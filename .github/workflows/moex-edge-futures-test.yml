@@ -1,0 +1,39 @@
+name: MOEX EDGE Futures Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  futures-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas
+
+      - name: Run futures data test
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+        run: python moex_edge_futures_test.py
+
+      - name: Upload futures reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-futures-reports
+          path: MOEX_EDGE_FUTURES_*.csv
+          if-no-files-found: warn
+          retention-days: 14
