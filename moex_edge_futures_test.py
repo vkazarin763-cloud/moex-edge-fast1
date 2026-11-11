@@ -47,7 +47,7 @@ def get_all_active_assets():
         cursor = next_cursor
         if not batch:
             break
-        time.sleep(0.05)
+        time.sleep(0.4)
     return assets
 
 def classify(a):
@@ -193,7 +193,7 @@ for i, a in enumerate(candidates, 1):
         row["Ошибка"] = str(e)[:500]
     rows.append(row)
     print(f'[{i}/{len(candidates)}] {a["symbol"]}: {row["Статус"]}')
-    time.sleep(0.08)
+    time.sleep(0.4)
 
 out = pd.DataFrame(rows)
 out.to_csv("MOEX_EDGE_FUTURES_data_test.csv", index=False, encoding="utf-8-sig")
