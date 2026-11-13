@@ -3,6 +3,7 @@ import time
 import logging
 import requests
 import pandas as pd
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -44,7 +45,7 @@ def place_market_order(token, symbol, quantity, side):
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     payload = {
         "symbol": symbol,
-        "quantity": str(quantity),
+        "quantity": {"value": str(quantity)},  # ИСПРАВЛЕНО: передаем как объект
         "side": side,
         "type": "ORDER_TYPE_MARKET",
         "account_id": ACCOUNT_ID
@@ -61,11 +62,11 @@ def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     payload = {
         "symbol": symbol,
-        "quantity": str(quantity),
+        "quantity": {"value": str(quantity)},
         "side": side,
         "account_id": ACCOUNT_ID,
-        "stop_loss": {"price": str(sl_price)},
-        "take_profit": {"price": str(tp_price)}
+        "stop_loss": {"price": {"value": str(sl_price)}},      # ИСПРАВЛЕНО
+        "take_profit": {"price": {"value": str(tp_price)}}     # ИСПРАВЛЕНО
     }
     resp = requests.post(f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/sltp-orders", headers=headers, json=payload)
     if resp.status_code in (200, 201):
@@ -76,6 +77,15 @@ def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
         return False
 
 def main():
+    # Проверка на выходные и нерабочее время (по Москве)
+    now_msk = datetime.utcnow() + timedelta(hours=3)
+    if now_msk.weekday() >= 5: # 5 - суббота, 6 - воскресенье
+        logging.info("Сегодня выходной. Биржа закрыта. Торговля отменена.")
+        return
+    if now_msk.hour < 10 or now_msk.hour >= 19: # С 10:00 до 19:00 МСК
+        logging.info("Нерабочее время биржи. Торговля отменена.")
+        return
+
     if not os.path.exists(CSV_FILE):
         logging.error("Файл moex_signals.csv не найден! Сначала запустите сканер.")
         return
@@ -102,13 +112,13 @@ def main():
         symbol = f"{ticker}@{MIC}"
 
         if symbol in open_symbols:
-            logging.info(f"⏭️ Позиция по {symbol} уже открыта. Пропускаем.")
+            logging.info(f"⏭️ Позиция по {symbol} уже открыта или заявка отправлена. Пропускаем.")
             continue
 
         lot_size = get_lot_size(token, ticker)
         
         if TEST_MODE_MIN_VOLUME:
-            qty_lots = 1  # Принудительно 1 лот для теста
+            qty_lots = 1
             logging.info(f"🧪 ТЕСТОВЫЙ РЕЖИМ: {ticker} берем 1 лот.")
         else:
             qty_shares = int(row["qty"])
@@ -128,6 +138,9 @@ def main():
 
         if not place_market_order(token, symbol, qty_shares_to_buy, side):
             continue
+        
+        # СРАЗУ ДОБАВЛЯЕМ В СПИСОК, ЧТОБЫ НЕ КУПИТЬ ДВА РАЗА
+        open_symbols.add(symbol) 
 
         if direction == "LONG":
             sl_price = entry_price * (1 - 0.03)
