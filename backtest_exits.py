@@ -2,7 +2,6 @@ import time
 import requests
 import pandas as pd
 import numpy as np
-from datetime import timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -10,12 +9,14 @@ ISS_BASE = "https://iss.moex.com/iss"
 BOARD = "TQBR"
 PAUSE = 0.2
 
-TICKERS = ["SBER", "GAZP", "LKOH"]
+# 10 самых ликвидных акций для быстрого и честного теста
+TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX"]
 
 ACTIVATIONS = [1, 2, 3, 5, 7]
 TAKES = [3, 5, 7, 10, 12, 15, 20]
 COMBOS = [(a, t) for a in ACTIVATIONS for t in TAKES]
 FEE_ROUND = 0.0026
+SL_PCT = 0.03  # Первоначальный стоп-лосс 3%
 
 def iss_get(url, params=None, retries=3):
     for i in range(retries):
@@ -140,30 +141,48 @@ def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct):
     h1_future = h1_df[h1_df['begin'] >= entry_time]
     if h1_future.empty: return None
     actual_entry = h1_future.iloc[0]['open']
+    
     act_price = actual_entry * (1 + direction * act_pct / 100)
     tp_price = actual_entry * (1 + direction * take_pct / 100)
     be_price = actual_entry * (1 + direction * FEE_ROUND)
+    sl_price = actual_entry * (1 - direction * SL_PCT) # СТОП-ЛОСС
+    
     activated = False
     mae = 0.0
+    
     for i in range(len(h1_future)):
         row = h1_future.iloc[i]
         op, hi, lo = row['open'], row['high'], row['low']
-        if direction == 1:
+        
+        if direction == 1: # LONG
             mae = min(mae, (lo - actual_entry) / actual_entry)
+            # Проверка ТП
             if op >= tp_price: return (tp_price, i, 'TP', mae)
             if hi >= tp_price: return (tp_price, i, 'TP', mae)
-            if not activated and hi >= act_price: activated = True
-            if activated:
-                if op <= be_price: return (op, i, 'BE_Stop', mae)
-                if lo <= be_price: return (be_price, i, 'BE_Stop', mae)
-        else:
+            
+            # Проверка Стоп-Лосса (если не активирован безубыток)
+            if not activated:
+                if op <= sl_price: return (op, i, 'SL', mae)
+                if lo <= sl_price: return (sl_price, i, 'SL', mae)
+                if hi >= act_price: activated = True
+            else:
+                # Проверка Безубытка (если активирован)
+                if op <= be_price: return (op, i, 'BE', mae)
+                if lo <= be_price: return (be_price, i, 'BE', mae)
+                
+        else: # SHORT
             mae = min(mae, (actual_entry - hi) / actual_entry)
             if op <= tp_price: return (tp_price, i, 'TP', mae)
             if lo <= tp_price: return (tp_price, i, 'TP', mae)
-            if not activated and lo <= act_price: activated = True
-            if activated:
-                if op >= be_price: return (op, i, 'BE_Stop', mae)
-                if hi >= be_price: return (be_price, i, 'BE_Stop', mae)
+            
+            if not activated:
+                if op >= sl_price: return (op, i, 'SL', mae)
+                if hi >= sl_price: return (sl_price, i, 'SL', mae)
+                if lo <= act_price: activated = True
+            else:
+                if op >= be_price: return (op, i, 'BE', mae)
+                if hi >= be_price: return (be_price, i, 'BE', mae)
+                
     return (h1_future.iloc[-1]['close'], len(h1_future)-1, 'OPEN', mae)
 
 def main():
@@ -218,9 +237,10 @@ def main():
     summary = df_res.groupby(['period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
     summary.to_csv("backtest_results.csv", index=False)
     
-    best = summary[(summary['trades'] >= 5)].sort_values('profit_factor', ascending=False).head(15)
+    # Показываем ТОП-15 лучших комбинаций, где было минимум 15 сделок
+    best = summary[(summary['trades'] >= 15)].sort_values('profit_factor', ascending=False).head(15)
     
-    print("\n================ ТОП-15 ЛУЧШИХ КОМБИНАЦИЙ (по Profit Factor) ================")
+    print("\n================ ТОП-15 ЛУЧШИХ КОМБИНАЦИЙ (со стоп-лоссом 3%) ================")
     print(best.to_string(index=False))
     print("\n(Файл с полными данными по всем 35 комбинациям сохранен в артефактах)")
 
