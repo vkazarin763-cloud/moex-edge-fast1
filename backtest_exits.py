@@ -10,12 +10,9 @@ BOARD = "TQBR"
 PAUSE = 0.2
 
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX"]
-ACTIVATIONS = [1, 2, 3, 5, 7]
-TAKES = [3, 5, 7, 10, 12, 15, 20]
-COMBOS = [(a, t) for a in ACTIVATIONS for t in TAKES]
+COMBOS = [(2, 5), (3, 7), (5, 10)] # Тестируем только самые лучшие комбинации
 FEE_ROUND = 0.0026
-SL_PCT = 0.03      # Фиксированный стоп 3%
-ATR_MULT = 2.0     # Множитель ATR для трейлинга (2 * ATR)
+SL_PCT = 0.03
 
 def iss_get(url, params=None, retries=3):
     for i in range(retries):
@@ -121,7 +118,6 @@ def get_signals(df):
     for i in range(200, len(df)):
         t = df.iloc[i]['begin'] 
         c = df.iloc[i]
-        
         if c['is_bull']:
             if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
             if c['cross_macd_up']: sigs.append((t, 1, 'MACD'))
@@ -133,7 +129,6 @@ def get_signals(df):
             if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
             if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
             if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
-            
         if c['is_bear']:
             if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
             if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
@@ -147,73 +142,82 @@ def get_signals(df):
             if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candlestick'))
     return sigs
 
-def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct, atr_val, use_atr):
-    h1_future = h1_df[h1_df['begin'] >= entry_time]
+def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct, mode):
+    h1_future = h1_df[h1_df['begin'] >= entry_time].copy()
     if h1_future.empty: return None
     actual_entry = h1_future.iloc[0]['open']
     
-    # Начальный стоп
-    if use_atr and atr_val > 0:
-        sl_price = actual_entry - direction * (ATR_MULT * atr_val)
-    else:
-        sl_price = actual_entry * (1 - direction * SL_PCT)
-        
     act_price = actual_entry * (1 + direction * act_pct / 100)
     tp_price = actual_entry * (1 + direction * take_pct / 100)
     be_price = actual_entry * (1 + direction * FEE_ROUND)
+    sl_price = actual_entry * (1 - direction * SL_PCT)
     
     activated = False
+    half_closed = False
     mae = 0.0
-    highest = actual_entry
-    lowest = actual_entry
     
     for i in range(len(h1_future)):
         row = h1_future.iloc[i]
-        op, hi, lo = row['open'], row['high'], row['low']
+        op, hi, lo, close = row['open'], row['high'], row['low'], row['close']
+        ema200_h1 = row['ema200_h1']
         
         if direction == 1: # LONG
             mae = min(mae, (lo - actual_entry) / actual_entry)
-            highest = max(highest, hi)
             
-            # Обновляем трейлинг-стоп
-            if use_atr and atr_val > 0:
-                trail_sl = highest - (ATR_MULT * atr_val)
-                sl_price = max(sl_price, trail_sl)
+            # SL Check
+            if not activated:
+                if op <= sl_price: return (op, i, 'SL', mae, half_closed)
+                if lo <= sl_price: return (sl_price, i, 'SL', mae, half_closed)
+            else:
+                if op <= be_price: return (op, i, 'BE_Stop', mae, half_closed)
+                if lo <= be_price: return (be_price, i, 'BE_Stop', mae, half_closed)
             
-            # Если активирован безубыток, стоп не может быть ниже безубытка
-            if activated:
-                sl_price = max(sl_price, be_price)
-                
-            if op >= tp_price: return (tp_price, i, 'TP', mae)
-            if hi >= tp_price: return (tp_price, i, 'TP', mae)
+            # TP Check
+            if not half_closed:
+                if op >= tp_price or hi >= tp_price:
+                    if mode == 'Half-Out':
+                        half_closed = True
+                        activated = True 
+                    else:
+                        return (tp_price, i, 'TP', mae, half_closed)
             
-            if op <= sl_price: return (op, i, 'SL', mae)
-            if lo <= sl_price: return (sl_price, i, 'SL', mae)
+            # Half-Out Trail Check (Trend break below H1 EMA200)
+            if half_closed:
+                if close < ema200_h1:
+                    return (close, i, 'Trail_Exit', mae, half_closed)
             
+            # Activation check
             if not activated and hi >= act_price:
                 activated = True
                 
         else: # SHORT
             mae = min(mae, (actual_entry - hi) / actual_entry)
-            lowest = min(lowest, lo)
             
-            if use_atr and atr_val > 0:
-                trail_sl = lowest + (ATR_MULT * atr_val)
-                sl_price = min(sl_price, trail_sl)
-                
-            if activated:
-                sl_price = min(sl_price, be_price)
-                
-            if op <= tp_price: return (tp_price, i, 'TP', mae)
-            if lo <= tp_price: return (tp_price, i, 'TP', mae)
+            if not activated:
+                if op >= sl_price: return (op, i, 'SL', mae, half_closed)
+                if hi >= sl_price: return (sl_price, i, 'SL', mae, half_closed)
+            else:
+                if op >= be_price: return (op, i, 'BE_Stop', mae, half_closed)
+                if hi >= be_price: return (be_price, i, 'BE_Stop', mae, half_closed)
             
-            if op >= sl_price: return (op, i, 'SL', mae)
-            if hi >= sl_price: return (sl_price, i, 'SL', mae)
-            
+            if not half_closed:
+                if op <= tp_price or lo <= tp_price:
+                    if mode == 'Half-Out':
+                        half_closed = True
+                        activated = True
+                    else:
+                        return (tp_price, i, 'TP', mae, half_closed)
+                        
+            if half_closed:
+                if close > ema200_h1:
+                    return (close, i, 'Trail_Exit', mae, half_closed)
+                    
             if not activated and lo <= act_price:
                 activated = True
                 
-    return (h1_future.iloc[-1]['close'], len(h1_future)-1, 'OPEN', mae)
+    # If trade is still open at the end of data
+    exit_p = h1_future.iloc[-1]['close']
+    return (exit_p, len(h1_future)-1, 'OPEN', mae, half_closed)
 
 def main():
     all_results = []
@@ -225,8 +229,10 @@ def main():
             d1 = calc_indicators(d1)
             signals = get_signals(d1)
             if not signals: continue
+            
             h1 = fetch_candles(ticker, 60, "2024-01-01", "2026-11-13")
             if h1.empty: continue
+            h1['ema200_h1'] = h1['close'].ewm(span=200, adjust=False).mean() # Добавили EMA200 на H1
             
             for strat in set([s[2] for s in signals]):
                 for direction in [1, -1]:
@@ -234,27 +240,28 @@ def main():
                     if not strat_sigs: continue
                     
                     for act, take in COMBOS:
-                        for mode in ['Fixed 3%', 'ATR Trailing']:
-                            use_atr = (mode == 'ATR Trailing')
+                        for mode in ['Fixed 5%', 'Half-Out']:
                             trade_end_time = pd.Timestamp.min
-                            
                             for sig_time, _ in strat_sigs:
                                 if sig_time <= trade_end_time: continue
                                 next_h1 = h1[h1['begin'] > sig_time]
                                 if next_h1.empty: continue
                                 entry_time = next_h1.iloc[0]['begin']
                                 
-                                try:
-                                    atr_val = d1.loc[d1['begin'] == sig_time, 'atr14'].values[0]
-                                except IndexError:
-                                    atr_val = 0
-                                    
-                                res = simulate_trade(h1, entry_time, direction, act, take, atr_val, use_atr)
+                                res = simulate_trade(h1, entry_time, direction, act, take, mode)
                                 if not res: continue
                                 
-                                exit_price, bars_held, exit_reason, mae = res
+                                exit_price, bars_held, exit_reason, mae, half_closed = res
                                 entry_price = h1[h1['begin'] == entry_time].iloc[0]['open']
-                                net_ret = (direction * (exit_price - entry_price) / entry_price) - FEE_ROUND
+                                
+                                if half_closed and exit_reason != 'OPEN':
+                                    ret_tp = direction * (entry_price * (1 + direction * take / 100) - entry_price) / entry_price
+                                    ret_rest = direction * (exit_price - entry_price) / entry_price
+                                    raw_ret = 0.5 * ret_tp + 0.5 * ret_rest
+                                else:
+                                    raw_ret = direction * (exit_price - entry_price) / entry_price
+                                    
+                                net_ret = raw_ret - FEE_ROUND
                                 trade_end_time = entry_time + pd.Timedelta(hours=bars_held)
                                 
                                 all_results.append({
@@ -283,11 +290,10 @@ def main():
     summary = df_res.groupby(['mode', 'period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
     summary.to_csv("backtest_results.csv", index=False)
     
-    # Вывод результатов
-    for mode in ['Fixed 3%', 'ATR Trailing']:
+    for mode in ['Fixed 5%', 'Half-Out']:
         print(f"\n================ ТОП-5: {mode} ================")
         best = summary[(summary['mode'] == mode) & (summary['trades'] >= 15)].sort_values('profit_factor', ascending=False).head(5)
-        print(best[['period', 'strategy', 'direction', 'act', 'take', 'trades', 'win_rate', 'profit_factor']].to_string(index=False))
+        print(best[['period', 'strategy', 'direction', 'act', 'take', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
 
 if __name__ == "__main__":
     main()
