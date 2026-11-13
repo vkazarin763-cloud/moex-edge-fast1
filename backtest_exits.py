@@ -9,14 +9,13 @@ ISS_BASE = "https://iss.moex.com/iss"
 BOARD = "TQBR"
 PAUSE = 0.2
 
-# 10 самых ликвидных акций для быстрого и честного теста
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX"]
 
 ACTIVATIONS = [1, 2, 3, 5, 7]
 TAKES = [3, 5, 7, 10, 12, 15, 20]
 COMBOS = [(a, t) for a in ACTIVATIONS for t in TAKES]
 FEE_ROUND = 0.0026
-SL_PCT = 0.03  # Первоначальный стоп-лосс 3%
+SL_PCT = 0.03  # Стоп-лосс 3%
 
 def iss_get(url, params=None, retries=3):
     for i in range(retries):
@@ -54,6 +53,7 @@ def calc_indicators(df):
     df = df.copy()
     df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
     df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
+    df['ema200'] = df['close'].ewm(span=200, adjust=False).mean() # ДОБАВИЛИ EMA200
     tr = pd.concat([df['high']-df['low'], (df['high']-df['close'].shift()).abs(), (df['low']-df['close'].shift()).abs()], axis=1).max(axis=1)
     df['atr14'] = tr.rolling(14).mean()
     delta = df['close'].diff()
@@ -93,6 +93,7 @@ def calc_indicators(df):
 
 def get_signals(df):
     sigs = []
+    # Условия для индикаторов
     df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
     df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
     df['cross_macd_up'] = (df['macd'] > df['macd_sig']) & (df['macd'].shift() <= df['macd_sig'].shift())
@@ -112,29 +113,40 @@ def get_signals(df):
     df['atr_break_up'] = df['close'] > (df['don20_high'] + 0.25 * df['atr14'])
     df['atr_break_dn'] = df['close'] < (df['don20_low'] - 0.25 * df['atr14'])
     
+    # ФИЛЬТР ТРЕНДА: EMA200
+    df['is_bull'] = df['close'] > df['ema200']
+    df['is_bear'] = df['close'] < df['ema200']
+    
     for i in range(200, len(df)):
         t = df.iloc[i]['begin'] 
         c = df.iloc[i]
-        if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
-        if c['cross_macd_up']: sigs.append((t, 1, 'MACD'))
-        if c['cross_adx_up']: sigs.append((t, 1, 'ADX+DI'))
-        if c['break_don20_up']: sigs.append((t, 1, 'Donchian20'))
-        if c['break_don55_up']: sigs.append((t, 1, 'Donchian55'))
-        if c['rsi_buy']: sigs.append((t, 1, 'RSI14'))
-        if c['bb_buy']: sigs.append((t, 1, 'Bollinger'))
-        if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
-        if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
-        if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
-        if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
-        if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
-        if c['cross_adx_dn']: sigs.append((t, -1, 'ADX+DI'))
-        if c['break_don20_dn']: sigs.append((t, -1, 'Donchian20'))
-        if c['break_don55_dn']: sigs.append((t, -1, 'Donchian55'))
-        if c['rsi_sell']: sigs.append((t, -1, 'RSI14'))
-        if c['bb_sell']: sigs.append((t, -1, 'Bollinger'))
-        if c['stoch_sell']: sigs.append((t, -1, 'Stochastic'))
-        if c['atr_break_dn']: sigs.append((t, -1, 'ATR'))
-        if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candlestick'))
+        
+        # LONG СИГНАЛЫ (только если рынок бычий)
+        if c['is_bull']:
+            if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
+            if c['cross_macd_up']: sigs.append((t, 1, 'MACD'))
+            if c['cross_adx_up']: sigs.append((t, 1, 'ADX+DI'))
+            if c['break_don20_up']: sigs.append((t, 1, 'Donchian20'))
+            if c['break_don55_up']: sigs.append((t, 1, 'Donchian55'))
+            if c['rsi_buy']: sigs.append((t, 1, 'RSI14'))
+            if c['bb_buy']: sigs.append((t, 1, 'Bollinger'))
+            if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
+            if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
+            if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
+            
+        # SHORT СИГНАЛЫ (только если рынок медвежий)
+        if c['is_bear']:
+            if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
+            if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
+            if c['cross_adx_dn']: sigs.append((t, -1, 'ADX+DI'))
+            if c['break_don20_dn']: sigs.append((t, -1, 'Donchian20'))
+            if c['break_don55_dn']: sigs.append((t, -1, 'Donchian55'))
+            if c['rsi_sell']: sigs.append((t, -1, 'RSI14'))
+            if c['bb_sell']: sigs.append((t, -1, 'Bollinger'))
+            if c['stoch_sell']: sigs.append((t, -1, 'Stochastic'))
+            if c['atr_break_dn']: sigs.append((t, -1, 'ATR'))
+            if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candlestick'))
+            
     return sigs
 
 def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct):
@@ -145,7 +157,7 @@ def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct):
     act_price = actual_entry * (1 + direction * act_pct / 100)
     tp_price = actual_entry * (1 + direction * take_pct / 100)
     be_price = actual_entry * (1 + direction * FEE_ROUND)
-    sl_price = actual_entry * (1 - direction * SL_PCT) # СТОП-ЛОСС
+    sl_price = actual_entry * (1 - direction * SL_PCT)
     
     activated = False
     mae = 0.0
@@ -154,27 +166,21 @@ def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct):
         row = h1_future.iloc[i]
         op, hi, lo = row['open'], row['high'], row['low']
         
-        if direction == 1: # LONG
+        if direction == 1:
             mae = min(mae, (lo - actual_entry) / actual_entry)
-            # Проверка ТП
             if op >= tp_price: return (tp_price, i, 'TP', mae)
             if hi >= tp_price: return (tp_price, i, 'TP', mae)
-            
-            # Проверка Стоп-Лосса (если не активирован безубыток)
             if not activated:
                 if op <= sl_price: return (op, i, 'SL', mae)
                 if lo <= sl_price: return (sl_price, i, 'SL', mae)
                 if hi >= act_price: activated = True
             else:
-                # Проверка Безубытка (если активирован)
                 if op <= be_price: return (op, i, 'BE', mae)
                 if lo <= be_price: return (be_price, i, 'BE', mae)
-                
-        else: # SHORT
+        else:
             mae = min(mae, (actual_entry - hi) / actual_entry)
             if op <= tp_price: return (tp_price, i, 'TP', mae)
             if lo <= tp_price: return (tp_price, i, 'TP', mae)
-            
             if not activated:
                 if op >= sl_price: return (op, i, 'SL', mae)
                 if hi >= sl_price: return (sl_price, i, 'SL', mae)
@@ -237,12 +243,11 @@ def main():
     summary = df_res.groupby(['period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
     summary.to_csv("backtest_results.csv", index=False)
     
-    # Показываем ТОП-15 лучших комбинаций, где было минимум 15 сделок
     best = summary[(summary['trades'] >= 15)].sort_values('profit_factor', ascending=False).head(15)
     
-    print("\n================ ТОП-15 ЛУЧШИХ КОМБИНАЦИЙ (со стоп-лоссом 3%) ================")
+    print("\n================ ТОП-15 (С ФИЛЬТРОМ EMA200) ================")
     print(best.to_string(index=False))
-    print("\n(Файл с полными данными по всем 35 комбинациям сохранен в артефактах)")
+    print("\n(Файл сохранен в артефактах)")
 
 if __name__ == "__main__":
     main()
