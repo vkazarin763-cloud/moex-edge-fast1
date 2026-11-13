@@ -1,9 +1,12 @@
-name: MOEX EDGE FAST (Scan & Trade)
+name: MOEX EDGE FAST (Hourly Trading)
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7 7-16 * * 1-5"
+    # Будние дни (ПН-ПТ): Запуск каждый час с 04:00 до 20:00 UTC (с 07:00 до 23:00 МСК)
+    - cron: "0 4-20 * * 1-5"
+    # Выходные (СБ-ВС): Запуск каждый час с 07:00 до 16:00 UTC (с 10:00 до 19:00 МСК)
+    - cron: "0 7-16 * * 6,0"
 
 jobs:
   scan_and_execute:
