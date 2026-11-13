@@ -1,4 +1,4 @@
-name: MOEX EDGE FAST
+name: MOEX EDGE FAST (Scan & Trade)
 
 on:
   workflow_dispatch:
@@ -6,10 +6,11 @@ on:
     - cron: "7 7-16 * * 1-5"
 
 jobs:
-  scan:
+  scan_and_execute:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -17,13 +18,19 @@ jobs:
       - name: Install dependencies
         run: pip install pandas requests numpy
         
-      - name: Run Scanner
+      - name: Run Scanner (Find Signals)
         run: python moex_edge_fast_33.py
         
-      - name: Upload artifacts
+      - name: Run Finam Executor (Place Orders)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+        run: python finam_executor.py
+        
+      - name: Upload signals log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: moex-signals
+          name: moex-signals-log
           path: moex_signals.csv
           if-no-files-found: warn
