@@ -54,6 +54,12 @@ def fetch_candles(ticker, interval, dfrom, dtill):
         time.sleep(PAUSE)
     if not rows_all: return pd.DataFrame()
     df = pd.DataFrame(rows_all, columns=["open","high","low","close","volume","begin"])
+    
+    # Защита от строковых значений
+    for col in ["open", "high", "low", "close", "volume"]:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna().reset_index(drop=True)
+    
     df["begin"] = pd.to_datetime(df["begin"])
     return df.sort_values("begin").reset_index(drop=True)
 
@@ -155,8 +161,6 @@ def get_signals(df):
 
 def main():
     print(f"=== MOEX EDGE FAST 3.3 (Запуск: {datetime.now().strftime('%Y-%m-%d %H:%M')} UTC) ===")
-    print(f"Источник данных: MOEX ISS | Фильтр тренда: EMA200")
-    print(f"Депозит: {DEPOSIT_RUB} RUB | Риск на сделку: {RISK_PER_TRADE_PCT}%")
     
     d1_from = (datetime.now() - timedelta(days=400)).strftime('%Y-%m-%d')
     d1_till = datetime.now().strftime('%Y-%m-%d')
@@ -185,7 +189,6 @@ def main():
                 if direction == 1 and entry_price > last_h1['ema20']: h1_confirmed = True
                 elif direction == -1 and entry_price < last_h1['ema20']: h1_confirmed = True
                 
-                # Расчет позиции (только если H1 подтвержден)
                 qty = 0
                 if h1_confirmed:
                     risk_rub = DEPOSIT_RUB * (RISK_PER_TRADE_PCT / 100.0)
@@ -206,6 +209,13 @@ def main():
         except Exception as e:
             print(f"Ошибка {ticker}: {e}")
             time.sleep(1)
+
+    # СОХРАНЕНИЕ В ФАЙЛ (чтобы Github не выдавал ошибку)
+    if signals_found:
+        df_res = pd.DataFrame(signals_found)
+        df_res.to_csv("moex_signals.csv", index=False)
+    else:
+        pd.DataFrame(columns=["ticker","direction","strategy","h1_confirmed","date","entry_price","qty"]).to_csv("moex_signals.csv", index=False)
 
     print("\n" + "="*50)
     if not signals_found:
@@ -237,7 +247,6 @@ def main():
                 print(f"      - Перевод в безубыток при: {be_price:.2f} (+{REC_BE_PCT}%)")
     
     print("\n" + "="*50)
-    print("ВНИМАНИЕ: Это не финансовая рекомендация. Торговля связана с риском.")
 
 if __name__ == "__main__":
     main()
