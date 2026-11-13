@@ -20,6 +20,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backtest-exits-output
-          path: |
-            h1_test_moex_iss.csv
-            h1_moex_iss.csv
+          path: backtest_results.csv
