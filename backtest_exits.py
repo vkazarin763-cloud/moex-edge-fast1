@@ -1,203 +1,313 @@
-"""
-MOEX EDGE — backtest_exits.py
-Шаг 1: загрузка H1-данных через MOEX ISS с контролем качества.
-Не затрагивает moex_edge_fast_33.py и workflow.
-"""
 import time
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+import numpy as np
+from datetime import timedelta
+import warnings
+warnings.filterwarnings('ignore')
 
 ISS_BASE = "https://iss.moex.com/iss"
 BOARD = "TQBR"
-INTERVAL_H1 = 60
-PAGE_SIZE = 500          # безопасный размер страницы ISS
-REQ_PAUSE = 0.25         # пауза между запросами, сек
-CONTROL_TOL_DAYS = 10    # допуск при проверке контрольной точки
+PAUSE = 0.2
+TOL = 10
 
-TICKERS = [
-    "AFKS","AFLT","ALRS","BSPB","CBOM","CHMF","CNRU","DOMRF","ENPG","FLOT",
-    "GAZP","GMKN","HEAD","IRAO","LKOH","MAGN","MDMG","MOEX","MTSS","NLMK",
-    "NVTK","OZON","PHOR","PLZL","POSI","RAGR","RENI","ROSN","RTKM","RUAL",
-    "SBER","SBERP","SNGS","SNGSP","SVCB","T","TATN","TATNP","TRNFP","UGLD",
-    "VKCO","VTBR","X5","YDEX",
-]
+TICKERS = ["AFKS","AFLT","ALRS","BSPB","CBOM","CHMF","CNRU","DOMRF","ENPG","FLOT",
+"GAZP","GMKN","HEAD","IRAO","LKOH","MAGN","MDMG","MOEX","MTSS","NLMK",
+"NVTK","OZON","PHOR","PLZL","POSI","RAGR","RENI","ROSN","RTKM","RUAL",
+"SBER","SBERP","SNGS","SNGSP","SVCB","T","TATN","TATNP","TRNFP","UGLD",
+"VKCO","VTBR","X5","YDEX"]
 
-CANDLE_COLS = ["open","close","high","low","value","volume","begin","end"]
+ACTIVATIONS = [1, 2, 3, 5, 7]
+TAKES = [3, 5, 7, 10, 12, 15, 20]
+COMBOS = [(a, t) for a in ACTIVATIONS for t in TAKES]
+FEE_ROUND = 0.0026
 
-
-def _iss_get(url, params=None, retries=3):
-    """GET с ретраями на 5xx/сетевые ошибки."""
-    for attempt in range(retries):
+def iss_get(url, params=None, retries=3):
+    for i in range(retries):
         try:
             r = requests.get(url, params=params, timeout=30)
-            if r.status_code == 200:
-                return r.json()
-            if 500 <= r.status_code < 600:
-                time.sleep(1 + attempt)
-                continue
+            if r.status_code == 200: return r.json()
+            if 500 <= r.status_code < 600: time.sleep(1+i); continue
             r.raise_for_status()
         except requests.RequestException:
-            if attempt == retries - 1:
-                raise
-            time.sleep(1 + attempt)
-    raise RuntimeError(f"ISS request failed: {url}")
+            if i == retries-1: raise
+            time.sleep(1+i)
+    return {}
 
-
-def get_candle_borders(ticker: str) -> dict:
-    """Возвращает {interval: (begin, end)} для тикера."""
-    url = f"{ISS_BASE}/engines/stock/markets/shares/boards/{BOARD}/securities/{ticker}/candleborders.json"
-    payload = _iss_get(url)
-    block = payload.get("borders", {})
-    cols = block.get("columns", [])
-    rows = block.get("data", [])
-    result = {}
-    for row in rows:
-        rec = dict(zip(cols, row))
-        result[rec["interval"]] = (rec["begin"], rec["end"])
-    return result
-
-
-def fetch_h1_candles(ticker: str, date_from: str, date_till: str) -> pd.DataFrame:
-    """
-    Пагинированная выгрузка H1-свечей.
-    date_from / date_till — строки 'YYYY-MM-DD'.
-    Возвращает DataFrame с колонками CANDLE_COLS.
-    """
+def fetch_candles(ticker, interval, dfrom, dtill):
     url = f"{ISS_BASE}/engines/stock/markets/shares/boards/{BOARD}/securities/{ticker}/candles.json"
-    all_rows = []
-    start = 0
+    rows_all, start = [], 0
     while True:
-        params = {
-            "from": date_from,
-            "till": date_till,
-            "interval": INTERVAL_H1,
-            "start": start,
-            "iss.reverse": "false",
-        }
-        payload = _iss_get(url, params=params)
-        block = payload.get("candles", {})
-        cols = block.get("columns", CANDLE_COLS)
-        rows = block.get("data", [])
-        if not rows:
-            break
-        # Приводим к единому порядку колонок
+        p = {"from": dfrom, "till": dtill, "interval": interval, "start": start, "iss.reverse": "false"}
+        b = iss_get(url, p).get("candles", {})
+        cols = b.get("columns", [])
+        rows = b.get("data", [])
+        if not rows: break
         idx = {c: i for i, c in enumerate(cols)}
         for r in rows:
-            all_rows.append([r[idx[c]] for c in CANDLE_COLS])
-        if len(rows) < PAGE_SIZE:
-            break
+            rows_all.append([r[idx.get(c, 0)] for c in ["open","high","low","close","volume","begin"]])
+        if len(rows) < 500: break
         start += len(rows)
-        time.sleep(REQ_PAUSE)
-
-    if not all_rows:
-        return pd.DataFrame(columns=CANDLE_COLS)
-
-    df = pd.DataFrame(all_rows, columns=CANDLE_COLS)
+        time.sleep(PAUSE)
+    
+    if not rows_all: return pd.DataFrame()
+    df = pd.DataFrame(rows_all, columns=["open","high","low","close","volume","begin"])
     df["begin"] = pd.to_datetime(df["begin"])
-    df["end"] = pd.to_datetime(df["end"])
-    df.insert(0, "ticker", ticker)
-    _check_control_point(df, ticker, date_from, date_till)
+    df = df.sort_values("begin").reset_index(drop=True)
     return df
 
+def calc_indicators(df):
+    df = df.copy()
+    df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
+    df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
+    df['ema200'] = df['close'].ewm(span=200, adjust=False).mean()
+    
+    tr = pd.concat([df['high']-df['low'], (df['high']-df['close'].shift()).abs(), (df['low']-df['close'].shift()).abs()], axis=1).max(axis=1)
+    df['atr14'] = tr.rolling(14).mean()
+    
+    delta = df['close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+    df['rsi14'] = 100 - (100 / (1 + (gain / loss)))
+    
+    df['macd'] = df['close'].ewm(span=12, adjust=False).mean() - df['close'].ewm(span=26, adjust=False).mean()
+    df['macd_sig'] = df['macd'].ewm(span=9, adjust=False).mean()
+    
+    up = df['high'] - df['high'].shift()
+    down = df['low'].shift() - df['low']
+    plus_dm = np.where((up > down) & (up > 0), up, 0.0)
+    minus_dm = np.where((down > up) & (down > 0), down, 0.0)
+    tr_s = pd.Series(tr)
+    atr_s = tr_s.rolling(14).mean()
+    df['di_plus'] = 100 * pd.Series(plus_dm).rolling(14).mean() / atr_s
+    df['di_minus'] = 100 * pd.Series(minus_dm).rolling(14).mean() / atr_s
+    dx = 100 * (df['di_plus'] - df['di_minus']).abs() / (df['di_plus'] + df['di_minus'])
+    df['adx14'] = dx.rolling(14).mean()
+    
+    df['don20_high'] = df['high'].rolling(20).max().shift(1)
+    df['don20_low'] = df['low'].rolling(20).min().shift(1)
+    df['don55_high'] = df['high'].rolling(55).max().shift(1)
+    df['don55_low'] = df['low'].rolling(55).min().shift(1)
+    
+    df['bb_mid'] = df['close'].rolling(20).mean()
+    df['bb_std'] = df['close'].rolling(20).std()
+    df['bb_up'] = df['bb_mid'] + 2 * df['bb_std']
+    df['bb_dn'] = df['bb_mid'] - 2 * df['bb_std']
+    
+    df['stoch_k'] = 100 * (df['close'] - df['low'].rolling(14).min()) / (df['high'].rolling(14).max() - df['low'].rolling(14).min())
+    df['stoch_d'] = df['stoch_k'].rolling(3).mean()
+    
+    # Candles
+    df['body'] = (df['close'] - df['open']).abs()
+    df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
+    df['c_lower'] = df[['open', 'close']].min(axis=1) - df['low']
+    df['bull_engulf'] = (df['close'] > df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open'].shift()) & (df['open'] < df['close'].shift())
+    df['bear_engulf'] = (df['close'] < df['open']) & (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open'].shift()) & (df['open'] > df['close'].shift())
+    df['hammer'] = (df['c_lower'] > 2 * df['body']) & (df['c_upper'] < 0.3 * df['body'])
+    df['shooting_star'] = (df['c_upper'] > 2 * df['body']) & (df['c_lower'] < 0.3 * df['body'])
+    return df
 
-def _check_control_point(df: pd.DataFrame, ticker: str, date_from: str, date_till: str):
-    """
-    Защита от 'тихой ошибки' ISS: проверяем, что данные действительно
-    в запрошенном окне (с допуском на выходные/праздники).
-    """
-    lo = pd.to_datetime(date_from) - timedelta(days=CONTROL_TOL_DAYS)
-    hi = pd.to_datetime(date_till) + timedelta(days=CONTROL_TOL_DAYS + 1)
-    first = df["begin"].min()
-    last = df["end"].max()
-    if first < lo or last > hi:
-        raise ValueError(
-            f"[{ticker}] контрольная точка нарушена: "
-            f"запрошено {date_from}..{date_till}, "
-            f"получено {first}..{last}"
-        )
+def get_signals(df):
+    sigs = []
+    def add(cond_long, cond_short, name):
+        if 'col' in dir():
+            pass
+    # 1. EMA
+    df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
+    df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
+    # 2. MACD
+    df['cross_macd_up'] = (df['macd'] > df['macd_sig']) & (df['macd'].shift() <= df['macd_sig'].shift())
+    df['cross_macd_dn'] = (df['macd'] < df['macd_sig']) & (df['macd'].shift() >= df['macd_sig'].shift())
+    # 3. ADX
+    df['cross_adx_up'] = (df['di_plus'] > df['di_minus']) & (df['di_plus'].shift() <= df['di_minus'].shift()) & (df['adx14'] > 20)
+    df['cross_adx_dn'] = (df['di_plus'] < df['di_minus']) & (df['di_plus'].shift() >= df['di_minus'].shift()) & (df['adx14'] > 20)
+    # 4. Donchian 20
+    df['break_don20_up'] = df['close'] > df['don20_high']
+    df['break_don20_dn'] = df['close'] < df['don20_low']
+    # 5. Donchian 55
+    df['break_don55_up'] = df['close'] > df['don55_high']
+    df['break_don55_dn'] = df['close'] < df['don55_low']
+    # 6. RSI reversal
+    df['rsi_buy'] = (df['rsi14'] > 30) & (df['rsi14'].shift() <= 30)
+    df['rsi_sell'] = (df['rsi14'] < 70) & (df['rsi14'].shift() >= 70)
+    # 7. BB reversal
+    df['bb_buy'] = (df['close'] > df['bb_dn']) & (df['close'].shift() <= df['bb_dn'].shift())
+    df['bb_sell'] = (df['close'] < df['bb_up']) & (df['close'].shift() >= df['bb_up'].shift())
+    # 8. Stoch
+    df['stoch_buy'] = (df['stoch_k'] > df['stoch_d']) & (df['stoch_k'].shift() <= df['stoch_d'].shift()) & (df['stoch_k'] < 20)
+    df['stoch_sell'] = (df['stoch_k'] < df['stoch_d']) & (df['stoch_k'].shift() >= df['stoch_d'].shift()) & (df['stoch_k'] > 80)
+    # 9. ATR breakout
+    df['atr_break_up'] = df['close'] > (df['don20_high'] + 0.25 * df['atr14'])
+    df['atr_break_dn'] = df['close'] < (df['don20_low'] - 0.25 * df['atr14'])
+    
+    for i in range(200, len(df)):
+        t = df.index[i]
+        c = df.iloc[i]
+        prev = df.iloc[i-1]
+        
+        # LONG signals
+        if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
+        if c['cross_macd_up']: sigs.append((t, 1, 'MACD'))
+        if c['cross_adx_up']: sigs.append((t, 1, 'ADX+DI'))
+        if c['break_don20_up']: sigs.append((t, 1, 'Donchian20'))
+        if c['break_don55_up']: sigs.append((t, 1, 'Donchian55'))
+        if c['rsi_buy']: sigs.append((t, 1, 'RSI14'))
+        if c['bb_buy']: sigs.append((t, 1, 'Bollinger'))
+        if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
+        if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
+        if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
+        
+        # SHORT signals
+        if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
+        if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
+        if c['cross_adx_dn']: sigs.append((t, -1, 'ADX+DI'))
+        if c['break_don20_dn']: sigs.append((t, -1, 'Donchian20'))
+        if c['break_don55_dn']: sigs.append((t, -1, 'Donchian55'))
+        if c['rsi_sell']: sigs.append((t, -1, 'RSI14'))
+        if c['bb_sell']: sigs.append((t, -1, 'Bollinger'))
+        if c['stoch_sell']: sigs.append((t, -1, 'Stochastic'))
+        if c['atr_break_dn']: sigs.append((t, -1, 'ATR'))
+        if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candlestick'))
+    return sigs
 
-
-def validate_h1(df: pd.DataFrame, ticker: str) -> list[str]:
-    """Контроль качества. Возвращает список проблем (пусто = OK)."""
-    issues = []
-    if df.empty:
-        return [f"{ticker}: пустой DataFrame"]
-
-    # Дубликаты по begin
-    dup = df["begin"].duplicated().sum()
-    if dup:
-        issues.append(f"{ticker}: дубликатов begin = {dup}")
-
-    # Пропуски обязательных полей
-    req = ["open","high","low","close","volume","begin","end"]
-    miss = df[req].isna().sum().sum()
-    if miss:
-        issues.append(f"{ticker}: пропусков обязательных полей = {miss}")
-
-    # OHLC-консистентность
-    bad = df[
-        (df["low"] > df["high"]) |
-        (df["low"] > df["open"]) | (df["low"] > df["close"]) |
-        (df["high"] < df["open"]) | (df["high"] < df["close"])
-    ]
-    if len(bad):
-        issues.append(f"{ticker}: некорректных OHLC = {len(bad)}")
-
-    # Свечи в выходные (по московскому времени)
-    wk = df[df["begin"].dt.weekday >= 5]
-    if len(wk):
-        issues.append(f"{ticker}: свечей в выходные = {len(wk)}")
-
-    # Монотонность времени
-    if not df["begin"].is_monotonic_increasing:
-        issues.append(f"{ticker}: begin не монотонен")
-
-    # end - begin == 1 час
-    diff = (df["end"] - df["begin"]).dt.total_seconds()
-    bad_len = (diff != 3600).sum()
-    if bad_len:
-        issues.append(f"{ticker}: свечей с длиной != 1 час = {bad_len}")
-
-    return issues
-
-
-def load_all(tickers, date_from, date_till, out_csv="h1_moex_iss.csv"):
-    all_parts, report = [], []
-    for i, t in enumerate(tickers, 1):
-        print(f"[{i}/{len(tickers)}] {t}: borders...")
-        borders = get_candle_borders(t)
-        if INTERVAL_H1 not in borders:
-            report.append({"ticker": t, "status": "no_h1_interval"})
-            continue
-        print(f"          H1 доступен: {borders[INTERVAL_H1]}")
-        print(f"          выгрузка {date_from}..{date_till}...")
-        try:
-            df = fetch_h1_candles(t, date_from, date_till)
-        except Exception as e:
-            report.append({"ticker": t, "status": f"fetch_error: {e}"})
-            continue
-        issues = validate_h1(df, t)
-        if issues:
-            report.append({"ticker": t, "status": "qc_issues", "issues": issues})
+def simulate_trade(h1_df, entry_time, entry_price, direction, act_pct, take_pct):
+    # entry_time - время открытия H1 свечи для входа
+    mask = h1_df['begin'] >= entry_time
+    h1_future = h1_df[mask]
+    if h1_future.empty: return None
+    
+    actual_entry = h1_future.iloc[0]['open']
+    act_price = actual_entry * (1 + direction * act_pct / 100)
+    tp_price = actual_entry * (1 + direction * take_pct / 100)
+    # Стоп в безубыток с учетом комиссии 0.26%
+    be_price = actual_entry * (1 + direction * FEE_ROUND)
+    
+    activated = False
+    mae = 0.0
+    
+    for i in range(len(h1_future)):
+        row = h1_future.iloc[i]
+        op, hi, lo = row['open'], row['high'], row['low']
+        
+        if direction == 1:
+            mae = min(mae, (lo - actual_entry) / actual_entry)
+            # Проверка ТП (сначала, чтобы зафиксировать прибыль при гэпе)
+            if op >= tp_price: return (tp_price, i, 'TP', mae)
+            if hi >= tp_price: return (tp_price, i, 'TP', mae)
+            
+            # Проверка активации
+            if not activated and hi >= act_price:
+                activated = True
+                
+            # Проверка стопа (если активирован)
+            if activated:
+                if op <= be_price: return (op, i, 'BE_Stop', mae) # Гэп вниз
+                if lo <= be_price: return (be_price, i, 'BE_Stop', mae)
+                
         else:
-            report.append({"ticker": t, "status": "ok", "rows": len(df)})
-        all_parts.append(df)
-        time.sleep(REQ_PAUSE)
+            mae = min(mae, (actual_entry - hi) / actual_entry)
+            if op <= tp_price: return (tp_price, i, 'TP', mae)
+            if lo <= tp_price: return (tp_price, i, 'TP', mae)
+            
+            if not activated and lo <= act_price:
+                activated = True
+                
+            if activated:
+                if op >= be_price: return (op, i, 'BE_Stop', mae) # Гэп вверх
+                if hi >= be_price: return (be_price, i, 'BE_Stop', mae)
+                
+    # Если не закрылась
+    last_close = h1_future.iloc[-1]['close']
+    return (last_close, len(h1_future)-1, 'OPEN', mae)
 
-    if all_parts:
-        full = pd.concat(all_parts, ignore_index=True)
-        full.to_csv(out_csv, index=False)
-        print(f"\nСохранено {len(full)} строк в {out_csv}")
+def main():
+    d1_from, d1_till = "2024-01-01", "2026-11-13"
+    all_results = []
+    
+    for ticker in TICKERS:
+        print(f"Обработка {ticker}...")
+        try:
+            d1 = fetch_candles(ticker, 24, d1_from, d1_till)
+            if len(d1) < 200: continue
+            d1 = calc_indicators(d1)
+            signals = get_signals(d1)
+            if not signals: continue
+            
+            h1 = fetch_candles(ticker, 60, d1_from, d1_till)
+            if h1.empty: continue
+            
+            # Симулируем только для уникальных сигналов
+            # Чтобы не открывать сделку, пока предыдущая не закрыта
+            # Группируем по стратегии и направлению
+            for strat in set([s[2] for s in signals]):
+                for direction in [1, -1]:
+                    strat_sigs = [(t, d) for t, d, s in signals if s == strat and d == direction]
+                    if not strat_sigs: continue
+                    
+                    for act, take in COMBOS:
+                        in_trade = False
+                        trade_end_time = pd.Timestamp.min
+                        
+                        for sig_time, _ in strat_sigs:
+                            if sig_time <= trade_end_time: continue
+                            
+                            # Вход на следующей H1 свече после закрытия D1
+                            next_h1 = h1[h1['begin'] > sig_time]
+                            if next_h1.empty: continue
+                            entry_time = next_h1.iloc[0]['begin']
+                            
+                            res = simulate_trade(h1, entry_time, 0, direction, act, take)
+                            if not res: continue
+                            
+                            exit_price, bars_held, exit_reason, mae = res
+                            
+                            # Расчет доходности с учетом комиссий
+                            raw_ret = direction * (exit_price - h1[h1['begin'] == entry_time].iloc[0]['open']) / h1[h1['begin'] == entry_time].iloc[0]['open']
+                            net_ret = raw_ret - FEE_ROUND
+                            
+                            trade_end_time = entry_time + pd.Timedelta(hours=bars_held)
+                            
+                            all_results.append({
+                                'ticker': ticker, 'strategy': strat, 'direction': 'LONG' if direction == 1 else 'SHORT',
+                                'act': act, 'take': take, 'entry_time': entry_time, 'exit_time': trade_end_time,
+                                'net_ret': net_ret, 'exit_reason': exit_reason, 'mae': mae, 'bars': bars_held
+                            })
+        except Exception as e:
+            print(f"Ошибка {ticker}: {e}")
 
-    rep = pd.DataFrame(report)
-    print("\n=== Отчёт по тикерам ===")
-    print(rep.to_string(index=False))
-    return rep
+    if not all_results:
+        print("Нет сделок.")
+        return
 
+    df_res = pd.DataFrame(all_results)
+    df_res['year'] = df_res['entry_time'].dt.year
+    df_res['period'] = np.where(df_res['year'] <= 2025, 'Train 2024-2025', 'Test 2026')
+    
+    def agg_stats(g):
+        closed = g[g['exit_reason'] != 'OPEN']
+        opn = g[g['exit_reason'] == 'OPEN']
+        
+        win = closed[closed['net_ret'] > 0]
+        loss = closed[closed['net_ret'] <= 0]
+        
+        pf = win['net_ret'].sum() / abs(loss['net_ret'].sum()) if len(loss) > 0 and loss['net_ret'].sum() != 0 else np.nan
+        
+        return pd.Series({
+            'trades': len(closed),
+            'win_rate': len(win) / len(closed) if len(closed) > 0 else 0,
+            'avg_ret': closed['net_ret'].mean(),
+            'med_ret': closed['net_ret'].median(),
+            'profit_factor': pf,
+            'avg_bars': closed['bars'].mean(),
+            'avg_mae': closed['mae'].mean(),
+            'open_trades': len(opn),
+            'worst_open_pnl': opn['net_ret'].min() if len(opn) > 0 else 0
+        })
+
+    summary = df_res.groupby(['period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
+    summary.to_csv("backtest_results.csv", index=False)
+    print("\nУспешно! Результаты сохранены в backtest_results.csv")
+    print(summary.head(10).to_string())
 
 if __name__ == "__main__":
-    # Тестовый прогон на 3 тикерах за узкий период
-    test_tickers = ["SBER", "GAZP", "LKOH"]
-    load_all(test_tickers, "2026-01-03", "2026-02-01",
-             out_csv="h1_test_moex_iss.csv")
+    main()
