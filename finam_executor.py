@@ -3,7 +3,7 @@ import time
 import logging
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as dt_time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -45,7 +45,7 @@ def place_market_order(token, symbol, quantity, side):
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     payload = {
         "symbol": symbol,
-        "quantity": {"value": str(quantity)},  # ИСПРАВЛЕНО: передаем как объект
+        "quantity": {"value": str(quantity)},
         "side": side,
         "type": "ORDER_TYPE_MARKET",
         "account_id": ACCOUNT_ID
@@ -65,8 +65,8 @@ def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
         "quantity": {"value": str(quantity)},
         "side": side,
         "account_id": ACCOUNT_ID,
-        "stop_loss": {"price": {"value": str(sl_price)}},      # ИСПРАВЛЕНО
-        "take_profit": {"price": {"value": str(tp_price)}}     # ИСПРАВЛЕНО
+        "stop_loss": {"price": {"value": str(sl_price)}},
+        "take_profit": {"price": {"value": str(tp_price)}}
     }
     resp = requests.post(f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/sltp-orders", headers=headers, json=payload)
     if resp.status_code in (200, 201):
@@ -77,14 +77,21 @@ def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
         return False
 
 def main():
-    # Проверка на выходные и нерабочее время (по Москве)
+    # Проверка на нерабочее время биржи (по Москве)
     now_msk = datetime.utcnow() + timedelta(hours=3)
-    if now_msk.weekday() >= 5: # 5 - суббота, 6 - воскресенье
-        logging.info("Сегодня выходной. Биржа закрыта. Торговля отменена.")
-        return
-    if now_msk.hour < 10 or now_msk.hour >= 19: # С 10:00 до 19:00 МСК
-        logging.info("Нерабочее время биржи. Торговля отменена.")
-        return
+    current_time = now_msk.time()
+    is_weekend = now_msk.weekday() >= 5  # 5 - суббота, 6 - воскресенье
+    
+    if is_weekend:
+        # Торги выходного дня: 09:50 - 19:00 МСК
+        if not (dt_time(9, 50) <= current_time <= dt_time(19, 0)):
+            logging.info(f"Выходной ({now_msk.strftime('%A')}). Нерабочее время (сейчас {current_time.strftime('%H:%M')} МСК). Торговля отменена.")
+            return
+    else:
+        # Торги в будние дни: 06:50 - 23:50 МСК
+        if not (dt_time(6, 50) <= current_time <= dt_time(23, 50)):
+            logging.info(f"Будний день. Нерабочее время (сейчас {current_time.strftime('%H:%M')} МСК). Торговля отменена.")
+            return
 
     if not os.path.exists(CSV_FILE):
         logging.error("Файл moex_signals.csv не найден! Сначала запустите сканер.")
@@ -139,7 +146,7 @@ def main():
         if not place_market_order(token, symbol, qty_shares_to_buy, side):
             continue
         
-        # СРАЗУ ДОБАВЛЯЕМ В СПИСОК, ЧТОБЫ НЕ КУПИТЬ ДВА РАЗА
+        # СРАЗУ ДОБАВЛЯЕМ В СПИСОК, ЧТОБЫ НЕ КУПИТЬ ДВА РАЗА В ОДНОМ ЗАПУСКЕ
         open_symbols.add(symbol) 
 
         if direction == "LONG":
