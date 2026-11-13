@@ -9,7 +9,6 @@ warnings.filterwarnings('ignore')
 ISS_BASE = "https://iss.moex.com/iss"
 BOARD = "TQBR"
 PAUSE = 0.2
-TOL = 10
 
 TICKERS = ["SBER", "GAZP", "LKOH"]
 
@@ -45,30 +44,23 @@ def fetch_candles(ticker, interval, dfrom, dtill):
         if len(rows) < 500: break
         start += len(rows)
         time.sleep(PAUSE)
-    
     if not rows_all: return pd.DataFrame()
     df = pd.DataFrame(rows_all, columns=["open","high","low","close","volume","begin"])
     df["begin"] = pd.to_datetime(df["begin"])
-    df = df.sort_values("begin").reset_index(drop=True)
-    return df
+    return df.sort_values("begin").reset_index(drop=True)
 
 def calc_indicators(df):
     df = df.copy()
     df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
     df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
-    df['ema200'] = df['close'].ewm(span=200, adjust=False).mean()
-    
     tr = pd.concat([df['high']-df['low'], (df['high']-df['close'].shift()).abs(), (df['low']-df['close'].shift()).abs()], axis=1).max(axis=1)
     df['atr14'] = tr.rolling(14).mean()
-    
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(14).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
     df['rsi14'] = 100 - (100 / (1 + (gain / loss)))
-    
     df['macd'] = df['close'].ewm(span=12, adjust=False).mean() - df['close'].ewm(span=26, adjust=False).mean()
     df['macd_sig'] = df['macd'].ewm(span=9, adjust=False).mean()
-    
     up = df['high'] - df['high'].shift()
     down = df['low'].shift() - df['low']
     plus_dm = np.where((up > down) & (up > 0), up, 0.0)
@@ -79,20 +71,16 @@ def calc_indicators(df):
     df['di_minus'] = 100 * pd.Series(minus_dm).rolling(14).mean() / atr_s
     dx = 100 * (df['di_plus'] - df['di_minus']).abs() / (df['di_plus'] + df['di_minus'])
     df['adx14'] = dx.rolling(14).mean()
-    
     df['don20_high'] = df['high'].rolling(20).max().shift(1)
     df['don20_low'] = df['low'].rolling(20).min().shift(1)
     df['don55_high'] = df['high'].rolling(55).max().shift(1)
     df['don55_low'] = df['low'].rolling(55).min().shift(1)
-    
     df['bb_mid'] = df['close'].rolling(20).mean()
     df['bb_std'] = df['close'].rolling(20).std()
     df['bb_up'] = df['bb_mid'] + 2 * df['bb_std']
     df['bb_dn'] = df['bb_mid'] - 2 * df['bb_std']
-    
     df['stoch_k'] = 100 * (df['close'] - df['low'].rolling(14).min()) / (df['high'].rolling(14).max() - df['low'].rolling(14).min())
     df['stoch_d'] = df['stoch_k'].rolling(3).mean()
-    
     df['body'] = (df['close'] - df['open']).abs()
     df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
     df['c_lower'] = df[['open', 'close']].min(axis=1) - df['low']
@@ -106,36 +94,26 @@ def get_signals(df):
     sigs = []
     df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
     df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
-    
     df['cross_macd_up'] = (df['macd'] > df['macd_sig']) & (df['macd'].shift() <= df['macd_sig'].shift())
     df['cross_macd_dn'] = (df['macd'] < df['macd_sig']) & (df['macd'].shift() >= df['macd_sig'].shift())
-    
     df['cross_adx_up'] = (df['di_plus'] > df['di_minus']) & (df['di_plus'].shift() <= df['di_minus'].shift()) & (df['adx14'] > 20)
     df['cross_adx_dn'] = (df['di_plus'] < df['di_minus']) & (df['di_plus'].shift() >= df['di_minus'].shift()) & (df['adx14'] > 20)
-    
     df['break_don20_up'] = df['close'] > df['don20_high']
     df['break_don20_dn'] = df['close'] < df['don20_low']
-    
     df['break_don55_up'] = df['close'] > df['don55_high']
     df['break_don55_dn'] = df['close'] < df['don55_low']
-    
     df['rsi_buy'] = (df['rsi14'] > 30) & (df['rsi14'].shift() <= 30)
     df['rsi_sell'] = (df['rsi14'] < 70) & (df['rsi14'].shift() >= 70)
-    
     df['bb_buy'] = (df['close'] > df['bb_dn']) & (df['close'].shift() <= df['bb_dn'].shift())
     df['bb_sell'] = (df['close'] < df['bb_up']) & (df['close'].shift() >= df['bb_up'].shift())
-    
     df['stoch_buy'] = (df['stoch_k'] > df['stoch_d']) & (df['stoch_k'].shift() <= df['stoch_d'].shift()) & (df['stoch_k'] < 20)
     df['stoch_sell'] = (df['stoch_k'] < df['stoch_d']) & (df['stoch_k'].shift() >= df['stoch_d'].shift()) & (df['stoch_k'] > 80)
-    
     df['atr_break_up'] = df['close'] > (df['don20_high'] + 0.25 * df['atr14'])
     df['atr_break_dn'] = df['close'] < (df['don20_low'] - 0.25 * df['atr14'])
     
     for i in range(200, len(df)):
-        # ИСПРАВЛЕНИЕ: берем реальную дату из колонки begin
         t = df.iloc[i]['begin'] 
         c = df.iloc[i]
-        
         if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
         if c['cross_macd_up']: sigs.append((t, 1, 'MACD'))
         if c['cross_adx_up']: sigs.append((t, 1, 'ADX+DI'))
@@ -146,7 +124,6 @@ def get_signals(df):
         if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
         if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
         if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
-        
         if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
         if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
         if c['cross_adx_dn']: sigs.append((t, -1, 'ADX+DI'))
@@ -160,106 +137,75 @@ def get_signals(df):
     return sigs
 
 def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct):
-    mask = h1_df['begin'] >= entry_time
-    h1_future = h1_df[mask]
+    h1_future = h1_df[h1_df['begin'] >= entry_time]
     if h1_future.empty: return None
-    
     actual_entry = h1_future.iloc[0]['open']
     act_price = actual_entry * (1 + direction * act_pct / 100)
     tp_price = actual_entry * (1 + direction * take_pct / 100)
     be_price = actual_entry * (1 + direction * FEE_ROUND)
-    
     activated = False
     mae = 0.0
-    
     for i in range(len(h1_future)):
         row = h1_future.iloc[i]
         op, hi, lo = row['open'], row['high'], row['low']
-        
         if direction == 1:
             mae = min(mae, (lo - actual_entry) / actual_entry)
             if op >= tp_price: return (tp_price, i, 'TP', mae)
             if hi >= tp_price: return (tp_price, i, 'TP', mae)
-            
-            if not activated and hi >= act_price:
-                activated = True
-                
+            if not activated and hi >= act_price: activated = True
             if activated:
                 if op <= be_price: return (op, i, 'BE_Stop', mae)
                 if lo <= be_price: return (be_price, i, 'BE_Stop', mae)
-                
         else:
             mae = min(mae, (actual_entry - hi) / actual_entry)
             if op <= tp_price: return (tp_price, i, 'TP', mae)
             if lo <= tp_price: return (tp_price, i, 'TP', mae)
-            
-            if not activated and lo <= act_price:
-                activated = True
-                
+            if not activated and lo <= act_price: activated = True
             if activated:
                 if op >= be_price: return (op, i, 'BE_Stop', mae)
                 if hi >= be_price: return (be_price, i, 'BE_Stop', mae)
-                
-    last_close = h1_future.iloc[-1]['close']
-    return (last_close, len(h1_future)-1, 'OPEN', mae)
+    return (h1_future.iloc[-1]['close'], len(h1_future)-1, 'OPEN', mae)
 
 def main():
-    d1_from, d1_till = "2024-01-01", "2026-11-13"
     all_results = []
-    
     for ticker in TICKERS:
         print(f"Обработка {ticker}...")
         try:
-            d1 = fetch_candles(ticker, 24, d1_from, d1_till)
+            d1 = fetch_candles(ticker, 24, "2024-01-01", "2026-11-13")
             if len(d1) < 200: continue
             d1 = calc_indicators(d1)
             signals = get_signals(d1)
             if not signals: continue
-            
-            h1 = fetch_candles(ticker, 60, d1_from, d1_till)
+            h1 = fetch_candles(ticker, 60, "2024-01-01", "2026-11-13")
             if h1.empty: continue
             
             for strat in set([s[2] for s in signals]):
                 for direction in [1, -1]:
                     strat_sigs = [(t, d) for t, d, s in signals if s == strat and d == direction]
                     if not strat_sigs: continue
-                    
                     for act, take in COMBOS:
                         trade_end_time = pd.Timestamp.min
-                        
                         for sig_time, _ in strat_sigs:
                             if sig_time <= trade_end_time: continue
-                            
                             next_h1 = h1[h1['begin'] > sig_time]
                             if next_h1.empty: continue
                             entry_time = next_h1.iloc[0]['begin']
-                            
                             res = simulate_trade(h1, entry_time, direction, act, take)
                             if not res: continue
-                            
                             exit_price, bars_held, exit_reason, mae = res
-                            
                             entry_price = h1[h1['begin'] == entry_time].iloc[0]['open']
-                            raw_ret = direction * (exit_price - entry_price) / entry_price
-                            net_ret = raw_ret - FEE_ROUND
-                            
+                            net_ret = (direction * (exit_price - entry_price) / entry_price) - FEE_ROUND
                             trade_end_time = entry_time + pd.Timedelta(hours=bars_held)
-                            
-                            all_results.append({
-                                'ticker': ticker, 'strategy': strat, 'direction': 'LONG' if direction == 1 else 'SHORT',
-                                'act': act, 'take': take, 'entry_time': entry_time, 'exit_time': trade_end_time,
-                                'net_ret': net_ret, 'exit_reason': exit_reason, 'mae': mae, 'bars': bars_held
-                            })
+                            all_results.append({'ticker': ticker, 'strategy': strat, 'direction': 'LONG' if direction == 1 else 'SHORT', 'act': act, 'take': take, 'entry_time': entry_time, 'net_ret': net_ret, 'exit_reason': exit_reason, 'mae': mae, 'bars': bars_held})
         except Exception as e:
             print(f"Ошибка {ticker}: {e}")
 
     if not all_results:
-        print("Нет сделок.")
-        return
+        print("Нет сделок."); return
 
     df_res = pd.DataFrame(all_results)
     df_res['year'] = df_res['entry_time'].dt.year
-    df_res['period'] = np.where(df_res['year'] <= 2025, 'Train 2024-2025', 'Test 2026')
+    df_res['period'] = np.where(df_res['year'] <= 2025, 'Train', 'Test')
     
     def agg_stats(g):
         closed = g[g['exit_reason'] != 'OPEN']
@@ -267,18 +213,16 @@ def main():
         win = closed[closed['net_ret'] > 0]
         loss = closed[closed['net_ret'] <= 0]
         pf = win['net_ret'].sum() / abs(loss['net_ret'].sum()) if len(loss) > 0 and loss['net_ret'].sum() != 0 else np.nan
-        
-        return pd.Series({
-            'trades': len(closed), 'win_rate': len(win) / len(closed) if len(closed) > 0 else 0,
-            'avg_ret': closed['net_ret'].mean(), 'med_ret': closed['net_ret'].median(),
-            'profit_factor': pf, 'avg_bars': closed['bars'].mean(), 'avg_mae': closed['mae'].mean(),
-            'open_trades': len(opn), 'worst_open_pnl': opn['net_ret'].min() if len(opn) > 0 else 0
-        })
+        return pd.Series({'trades': len(closed), 'win_rate': len(win) / len(closed) if len(closed) > 0 else 0, 'avg_ret': closed['net_ret'].mean(), 'profit_factor': pf, 'avg_bars': closed['bars'].mean(), 'open_trades': len(opn), 'worst_open_pnl': opn['net_ret'].min() if len(opn) > 0 else 0})
 
     summary = df_res.groupby(['period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
     summary.to_csv("backtest_results.csv", index=False)
-    print("\nУспешно! Результаты сохранены в backtest_results.csv")
-    print(summary.head(10).to_string())
+    
+    best = summary[(summary['trades'] >= 5)].sort_values('profit_factor', ascending=False).head(15)
+    
+    print("\n================ ТОП-15 ЛУЧШИХ КОМБИНАЦИЙ (по Profit Factor) ================")
+    print(best.to_string(index=False))
+    print("\n(Файл с полными данными по всем 35 комбинациям сохранен в артефактах)")
 
 if __name__ == "__main__":
     main()
