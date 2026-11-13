@@ -11,7 +11,6 @@ BOARD = "TQBR"
 PAUSE = 0.2
 TOL = 10
 
-# ОСТАВИЛИ ТОЛЬКО 3 ТИКЕРА ДЛЯ БЫСТРОГО ТЕСТА
 TICKERS = ["SBER", "GAZP", "LKOH"]
 
 ACTIVATIONS = [1, 2, 3, 5, 7]
@@ -133,7 +132,8 @@ def get_signals(df):
     df['atr_break_dn'] = df['close'] < (df['don20_low'] - 0.25 * df['atr14'])
     
     for i in range(200, len(df)):
-        t = df.index[i]
+        # ИСПРАВЛЕНИЕ: берем реальную дату из колонки begin
+        t = df.iloc[i]['begin'] 
         c = df.iloc[i]
         
         if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
