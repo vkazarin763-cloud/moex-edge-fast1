@@ -1,4 +1,3 @@
-
 name: MOEX EDGE FAST
 
 on:
@@ -9,46 +8,22 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
+          
       - name: Install dependencies
-        run: pip install requests pandas numpy ipython
-
-      - name: Configure scanner
-        env:
-          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path("moex_edge_fast_33.py")
-          s = p.read_text(encoding="utf-8")
-          s = s.replace("import sys\n", "import os\nimport sys\n", 1)
-          old = '    return getpass("Finam API Secret (ввод скрыт): ").strip()'
-          new = '    return os.environ["FINAM_API_SECRET"].strip()'
-          if old not in s:
-              raise SystemExit("Не найден участок get_secret")
-          p.write_text(s.replace(old, new, 1), encoding="utf-8")
-          PY
-
-      - name: Run scanner
-        env:
-          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+        run: pip install pandas requests numpy
+        
+      - name: Run Scanner
         run: python moex_edge_fast_33.py
-
-      - name: Save reports
+        
+      - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: moex-edge-fast-reports
-          path: "*.csv"
+          name: moex-signals
+          path: moex_signals.csv
           if-no-files-found: warn
-          
