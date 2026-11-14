@@ -25,6 +25,24 @@ REC_TAKE_PCT = 5.0
 REC_BE_PCT = 2.0
 REC_SL_PCT = 3.0
 
+# ПРИОРИТЕТ СТРАТЕГИЙ (от самого сильного к слабому)
+STRATEGY_PRIORITY = {
+    'Keltner': 10,
+    'ATR': 9,
+    'Donchian55': 8,
+    'Donchian20': 7,
+    'Evening_Star': 6,
+    'Three_Black': 6,
+    'Dark_Cloud': 5,
+    'MACD': 5,
+    'Candlestick': 4,
+    'ADX+DI': 4,
+    'Bollinger': 3,
+    'RSI14': 3,
+    'Stochastic': 2,
+    'EMA20/50': 1
+}
+
 def iss_get(url, params=None, retries=3):
     for i in range(retries):
         try:
@@ -157,7 +175,7 @@ def get_signals(df):
         if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
         if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
         if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
-        if c['keltner_up']: sigs.append((t, 1, 'Keltner')) # НОВАЯ СТРАТЕГИЯ
+        if c['keltner_up']: sigs.append((t, 1, 'Keltner'))
         
     if c['is_bear']:
         if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
@@ -173,12 +191,12 @@ def get_signals(df):
         if c['evening_star']: sigs.append((t, -1, 'Evening_Star'))
         if c['three_black']: sigs.append((t, -1, 'Three_Black'))
         if c['dark_cloud']: sigs.append((t, -1, 'Dark_Cloud'))
-        if c['keltner_dn']: sigs.append((t, -1, 'Keltner')) # НОВАЯ СТРАТЕГИЯ
+        if c['keltner_dn']: sigs.append((t, -1, 'Keltner'))
         
     return sigs
 
 def main():
-    print(f"=== MOEX EDGE FAST 3.5 (Запуск: {datetime.now().strftime('%Y-%m-%d %H:%M')} UTC) ===")
+    print(f"=== MOEX EDGE FAST 3.6 (Priority Engine) ===")
     print(f"Депозит: {DEPOSIT_RUB} RUB | Риск на сделку: {RISK_PER_TRADE_PCT}%")
     
     d1_from = (datetime.now() - timedelta(days=400)).strftime('%Y-%m-%d')
@@ -224,22 +242,32 @@ def main():
             print(f"Ошибка {ticker}: {e}")
             time.sleep(1)
 
+    # ДЕДУПЛИКАЦИЯ И ПРИОРИТЕТ
     if signals_found:
         df_res = pd.DataFrame(signals_found)
+        # Добавляем колонку с весом стратегии
+        df_res['priority'] = df_res['strategy'].map(STRATEGY_PRIORITY).fillna(0)
+        
+        # Сортируем по весу (сначала сильные сигналы)
+        df_res = df_res.sort_values('priority', ascending=False)
+        
+        # Оставляем только ОДИН лучший сигнал для каждого тикера и направления
+        df_res = df_res.drop_duplicates(subset=['ticker', 'direction'], keep='first')
+        
+        # Удаляем служебную колонку и сохраняем
+        df_res = df_res.drop(columns=['priority'])
         df_res.to_csv("moex_signals.csv", index=False)
     else:
         pd.DataFrame(columns=["ticker","direction","strategy","h1_confirmed","date","entry_price","qty"]).to_csv("moex_signals.csv", index=False)
 
     print("\n" + "="*50)
-    if not signals_found:
-        print("Сегодня сигналов нет. Рынок не дает точек входа по нашим правилам.")
-    else:
+    if signals_found and not df_res.empty:
         ticker_dirs = {}
-        for s in signals_found:
+        for _, s in df_res.iterrows():
             if s['ticker'] not in ticker_dirs: ticker_dirs[s['ticker']] = set()
             ticker_dirs[s['ticker']].add(s['direction'])
         
-        for s in signals_found:
+        for _, s in df_res.iterrows():
             conflict = "⚠️ КОНФЛИКТ НАПРАВЛЕНИЙ!" if len(ticker_dirs[s['ticker']]) > 1 else ""
             status = "✅ H1 ПОДТВЕРЖДЕН" if s['h1_confirmed'] else "❌ H1 НЕ ПОДТВЕРЖДЕН (ЖДЕМ)"
             
@@ -258,6 +286,8 @@ def main():
                 print(f"      - Стоп-лосс: {sl_price:.2f} (-{REC_SL_PCT}%)")
                 print(f"      - Тейк-профит: {tp_price:.2f} (+{REC_TAKE_PCT}%)")
                 print(f"      - Перевод в безубыток при: {be_price:.2f} (+{REC_BE_PCT}%)")
+    else:
+        print("Сегодня сигналов нет. Рынок не дает точек входа по нашим правилам.")
     
     print("\n" + "="*50)
 
