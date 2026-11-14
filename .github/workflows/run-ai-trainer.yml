@@ -1,0 +1,27 @@
+name: AI Trainer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas requests numpy
+      - name: Run Trainer
+        run: python ai_trainer.py
+      - name: Commit weights
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add ai_weights.json || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update AI weights [skip ci]" && git push)
