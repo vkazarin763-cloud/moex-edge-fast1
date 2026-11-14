@@ -10,7 +10,7 @@ BOARD = "TQBR"
 PAUSE = 0.2
 
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX"]
-COMBOS = [(2, 5)] # Фокусируемся на лучшей комбинации выходов
+COMBOS = [(2, 5)]
 FEE_ROUND = 0.0026
 SL_PCT = 0.03
 
@@ -21,8 +21,7 @@ STRATEGY_PRIORITY = {
     'Stochastic': 2, 'EMA20/50': 1
 }
 
-# Порядок старых стратегий (как они шли в коде бота)
-OLD_ORDER = ['EMA20/50', 'MACD', 'ADX+DI', 'Donchian20', 'Donchian55', 'RSI14', 'Bollinger', 'Stochastic', 'ATR', 'Candlestick', 'Keltner', 'Evening_Star', 'Three_Black', 'Dark_Cloud']
+MIN_PRIORITY_THRESHOLD = 7 # Отсекаем все сигналы ниже 7 (оставляем только топ)
 
 def iss_get(url, params=None, retries=3):
     for i in range(retries):
@@ -109,7 +108,6 @@ def calc_indicators(df):
     return df
 
 def get_signals_per_day(df):
-    """Возвращает список всех сигналов на последнюю свечу"""
     sigs = []
     df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
     df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
@@ -135,7 +133,6 @@ def get_signals_per_day(df):
     df['is_bull'] = df['close'] > df['ema200']
     df['is_bear'] = df['close'] < df['ema200']
     
-    # Берем только последнюю свечу (как делает сканер)
     i = len(df) - 1
     t = df.iloc[i]['begin'] 
     c = df.iloc[i]
@@ -152,9 +149,6 @@ def get_signals_per_day(df):
         if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
         if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
         if c['keltner_up']: sigs.append((t, 1, 'Keltner'))
-        if c['evening_star']: sigs.append((t, 1, 'Evening_Star'))
-        if c['three_black']: sigs.append((t, 1, 'Three_Black'))
-        if c['dark_cloud']: sigs.append((t, 1, 'Dark_Cloud'))
         
     if c['is_bear']:
         if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
@@ -220,11 +214,9 @@ def main():
         h1 = fetch_candles(ticker, 60, "2024-01-01", "2026-11-13")
         if h1.empty: continue
         
-        # Прогоняем сканер по всей истории
         d1_calc = calc_indicators(d1)
         
         for i in range(200, len(d1_calc)):
-            # Отрезаем данные до текущего дня (как в реальном времени)
             df_slice = d1_calc.iloc[:i+1].copy()
             sigs = get_signals_per_day(df_slice)
             
@@ -235,30 +227,25 @@ def main():
             if next_h1.empty: continue
             entry_time = next_h1.iloc[0]['begin']
             
-            # ==========================================
-            # СЦЕНАРИЙ 1: СТАРЫЙ МЕТОД (Берем первый по порядку)
-            # ==========================================
+            # 1. All Trades (Берем любой первый сигнал)
             first_sig = sigs[0]
             res_old = simulate_trade(h1, entry_time, first_sig[1], 2, 5)
             if res_old:
                 exit_price, bars_held, exit_reason, mae = res_old
                 entry_price = h1[h1['begin'] == entry_time].iloc[0]['open']
                 net_ret = (first_sig[1] * (exit_price - entry_price) / entry_price) - FEE_ROUND
-                all_results.append({'method': 'Old_NoPriority', 'strategy': first_sig[2], 'direction': 'LONG' if first_sig[1] == 1 else 'SHORT', 'entry_time': entry_time, 'net_ret': net_ret})
+                all_results.append({'method': 'All_Trades', 'strategy': first_sig[2], 'direction': 'LONG' if first_sig[1] == 1 else 'SHORT', 'entry_time': entry_time, 'net_ret': net_ret})
 
-            # ==========================================
-            # СЦЕНАРИЙ 2: НОВЫЙ МЕТОД (Приоритет)
-            # ==========================================
-            # Сортируем сигналы по убыванию приоритета
+            # 2. Strong Only (Берем лучший сигнал, если его приоритет >= порога)
             sorted_sigs = sorted(sigs, key=lambda x: STRATEGY_PRIORITY.get(x[2], 0), reverse=True)
             best_sig = sorted_sigs[0]
-            
-            res_new = simulate_trade(h1, entry_time, best_sig[1], 2, 5)
-            if res_new:
-                exit_price, bars_held, exit_reason, mae = res_new
-                entry_price = h1[h1['begin'] == entry_time].iloc[0]['open']
-                net_ret = (best_sig[1] * (exit_price - entry_price) / entry_price) - FEE_ROUND
-                all_results.append({'method': 'New_Priority', 'strategy': best_sig[2], 'direction': 'LONG' if best_sig[1] == 1 else 'SHORT', 'entry_time': entry_time, 'net_ret': net_ret})
+            if STRATEGY_PRIORITY.get(best_sig[2], 0) >= MIN_PRIORITY_THRESHOLD:
+                res_new = simulate_trade(h1, entry_time, best_sig[1], 2, 5)
+                if res_new:
+                    exit_price, bars_held, exit_reason, mae = res_new
+                    entry_price = h1[h1['begin'] == entry_time].iloc[0]['open']
+                    net_ret = (best_sig[1] * (exit_price - entry_price) / entry_price) - FEE_ROUND
+                    all_results.append({'method': f'Strong_Only (>= {MIN_PRIORITY_THRESHOLD})', 'strategy': best_sig[2], 'direction': 'LONG' if best_sig[1] == 1 else 'SHORT', 'entry_time': entry_time, 'net_ret': net_ret})
 
     df_res = pd.DataFrame(all_results)
     df_res['period'] = np.where(df_res['entry_time'].dt.year <= 2025, 'Train', 'Test')
@@ -270,7 +257,7 @@ def main():
         return pd.Series({'trades': len(g), 'win_rate': len(win) / len(g), 'avg_ret': g['net_ret'].mean(), 'profit_factor': pf})
 
     summary = df_res.groupby(['method', 'period']).apply(agg_stats).reset_index()
-    print("\n================ СРАВНЕНИЕ: СТАРЫЙ БОТ vs НОВЫЙ БОТ ================")
+    print("\n================ СРАВНЕНИЕ: ALL vs STRONG ONLY ================")
     print(summary.to_string(index=False))
 
 if __name__ == "__main__":
