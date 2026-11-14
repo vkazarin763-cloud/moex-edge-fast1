@@ -7,18 +7,14 @@ from datetime import datetime, timedelta, time as dt_time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# ================= НАСТРОЙКИ =================
 FINAM_SECRET = os.getenv("FINAM_API_SECRET")
 ACCOUNT_ID = os.getenv("FINAM_ACCOUNT_ID")
 CSV_FILE = "futures_signals.csv"
 TEST_MODE_MIN_VOLUME = True
-# ============================================
 
 BASE_URL = "https://api.finam.ru"
 
 def get_jwt_token():
-    if not FINAM_SECRET:
-        raise ValueError("Не задан FINAM_API_SECRET")
     resp = requests.post(f"{BASE_URL}/v1/sessions", json={"secret": FINAM_SECRET})
     resp.raise_for_status()
     return resp.json()["token"]
@@ -31,156 +27,119 @@ def get_account_info(token):
     available_cash = data.get("portfolio_mc", {}).get("available_cash", {}).get("value", "0")
     return data, float(available_cash)
 
-def get_finam_futures_symbols(token):
-    """
-    Запрашиваем ВСЕ активные инструменты через /v1/assets/all с пагинацией.
-    Фильтруем фьючерсы уже на стороне Python по полю 'type'.
-    """
+def get_finam_futures_map(token):
+    """Скачиваем справочник и делаем умную карту сопоставления"""
     headers = {"Authorization": f"Bearer {token}"}
     futures_map = {}
     cursor = None
-    page = 0
-
+    
+    logging.info("Загрузка справочника фьючерсов из Финама...")
     while True:
         params = {"only_active": "true"}
-        if cursor:
-            params["cursor"] = cursor
-
+        if cursor: params["cursor"] = cursor
+        
         resp = requests.get(f"{BASE_URL}/v1/assets/all", headers=headers, params=params)
-
-        if resp.status_code != 200:
-            logging.error(f"Не удалось получить список инструментов (страница {page}): {resp.status_code} {resp.text[:200]}")
-            break
-
+        if resp.status_code != 200: break
+        
         data = resp.json()
         assets = data.get("assets", [])
-        if not assets:
-            break
-
-        for asset in assets:
-            if asset.get("type") == "FUTURES":
-                ticker = asset.get("ticker", "")
-                symbol = asset.get("symbol", "")
-                if ticker and symbol:
-                    futures_map[ticker] = symbol
-
+        if not assets: break
+        
+        for a in assets:
+            if a.get("type") == "FUTURES":
+                ticker = a.get("ticker", "").upper()
+                name = a.get("name", "").upper()
+                symbol = a.get("symbol", "")
+                
+                # 1. Прямое совпадение по тикеру
+                if ticker: futures_map[ticker] = symbol
+                
+                # 2. Умный поиск (вытаскиваем базовый актив)
+                # Например, ищем "SILV" или "GOLD" в названии
+                bases = ['SILV', 'GOLD', 'BR', 'SI', 'CNY', 'MIX', 'GAZR', 'SBRF', 'LKOH', 'ROSN', 'VTBR', 'NOTK']
+                for b in bases:
+                    if b in name or b in ticker:
+                        # Сохраняем по базовому имени, если там есть "MINI" или "МИНИ"
+                        if "MINI" in name or "МИНИ" in name:
+                            futures_map[f"{b}_MINI"] = symbol
+                        # Сохраняем просто по базе, если еще не занято
+                        if b not in futures_map:
+                            futures_map[b] = symbol
+        
         cursor = data.get("next_cursor")
-        page += 1
-        if not cursor or page > 10:  # Ограничиваем 10 страницами на всякий случай
-            break
+        if not cursor: break
 
+    logging.info(f"Справочник загружен. Найдено {len(futures_map)} связей.")
     return futures_map
+
+def find_symbol(secid, finam_map):
+    """Ищет правильный символ в Финаме для нашего MOEX тикера"""
+    secid = secid.upper()
+    
+    # 1. Прямое совпадение (например, SVZ6)
+    if secid in finam_map: return finam_map[secid]
+    
+    # 2. Отрезаем последние 2 символа (месяц и год: Z6, H7) и ищем базу (SV)
+    base_short = secid[:-2]
+    if base_short in finam_map: return finam_map[base_short]
+    
+    # 3. Ищем расширенное имя (SILV, GOLD)
+    mapping_dict = {
+        'SV': 'SILV', 'GD': 'GOLD', 'BR': 'BR', 'SR': 'SBRF', 'GZ': 'GAZR',
+        'LK': 'LKOH', 'RN': 'ROSN', 'VB': 'VTBR', 'MX': 'MIX', 'CR': 'CNY'
+    }
+    base_long = mapping_dict.get(base_short, base_short)
+    
+    # Сначала ищем мини-версию (так как у нас маленький депозит)
+    if f"{base_long}_MINI" in finam_map: return finam_map[f"{base_long}_MINI"]
+    if base_long in finam_map: return finam_map[base_long]
+    
+    return None
 
 def place_market_order(token, symbol, quantity, side):
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    payload = {
-        "symbol": symbol,
-        "quantity": {"value": str(quantity)},
-        "side": side,
-        "type": "ORDER_TYPE_MARKET",
-        "account_id": ACCOUNT_ID
-    }
+    payload = {"symbol": symbol, "quantity": {"value": str(quantity)}, "side": side, "type": "ORDER_TYPE_MARKET", "account_id": ACCOUNT_ID}
     resp = requests.post(f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/orders", headers=headers, json=payload)
     if resp.status_code in (200, 201):
-        logging.info(f"✅ Ордер {side} {symbol} ({quantity} шт.) выставлен.")
+        logging.info(f"✅ Ордер {side} {symbol} выставлен.")
         return True
     else:
-        logging.error(f"❌ Ошибка ордера {symbol}: {resp.text}")
+        logging.error(f"❌ Ошибка: {resp.text}")
         return False
-
-def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    payload = {
-        "symbol": symbol,
-        "quantity": {"value": str(quantity)},
-        "side": side,
-        "account_id": ACCOUNT_ID,
-        "stop_loss": {"price": {"value": str(sl_price)}},
-        "take_profit": {"price": {"value": str(tp_price)}}
-    }
-    resp = requests.post(f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/sltp-orders", headers=headers, json=payload)
-    if resp.status_code in (200, 201):
-        logging.info(f"🛡️ SL/TP для {symbol} выставлены.")
-        return True
-    return False
 
 def main():
     now_msk = datetime.utcnow() + timedelta(hours=3)
-    current_time = now_msk.time()
-    is_weekend = now_msk.weekday() >= 5
-    
-    if is_weekend:
-        if not (dt_time(9, 50) <= current_time <= dt_time(19, 0)):
-            return
-    else:
-        if not (dt_time(6, 50) <= current_time <= dt_time(23, 50)):
-            return
+    if now_msk.weekday() >= 5 and not (dt_time(9, 50) <= now_msk.time() <= dt_time(19, 0)): return
+    if now_msk.weekday() < 5 and not (dt_time(6, 50) <= now_msk.time() <= dt_time(23, 50)): return
 
-    if not os.path.exists(CSV_FILE):
-        logging.info("Файл с сигналами не найден.")
-        return
+    if not os.path.exists(CSV_FILE): return
 
     token = get_jwt_token()
-    logging.info("Авторизация в Finam API успешна.")
-
     account_data, available_cash = get_account_info(token)
-    logging.info(f"Свободные средства: {available_cash:.2f} RUB")
-
-    logging.info("Загрузка справочника фьючерсов из Finam API (через /v1/assets/all)...")
-    finam_futures = get_finam_futures_symbols(token)
-    logging.info(f"Найдено доступных фьючерсов в Финаме: {len(finam_futures)}")
-
-    if len(finam_futures) == 0:
-        logging.warning("Справочник фьючерсов пуст. Возможно, проблема с доступом или пагинацией.")
-        logging.info("Проверьте, что токен имеет права на чтение справочника инструментов.")
-        return
-
+    finam_map = get_finam_futures_map(token)
     open_symbols = {p["symbol"] for p in account_data.get("positions", [])}
 
     df = pd.read_csv(CSV_FILE)
     df_active = df[(df["h1_confirmed"] == True)]
-
-    if df_active.empty:
-        logging.info("Нет подтвержденных сигналов.")
-        return
 
     for _, row in df_active.iterrows():
         secid = row["secid"]
         direction = row["direction"]
         entry_price = float(row["entry_price"])
 
-        if secid not in finam_futures:
-            logging.warning(f"⚠️ Инструмент {secid} не найден в Финаме.")
-            # Выведем первые 20 фьючерсов для примера
-            sample = list(finam_futures.keys())[:20]
-            logging.info(f"Примеры доступных тикеров (первые 20): {sample}")
+        symbol = find_symbol(secid, finam_map)
+        
+        if not symbol:
+            logging.warning(f"⚠️ Для {secid} не найден аналог в Финаме. Пропускаем.")
             continue
 
-        symbol = finam_futures[secid]
+        if symbol in open_symbols: continue
 
-        if symbol in open_symbols:
-            logging.info(f"⏭️ Позиция по {symbol} уже открыта. Пропускаем.")
-            continue
-
-        qty = 1 if TEST_MODE_MIN_VOLUME else int(row.get("qty", 1))
         side = "SIDE_BUY" if direction == "LONG" else "SIDE_SELL"
+        logging.info(f"🧪 Торгуем {secid} через символ {symbol}")
 
-        logging.info(f"🧪 Попытка торговли: {secid} (Символ: {symbol})")
-        
-        if not place_market_order(token, symbol, qty, side):
-            continue
-        
-        open_symbols.add(symbol) 
-
-        if direction == "LONG":
-            sl_price = entry_price * (1 - 0.03)
-            tp_price = entry_price * (1 + 0.05)
-        else:
-            sl_price = entry_price * (1 + 0.03)
-            tp_price = entry_price * (1 - 0.05)
-
-        place_sltp_order(token, symbol, qty, side, round(sl_price, 2), round(tp_price, 2))
-        time.sleep(2)
+        if place_market_order(token, symbol, 1, side):
+            open_symbols.add(symbol)
 
 if __name__ == "__main__":
     main()
