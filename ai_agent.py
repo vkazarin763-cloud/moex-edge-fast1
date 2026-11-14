@@ -37,7 +37,6 @@ DEFAULT_WEIGHTS = {
 }
 
 def load_data(file, default):
-    """Загрузка JSON-файла или возврат значения по умолчанию."""
     if os.path.exists(file):
         try:
             with open(file, "r", encoding="utf-8") as f:
@@ -47,7 +46,6 @@ def load_data(file, default):
     return default
 
 def save_data(file, data):
-    """Сохранение данных в JSON-файл."""
     with open(file, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2, default=str)
 
@@ -123,7 +121,6 @@ def calc_indicators(df, ref_data=None):
     df['obv'] = (np.sign(df['close'].diff()) * df['volume']).cumsum()
     df['obv_ema'] = df['obv'].ewm(span=20, adjust=False).mean()
     
-    # Новые индикаторы
     df['z_score'] = (df['close'] - df['sma200']) / df['std200']
     df['inside_bar'] = (df['high'] < df['high'].shift(1)) & (df['low'] > df['low'].shift(1))
     df['gap'] = (df['open'] - df['close'].shift(1)) / df['close'].shift(1)
@@ -131,7 +128,6 @@ def calc_indicators(df, ref_data=None):
     df['r1'] = 2 * df['pivot'] - df['low'].shift(1)
     df['s1'] = 2 * df['pivot'] - df['high'].shift(1)
     
-    # Свечи
     df['body'] = (df['close'] - df['open']).abs()
     df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
     df['c_lower'] = df[['open', 'close']].min(axis=1) - df['low']
@@ -145,7 +141,6 @@ def calc_indicators(df, ref_data=None):
     df['bull_harami'] = (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open']) & (df['open'] > df['close'].shift()) & (df['close'] < df['open'].shift())
     df['bear_harami'] = (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open']) & (df['open'] < df['close'].shift()) & (df['close'] > df['open'].shift())
     
-    # Intermarket
     if ref_data:
         for ref_name, ref_df in ref_data.items():
             if not ref_df.empty and ref_name in ['IMOEX', 'BR', 'Si']:
@@ -199,7 +194,7 @@ def get_signals(df):
         if c['squeeze_fire'] and c['close'] > c['open']: sigs.append((t, 1, 'Squeeze'))
         if c['z_score'] < -2.0: sigs.append((t, 1, 'ZScore'))
         if 'rs' in c and c['rs'] > c['rs_ema'] and prev['rs'] <= prev['rs_ema']: sigs.append((t, 1, 'RelativeStrength'))
-        if c['inside_bar'] and c['close'] > c['high'].shift(1): sigs.append((t, 1, 'InsideBar'))
+        if c['inside_bar'] and c['close'] > prev['high']: sigs.append((t, 1, 'InsideBar'))
         if c['low'] <= c['s1'] and c['close'] > c['s1']: sigs.append((t, 1, 'Pivot'))
         if 'BR_close' in c and 'Si_close' in c:
             if c['BR_close'] > c['BR_ema20'] and c['Si_close'] < c['Si_ema20']: sigs.append((t, 1, 'Intermarket'))
@@ -227,7 +222,7 @@ def get_signals(df):
         if c['squeeze_fire'] and c['close'] < c['open']: sigs.append((t, -1, 'Squeeze'))
         if c['z_score'] > 2.0: sigs.append((t, -1, 'ZScore'))
         if 'rs' in c and c['rs'] < c['rs_ema'] and prev['rs'] >= prev['rs_ema']: sigs.append((t, -1, 'RelativeStrength'))
-        if c['inside_bar'] and c['close'] < c['low'].shift(1): sigs.append((t, -1, 'InsideBar'))
+        if c['inside_bar'] and c['close'] < prev['low']: sigs.append((t, -1, 'InsideBar'))
         if c['high'] >= c['r1'] and c['close'] < c['r1']: sigs.append((t, -1, 'Pivot'))
         if 'BR_close' in c and 'Si_close' in c:
             if c['BR_close'] < c['BR_ema20'] and c['Si_close'] > c['Si_ema20']: sigs.append((t, -1, 'Intermarket'))
@@ -298,7 +293,6 @@ def main():
     weights = load_data(WEIGHTS_FILE, DEFAULT_WEIGHTS)
     portfolio = load_data(PORTFOLIO_FILE, {"cash": INITIAL_DEPOSIT, "positions": [], "closed_trades": []})
     
-    # Загрузка референсов
     d1_from = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d')
     d1_till = datetime.now().strftime('%Y-%m-%d')
     
