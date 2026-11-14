@@ -1,29 +1,8 @@
-name: Futures Scanner
-
-on:
-  workflow_dispatch:
-  schedule:
-    # Запуск раз в час в будни (с 10:00 до 23:00 МСК)
-    - cron: "0 7-20 * * 1-5"
-    # Запуск раз в час в выходные (с 10:00 до 19:00 МСК)
-    - cron: "0 7-16 * * 6,0"
-
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install deps
-        run: pip install pandas requests numpy
-      - name: Run Futures Scanner
-        run: python futures_scanner.py
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: futures-signals
-          path: futures_signals.csv
-          if-no-files-found: warn
+TARGET_ASSETS = [
+    # Вечные фьючерсы (без экспирации)
+    'USDRUBF', 'EURRUBF', 'CNYRUBF', 'GLDRUBF', 'IMOEXF',
+    # Обычные и мини-фьючерсы
+    'MIX', 'MXI', 'RTS', 'RTSM', 'Si', 'USDM', 'CNY', 'Eu', 
+    'BR', 'BRM', 'GOLD', 'GOLDM', 'SILV', 'SILVM', 'NG', 'WTI',
+    'SBRF', 'GAZR', 'LKOH', 'ROSN', 'VTBR', 'T', 'MGNT', 'NOTKM'
+]
