@@ -19,6 +19,13 @@ TEST_MODE_MIN_VOLUME = True
 
 BASE_URL = "https://api.finam.ru"
 
+SECTOR_GROUPS = {
+    'SBER': 'BANKS', 'SBERP': 'BANKS', 'VTBR': 'BANKS', 'MOEX': 'BANKS', 'SVCB': 'BANKS',
+    'GAZP': 'OIL', 'ROSN': 'OIL', 'LKOH': 'OIL', 'NVTK': 'OIL', 'TATN': 'OIL', 'SNGS': 'OIL', 'SNGSP': 'OIL',
+    'GMKN': 'METALS', 'NLMK': 'METALS', 'CHMF': 'METALS', 'MAGN': 'METALS', 'RUAL': 'METALS', 'ALRS': 'METALS', 'PLZL': 'METALS',
+    'YDEX': 'TECH', 'VKCO': 'TECH', 'OZON': 'TECH', 'HEAD': 'TECH',
+}
+
 def send_telegram_message(text):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         return
@@ -78,7 +85,7 @@ def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
     }
     resp = requests.post(f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/sltp-orders", headers=headers, json=payload)
     if resp.status_code in (200, 201):
-        logging.info(f"🛡️ SL/TP для {symbol} выставлены (SL: {sl_price}, TP: {tp_price}).")
+        logging.info(f"🛡️ SL/TP для {symbol} выставлены.")
         return True
     else:
         logging.error(f"❌ Ошибка SL/TP для {symbol}: {resp.text}")
@@ -94,13 +101,21 @@ def main():
     else:
         if not (dt_time(6, 50) <= current_time <= dt_time(23, 50)): return
 
-    if not os.path.exists(CSV_FILE): return
+    if not os.path.exists(CSV_FILE):
+        return
 
     token = get_jwt_token()
     account_data, available_cash = get_account_info(token)
     logging.info(f"Свободные средства: {available_cash:.2f} RUB")
 
-    open_symbols = {p["symbol"] for p in account_data.get("positions", [])}
+    open_symbols = {p["symbol"].split('@')[0] for p in account_data.get("positions", [])}
+    
+    busy_sectors = set()
+    for sym in open_symbols:
+        if sym in SECTOR_GROUPS:
+            busy_sectors.add(SECTOR_GROUPS[sym])
+    
+    logging.info(f"Занятые сектора: {busy_sectors}")
 
     df = pd.read_csv(CSV_FILE)
     df_active = df[(df["h1_confirmed"] == True) & (df["qty"] > 0)]
@@ -114,8 +129,13 @@ def main():
         direction = row["direction"]
         entry_price = float(row["entry_price"])
         symbol = f"{ticker}@{MIC}"
+        sector = SECTOR_GROUPS.get(ticker)
 
-        if symbol in open_symbols:
+        if symbol.split('@')[0] in open_symbols:
+            continue
+            
+        if sector and sector in busy_sectors:
+            logging.warning(f"⏭️ Пропускаем {ticker} (сектор {sector} уже занят)")
             continue
 
         lot_size = get_lot_size(token, ticker)
@@ -129,7 +149,9 @@ def main():
         if not place_market_order(token, symbol, qty_shares_to_buy, side):
             continue
         
-        open_symbols.add(symbol) 
+        open_symbols.add(ticker)
+        if sector:
+            busy_sectors.add(sector)
 
         if direction == "LONG":
             sl_price = entry_price * (1 - 0.03)
@@ -139,7 +161,6 @@ def main():
             tp_price = entry_price * (1 - 0.05)
 
         if place_sltp_order(token, symbol, qty_shares_to_buy, side, round(sl_price, 2), round(tp_price, 2)):
-            # ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ТОЛЬКО ЕСЛИ ВСЁ ПРОШЛО УСПЕШНО
             emoji = "🟢" if direction == "LONG" else "🔴"
             msg = (
                 f"{emoji} <b>Сделка открыта!</b>\n\n"
