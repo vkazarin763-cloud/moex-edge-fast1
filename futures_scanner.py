@@ -6,13 +6,33 @@ import warnings
 from datetime import datetime, timedelta
 warnings.filterwarnings('ignore')
 
-# Базовые коды фьючерсов, которые мы отслеживаем (согласно спецификациям MOEX)
-# MIX - Индекс МосБиржи, CNY - Юань, BR - Brent, GOLD - Золото, Si - Доллар
-TARGET_ASSETS = ['MIX', 'CNY', 'BR', 'GOLD', 'Si']
+# Базовые коды фьючерсов (30 самых ликвидных контрактов MOEX)
+TARGET_ASSETS = [
+    # 1. Индексы
+    'MIX', 'RTS', 'MOEXCNY',
+    # 2. Валюта
+    'Si', 'CNY', 'Eu',
+    # 3. Сырье и Товары
+    'BR', 'GOLD', 'SILV', 'PLT', 'NG', 'WTI',
+    # 4. Акции (Single Stock Futures)
+    'SBRF', 'GAZR', 'LKOH', 'ROSN', 'VTBR', 
+    'T', 'MGNT', 'NVTK', 'PLZL', 'SNGR', 'ALRS', 
+    'MTSS', 'GMKN', 'CHMF', 'NLMK', 'MOEX', 'AFLT'
+]
 
 REC_TAKE_PCT = 5.0
 REC_BE_PCT = 2.0
 REC_SL_PCT = 3.0
+
+# ПРИОРИТЕТ СТРАТЕГИЙ
+STRATEGY_PRIORITY = {
+    'Keltner': 10, 'ATR': 9, 'Donchian55': 8, 'Donchian20': 7,
+    'Evening_Star': 6, 'Three_Black': 6, 'Dark_Cloud': 5, 'MACD': 5,
+    'Candlestick': 4, 'ADX+DI': 4, 'Bollinger': 3, 'RSI14': 3,
+    'Stochastic': 2, 'EMA20/50': 1
+}
+
+MIN_PRIORITY_THRESHOLD = 7
 
 def get_iss_json(url, params=None):
     try:
@@ -24,7 +44,6 @@ def get_iss_json(url, params=None):
         return {}
 
 def get_active_futures():
-    """Находит ближайшие (самые ликвидные) контракты для наших базовых активов"""
     url = "https://iss.moex.com/iss/engines/futures/markets/forts/securities.json"
     payload = get_iss_json(url)
     if not payload: return {}
@@ -34,17 +53,13 @@ def get_active_futures():
     rows = data.get('data', [])
     
     df = pd.DataFrame(rows, columns=cols)
-    
-    # Оставляем только те, что нам нужны
     df = df[df['ASSETCODE'].isin(TARGET_ASSETS)].copy()
     
-    # Преобразуем дату экспирации и сортируем
     df['LASTTRADEDATE'] = pd.to_datetime(df['LASTTRADEDATE'], errors='coerce')
     df = df.dropna(subset=['LASTTRADEDATE'])
-    df = df[df['LASTTRADEDATE'] > datetime.now()] # Берем только будущие контракты
+    df = df[df['LASTTRADEDATE'] > datetime.now()]
     df = df.sort_values('LASTTRADEDATE')
     
-    # Для каждого актива берем самый первый (ближайший) контракт
     active = df.groupby('ASSETCODE').first().reset_index()
     return active[['ASSETCODE', 'SECID']].to_dict('records')
 
@@ -79,7 +94,6 @@ def fetch_candles(secid, interval, days_back):
     df["begin"] = pd.to_datetime(df["begin"])
     return df.dropna().sort_values("begin").reset_index(drop=True)
 
-# (Функции calc_indicators и get_signals остаются точно такими же, как в сканере акций)
 def calc_indicators(df):
     df = df.copy()
     df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
@@ -113,13 +127,23 @@ def calc_indicators(df):
     df['bb_dn'] = df['bb_mid'] - 2 * df['bb_std']
     df['stoch_k'] = 100 * (df['close'] - df['low'].rolling(14).min()) / (df['high'].rolling(14).max() - df['low'].rolling(14).min())
     df['stoch_d'] = df['stoch_k'].rolling(3).mean()
+    
+    df['kc_up'] = df['ema20'] + 2 * df['atr14']
+    df['kc_dn'] = df['ema20'] - 2 * df['atr14']
+    
     df['body'] = (df['close'] - df['open']).abs()
     df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
     df['c_lower'] = df[['open', 'close']].min(axis=1) - df['low']
+    
     df['bull_engulf'] = (df['close'] > df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open'].shift()) & (df['open'] < df['close'].shift())
     df['bear_engulf'] = (df['close'] < df['open']) & (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open'].shift()) & (df['open'] > df['close'].shift())
     df['hammer'] = (df['c_lower'] > 2 * df['body']) & (df['c_upper'] < 0.3 * df['body'])
     df['shooting_star'] = (df['c_upper'] > 2 * df['body']) & (df['c_lower'] < 0.3 * df['body'])
+    
+    df['evening_star'] = (df['close'].shift(2) > df['open'].shift(2)) & (df['body'].shift(1) < df['body'].shift(2) * 0.5) & (df['close'] < df['open']) & (df['close'] < (df['open'].shift(2) + df['close'].shift(2))/2)
+    df['three_black'] = (df['close'] < df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'].shift(2) < df['open'].shift(2)) & (df['close'] < df['close'].shift()) & (df['close'].shift() < df['close'].shift(2))
+    df['dark_cloud'] = (df['close'].shift() > df['open'].shift()) & (df['open'] > df['high'].shift()) & (df['close'] < (df['open'].shift() + df['close'].shift())/2) & (df['close'] > df['open'].shift())
+    
     return df
 
 def get_signals(df):
@@ -142,6 +166,8 @@ def get_signals(df):
     df['stoch_sell'] = (df['stoch_k'] < df['stoch_d']) & (df['stoch_k'].shift() >= df['stoch_d'].shift()) & (df['stoch_k'] > 80)
     df['atr_break_up'] = df['close'] > (df['don20_high'] + 0.25 * df['atr14'])
     df['atr_break_dn'] = df['close'] < (df['don20_low'] - 0.25 * df['atr14'])
+    df['keltner_up'] = (df['close'] > df['kc_up']) & (df['close'].shift() <= df['kc_up'].shift())
+    df['keltner_dn'] = (df['close'] < df['kc_dn']) & (df['close'].shift() >= df['kc_dn'].shift())
     
     df['is_bull'] = df['close'] > df['ema200']
     df['is_bear'] = df['close'] < df['ema200']
@@ -161,6 +187,7 @@ def get_signals(df):
         if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
         if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
         if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
+        if c['keltner_up']: sigs.append((t, 1, 'Keltner'))
         
     if c['is_bear']:
         if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
@@ -173,10 +200,15 @@ def get_signals(df):
         if c['stoch_sell']: sigs.append((t, -1, 'Stochastic'))
         if c['atr_break_dn']: sigs.append((t, -1, 'ATR'))
         if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candlestick'))
+        if c['evening_star']: sigs.append((t, -1, 'Evening_Star'))
+        if c['three_black']: sigs.append((t, -1, 'Three_Black'))
+        if c['dark_cloud']: sigs.append((t, -1, 'Dark_Cloud'))
+        if c['keltner_dn']: sigs.append((t, -1, 'Keltner'))
+        
     return sigs
 
 def main():
-    print(f"=== Сканер фьючерсов MOEX (Запуск: {datetime.now().strftime('%Y-%m-%d %H:%M')} UTC) ===")
+    print(f"=== Сканер фьючерсов MOEX (Sniper Mode) ===")
     active_contracts = get_active_futures()
     
     if not active_contracts:
@@ -193,13 +225,21 @@ def main():
         
         d1 = fetch_candles(secid, 24, 400)
         if len(d1) < 200: 
-            print(f"  Мало данных по {secid}")
             continue
             
         d1 = calc_indicators(d1)
         d1_sigs = get_signals(d1)
         
         if not d1_sigs: continue
+        
+        # ФИЛЬТР ПРИОРИТЕТА
+        sorted_sigs = sorted(d1_sigs, key=lambda x: STRATEGY_PRIORITY.get(x[2], 0), reverse=True)
+        best_sig = sorted_sigs[0]
+        
+        if STRATEGY_PRIORITY.get(best_sig[2], 0) < MIN_PRIORITY_THRESHOLD:
+            continue
+            
+        t, direction, strat = best_sig
         
         h1 = fetch_candles(secid, 60, 5)
         if h1.empty: continue
@@ -208,22 +248,20 @@ def main():
         last_h1 = h1.iloc[-1]
         entry_price = last_h1['close']
         
-        for t, direction, strat in d1_sigs:
-            h1_confirmed = False
-            if direction == 1 and entry_price > last_h1['ema20']: h1_confirmed = True
-            elif direction == -1 and entry_price < last_h1['ema20']: h1_confirmed = True
-            
-            signals_found.append({
-                'asset': asset,
-                'secid': secid,
-                'direction': 'LONG' if direction == 1 else 'SHORT',
-                'strategy': strat,
-                'h1_confirmed': h1_confirmed,
-                'date': t,
-                'entry_price': entry_price
-            })
+        h1_confirmed = False
+        if direction == 1 and entry_price > last_h1['ema20']: h1_confirmed = True
+        elif direction == -1 and entry_price < last_h1['ema20']: h1_confirmed = True
+        
+        signals_found.append({
+            'asset': asset,
+            'secid': secid,
+            'direction': 'LONG' if direction == 1 else 'SHORT',
+            'strategy': strat,
+            'h1_confirmed': h1_confirmed,
+            'date': t,
+            'entry_price': entry_price
+        })
 
-    # Сохраняем в CSV
     if signals_found:
         df_res = pd.DataFrame(signals_found)
         df_res.to_csv("futures_signals.csv", index=False)
@@ -232,11 +270,11 @@ def main():
 
     print("\n" + "="*50)
     if not signals_found:
-        print("Сигналов по фьючерсам нет.")
+        print("Сильных сигналов по фьючерсам нет.")
     else:
         for s in signals_found:
             status = "✅ H1 ПОДТВЕРЖДЕН" if s['h1_confirmed'] else "❌ H1 НЕ ПОДТВЕРЖДЕН"
-            print(f"\n🔥 {s['direction']} {s['asset']} ({s['secid']}) по стратегии {s['strategy']}")
+            print(f"\n🎯 СИЛЬНЫЙ СИГНАЛ: {s['direction']} {s['asset']} ({s['secid']}) по стратегии {s['strategy']}")
             print(f"   Цена входа: {s['entry_price']:.2f} | Статус: {status}")
             if s['h1_confirmed']:
                 print(f"   👉 РЕКОМЕНДАЦИЯ: Вход. Стоп: {REC_SL_PCT}% | Тейк: {REC_TAKE_PCT}% | БУ: {REC_BE_PCT}%")
