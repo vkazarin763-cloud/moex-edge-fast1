@@ -32,27 +32,43 @@ def get_account_info(token):
     return data, float(available_cash)
 
 def get_finam_futures_symbols(token):
-    """Запрашиваем у Финама список всех доступных фьючерсов"""
+    """
+    Запрашиваем список фьючерсов через /v1/assets/all с пагинацией.
+    Это обходит ошибку 'Response not transcoded'.
+    """
     headers = {"Authorization": f"Bearer {token}"}
-    resp = requests.get(f"{BASE_URL}/v1/assets", headers=headers)
-    
-    # Защита на случай, если API вернет ошибку
-    if resp.status_code != 200:
-        logging.error(f"Не удалось получить список инструментов: {resp.text}")
-        return {}
-        
-    assets = resp.json().get("assets", [])
     futures_map = {}
-    
-    for asset in assets:
-        # Нас интересуют только фьючерсы
-        if asset.get("type") == "FUTURES":
+    cursor = None
+    page = 0
+
+    while True:
+        params = {"type": "FUTURES"}
+        if cursor:
+            params["cursor"] = cursor
+
+        resp = requests.get(f"{BASE_URL}/v1/assets/all", headers=headers, params=params)
+
+        if resp.status_code != 200:
+            logging.error(f"Не удалось получить список инструментов: {resp.text}")
+            break
+
+        data = resp.json()
+        assets = data.get("assets", [])
+        if not assets:
+            break
+
+        for asset in assets:
             ticker = asset.get("ticker", "")
             symbol = asset.get("symbol", "")
-            # Сохраняем в словарь: ключ = тикер (например, SVZ6), значение = полный символ (например, SVZ6@ROFX)
-            if ticker:
+            if ticker and symbol:
                 futures_map[ticker] = symbol
-                
+
+        # Проверяем, есть ли следующая страница
+        cursor = data.get("next_cursor")
+        page += 1
+        if not cursor or page > 5:  # Ограничиваем 5 страницами (250 инструментов)
+            break
+
     return futures_map
 
 def place_market_order(token, symbol, quantity, side):
@@ -89,7 +105,6 @@ def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
     return False
 
 def main():
-    # Проверка времени
     now_msk = datetime.utcnow() + timedelta(hours=3)
     current_time = now_msk.time()
     is_weekend = now_msk.weekday() >= 5
@@ -102,6 +117,7 @@ def main():
             return
 
     if not os.path.exists(CSV_FILE):
+        logging.info("Файл с сигналами не найден.")
         return
 
     token = get_jwt_token()
@@ -110,8 +126,7 @@ def main():
     account_data, available_cash = get_account_info(token)
     logging.info(f"Свободные средства: {available_cash:.2f} RUB")
 
-    # Получаем карту доступных фьючерсов от Финама
-    logging.info("Загрузка справочника фьючерсов из Finam API...")
+    logging.info("Загрузка справочника фьючерсов из Finam API (через /v1/assets/all)...")
     finam_futures = get_finam_futures_symbols(token)
     logging.info(f"Найдено доступных фьючерсов в Финаме: {len(finam_futures)}")
 
@@ -125,19 +140,18 @@ def main():
         return
 
     for _, row in df_active.iterrows():
-        secid = row["secid"] # Это тикер с MOEX (например, SVZ6)
+        secid = row["secid"]
         direction = row["direction"]
         entry_price = float(row["entry_price"])
 
-        # Ищем этот тикер в справочнике Финама
         if secid not in finam_futures:
-            logging.warning(f"⚠️ Инструмент {secid} не найден в Финаме. Проверьте, доступен ли он для торговли.")
-            # Выведем первые 5 фьючерсов для примера, чтобы видеть формат
-            sample = list(finam_futures.keys())[:5]
-            logging.info(f"Примеры доступных тикеров: {sample}")
+            logging.warning(f"⚠️ Инструмент {secid} не найден в Финаме.")
+            # Выведем первые 20 фьючерсов для примера
+            sample = list(finam_futures.keys())[:20]
+            logging.info(f"Примеры доступных тикеров (первые 20): {sample}")
             continue
 
-        symbol = finam_futures[secid] # Получаем правильный символ (например, SVZ6@ROFX)
+        symbol = finam_futures[secid]
 
         if symbol in open_symbols:
             logging.info(f"⏭️ Позиция по {symbol} уже открыта. Пропускаем.")
