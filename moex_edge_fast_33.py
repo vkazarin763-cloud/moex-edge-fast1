@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 warnings.filterwarnings('ignore')
 
 # ================= НАСТРОЙКИ РИСК-МЕНЕДЖМЕНТА =================
-DEPOSIT_RUB = 100000
+DEPOSIT_RUB = 10000
 RISK_PER_TRADE_PCT = 1.0
 # ==============================================================
 
@@ -32,7 +32,7 @@ STRATEGY_PRIORITY = {
     'Stochastic': 2, 'EMA20/50': 1
 }
 
-MIN_PRIORITY_THRESHOLD = 7 # Пропускаем только сильные сигналы!
+MIN_PRIORITY_THRESHOLD = 7
 
 def iss_get(url, params=None, retries=3):
     for i in range(retries):
@@ -68,6 +68,33 @@ def fetch_candles(ticker, interval, dfrom, dtill):
     df = df.dropna().reset_index(drop=True)
     df["begin"] = pd.to_datetime(df["begin"])
     return df.sort_values("begin").reset_index(drop=True)
+
+def check_market_regime():
+    """Проверяет, растет ли рынок (индекс IMOEX)."""
+    url = f"{ISS_BASE}/engines/stock/markets/index/boards/SNDX/securities/IMOEX/candles.json"
+    d_from = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
+    d_till = datetime.now().strftime('%Y-%m-%d')
+    params = {"from": d_from, "till": d_till, "interval": 24, "iss.reverse": "false"}
+    
+    payload = iss_get(url, params)
+    data = payload.get('candles', {})
+    rows = data.get('data', [])
+    cols = data.get('columns', [])
+    
+    if not rows: return True 
+    
+    idx = {c: i for i, c in enumerate(cols)}
+    last_candle = rows[-1]
+    
+    open_price = float(last_candle[idx['open']])
+    close_price = float(last_candle[idx['close']])
+    
+    change_pct = (close_price - open_price) / open_price * 100
+    
+    if change_pct < -1.0:
+        print(f"🚨 Рынок падает ({change_pct:.2f}%). LONG-сигналы заблокированы.")
+        return False
+    return True
 
 def calc_indicators(df):
     df = df.copy()
@@ -185,6 +212,8 @@ def get_signals(df):
 def main():
     print(f"=== MOEX EDGE FAST 4.0 (Sniper Mode) ===")
     
+    is_market_bullish = check_market_regime()
+    
     d1_from = (datetime.now() - timedelta(days=400)).strftime('%Y-%m-%d')
     d1_till = datetime.now().strftime('%Y-%m-%d')
     h1_from = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
@@ -201,15 +230,16 @@ def main():
             
             if not d1_sigs: continue
             
-            # ФИЛЬТР ПРИОРИТЕТА: Берем только сильнейший сигнал
             sorted_sigs = sorted(d1_sigs, key=lambda x: STRATEGY_PRIORITY.get(x[2], 0), reverse=True)
             best_sig = sorted_sigs[0]
             
-            # Если сигнал слабый - пропускаем
             if STRATEGY_PRIORITY.get(best_sig[2], 0) < MIN_PRIORITY_THRESHOLD:
                 continue
                 
             t, direction, strat = best_sig
+            
+            if direction == 1 and not is_market_bullish:
+                continue
             
             h1 = fetch_candles(ticker, 60, h1_from, h1_till)
             if h1.empty: continue
