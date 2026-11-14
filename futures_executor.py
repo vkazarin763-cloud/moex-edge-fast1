@@ -13,18 +13,16 @@ CSV_FILE = "futures_signals.csv"
 TEST_MODE_MIN_VOLUME = True
 
 BASE_URL = "https://api.finam.ru"
-MIC = "RTSX" # Правильный MIC для срочного рынка Finam
+MIC = "RTSX"
 
-# Словарь сопоставления обычных фьючерсов и их мини-версий (для маленького депозита)
-# Если сканер нашел обычный контракт, бот попробует купить мини-версию.
 MINI_MAPPING = {
-    'SVZ6': 'S1Z6',   # Серебро мини
-    'GDZ6': 'G1Z6',   # Золото мини (предположительно)
-    'BRZ6': 'BRM',    # Нефть мини
-    'LKZ6': 'LKM',    # Лукойл мини
-    'GZZ6': 'GZM',    # Газпром мини
-    'SRZ6': 'SRM',    # Сбербанк мини
-    'RNZ6': 'RNM',    # Роснефть мини
+    'SVZ6': 'S1Z6',   # Серебро
+    'GDZ6': 'G1Z6',   # Золото
+    'BRZ6': 'BRM',    # Нефть
+    'LKZ6': 'LKM',    # Лукойл
+    'GZZ6': 'GZM',    # Газпром
+    'SRZ6': 'SRM',    # Сбербанк
+    'RNZ6': 'RNM',    # Роснефть
 }
 
 def get_jwt_token():
@@ -86,10 +84,13 @@ def main():
         secid = row["secid"].upper()
         direction = row["direction"]
         
-        # Проверяем, есть ли у нас мини-версия для этого контракта
-        # Если да - берем ее (так как депозит маленький)
+        # --- ЗАЩИТА ОТ ОШИБКИ 666 (Пока пропускаем все шорты) ---
+        if direction == "SHORT":
+            logging.warning(f"⏭️ Пропускаем SHORT по {secid} (требуется настройка непокрытых сделок в Finam)")
+            continue
+        # ---------------------------------------------------------
+
         trade_secid = MINI_MAPPING.get(secid, secid)
-        
         symbol = f"{trade_secid}@{MIC}"
         
         if symbol in open_symbols:
@@ -99,7 +100,6 @@ def main():
         side = "SIDE_BUY" if direction == "LONG" else "SIDE_SELL"
         logging.info(f"🧪 Сигнал по {secid}. Пытаемся торговать {symbol}...")
         
-        # Обновляем токен прямо перед ордером
         fresh_token = get_jwt_token()
         
         if place_market_order(fresh_token, symbol, 1, side):
