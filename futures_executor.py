@@ -7,23 +7,15 @@ from datetime import datetime, timedelta, time as dt_time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+# ================= НАСТРОЙКИ =================
 FINAM_SECRET = os.getenv("FINAM_API_SECRET")
 ACCOUNT_ID = os.getenv("FINAM_ACCOUNT_ID")
-CSV_FILE = "futures_signals.csv"
+CSV_FILE = "moex_signals.csv"
+MIC = "MISX"
 TEST_MODE_MIN_VOLUME = True
+# ============================================
 
 BASE_URL = "https://api.finam.ru"
-MIC = "RTSX"
-
-MINI_MAPPING = {
-    'SVZ6': 'S1Z6',   # Серебро
-    'GDZ6': 'G1Z6',   # Золото
-    'BRZ6': 'BRM',    # Нефть
-    'LKZ6': 'LKM',    # Лукойл
-    'GZZ6': 'GZM',    # Газпром
-    'SRZ6': 'SRM',    # Сбербанк
-    'RNZ6': 'RNM',    # Роснефть
-}
 
 def get_jwt_token():
     resp = requests.post(f"{BASE_URL}/v1/sessions", json={"secret": FINAM_SECRET})
@@ -37,6 +29,13 @@ def get_account_info(token):
     data = resp.json()
     available_cash = data.get("portfolio_mc", {}).get("available_cash", {}).get("value", "0")
     return data, float(available_cash)
+
+def get_lot_size(token, ticker):
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = requests.get(f"{BASE_URL}/v1/assets/{ticker}@{MIC}", headers=headers)
+    if resp.status_code == 200:
+        return int(float(resp.json().get("lot_size", {}).get("value", "1")))
+    return 1
 
 def place_market_order(token, symbol, quantity, side):
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
@@ -55,6 +54,30 @@ def place_market_order(token, symbol, quantity, side):
         logging.error(f"❌ Ошибка ордера {symbol}: {resp.text}")
         return False
 
+def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    payload = {
+        "symbol": symbol,
+        "quantity": {"value": str(quantity)},
+        "side": side,
+        "account_id": ACCOUNT_ID,
+        "stop_loss": {
+            "type": "STOP_LOSS",  # ИСПРАВЛЕНО: добавляем тип
+            "price": {"value": str(sl_price)}
+        },
+        "take_profit": {
+            "type": "TAKE_PROFIT",  # ИСПРАВЛЕНО: добавляем тип
+            "price": {"value": str(tp_price)}
+        }
+    }
+    resp = requests.post(f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/sltp-orders", headers=headers, json=payload)
+    if resp.status_code in (200, 201):
+        logging.info(f"🛡️ SL/TP для {symbol} выставлены (SL: {sl_price}, TP: {tp_price}).")
+        return True
+    else:
+        logging.error(f"❌ Ошибка SL/TP для {symbol}: {resp.text}")
+        return False
+
 def main():
     now_msk = datetime.utcnow() + timedelta(hours=3)
     current_time = now_msk.time()
@@ -65,7 +88,8 @@ def main():
     else:
         if not (dt_time(6, 50) <= current_time <= dt_time(23, 50)): return
 
-    if not os.path.exists(CSV_FILE): return
+    if not os.path.exists(CSV_FILE):
+        return
 
     token = get_jwt_token()
     account_data, available_cash = get_account_info(token)
@@ -74,36 +98,44 @@ def main():
     open_symbols = {p["symbol"] for p in account_data.get("positions", [])}
 
     df = pd.read_csv(CSV_FILE)
-    df_active = df[(df["h1_confirmed"] == True)]
+    df_active = df[(df["h1_confirmed"] == True) & (df["qty"] > 0)]
 
     if df_active.empty:
         logging.info("Нет подтвержденных сигналов.")
         return
 
     for _, row in df_active.iterrows():
-        secid = row["secid"].upper()
+        ticker = row["ticker"]
         direction = row["direction"]
-        
-        # --- ЗАЩИТА ОТ ОШИБКИ 666 (Пока пропускаем все шорты) ---
-        if direction == "SHORT":
-            logging.warning(f"⏭️ Пропускаем SHORT по {secid} (требуется настройка непокрытых сделок в Finam)")
-            continue
-        # ---------------------------------------------------------
+        entry_price = float(row["entry_price"])
+        symbol = f"{ticker}@{MIC}"
 
-        trade_secid = MINI_MAPPING.get(secid, secid)
-        symbol = f"{trade_secid}@{MIC}"
-        
         if symbol in open_symbols:
             logging.info(f"⏭️ Позиция по {symbol} уже открыта.")
             continue
-            
+
+        lot_size = get_lot_size(token, ticker)
+        qty_lots = 1 if TEST_MODE_MIN_VOLUME else int(row["qty"]) // lot_size
+
+        if qty_lots == 0: continue
+
+        qty_shares_to_buy = qty_lots * lot_size
         side = "SIDE_BUY" if direction == "LONG" else "SIDE_SELL"
-        logging.info(f"🧪 Сигнал по {secid}. Пытаемся торговать {symbol}...")
+
+        if not place_market_order(token, symbol, qty_shares_to_buy, side):
+            continue
         
-        fresh_token = get_jwt_token()
-        
-        if place_market_order(fresh_token, symbol, 1, side):
-            open_symbols.add(symbol)
+        open_symbols.add(symbol) 
+
+        if direction == "LONG":
+            sl_price = entry_price * (1 - 0.03)
+            tp_price = entry_price * (1 + 0.05)
+        else:
+            sl_price = entry_price * (1 + 0.03)
+            tp_price = entry_price * (1 - 0.05)
+
+        place_sltp_order(token, symbol, qty_shares_to_buy, side, round(sl_price, 2), round(tp_price, 2))
+        time.sleep(2)
 
 if __name__ == "__main__":
     main()
