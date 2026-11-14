@@ -54,12 +54,9 @@ def fetch_candles(ticker, interval, dfrom, dtill):
         time.sleep(PAUSE)
     if not rows_all: return pd.DataFrame()
     df = pd.DataFrame(rows_all, columns=["open","high","low","close","volume","begin"])
-    
-    # Защита от строковых значений
     for col in ["open", "high", "low", "close", "volume"]:
         df[col] = pd.to_numeric(df[col], errors='coerce')
     df = df.dropna().reset_index(drop=True)
-    
     df["begin"] = pd.to_datetime(df["begin"])
     return df.sort_values("begin").reset_index(drop=True)
 
@@ -97,6 +94,10 @@ def calc_indicators(df):
     df['stoch_k'] = 100 * (df['close'] - df['low'].rolling(14).min()) / (df['high'].rolling(14).max() - df['low'].rolling(14).min())
     df['stoch_d'] = df['stoch_k'].rolling(3).mean()
     
+    # КАНАЛ КЕЛЬТНЕРА
+    df['kc_up'] = df['ema20'] + 2 * df['atr14']
+    df['kc_dn'] = df['ema20'] - 2 * df['atr14']
+    
     # Свечные паттерны
     df['body'] = (df['close'] - df['open']).abs()
     df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
@@ -107,16 +108,9 @@ def calc_indicators(df):
     df['hammer'] = (df['c_lower'] > 2 * df['body']) & (df['c_upper'] < 0.3 * df['body'])
     df['shooting_star'] = (df['c_upper'] > 2 * df['body']) & (df['c_lower'] < 0.3 * df['body'])
     
-    df['morning_star'] = (df['close'].shift(2) < df['open'].shift(2)) & (df['body'].shift(1) < df['body'].shift(2) * 0.5) & (df['close'] > df['open']) & (df['close'] > (df['open'].shift(2) + df['close'].shift(2))/2)
     df['evening_star'] = (df['close'].shift(2) > df['open'].shift(2)) & (df['body'].shift(1) < df['body'].shift(2) * 0.5) & (df['close'] < df['open']) & (df['close'] < (df['open'].shift(2) + df['close'].shift(2))/2)
-    df['piercing'] = (df['close'].shift() < df['open'].shift()) & (df['open'] < df['low'].shift()) & (df['close'] > (df['open'].shift() + df['close'].shift())/2) & (df['close'] < df['open'].shift())
-    df['dark_cloud'] = (df['close'].shift() > df['open'].shift()) & (df['open'] > df['high'].shift()) & (df['close'] < (df['open'].shift() + df['close'].shift())/2) & (df['close'] > df['open'].shift())
-    df['three_white'] = (df['close'] > df['open']) & (df['close'].shift() > df['open'].shift()) & (df['close'].shift(2) > df['open'].shift(2)) & (df['close'] > df['close'].shift()) & (df['close'].shift() > df['close'].shift(2))
     df['three_black'] = (df['close'] < df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'].shift(2) < df['open'].shift(2)) & (df['close'] < df['close'].shift()) & (df['close'].shift() < df['close'].shift(2))
-    df['bull_harami'] = (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open']) & (df['open'] > df['close'].shift()) & (df['close'] < df['open'].shift())
-    df['bear_harami'] = (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open']) & (df['open'] < df['close'].shift()) & (df['close'] > df['open'].shift())
-    df['tweezer_bottom'] = (abs(df['low'] - df['low'].shift()) / df['low'] < 0.001) & (df['close'] > df['open']) & (df['close'].shift() < df['open'].shift())
-    df['tweezer_top'] = (abs(df['high'] - df['high'].shift()) / df['high'] < 0.001) & (df['close'] < df['open']) & (df['close'].shift() > df['open'].shift())
+    df['dark_cloud'] = (df['close'].shift() > df['open'].shift()) & (df['open'] > df['high'].shift()) & (df['close'] < (df['open'].shift() + df['close'].shift())/2) & (df['close'] > df['open'].shift())
     
     return df
 
@@ -141,6 +135,10 @@ def get_signals(df):
     df['atr_break_up'] = df['close'] > (df['don20_high'] + 0.25 * df['atr14'])
     df['atr_break_dn'] = df['close'] < (df['don20_low'] - 0.25 * df['atr14'])
     
+    # Кельтнер
+    df['keltner_up'] = (df['close'] > df['kc_up']) & (df['close'].shift() <= df['kc_up'].shift())
+    df['keltner_dn'] = (df['close'] < df['kc_dn']) & (df['close'].shift() >= df['kc_dn'].shift())
+    
     df['is_bull'] = df['close'] > df['ema200']
     df['is_bear'] = df['close'] < df['ema200']
     
@@ -159,6 +157,7 @@ def get_signals(df):
         if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
         if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
         if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
+        if c['keltner_up']: sigs.append((t, 1, 'Keltner')) # НОВАЯ СТРАТЕГИЯ
         
     if c['is_bear']:
         if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
@@ -171,16 +170,15 @@ def get_signals(df):
         if c['stoch_sell']: sigs.append((t, -1, 'Stochastic'))
         if c['atr_break_dn']: sigs.append((t, -1, 'ATR'))
         if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candlestick'))
-        
-        # ДОБАВЛЯЕМ НОВЫЕ СВЕЧНЫЕ ПАТТЕРНЫ
         if c['evening_star']: sigs.append((t, -1, 'Evening_Star'))
         if c['three_black']: sigs.append((t, -1, 'Three_Black'))
         if c['dark_cloud']: sigs.append((t, -1, 'Dark_Cloud'))
+        if c['keltner_dn']: sigs.append((t, -1, 'Keltner')) # НОВАЯ СТРАТЕГИЯ
         
     return sigs
 
 def main():
-    print(f"=== MOEX EDGE FAST 3.4 (Запуск: {datetime.now().strftime('%Y-%m-%d %H:%M')} UTC) ===")
+    print(f"=== MOEX EDGE FAST 3.5 (Запуск: {datetime.now().strftime('%Y-%m-%d %H:%M')} UTC) ===")
     print(f"Депозит: {DEPOSIT_RUB} RUB | Риск на сделку: {RISK_PER_TRADE_PCT}%")
     
     d1_from = (datetime.now() - timedelta(days=400)).strftime('%Y-%m-%d')
