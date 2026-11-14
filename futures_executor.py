@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 FINAM_SECRET = os.getenv("FINAM_API_SECRET")
 ACCOUNT_ID = os.getenv("FINAM_ACCOUNT_ID")
 CSV_FILE = "futures_signals.csv"
-MIC = "RTS"  # Для фьючерсов используется срочный рынок RTS
+MIC = "RUSX"  # Для фьючерсов используется срочный рынок RTS
 
 TEST_MODE_MIN_VOLUME = True  # True = всегда торгуем ровно 1 контракт
 # ============================================
