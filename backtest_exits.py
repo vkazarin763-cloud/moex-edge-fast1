@@ -10,7 +10,7 @@ BOARD = "TQBR"
 PAUSE = 0.2
 
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX"]
-COMBOS = [(2, 5), (3, 7), (5, 10)] # Тестируем только самые лучшие комбинации
+COMBOS = [(2, 5)] # Тестируем самую эффективную комбинацию выходов
 FEE_ROUND = 0.0026
 SL_PCT = 0.03
 
@@ -82,13 +82,39 @@ def calc_indicators(df):
     df['bb_dn'] = df['bb_mid'] - 2 * df['bb_std']
     df['stoch_k'] = 100 * (df['close'] - df['low'].rolling(14).min()) / (df['high'].rolling(14).max() - df['low'].rolling(14).min())
     df['stoch_d'] = df['stoch_k'].rolling(3).mean()
+    
+    # Свечные паттерны
     df['body'] = (df['close'] - df['open']).abs()
     df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
     df['c_lower'] = df[['open', 'close']].min(axis=1) - df['low']
+    
+    # Старые
     df['bull_engulf'] = (df['close'] > df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open'].shift()) & (df['open'] < df['close'].shift())
     df['bear_engulf'] = (df['close'] < df['open']) & (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open'].shift()) & (df['open'] > df['close'].shift())
     df['hammer'] = (df['c_lower'] > 2 * df['body']) & (df['c_upper'] < 0.3 * df['body'])
     df['shooting_star'] = (df['c_upper'] > 2 * df['body']) & (df['c_lower'] < 0.3 * df['body'])
+    
+    # Новые
+    # Morning Star / Evening Star (3 свечи)
+    df['morning_star'] = (df['close'].shift(2) < df['open'].shift(2)) & (df['body'].shift(1) < df['body'].shift(2) * 0.5) & (df['close'] > df['open']) & (df['close'] > (df['open'].shift(2) + df['close'].shift(2))/2)
+    df['evening_star'] = (df['close'].shift(2) > df['open'].shift(2)) & (df['body'].shift(1) < df['body'].shift(2) * 0.5) & (df['close'] < df['open']) & (df['close'] < (df['open'].shift(2) + df['close'].shift(2))/2)
+    
+    # Piercing Line / Dark Cloud Cover
+    df['piercing'] = (df['close'].shift() < df['open'].shift()) & (df['open'] < df['low'].shift()) & (df['close'] > (df['open'].shift() + df['close'].shift())/2) & (df['close'] < df['open'].shift())
+    df['dark_cloud'] = (df['close'].shift() > df['open'].shift()) & (df['open'] > df['high'].shift()) & (df['close'] < (df['open'].shift() + df['close'].shift())/2) & (df['close'] > df['open'].shift())
+    
+    # Three White Soldiers / Black Crows
+    df['three_white'] = (df['close'] > df['open']) & (df['close'].shift() > df['open'].shift()) & (df['close'].shift(2) > df['open'].shift(2)) & (df['close'] > df['close'].shift()) & (df['close'].shift() > df['close'].shift(2))
+    df['three_black'] = (df['close'] < df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'].shift(2) < df['open'].shift(2)) & (df['close'] < df['close'].shift()) & (df['close'].shift() < df['close'].shift(2))
+    
+    # Harami (внутренняя свеча)
+    df['bull_harami'] = (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open']) & (df['open'] > df['close'].shift()) & (df['close'] < df['open'].shift())
+    df['bear_harami'] = (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open']) & (df['open'] < df['close'].shift()) & (df['close'] > df['open'].shift())
+    
+    # Tweezer Top/Bottom
+    df['tweezer_bottom'] = (abs(df['low'] - df['low'].shift()) / df['low'] < 0.001) & (df['close'] > df['open']) & (df['close'].shift() < df['open'].shift())
+    df['tweezer_top'] = (abs(df['high'] - df['high'].shift()) / df['high'] < 0.001) & (df['close'] < df['open']) & (df['close'].shift() > df['open'].shift())
+    
     return df
 
 def get_signals(df):
@@ -118,7 +144,9 @@ def get_signals(df):
     for i in range(200, len(df)):
         t = df.iloc[i]['begin'] 
         c = df.iloc[i]
+        
         if c['is_bull']:
+            # Старые
             if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
             if c['cross_macd_up']: sigs.append((t, 1, 'MACD'))
             if c['cross_adx_up']: sigs.append((t, 1, 'ADX+DI'))
@@ -128,8 +156,17 @@ def get_signals(df):
             if c['bb_buy']: sigs.append((t, 1, 'Bollinger'))
             if c['stoch_buy']: sigs.append((t, 1, 'Stochastic'))
             if c['atr_break_up']: sigs.append((t, 1, 'ATR'))
-            if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candlestick'))
+            if c['bull_engulf'] or c['hammer']: sigs.append((t, 1, 'Candle_Classic'))
+            
+            # Новые свечные
+            if c['morning_star']: sigs.append((t, 1, 'Morning_Star'))
+            if c['piercing']: sigs.append((t, 1, 'Piercing_Line'))
+            if c['three_white']: sigs.append((t, 1, 'Three_White'))
+            if c['bull_harami']: sigs.append((t, 1, 'Bull_Harami'))
+            if c['tweezer_bottom']: sigs.append((t, 1, 'Tweezer_Bot'))
+            
         if c['is_bear']:
+            # Старые
             if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
             if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
             if c['cross_adx_dn']: sigs.append((t, -1, 'ADX+DI'))
@@ -139,10 +176,18 @@ def get_signals(df):
             if c['bb_sell']: sigs.append((t, -1, 'Bollinger'))
             if c['stoch_sell']: sigs.append((t, -1, 'Stochastic'))
             if c['atr_break_dn']: sigs.append((t, -1, 'ATR'))
-            if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candlestick'))
+            if c['bear_engulf'] or c['shooting_star']: sigs.append((t, -1, 'Candle_Classic'))
+            
+            # Новые свечные
+            if c['evening_star']: sigs.append((t, -1, 'Evening_Star'))
+            if c['dark_cloud']: sigs.append((t, -1, 'Dark_Cloud'))
+            if c['three_black']: sigs.append((t, -1, 'Three_Black'))
+            if c['bear_harami']: sigs.append((t, -1, 'Bear_Harami'))
+            if c['tweezer_top']: sigs.append((t, -1, 'Tweezer_Top'))
+            
     return sigs
 
-def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct, mode):
+def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct):
     h1_future = h1_df[h1_df['begin'] >= entry_time].copy()
     if h1_future.empty: return None
     actual_entry = h1_future.iloc[0]['open']
@@ -153,71 +198,36 @@ def simulate_trade(h1_df, entry_time, direction, act_pct, take_pct, mode):
     sl_price = actual_entry * (1 - direction * SL_PCT)
     
     activated = False
-    half_closed = False
     mae = 0.0
     
     for i in range(len(h1_future)):
         row = h1_future.iloc[i]
-        op, hi, lo, close = row['open'], row['high'], row['low'], row['close']
-        ema200_h1 = row['ema200_h1']
+        op, hi, lo = row['open'], row['high'], row['low']
         
-        if direction == 1: # LONG
+        if direction == 1:
             mae = min(mae, (lo - actual_entry) / actual_entry)
-            
-            # SL Check
+            if op >= tp_price: return (tp_price, i, 'TP', mae)
+            if hi >= tp_price: return (tp_price, i, 'TP', mae)
             if not activated:
-                if op <= sl_price: return (op, i, 'SL', mae, half_closed)
-                if lo <= sl_price: return (sl_price, i, 'SL', mae, half_closed)
+                if op <= sl_price: return (op, i, 'SL', mae)
+                if lo <= sl_price: return (sl_price, i, 'SL', mae)
+                if hi >= act_price: activated = True
             else:
-                if op <= be_price: return (op, i, 'BE_Stop', mae, half_closed)
-                if lo <= be_price: return (be_price, i, 'BE_Stop', mae, half_closed)
-            
-            # TP Check
-            if not half_closed:
-                if op >= tp_price or hi >= tp_price:
-                    if mode == 'Half-Out':
-                        half_closed = True
-                        activated = True 
-                    else:
-                        return (tp_price, i, 'TP', mae, half_closed)
-            
-            # Half-Out Trail Check (Trend break below H1 EMA200)
-            if half_closed:
-                if close < ema200_h1:
-                    return (close, i, 'Trail_Exit', mae, half_closed)
-            
-            # Activation check
-            if not activated and hi >= act_price:
-                activated = True
-                
-        else: # SHORT
+                if op <= be_price: return (op, i, 'BE', mae)
+                if lo <= be_price: return (be_price, i, 'BE', mae)
+        else:
             mae = min(mae, (actual_entry - hi) / actual_entry)
-            
+            if op <= tp_price: return (tp_price, i, 'TP', mae)
+            if lo <= tp_price: return (tp_price, i, 'TP', mae)
             if not activated:
-                if op >= sl_price: return (op, i, 'SL', mae, half_closed)
-                if hi >= sl_price: return (sl_price, i, 'SL', mae, half_closed)
+                if op >= sl_price: return (op, i, 'SL', mae)
+                if hi >= sl_price: return (sl_price, i, 'SL', mae)
+                if lo <= act_price: activated = True
             else:
-                if op >= be_price: return (op, i, 'BE_Stop', mae, half_closed)
-                if hi >= be_price: return (be_price, i, 'BE_Stop', mae, half_closed)
-            
-            if not half_closed:
-                if op <= tp_price or lo <= tp_price:
-                    if mode == 'Half-Out':
-                        half_closed = True
-                        activated = True
-                    else:
-                        return (tp_price, i, 'TP', mae, half_closed)
-                        
-            if half_closed:
-                if close > ema200_h1:
-                    return (close, i, 'Trail_Exit', mae, half_closed)
-                    
-            if not activated and lo <= act_price:
-                activated = True
+                if op >= be_price: return (op, i, 'BE', mae)
+                if hi >= be_price: return (be_price, i, 'BE', mae)
                 
-    # If trade is still open at the end of data
-    exit_p = h1_future.iloc[-1]['close']
-    return (exit_p, len(h1_future)-1, 'OPEN', mae, half_closed)
+    return (h1_future.iloc[-1]['close'], len(h1_future)-1, 'OPEN', mae)
 
 def main():
     all_results = []
@@ -232,7 +242,6 @@ def main():
             
             h1 = fetch_candles(ticker, 60, "2024-01-01", "2026-11-13")
             if h1.empty: continue
-            h1['ema200_h1'] = h1['close'].ewm(span=200, adjust=False).mean() # Добавили EMA200 на H1
             
             for strat in set([s[2] for s in signals]):
                 for direction in [1, -1]:
@@ -240,35 +249,26 @@ def main():
                     if not strat_sigs: continue
                     
                     for act, take in COMBOS:
-                        for mode in ['Fixed 5%', 'Half-Out']:
-                            trade_end_time = pd.Timestamp.min
-                            for sig_time, _ in strat_sigs:
-                                if sig_time <= trade_end_time: continue
-                                next_h1 = h1[h1['begin'] > sig_time]
-                                if next_h1.empty: continue
-                                entry_time = next_h1.iloc[0]['begin']
-                                
-                                res = simulate_trade(h1, entry_time, direction, act, take, mode)
-                                if not res: continue
-                                
-                                exit_price, bars_held, exit_reason, mae, half_closed = res
-                                entry_price = h1[h1['begin'] == entry_time].iloc[0]['open']
-                                
-                                if half_closed and exit_reason != 'OPEN':
-                                    ret_tp = direction * (entry_price * (1 + direction * take / 100) - entry_price) / entry_price
-                                    ret_rest = direction * (exit_price - entry_price) / entry_price
-                                    raw_ret = 0.5 * ret_tp + 0.5 * ret_rest
-                                else:
-                                    raw_ret = direction * (exit_price - entry_price) / entry_price
-                                    
-                                net_ret = raw_ret - FEE_ROUND
-                                trade_end_time = entry_time + pd.Timedelta(hours=bars_held)
-                                
-                                all_results.append({
-                                    'mode': mode, 'ticker': ticker, 'strategy': strat, 'direction': 'LONG' if direction == 1 else 'SHORT',
-                                    'act': act, 'take': take, 'entry_time': entry_time, 'net_ret': net_ret, 
-                                    'exit_reason': exit_reason, 'mae': mae, 'bars': bars_held
-                                })
+                        trade_end_time = pd.Timestamp.min
+                        for sig_time, _ in strat_sigs:
+                            if sig_time <= trade_end_time: continue
+                            next_h1 = h1[h1['begin'] > sig_time]
+                            if next_h1.empty: continue
+                            entry_time = next_h1.iloc[0]['begin']
+                            
+                            res = simulate_trade(h1, entry_time, direction, act, take)
+                            if not res: continue
+                            
+                            exit_price, bars_held, exit_reason, mae = res
+                            entry_price = h1[h1['begin'] == entry_time].iloc[0]['open']
+                            net_ret = (direction * (exit_price - entry_price) / entry_price) - FEE_ROUND
+                            trade_end_time = entry_time + pd.Timedelta(hours=bars_held)
+                            
+                            all_results.append({
+                                'ticker': ticker, 'strategy': strat, 'direction': 'LONG' if direction == 1 else 'SHORT',
+                                'act': act, 'take': take, 'entry_time': entry_time, 'net_ret': net_ret, 
+                                'exit_reason': exit_reason, 'mae': mae, 'bars': bars_held
+                            })
         except Exception as e:
             print(f"Ошибка {ticker}: {e}")
 
@@ -287,13 +287,12 @@ def main():
         pf = win['net_ret'].sum() / abs(loss['net_ret'].sum()) if len(loss) > 0 and loss['net_ret'].sum() != 0 else np.nan
         return pd.Series({'trades': len(closed), 'win_rate': len(win) / len(closed) if len(closed) > 0 else 0, 'avg_ret': closed['net_ret'].mean(), 'profit_factor': pf, 'avg_bars': closed['bars'].mean(), 'open_trades': len(opn), 'worst_open_pnl': opn['net_ret'].min() if len(opn) > 0 else 0})
 
-    summary = df_res.groupby(['mode', 'period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
+    summary = df_res.groupby(['period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
     summary.to_csv("backtest_results.csv", index=False)
     
-    for mode in ['Fixed 5%', 'Half-Out']:
-        print(f"\n================ ТОП-5: {mode} ================")
-        best = summary[(summary['mode'] == mode) & (summary['trades'] >= 15)].sort_values('profit_factor', ascending=False).head(5)
-        print(best[['period', 'strategy', 'direction', 'act', 'take', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
+    print("\n================ ТОП-15 ВСЕХ СТРАТЕГИЙ (минимум 10 сделок) ================")
+    best = summary[(summary['trades'] >= 10)].sort_values('profit_factor', ascending=False).head(15)
+    print(best[['period', 'strategy', 'direction', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
 
 if __name__ == "__main__":
     main()
