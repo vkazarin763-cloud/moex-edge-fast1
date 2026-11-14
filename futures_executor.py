@@ -33,8 +33,8 @@ def get_account_info(token):
 
 def get_finam_futures_symbols(token):
     """
-    Запрашиваем список фьючерсов через /v1/assets/all с пагинацией.
-    Это обходит ошибку 'Response not transcoded'.
+    Запрашиваем ВСЕ активные инструменты через /v1/assets/all с пагинацией.
+    Фильтруем фьючерсы уже на стороне Python по полю 'type'.
     """
     headers = {"Authorization": f"Bearer {token}"}
     futures_map = {}
@@ -42,14 +42,14 @@ def get_finam_futures_symbols(token):
     page = 0
 
     while True:
-        params = {"type": "FUTURES"}
+        params = {"only_active": "true"}
         if cursor:
             params["cursor"] = cursor
 
         resp = requests.get(f"{BASE_URL}/v1/assets/all", headers=headers, params=params)
 
         if resp.status_code != 200:
-            logging.error(f"Не удалось получить список инструментов: {resp.text}")
+            logging.error(f"Не удалось получить список инструментов (страница {page}): {resp.status_code} {resp.text[:200]}")
             break
 
         data = resp.json()
@@ -58,15 +58,15 @@ def get_finam_futures_symbols(token):
             break
 
         for asset in assets:
-            ticker = asset.get("ticker", "")
-            symbol = asset.get("symbol", "")
-            if ticker and symbol:
-                futures_map[ticker] = symbol
+            if asset.get("type") == "FUTURES":
+                ticker = asset.get("ticker", "")
+                symbol = asset.get("symbol", "")
+                if ticker and symbol:
+                    futures_map[ticker] = symbol
 
-        # Проверяем, есть ли следующая страница
         cursor = data.get("next_cursor")
         page += 1
-        if not cursor or page > 5:  # Ограничиваем 5 страницами (250 инструментов)
+        if not cursor or page > 10:  # Ограничиваем 10 страницами на всякий случай
             break
 
     return futures_map
@@ -129,6 +129,11 @@ def main():
     logging.info("Загрузка справочника фьючерсов из Finam API (через /v1/assets/all)...")
     finam_futures = get_finam_futures_symbols(token)
     logging.info(f"Найдено доступных фьючерсов в Финаме: {len(finam_futures)}")
+
+    if len(finam_futures) == 0:
+        logging.warning("Справочник фьючерсов пуст. Возможно, проблема с доступом или пагинацией.")
+        logging.info("Проверьте, что токен имеет права на чтение справочника инструментов.")
+        return
 
     open_symbols = {p["symbol"] for p in account_data.get("positions", [])}
 
