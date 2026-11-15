@@ -39,8 +39,8 @@ def tg(text):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: return
     try:
         resp = requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=10)
-        if resp.status_code != 200: print(f"❌ ОШИБКА TELEGRAM: {resp.text}")
-    except Exception as e: print(f"❌ ОШИБКА СЕТИ: {e}")
+        if resp.status_code != 200: print(f"❌ ОШИБКА TELEGRAM: {resp.text}", flush=True)
+    except Exception as e: print(f"❌ ОШИБКА СЕТИ: {e}", flush=True)
 
 def fetch(t, i, dfrom, dtill, b="TQBR"):
     url = f"{ISS_BASE}/engines/stock/markets/index/boards/SNDX/securities/{t}/candles.json" if b == "SNDX" else f"{ISS_BASE}/engines/currency/markets/selt/boards/CETS/securities/{t}/candles.json" if b == "CETS" else f"{ISS_BASE}/engines/stock/markets/shares/boards/{b}/securities/{t}/candles.json"
@@ -77,8 +77,6 @@ def calc(df, ref=None):
     df['rsi14'] = 100 - (100 / (1 + (gain / loss)))
     df['macd'] = df['close'].ewm(span=12, adjust=False).mean() - df['close'].ewm(span=26, adjust=False).mean()
     df['macd_sig'] = df['macd'].ewm(span=9, adjust=False).mean()
-    
-    # ===== ADX / DI+ / DI- =====
     up = df['high'] - df['high'].shift()
     down = df['low'].shift() - df['low']
     plus_dm = np.where((up > down) & (up > 0), up, 0.0)
@@ -88,8 +86,6 @@ def calc(df, ref=None):
     df['di_minus'] = 100 * pd.Series(minus_dm).rolling(14).mean() / atr_s
     dx = 100 * (df['di_plus'] - df['di_minus']).abs() / (df['di_plus'] + df['di_minus'])
     df['adx14'] = dx.rolling(14).mean()
-    # ===========================
-    
     df['don20_high'] = df['high'].rolling(20).max().shift(1)
     df['don20_low'] = df['low'].rolling(20).min().shift(1)
     df['don55_high'] = df['high'].rolling(55).max().shift(1)
@@ -136,7 +132,7 @@ def calc(df, ref=None):
                 df = df.merge(rdf, on='begin', how='left').ffill()
                 df[f'{rn}_ema20'] = df[f'{rn}_close'].ewm(span=20, adjust=False).mean()
     return df
-
+    
 def sigs(df):
     df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
     df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
@@ -228,34 +224,29 @@ def check_p(pf):
     pf["positions"] = still
 
 def main():
-    print("=== AI VIRTUAL AGENT (Kelly + Regime) ===")
+    print("=== AI VIRTUAL AGENT (Kelly + Regime) ===", flush=True)
     w = load(WEIGHTS_FILE, DEFAULT_WEIGHTS)
     pf = load(PORTFOLIO_FILE, {"cash": INITIAL_DEPOSIT, "positions": [], "closed_trades": []})
     d1, d2 = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d'), datetime.now().strftime('%Y-%m-%d')
     ref = {rn: fetch(rn, 24, d1, d2, b) for rn, (b, _) in REF_TICKERS.items()}
-    
     imoex_adx = 0
     if not ref.get('IMOEX', pd.DataFrame()).empty:
         imoex_calc = calc(ref['IMOEX'])
         if len(imoex_calc) > 0:
             imoex_adx = imoex_calc['adx14'].iloc[-1]
-            print(f"ADX IMOEX: {imoex_adx:.1f}")
-    
+            print(f"ADX IMOEX: {imoex_adx:.1f}", flush=True)
     if imoex_adx > 25:
-        print("📈 Режим: Тренд (усиливаем трендовые)")
-        for s in ['Keltner', 'ATR', 'Donchian55', 'Donchian20', 'SMC_Sweep', 'Chandelier']:
-            w[s] = w.get(s, 5) * 1.5
+        print("📈 Режим: Тренд", flush=True)
+        for s in ['Keltner', 'ATR', 'Donchian55', 'Donchian20', 'SMC_Sweep', 'Chandelier']: w[s] = w.get(s, 5) * 1.5
     elif imoex_adx < 20:
-        print("📉 Режим: Флэт (усиливаем контртрендовые)")
-        for s in ['RSI14', 'Bollinger', 'ZScore', 'VWAP_Reversion']:
-            w[s] = w.get(s, 5) * 1.5
-            
+        print("📉 Режим: Флэт", flush=True)
+        for s in ['RSI14', 'Bollinger', 'ZScore', 'VWAP_Reversion']: w[s] = w.get(s, 5) * 1.5
     check_p(pf)
     open_t = {p["ticker"] for p in pf["positions"]}
     slots = MAX_POSITIONS - len(pf["positions"])
-    
     for t in TICKERS:
         if slots <= 0 or t in open_t: continue
+        print(f"Проверка {t}...", flush=True)
         d = fetch(t, 24, d1, d2)
         if len(d) < 200: continue
         s = sigs(calc(d, ref))
@@ -268,9 +259,7 @@ def main():
         ep = h1.iloc[-1]['close']
         if best[1] == 1 and ep < h1.iloc[-1]['ema20']: continue
         if best[1] == -1 and ep > h1.iloc[-1]['ema20']: continue
-        
         kelly_pct = get_kelly_pct(pf, best[2])
-        
         if OPTIONS_MODE and best[1] == -1:
             K = ep * 0.97; T = DAYS_TO_EXPIRY / 365.0
             prem = bs(ep, K, T, 0.15, SIGMA, 'put')
@@ -284,9 +273,12 @@ def main():
             sl, tp, be = (ep * 0.97, ep * 1.05, ep * 1.02) if best[1] == 1 else (ep * 1.03, ep * 0.95, ep * 0.98)
             pf["positions"].append({"ticker": t, "direction": "LONG" if best[1] == 1 else "SHORT", "entry_price": ep, "entry_time": str(best[0]), "qty": qty, "activated": False, "strategy": best[2], "sl_price": round(sl, 2), "tp_price": round(tp, 2), "be_price": round(be, 2)})
             pf["cash"] -= ep * qty; slots -= 1; open_t.add(t)
-            tg(f"{'🟢' if best[1]==1 else '🔴'} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ</b>\n{t} {pf['positions'][-1]['direction']} ({best[2]})\nЦена: {ep:.2f}\nОбъем: {qty} шт. (Келли: {kelly_pct*100:.1f}%)\nСтоп: {sl:.2f}\nТейк: {tp:.2f}")
-            
+            tg(f"{'🟢' if best[1]==1 else '🔴'} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ</b>\n{t} {pf['positions'][-1]['direction']} ({best[2]})\nЦена: {ep:.2f}\nОбъем: {qty} шт.\nСтоп: {sl:.2f}\nТейк: {tp:.2f}")
     save(PORTFOLIO_FILE, pf)
-    print(f"\nКэш: {pf['cash']:.2f} ₽ | Открытых: {len(pf['positions'])}")
+    print(f"\nКэш: {pf['cash']:.2f} ₽ | Открытых: {len(pf['positions'])}", flush=True)
     if pf["closed_trades"]:
-        df 
+        df = pd.DataFrame(pf["closed_trades"])
+        win = df[df["pnl"] > 0]
+        print(f"\n=== СТАТИСТИКА ===\nСделок: {len(df)} | Win Rate: {len(win)/len(df)*100:.1f}% | PnL: {df['pnl'].sum():+.0f} ₽", flush=True)
+
+if __name__ == "__main__": main()
