@@ -17,7 +17,8 @@ PORTFOLIO_FILE = "ai_portfolio.json"
 WEIGHTS_FILE = "ai_weights.json"
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-DEFAULT_WEIGHTS = {'Keltner': 8, 'ATR': 8, 'Donchian55': 7, 'Donchian20': 7, 'VWAP': 7, 'OBV': 6, 'MACD': 6, 'Evening_Star': 6, 'Three_Black': 6, 'ADX+DI': 5, 'Bollinger': 4, 'RSI14': 4, 'Stochastic': 3, 'EMA20/50': 3, 'Morning_Star': 5, 'Bull_Harami': 4, 'Bear_Harami': 4, 'Hammer': 4, 'Shooting_Star': 4, 'Squeeze': 7, 'ZScore': 6, 'RelativeStrength': 7, 'InsideBar': 6, 'Pivot': 5, 'Intermarket': 7, 'GapAndGo': 6, 'VWAP_Reversion': 5, 'Seasonality': 4, 'Chandelier': 6}
+# Добавили SMC_Sweep и SMC_FVG в базовые веса
+DEFAULT_WEIGHTS = {'Keltner': 8, 'ATR': 8, 'Donchian55': 7, 'Donchian20': 7, 'VWAP': 7, 'OBV': 6, 'MACD': 6, 'Evening_Star': 6, 'Three_Black': 6, 'ADX+DI': 5, 'Bollinger': 4, 'RSI14': 4, 'Stochastic': 3, 'EMA20/50': 3, 'Morning_Star': 5, 'Bull_Harami': 4, 'Bear_Harami': 4, 'Hammer': 4, 'Shooting_Star': 4, 'Squeeze': 7, 'ZScore': 6, 'RelativeStrength': 7, 'InsideBar': 6, 'Pivot': 5, 'Intermarket': 7, 'GapAndGo': 6, 'VWAP_Reversion': 5, 'Seasonality': 4, 'Chandelier': 6, 'SMC_Sweep': 8, 'SMC_FVG': 8}
 
 def bs(S, K, T, r, sig, opt):
     if T <= 0: return max(0, (S-K) if opt == 'call' else (K-S))
@@ -37,16 +38,13 @@ def save(f, d):
 
 def tg(text):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("⚠️ Telegram не настроен (нет ключей)")
+        print("⚠️ Telegram не настроен")
         return
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}
-        resp = requests.post(url, json=payload, timeout=10)
-        if resp.status_code != 200:
-            print(f"❌ ОШИБКА TELEGRAM: {resp.status_code} - {resp.text}")
-    except Exception as e:
-        print(f"❌ ОШИБКА СЕТИ: {e}")
+        resp = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=10)
+        if resp.status_code != 200: print(f"❌ ОШИБКА TELEGRAM: {resp.text}")
+    except Exception as e: print(f"❌ ОШИБКА СЕТИ: {e}")
 
 def fetch(t, i, dfrom, dtill, b="TQBR"):
     url = f"{ISS_BASE}/engines/stock/markets/index/boards/SNDX/securities/{t}/candles.json" if b == "SNDX" else f"{ISS_BASE}/engines/currency/markets/selt/boards/CETS/securities/{t}/candles.json" if b == "CETS" else f"{ISS_BASE}/engines/stock/markets/shares/boards/{b}/securities/{t}/candles.json"
@@ -116,6 +114,15 @@ def calc(df, ref=None):
     df['three_black'] = (df['close'] < df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'].shift(2) < df['open'].shift(2)) & (df['close'] < df['close'].shift()) & (df['close'].shift() < df['close'].shift(2))
     df['bull_harami'] = (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open']) & (df['open'] > df['close'].shift()) & (df['close'] < df['open'].shift())
     df['bear_harami'] = (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open']) & (df['open'] < df['close'].shift()) & (df['close'] > df['open'].shift())
+    
+    # SMC логика
+    df['prev_low'] = df['low'].shift(1)
+    df['prev_high'] = df['high'].shift(1)
+    df['sweep_up'] = (df['low'] < df['prev_low']) & (df['close'] > df['prev_low'])
+    df['sweep_dn'] = (df['high'] > df['prev_high']) & (df['close'] < df['prev_high'])
+    df['fvg_up'] = (df['low'] > df['high'].shift(2))
+    df['fvg_dn'] = (df['high'] < df['low'].shift(2))
+    
     if ref:
         for rn, rdf in ref.items():
             if not rdf.empty and rn in ['IMOEX', 'BR', 'Si']:
@@ -146,10 +153,10 @@ def sigs(df):
     p = df.iloc[i-1] if i > 0 else c
     out = []
     if c['is_bull']:
-        lc = [(c['cross_ema_up'], 'EMA20/50'), (c['cross_macd_up'], 'MACD'), (c['close'] > c['don20_high'], 'Donchian20'), (c['close'] > c['don55_high'], 'Donchian55'), (c['close'] > c['kc_up'] and p['close'] <= p['kc_up'], 'Keltner'), (c['close'] > (c['don20_high'] + 0.25 * c['atr14']), 'ATR'), (c['vwap_up'], 'VWAP'), (c['obv_up'], 'OBV'), (c['bull_engulf'], 'Bull_Engulf'), (c['hammer'], 'Hammer'), (c['morning_star'], 'Morning_Star'), (c['bull_harami'], 'Bull_Harami'), (c['rsi14'] > 30 and p['rsi14'] <= 30, 'RSI14'), (c['close'] > c['bb_dn'] and p['close'] <= p['bb_dn'], 'Bollinger'), (c['close'] < c['vwap'] * 0.98 and c['close'] > c['open'], 'VWAP_Reversion'), (c['sqf'] and c['close'] > c['open'], 'Squeeze'), (c['z_score'] < -2.0, 'ZScore'), ('rs' in c and c['rs'] > c['rs_ema'] and p['rs'] <= p['rs_ema'], 'RelativeStrength'), (c['inside_bar'] and c['close'] > p['high'], 'InsideBar'), (c['low'] <= c['s1'] and c['close'] > c['s1'], 'Pivot'), ('BR_close' in c and 'Si_close' in c and c['BR_close'] > c['BR_ema20'] and c['Si_close'] < c['Si_ema20'], 'Intermarket'), (c['gap'] > 0.01 and c['close'] > c['open'], 'GapAndGo'), (c['begin'].weekday() == 0 and c['close'] > c['open'], 'Seasonality'), (c['close'] > c['sma200'] and c['low'] <= c['ema20'] and c['close'] > c['ema20'], 'Chandelier')]
+        lc = [(c['cross_ema_up'], 'EMA20/50'), (c['cross_macd_up'], 'MACD'), (c['close'] > c['don20_high'], 'Donchian20'), (c['close'] > c['don55_high'], 'Donchian55'), (c['close'] > c['kc_up'] and p['close'] <= p['kc_up'], 'Keltner'), (c['close'] > (c['don20_high'] + 0.25 * c['atr14']), 'ATR'), (c['vwap_up'], 'VWAP'), (c['obv_up'], 'OBV'), (c['bull_engulf'], 'Bull_Engulf'), (c['hammer'], 'Hammer'), (c['morning_star'], 'Morning_Star'), (c['bull_harami'], 'Bull_Harami'), (c['rsi14'] > 30 and p['rsi14'] <= 30, 'RSI14'), (c['close'] > c['bb_dn'] and p['close'] <= p['bb_dn'], 'Bollinger'), (c['close'] < c['vwap'] * 0.98 and c['close'] > c['open'], 'VWAP_Reversion'), (c['sqf'] and c['close'] > c['open'], 'Squeeze'), (c['z_score'] < -2.0, 'ZScore'), ('rs' in c and c['rs'] > c['rs_ema'] and p['rs'] <= p['rs_ema'], 'RelativeStrength'), (c['inside_bar'] and c['close'] > p['high'], 'InsideBar'), (c['low'] <= c['s1'] and c['close'] > c['s1'], 'Pivot'), ('BR_close' in c and 'Si_close' in c and c['BR_close'] > c['BR_ema20'] and c['Si_close'] < c['Si_ema20'], 'Intermarket'), (c['gap'] > 0.01 and c['close'] > c['open'], 'GapAndGo'), (c['begin'].weekday() == 0 and c['close'] > c['open'], 'Seasonality'), (c['close'] > c['sma200'] and c['low'] <= c['ema20'] and c['close'] > c['ema20'], 'Chandelier'), (c['sweep_up'], 'SMC_Sweep'), (c['fvg_up'], 'SMC_FVG')]
         out.extend([(t, 1, n) for cond, n in lc if cond])
     if c['is_bear']:
-        sc = [(c['cross_ema_dn'], 'EMA20/50'), (c['cross_macd_dn'], 'MACD'), (c['close'] < c['don20_low'], 'Donchian20'), (c['close'] < c['don55_low'], 'Donchian55'), (c['close'] < c['kc_dn'] and p['close'] >= p['kc_dn'], 'Keltner'), (c['close'] < (c['don20_low'] - 0.25 * c['atr14']), 'ATR'), (c['vwap_dn'], 'VWAP'), (c['obv_dn'], 'OBV'), (c['bear_engulf'], 'Bear_Engulf'), (c['shooting_star'], 'Shooting_Star'), (c['evening_star'], 'Evening_Star'), (c['bear_harami'], 'Bear_Harami'), (c['three_black'], 'Three_Black'), (c['rsi14'] < 70 and p['rsi14'] >= 70, 'RSI14'), (c['close'] < c['bb_up'] and p['close'] >= p['bb_up'], 'Bollinger'), (c['close'] > c['vwap'] * 1.02 and c['close'] < c['open'], 'VWAP_Reversion'), (c['sqf'] and c['close'] < c['open'], 'Squeeze'), (c['z_score'] > 2.0, 'ZScore'), ('rs' in c and c['rs'] < c['rs_ema'] and p['rs'] >= p['rs_ema'], 'RelativeStrength'), (c['inside_bar'] and c['close'] < p['low'], 'InsideBar'), (c['high'] >= c['r1'] and c['close'] < c['r1'], 'Pivot'), ('BR_close' in c and 'Si_close' in c and c['BR_close'] < c['BR_ema20'] and c['Si_close'] > c['Si_ema20'], 'Intermarket'), (c['gap'] < -0.01 and c['close'] < c['open'], 'GapAndGo'), (c['begin'].weekday() == 4 and c['close'] < c['open'], 'Seasonality'), (c['close'] < c['sma200'] and c['high'] >= c['ema20'] and c['close'] < c['ema20'], 'Chandelier')]
+        sc = [(c['cross_ema_dn'], 'EMA20/50'), (c['cross_macd_dn'], 'MACD'), (c['close'] < c['don20_low'], 'Donchian20'), (c['close'] < c['don55_low'], 'Donchian55'), (c['close'] < c['kc_dn'] and p['close'] >= p['kc_dn'], 'Keltner'), (c['close'] < (c['don20_low'] - 0.25 * c['atr14']), 'ATR'), (c['vwap_dn'], 'VWAP'), (c['obv_dn'], 'OBV'), (c['bear_engulf'], 'Bear_Engulf'), (c['shooting_star'], 'Shooting_Star'), (c['evening_star'], 'Evening_Star'), (c['bear_harami'], 'Bear_Harami'), (c['three_black'], 'Three_Black'), (c['rsi14'] < 70 and p['rsi14'] >= 70, 'RSI14'), (c['close'] < c['bb_up'] and p['close'] >= p['bb_up'], 'Bollinger'), (c['close'] > c['vwap'] * 1.02 and c['close'] < c['open'], 'VWAP_Reversion'), (c['sqf'] and c['close'] < c['open'], 'Squeeze'), (c['z_score'] > 2.0, 'ZScore'), ('rs' in c and c['rs'] < c['rs_ema'] and p['rs'] >= p['rs_ema'], 'RelativeStrength'), (c['inside_bar'] and c['close'] < p['low'], 'InsideBar'), (c['high'] >= c['r1'] and c['close'] < c['r1'], 'Pivot'), ('BR_close' in c and 'Si_close' in c and c['BR_close'] < c['BR_ema20'] and c['Si_close'] > c['Si_ema20'], 'Intermarket'), (c['gap'] < -0.01 and c['close'] < c['open'], 'GapAndGo'), (c['begin'].weekday() == 4 and c['close'] < c['open'], 'Seasonality'), (c['close'] < c['sma200'] and c['high'] >= c['ema20'] and c['close'] < c['ema20'], 'Chandelier'), (c['sweep_dn'], 'SMC_Sweep'), (c['fvg_dn'], 'SMC_FVG')]
         out.extend([(t, -1, n) for cond, n in sc if cond])
     return out
 
@@ -203,8 +210,7 @@ def check_p(pf):
     pf["positions"] = still
 
 def main():
-    print("=== AI VIRTUAL AGENT (Options Mode) ===")
-    tg("🧪 <b>Тест связи!</b>\nАгент запущен.\nВиртуальный депозит: 150 000 ₽.")
+    print("=== AI VIRTUAL AGENT (Options + SMC) ===")
     w = load(WEIGHTS_FILE, DEFAULT_WEIGHTS)
     pf = load(PORTFOLIO_FILE, {"cash": INITIAL_DEPOSIT, "positions": [], "closed_trades": []})
     d1, d2 = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d'), datetime.now().strftime('%Y-%m-%d')
@@ -232,14 +238,14 @@ def main():
             if prem > pf["cash"]: continue
             pf["positions"].append({"ticker": t, "direction": "PUT", "entry_price": ep, "entry_time": str(best[0]), "qty": 1, "activated": False, "strategy": best[2], "strike": K, "premium": prem, "is_option": True, "expiry_time": (datetime.now() + timedelta(days=DAYS_TO_EXPIRY)).strftime('%Y-%m-%d')})
             pf["cash"] -= prem; slots -= 1; open_t.add(t)
-            tg(f"🛡️ <b>АГЕНТ КУПИЛ PUT-ОПЦИОН</b>\n{t} (Страйк: {K:.2f})\nПремия: {prem:.2f} руб.\nСтратегия: {best[2]}")
+            tg(f"🛡️ <b>АГЕНТ КУПИЛ PUT-ОПЦИОН (SMC)</b>\n{t} (Страйк: {K:.2f})\nПремия: {prem:.2f} руб.\nСтратегия: {best[2]}")
         else:
             qty = max(1, int((pf["cash"] * 0.10) / ep))
             if ep * qty > pf["cash"]: continue
             sl, tp, be = (ep * 0.97, ep * 1.05, ep * 1.02) if best[1] == 1 else (ep * 1.03, ep * 0.95, ep * 0.98)
             pf["positions"].append({"ticker": t, "direction": "LONG" if best[1] == 1 else "SHORT", "entry_price": ep, "entry_time": str(best[0]), "qty": qty, "activated": False, "strategy": best[2], "sl_price": round(sl, 2), "tp_price": round(tp, 2), "be_price": round(be, 2)})
             pf["cash"] -= ep * qty; slots -= 1; open_t.add(t)
-            tg(f"{'🟢' if best[1]==1 else '🔴'} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ</b>\n{t} {pf['positions'][-1]['direction']} ({best[2]})\nЦена: {ep:.2f}\nОбъем: {qty} шт.\nСтоп: {sl:.2f}\nТейк: {tp:.2f}")
+            tg(f"{'🟢' if best[1]==1 else '🔴'} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ (SMC)</b>\n{t} {pf['positions'][-1]['direction']} ({best[2]})\nЦена: {ep:.2f}\nОбъем: {qty} шт.\nСтоп: {sl:.2f}\nТейк: {tp:.2f}")
     save(PORTFOLIO_FILE, pf)
     print(f"\nКэш: {pf['cash']:.2f} ₽ | Открытых: {len(pf['positions'])}")
     if pf["closed_trades"]:
