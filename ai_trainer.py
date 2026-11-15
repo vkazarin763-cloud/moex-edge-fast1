@@ -28,9 +28,9 @@ def fetch_candles(ticker, interval, dfrom, dtill, board="TQBR"):
     rows, start = [], 0
     while True:
         p = {"from": dfrom, "till": dtill, "interval": interval, "start": start, "iss.reverse": "false"}
-        try: 
+        try:
             r = requests.get(url, params=p, timeout=30).json()
-        except: 
+        except:
             break
         b = r.get("candles", {})
         data, cols = b.get("data", []), b.get("columns", [])
@@ -44,7 +44,7 @@ def fetch_candles(ticker, interval, dfrom, dtill, board="TQBR"):
         
     if not rows: return pd.DataFrame()
     df = pd.DataFrame(rows, columns=["open", "high", "low", "close", "volume", "begin"])
-    for c in ["open", "high", "low", "close", "volume"]: 
+    for c in ["open", "high", "low", "close", "volume"]:
         df[c] = pd.to_numeric(df[c], errors='coerce')
     df["begin"] = pd.to_datetime(df["begin"])
     return df.dropna().sort_values("begin").reset_index(drop=True)
@@ -78,16 +78,12 @@ def calc_indicators(df, ref_data=None):
     df['vwap'] = (df['volume'] * (df['high'] + df['low'] + df['close']) / 3).cumsum() / df['volume'].cumsum()
     df['obv'] = (np.sign(df['close'].diff()) * df['volume']).cumsum()
     df['obv_ema'] = df['obv'].ewm(span=20, adjust=False).mean()
-    
-    # Новые индикаторы
     df['z_score'] = (df['close'] - df['sma200']) / df['std200']
     df['inside_bar'] = (df['high'] < df['high'].shift(1)) & (df['low'] > df['low'].shift(1))
     df['gap'] = (df['open'] - df['close'].shift(1)) / df['close'].shift(1)
     df['pivot'] = (df['high'].shift(1) + df['low'].shift(1) + df['close'].shift(1)) / 3
     df['r1'] = 2 * df['pivot'] - df['low'].shift(1)
     df['s1'] = 2 * df['pivot'] - df['high'].shift(1)
-    
-    # Свечи
     df['body'] = (df['close'] - df['open']).abs()
     df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
     df['c_lower'] = df[['open', 'close']].min(axis=1) - df['low']
@@ -101,7 +97,6 @@ def calc_indicators(df, ref_data=None):
     df['bull_harami'] = (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open']) & (df['open'] > df['close'].shift()) & (df['close'] < df['open'].shift())
     df['bear_harami'] = (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open']) & (df['open'] < df['close'].shift()) & (df['close'] > df['open'].shift())
     
-    # Intermarket
     if ref_data:
         for ref_name, ref_df in ref_data.items():
             if not ref_df.empty and ref_name in ['IMOEX', 'BR', 'Si']:
@@ -111,9 +106,9 @@ def calc_indicators(df, ref_data=None):
     
     return df
 
-def get_signals(df):
+def get_signals_all(df):
+    """Возвращает сигналы для ВСЕХ строк (для обучения на истории)."""
     sigs = []
-    # Старые сигналы
     df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
     df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
     df['cross_macd_up'] = (df['macd'] > df['macd_sig']) & (df['macd'].shift() <= df['macd_sig'].shift())
@@ -122,15 +117,11 @@ def get_signals(df):
     df['vwap_dn'] = (df['close'] < df['vwap']) & (df['close'].shift() >= df['vwap'].shift())
     df['obv_up'] = (df['obv'] > df['obv_ema']) & (df['obv'].shift() <= df['obv_ema'].shift())
     df['obv_dn'] = (df['obv'] < df['obv_ema']) & (df['obv'].shift() >= df['obv_ema'].shift())
-    
-    # Новые сигналы
     df['squeeze_on'] = (df['bb_up'] < df['kc_up']) & (df['bb_dn'] > df['kc_dn'])
     df['squeeze_fire'] = (df['squeeze_on'].shift() == True) & (df['squeeze_on'] == False)
-    
     if 'IMOEX_close' in df.columns:
         df['rs'] = df['close'] / df['IMOEX_close']
         df['rs_ema'] = df['rs'].ewm(span=20, adjust=False).mean()
-    
     df['is_bull'] = df['close'] > df['sma200']
     df['is_bear'] = df['close'] < df['sma200']
     
@@ -155,19 +146,17 @@ def get_signals(df):
             if c['rsi14'] > 30 and prev['rsi14'] <= 30: sigs.append((t, 1, 'RSI14'))
             if c['close'] > c['bb_dn'] and prev['close'] <= prev['bb_dn']: sigs.append((t, 1, 'Bollinger'))
             if c['close'] < c['vwap'] * 0.98 and c['close'] > c['open']: sigs.append((t, 1, 'VWAP_Reversion'))
-            
-            # Новые
             if c['squeeze_fire'] and c['close'] > c['open']: sigs.append((t, 1, 'Squeeze'))
             if c['z_score'] < -2.0: sigs.append((t, 1, 'ZScore'))
             if 'rs' in c and c['rs'] > c['rs_ema'] and prev['rs'] <= prev['rs_ema']: sigs.append((t, 1, 'RelativeStrength'))
-            if c['inside_bar'] and c['close'] > c['high'].shift(1): sigs.append((t, 1, 'InsideBar'))
+            if c['inside_bar'] and c['close'] > prev['high']: sigs.append((t, 1, 'InsideBar'))
             if c['low'] <= c['s1'] and c['close'] > c['s1']: sigs.append((t, 1, 'Pivot'))
             if 'BR_close' in c and 'Si_close' in c:
                 if c['BR_close'] > c['BR_ema20'] and c['Si_close'] < c['Si_ema20']: sigs.append((t, 1, 'Intermarket'))
             if c['gap'] > 0.01 and c['close'] > c['open']: sigs.append((t, 1, 'GapAndGo'))
             if c['begin'].weekday() == 0 and c['close'] > c['open']: sigs.append((t, 1, 'Seasonality'))
             if c['close'] > c['sma200'] and c['low'] <= c['ema20'] and c['close'] > c['ema20']: sigs.append((t, 1, 'Chandelier'))
-        
+            
         if c['is_bear']:
             if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
             if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
@@ -185,12 +174,10 @@ def get_signals(df):
             if c['rsi14'] < 70 and prev['rsi14'] >= 70: sigs.append((t, -1, 'RSI14'))
             if c['close'] < c['bb_up'] and prev['close'] >= prev['bb_up']: sigs.append((t, -1, 'Bollinger'))
             if c['close'] > c['vwap'] * 1.02 and c['close'] < c['open']: sigs.append((t, -1, 'VWAP_Reversion'))
-            
-            # Новые
             if c['squeeze_fire'] and c['close'] < c['open']: sigs.append((t, -1, 'Squeeze'))
             if c['z_score'] > 2.0: sigs.append((t, -1, 'ZScore'))
             if 'rs' in c and c['rs'] < c['rs_ema'] and prev['rs'] >= prev['rs_ema']: sigs.append((t, -1, 'RelativeStrength'))
-            if c['inside_bar'] and c['close'] < c['low'].shift(1): sigs.append((t, -1, 'InsideBar'))
+            if c['inside_bar'] and c['close'] < prev['low']: sigs.append((t, -1, 'InsideBar'))
             if c['high'] >= c['r1'] and c['close'] < c['r1']: sigs.append((t, -1, 'Pivot'))
             if 'BR_close' in c and 'Si_close' in c:
                 if c['BR_close'] < c['BR_ema20'] and c['Si_close'] > c['Si_ema20']: sigs.append((t, -1, 'Intermarket'))
@@ -209,7 +196,6 @@ def simulate_trade(h1_df, entry_time, direction):
     be_price = actual_entry * (1 + direction * 0.0026)
     sl_price = actual_entry * (1 - direction * 0.03)
     activated = False
-    
     for i in range(len(h1_future)):
         op, hi, lo = h1_future.iloc[i]['open'], h1_future.iloc[i]['high'], h1_future.iloc[i]['low']
         if direction == 1:
@@ -230,25 +216,36 @@ def simulate_trade(h1_df, entry_time, direction):
 
 def main():
     print("=== AI TRAINER (30+ стратегий) ===")
-    d1_from = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+    # ВАЖНО: качаем данные за 400 дней (для индикаторов),
+    # но анализируем сигналы только за последние 90 дней
+    d1_from = (datetime.now() - timedelta(days=400)).strftime('%Y-%m-%d')
     d1_till = datetime.now().strftime('%Y-%m-%d')
+    cutoff_date = (datetime.now() - timedelta(days=90)).date()
     
-    # Загрузка референсов (IMOEX, BR, Si)
     ref_data = {}
     for ref_name, (board, _) in REF_TICKERS.items():
         print(f"Загрузка референса {ref_name}...")
         ref_data[ref_name] = fetch_candles(ref_name, 24, d1_from, d1_till, board)
     
     stats = {}
+    total_signals = 0
     for ticker in TICKERS:
         print(f"Анализ {ticker}...")
         d1 = fetch_candles(ticker, 24, d1_from, d1_till)
-        if len(d1) < 200: continue
+        print(f"  D1 свечей: {len(d1)}")
+        if len(d1) < 200: 
+            print(f"  ПРОПУСК: мало данных")
+            continue
         h1 = fetch_candles(ticker, 60, d1_from, d1_till)
         if h1.empty: continue
         
         d1 = calc_indicators(d1, ref_data)
-        sigs = get_signals(d1)
+        all_sigs = get_signals_all(d1)
+        
+        # Фильтруем: только сигналы за последние 90 дней
+        sigs = [(t, d, s) for t, d, s in all_sigs if pd.Timestamp(t).date() >= cutoff_date]
+        total_signals += len(sigs)
+        print(f"  Сигналов за 90 дней: {len(sigs)}")
         
         for sig_time, direction, strat in sigs:
             next_h1 = h1[h1['begin'] > sig_time]
@@ -258,30 +255,33 @@ def main():
             if ret is not None:
                 stats.setdefault(strat, []).append(ret)
 
+    print(f"\nВсего сигналов обработано: {total_signals}")
+    
+    if not stats:
+        print("⚠️ Не найдено ни одного сигнала. Проверьте данные.")
+        return
+    
     new_weights = {}
     print("\n=== РЕЗУЛЬТАТЫ СТРАТЕГИЙ ЗА 3 МЕСЯЦА ===")
-    for strat, rets in stats.items():
+    for strat, rets in sorted(stats.items(), key=lambda x: -len(x[1])):
         if len(rets) < 3:
             new_weights[strat] = 5
             print(f"{strat}: мало сделок ({len(rets)}), вес = 5")
             continue
-            
         win = [r for r in rets if r > 0]
         loss = [r for r in rets if r < 0]
         win_rate = len(win) / len(rets)
         sum_win = sum(win)
         sum_loss = abs(sum(loss)) if loss else 1
         pf = sum_win / sum_loss if sum_loss > 0 else 10
-        
         weight = min(10, max(1, int(pf * 1.5)))
         if win_rate < 0.3: weight = max(1, weight - 2)
-            
         new_weights[strat] = weight
         print(f"{strat}: Сделок {len(rets)}, WR {win_rate*100:.0f}%, PF {pf:.2f} -> Вес: {weight}")
 
     with open(WEIGHTS_FILE, "w", encoding="utf-8") as f:
         json.dump(new_weights, f, ensure_ascii=False, indent=2)
-    print(f"\nВеса сохранены в {WEIGHTS_FILE}")
+    print(f"\n✅ Веса сохранены в {WEIGHTS_FILE}")
 
 if __name__ == "__main__":
     main()
