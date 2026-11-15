@@ -77,6 +77,19 @@ def calc(df, ref=None):
     df['rsi14'] = 100 - (100 / (1 + (gain / loss)))
     df['macd'] = df['close'].ewm(span=12, adjust=False).mean() - df['close'].ewm(span=26, adjust=False).mean()
     df['macd_sig'] = df['macd'].ewm(span=9, adjust=False).mean()
+    
+    # ===== ADX / DI+ / DI- =====
+    up = df['high'] - df['high'].shift()
+    down = df['low'].shift() - df['low']
+    plus_dm = np.where((up > down) & (up > 0), up, 0.0)
+    minus_dm = np.where((down > up) & (down > 0), down, 0.0)
+    atr_s = pd.Series(tr).rolling(14).mean()
+    df['di_plus'] = 100 * pd.Series(plus_dm).rolling(14).mean() / atr_s
+    df['di_minus'] = 100 * pd.Series(minus_dm).rolling(14).mean() / atr_s
+    dx = 100 * (df['di_plus'] - df['di_minus']).abs() / (df['di_plus'] + df['di_minus'])
+    df['adx14'] = dx.rolling(14).mean()
+    # ===========================
+    
     df['don20_high'] = df['high'].rolling(20).max().shift(1)
     df['don20_low'] = df['low'].rolling(20).min().shift(1)
     df['don55_high'] = df['high'].rolling(55).max().shift(1)
@@ -155,7 +168,7 @@ def sigs(df):
 
 def get_kelly_pct(pf, strat):
     trades = [t for t in pf.get("closed_trades", []) if t.get("strategy") == strat]
-    if len(trades) < 10: return 0.10 # По умолчанию 10%, если истории мало
+    if len(trades) < 10: return 0.10
     wins = [t for t in trades if t["pnl"] > 0]
     losses = [t for t in trades if t["pnl"] <= 0]
     W = len(wins) / len(trades)
@@ -163,7 +176,7 @@ def get_kelly_pct(pf, strat):
     avg_loss = abs(sum([t["pnl"] for t in losses]) / len(losses)) if losses else 1
     R = avg_win / avg_loss if avg_loss != 0 else 1.66
     K = W - ((1 - W) / R)
-    return max(0.02, min(0.20, K * 0.5)) # Half-Kelly (от 2% до 20%)
+    return max(0.02, min(0.20, K * 0.5))
 
 def check_p(pf):
     still = []
@@ -221,15 +234,15 @@ def main():
     d1, d2 = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d'), datetime.now().strftime('%Y-%m-%d')
     ref = {rn: fetch(rn, 24, d1, d2, b) for rn, (b, _) in REF_TICKERS.items()}
     
-    # 1. Market Regime (Режим рынка)
     imoex_adx = 0
     if not ref.get('IMOEX', pd.DataFrame()).empty:
         imoex_calc = calc(ref['IMOEX'])
-        imoex_adx = imoex_calc['adx14'].iloc[-1]
-        print(f"ADX IMOEX: {imoex_adx:.1f}")
+        if len(imoex_calc) > 0:
+            imoex_adx = imoex_calc['adx14'].iloc[-1]
+            print(f"ADX IMOEX: {imoex_adx:.1f}")
     
     if imoex_adx > 25:
-        print("📈 Режим: Тренд (усиливаем трендовые стратегии)")
+        print("📈 Режим: Тренд (усиливаем трендовые)")
         for s in ['Keltner', 'ATR', 'Donchian55', 'Donchian20', 'SMC_Sweep', 'Chandelier']:
             w[s] = w.get(s, 5) * 1.5
     elif imoex_adx < 20:
@@ -256,7 +269,6 @@ def main():
         if best[1] == 1 and ep < h1.iloc[-1]['ema20']: continue
         if best[1] == -1 and ep > h1.iloc[-1]['ema20']: continue
         
-        # 2. Kelly Criterion (Размер позиции)
         kelly_pct = get_kelly_pct(pf, best[2])
         
         if OPTIONS_MODE and best[1] == -1:
@@ -277,8 +289,4 @@ def main():
     save(PORTFOLIO_FILE, pf)
     print(f"\nКэш: {pf['cash']:.2f} ₽ | Открытых: {len(pf['positions'])}")
     if pf["closed_trades"]:
-        df = pd.DataFrame(pf["closed_trades"])
-        win = df[df["pnl"] > 0]
-        print(f"\n=== СТАТИСТИКА ===\nСделок: {len(df)} | Win Rate: {len(win)/len(df)*100:.1f}% | PnL: {df['pnl'].sum():+.0f} ₽")
-
-if __name__ == "__main__": main()
+        df 
