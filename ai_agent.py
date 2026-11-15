@@ -10,11 +10,9 @@ SIGMA = 0.30
 DAYS_TO_EXPIRY = 30
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX", "GMKN", "PLZL", "CHMF", "ALRS", "T"]
 REF_TICKERS = {"IMOEX": ("SNDX", "index"), "BR": ("RTS", "share"), "Si": ("CETS", "share")}
-
-# УСТАНОВИЛИ ДЕПОЗИТ 150 000 РУБЛЕЙ
 INITIAL_DEPOSIT = 150000
 COMMISSION = 0.0026
-MAX_POSITIONS = 10 # Теперь можем держать до 10 позиций
+MAX_POSITIONS = 10
 PORTFOLIO_FILE = "ai_portfolio.json"
 WEIGHTS_FILE = "ai_weights.json"
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -38,12 +36,17 @@ def save(f, d):
     with open(f, "w", encoding="utf-8") as file: json.dump(d, file, ensure_ascii=False, indent=2, default=str)
 
 def tg(text):
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: 
-        print("Telegram не настроен (нет ключей)")
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("⚠️ Telegram не настроен (нет ключей)")
         return
-    try: 
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=10)
-    except: pass
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}
+        resp = requests.post(url, json=payload, timeout=10)
+        if resp.status_code != 200:
+            print(f"❌ ОШИБКА TELEGRAM: {resp.status_code} - {resp.text}")
+    except Exception as e:
+        print(f"❌ ОШИБКА СЕТИ: {e}")
 
 def fetch(t, i, dfrom, dtill, b="TQBR"):
     url = f"{ISS_BASE}/engines/stock/markets/index/boards/SNDX/securities/{t}/candles.json" if b == "SNDX" else f"{ISS_BASE}/engines/currency/markets/selt/boards/CETS/securities/{t}/candles.json" if b == "CETS" else f"{ISS_BASE}/engines/stock/markets/shares/boards/{b}/securities/{t}/candles.json"
