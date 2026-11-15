@@ -14,10 +14,9 @@ ISS_BASE = "https://iss.moex.com/iss"
 BOARD = "TQBR"
 PAUSE = 0.2
 
-# Режим опционов (True = при SHORT-сигнале покупаем Put)
 OPTIONS_MODE = True
-SIGMA = 0.30        # Волатильность 30%
-DAYS_TO_EXPIRY = 30 # Экспирация через 30 дней
+SIGMA = 0.30
+DAYS_TO_EXPIRY = 30
 
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX", "GMKN", "PLZL", "CHMF", "ALRS", "T"]
 REF_TICKERS = {"IMOEX": ("SNDX", "index"), "BR": ("RTS", "share"), "Si": ("CETS", "share")}
@@ -40,7 +39,6 @@ DEFAULT_WEIGHTS = {
 }
 
 def black_scholes(S, K, T, r, sigma, option_type):
-    """Цена опциона по Блэку-Шоулзу."""
     if T <= 0: return max(0, (S - K) if option_type == 'call' else (K - S))
     d1 = (math.log(S/K) + (r + sigma**2/2) * T) / (sigma * math.sqrt(T))
     d2 = d1 - sigma * math.sqrt(T)
@@ -99,8 +97,7 @@ def fetch_candles(ticker, interval, dfrom, dtill, board="TQBR"):
         df[c] = pd.to_numeric(df[c], errors='coerce')
     df["begin"] = pd.to_datetime(df["begin"])
     return df.dropna().sort_values("begin").reset_index(drop=True)
-
-def calc_indicators(df, ref_data=None):
+    def calc_indicators(df, ref_data=None):
     df = df.copy()
     df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
     df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
@@ -155,8 +152,7 @@ def calc_indicators(df, ref_data=None):
                 df = df.merge(ref_df, on='begin', how='left').ffill()
                 df[f'{ref_name}_ema20'] = df[f'{ref_name}_close'].ewm(span=20, adjust=False).mean()
     return df
-
-def get_signals(df):
+    def get_signals(df):
     sigs = []
     df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
     df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
@@ -235,8 +231,7 @@ def get_signals(df):
         if c['close'] < c['sma200'] and c['high'] >= c['ema20'] and c['close'] < c['ema20']: sigs.append((t, -1, 'Chandelier'))
         
     return sigs
-
-def check_positions(portfolio):
+    def check_positions(portfolio):
     still_open = []
     for pos in portfolio["positions"]:
         dfrom = pos["entry_time"][:10]
@@ -251,7 +246,6 @@ def check_positions(portfolio):
             still_open.append(pos)
             continue
             
-        # Если это опцион - проверяем по времени и по intrinsic value
         if pos.get("is_option"):
             expiry = pd.to_datetime(pos["expiry_time"])
             current_time = h1.iloc[-1]['begin']
@@ -259,8 +253,6 @@ def check_positions(portfolio):
             if current_time >= expiry:
                 S = h1.iloc[-1]['close']
                 K = pos["strike"]
-                T = 0
-                # Считаем PnL опциона на экспирации
                 if pos["direction"] == "PUT":
                     intrinsic = max(0, K - S)
                     net_ret = (intrinsic - pos["premium"]) / pos["premium"]
@@ -356,8 +348,7 @@ def main():
         if direction == -1 and entry_price > h1.iloc[-1]['ema20']: continue
         
         if OPTIONS_MODE and direction == -1:
-            # Вместо шорта фьючерса покупаем Put-опцион
-            K = entry_price * 0.97  # Страйк на 3% ниже
+            K = entry_price * 0.97
             T = DAYS_TO_EXPIRY / 365.0
             premium = black_scholes(entry_price, K, T, 0.15, SIGMA, 'put')
             
@@ -365,4 +356,48 @@ def main():
             cost = premium * qty
             if cost > portfolio["cash"]: continue
             
-            portfolio["pos
+            portfolio["positions"].append({
+                "ticker": ticker, "direction": "PUT",
+                "entry_price": entry_price, "entry_time": str(t),
+                "qty": qty, "activated": False, "strategy": strat,
+                "strike": K, "premium": premium, "is_option": True,
+                "expiry_time": (datetime.now() + timedelta(days=DAYS_TO_EXPIRY)).strftime('%Y-%m-%d')
+            })
+            portfolio["cash"] -= cost
+            slots -= 1
+            open_tickers.add(ticker)
+            send_telegram(f"🛡️ <b>АГЕНТ КУПИЛ PUT-ОПЦИОН</b>\n{ticker} (Страйк: {K:.2f})\nПремия: {premium:.2f} руб.\nСтратегия: {strat}")
+        else:
+            qty = 1 if (entry_price * 1) > portfolio["cash"] else int((portfolio["cash"] * 0.25) / entry_price)
+            if qty == 0: qty = 1
+            cost = entry_price * qty
+            if cost > portfolio["cash"]: continue
+            
+            if direction == 1:
+                sl, tp, be = entry_price * 0.97, entry_price * 1.05, entry_price * 1.02
+            else:
+                sl, tp, be = entry_price * 1.03, entry_price * 0.95, entry_price * 0.98
+                
+            portfolio["positions"].append({
+                "ticker": ticker, "direction": "LONG" if direction == 1 else "SHORT",
+                "entry_price": entry_price, "entry_time": str(t),
+                "qty": qty, "activated": False, "strategy": strat,
+                "sl_price": round(sl, 2), "tp_price": round(tp, 2), "be_price": round(be, 2)
+            })
+            portfolio["cash"] -= cost
+            slots -= 1
+            open_tickers.add(ticker)
+            emoji = "🟢" if direction == 1 else "🔴"
+            send_telegram(f"{emoji} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ</b>\n{ticker} {portfolio['positions'][-1]['direction']} ({strat})\nЦена: {entry_price:.2f}\nОбъем: {qty} шт.\nСтоп: {sl:.2f}\nТейк: {tp:.2f}")
+        
+    save_data(PORTFOLIO_FILE, portfolio)
+    
+    print(f"\nКэш: {portfolio['cash']:.2f} ₽ | Открытых: {len(portfolio['positions'])}")
+    if portfolio["closed_trades"]:
+        df = pd.DataFrame(portfolio["closed_trades"])
+        win = df[df["pnl"] > 0]
+        print(f"\n=== СТАТИСТИКА ===")
+        print(f"Сделок: {len(df)} | Win Rate: {len(win)/len(df)*100:.1f}% | PnL: {df['pnl'].sum():+.0f} ₽")
+
+if __name__ == "__main__":
+    main()
