@@ -1,29 +1,32 @@
 import os
 import json
 import time
+import math
 import requests
 import pandas as pd
 import numpy as np
 import warnings
 from datetime import datetime, timedelta
+from scipy.stats import norm
 warnings.filterwarnings('ignore')
 
 ISS_BASE = "https://iss.moex.com/iss"
 BOARD = "TQBR"
 PAUSE = 0.2
 
+# Режим опционов (True = при SHORT-сигнале покупаем Put)
+OPTIONS_MODE = True
+SIGMA = 0.30        # Волатильность 30%
+DAYS_TO_EXPIRY = 30 # Экспирация через 30 дней
+
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX", "GMKN", "PLZL", "CHMF", "ALRS", "T"]
 REF_TICKERS = {"IMOEX": ("SNDX", "index"), "BR": ("RTS", "share"), "Si": ("CETS", "share")}
 
 INITIAL_DEPOSIT = 10000
 COMMISSION = 0.0026
-SL_PCT = 0.03
-TP_PCT = 0.05
-BE_PCT = 0.02
 MAX_POSITIONS = 4
 PORTFOLIO_FILE = "ai_portfolio.json"
 WEIGHTS_FILE = "ai_weights.json"
-
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -36,13 +39,21 @@ DEFAULT_WEIGHTS = {
     'Intermarket': 7, 'GapAndGo': 6, 'VWAP_Reversion': 5, 'Seasonality': 4, 'Chandelier': 6
 }
 
+def black_scholes(S, K, T, r, sigma, option_type):
+    """Цена опциона по Блэку-Шоулзу."""
+    if T <= 0: return max(0, (S - K) if option_type == 'call' else (K - S))
+    d1 = (math.log(S/K) + (r + sigma**2/2) * T) / (sigma * math.sqrt(T))
+    d2 = d1 - sigma * math.sqrt(T)
+    if option_type == 'call':
+        return S * norm.cdf(d1) - K * math.exp(-r*T) * norm.cdf(d2)
+    else:
+        return K * math.exp(-r*T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+
 def load_data(file, default):
     if os.path.exists(file):
         try:
-            with open(file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            return default
+            with open(file, "r", encoding="utf-8") as f: return json.load(f)
+        except: return default
     return default
 
 def save_data(file, data):
@@ -70,10 +81,8 @@ def fetch_candles(ticker, interval, dfrom, dtill, board="TQBR"):
     rows, start = [], 0
     while True:
         p = {"from": dfrom, "till": dtill, "interval": interval, "start": start, "iss.reverse": "false"}
-        try:
-            r = requests.get(url, params=p, timeout=30).json()
-        except:
-            break
+        try: r = requests.get(url, params=p, timeout=30).json()
+        except: break
         b = r.get("candles", {})
         data, cols = b.get("data", []), b.get("columns", [])
         if not data: break
@@ -120,14 +129,12 @@ def calc_indicators(df, ref_data=None):
     df['vwap'] = (df['volume'] * (df['high'] + df['low'] + df['close']) / 3).cumsum() / df['volume'].cumsum()
     df['obv'] = (np.sign(df['close'].diff()) * df['volume']).cumsum()
     df['obv_ema'] = df['obv'].ewm(span=20, adjust=False).mean()
-    
     df['z_score'] = (df['close'] - df['sma200']) / df['std200']
     df['inside_bar'] = (df['high'] < df['high'].shift(1)) & (df['low'] > df['low'].shift(1))
     df['gap'] = (df['open'] - df['close'].shift(1)) / df['close'].shift(1)
     df['pivot'] = (df['high'].shift(1) + df['low'].shift(1) + df['close'].shift(1)) / 3
     df['r1'] = 2 * df['pivot'] - df['low'].shift(1)
     df['s1'] = 2 * df['pivot'] - df['high'].shift(1)
-    
     df['body'] = (df['close'] - df['open']).abs()
     df['c_upper'] = df['high'] - df[['open', 'close']].max(axis=1)
     df['c_lower'] = df[['open', 'close']].min(axis=1) - df['low']
@@ -147,7 +154,6 @@ def calc_indicators(df, ref_data=None):
                 ref_df = ref_df[['begin', 'close']].rename(columns={'close': f'{ref_name}_close'})
                 df = df.merge(ref_df, on='begin', how='left').ffill()
                 df[f'{ref_name}_ema20'] = df[f'{ref_name}_close'].ewm(span=20, adjust=False).mean()
-    
     return df
 
 def get_signals(df):
@@ -162,11 +168,9 @@ def get_signals(df):
     df['obv_dn'] = (df['obv'] < df['obv_ema']) & (df['obv'].shift() >= df['obv_ema'].shift())
     df['squeeze_on'] = (df['bb_up'] < df['kc_up']) & (df['bb_dn'] > df['kc_dn'])
     df['squeeze_fire'] = (df['squeeze_on'].shift() == True) & (df['squeeze_on'] == False)
-    
     if 'IMOEX_close' in df.columns:
         df['rs'] = df['close'] / df['IMOEX_close']
         df['rs_ema'] = df['rs'].ewm(span=20, adjust=False).mean()
-    
     df['is_bull'] = df['close'] > df['sma200']
     df['is_bear'] = df['close'] < df['sma200']
     
@@ -247,6 +251,31 @@ def check_positions(portfolio):
             still_open.append(pos)
             continue
             
+        # Если это опцион - проверяем по времени и по intrinsic value
+        if pos.get("is_option"):
+            expiry = pd.to_datetime(pos["expiry_time"])
+            current_time = h1.iloc[-1]['begin']
+            
+            if current_time >= expiry:
+                S = h1.iloc[-1]['close']
+                K = pos["strike"]
+                T = 0
+                # Считаем PnL опциона на экспирации
+                if pos["direction"] == "PUT":
+                    intrinsic = max(0, K - S)
+                    net_ret = (intrinsic - pos["premium"]) / pos["premium"]
+                else:
+                    intrinsic = max(0, S - K)
+                    net_ret = (intrinsic - pos["premium"]) / pos["premium"]
+                    
+                pnl = pos["premium"] * pos["qty"] * net_ret
+                portfolio["cash"] += pos["premium"] * pos["qty"] + pnl
+                portfolio["closed_trades"].append({**pos, "exit_price": intrinsic, "exit_reason": "EXP", "net_ret": net_ret, "pnl": pnl, "exit_time": str(current_time)})
+                send_telegram(f"⏰ <b>АГЕНТ ЗАКРЫЛ ОПЦИОН (Экспирация)</b>\n{pos['ticker']} {pos['direction']}\nРезультат: {net_ret*100:+.2f}% ({pnl:+.0f} ₽)")
+            else:
+                still_open.append(pos)
+            continue
+            
         direction = 1 if pos["direction"] == "LONG" else -1
         sl, tp, be = pos["sl_price"], pos["tp_price"], pos["be_price"]
         activated = pos.get("activated", False)
@@ -279,7 +308,6 @@ def check_positions(portfolio):
             pnl = pos["entry_price"] * pos["qty"] * net_ret
             portfolio["cash"] += pos["entry_price"] * pos["qty"] + pnl
             portfolio["closed_trades"].append({**pos, "exit_price": exit_price, "exit_reason": reason, "net_ret": net_ret, "pnl": pnl, "exit_time": str(h1.iloc[i]["begin"])})
-            
             emoji = "✅" if pnl > 0 else "❌"
             send_telegram(f"{emoji} <b>АГЕНТ ЗАКРЫЛ СДЕЛКУ</b>\n{pos['ticker']} {pos['direction']}\nВход: {pos['entry_price']:.2f} -> Выход: {exit_price:.2f}\nПричина: {reason}\nРезультат: {net_ret*100:+.2f}% ({pnl:+.0f} ₽)")
         else:
@@ -289,14 +317,13 @@ def check_positions(portfolio):
     portfolio["positions"] = still_open
 
 def main():
-    print("=== AI VIRTUAL AGENT (30+ Strategies) ===")
+    print("=== AI VIRTUAL AGENT (Options Mode) ===")
     weights = load_data(WEIGHTS_FILE, DEFAULT_WEIGHTS)
     portfolio = load_data(PORTFOLIO_FILE, {"cash": INITIAL_DEPOSIT, "positions": [], "closed_trades": []})
     
     d1_from = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d')
     d1_till = datetime.now().strftime('%Y-%m-%d')
     
-    print("Загрузка индексов и товаров для Intermarket...")
     ref_data = {}
     for ref_name, (board, _) in REF_TICKERS.items():
         ref_data[ref_name] = fetch_candles(ref_name, 24, d1_from, d1_till, board)
@@ -328,37 +355,14 @@ def main():
         if direction == 1 and entry_price < h1.iloc[-1]['ema20']: continue
         if direction == -1 and entry_price > h1.iloc[-1]['ema20']: continue
         
-        qty = 1 if (entry_price * 1) > portfolio["cash"] else int((portfolio["cash"] * 0.25) / entry_price)
-        if qty == 0: qty = 1
-        cost = entry_price * qty
-        if cost > portfolio["cash"]: continue
-        
-        if direction == 1:
-            sl, tp, be = entry_price * 0.97, entry_price * 1.05, entry_price * 1.02
-        else:
-            sl, tp, be = entry_price * 1.03, entry_price * 0.95, entry_price * 0.98
+        if OPTIONS_MODE and direction == -1:
+            # Вместо шорта фьючерса покупаем Put-опцион
+            K = entry_price * 0.97  # Страйк на 3% ниже
+            T = DAYS_TO_EXPIRY / 365.0
+            premium = black_scholes(entry_price, K, T, 0.15, SIGMA, 'put')
             
-        portfolio["positions"].append({
-            "ticker": ticker, "direction": "LONG" if direction == 1 else "SHORT",
-            "entry_price": entry_price, "entry_time": str(t),
-            "qty": qty, "activated": False, "strategy": strat,
-            "sl_price": round(sl, 2), "tp_price": round(tp, 2), "be_price": round(be, 2)
-        })
-        portfolio["cash"] -= cost
-        slots -= 1
-        open_tickers.add(ticker)
-        
-        emoji = "🟢" if direction == 1 else "🔴"
-        send_telegram(f"{emoji} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ (Виртуально)</b>\n{ticker} {portfolio['positions'][-1]['direction']} ({strat})\nЦена: {entry_price:.2f}\nОбъем: {qty} шт. ({cost:.0f} ₽)\nСтоп: {sl:.2f}\nТейк: {tp:.2f}\nБУ: {be:.2f}")
-        
-    save_data(PORTFOLIO_FILE, portfolio)
-    
-    print(f"\nКэш: {portfolio['cash']:.2f} ₽ | Открытых: {len(portfolio['positions'])}")
-    if portfolio["closed_trades"]:
-        df = pd.DataFrame(portfolio["closed_trades"])
-        win = df[df["pnl"] > 0]
-        print(f"\n=== СТАТИСТИКА ===")
-        print(f"Сделок: {len(df)} | Win Rate: {len(win)/len(df)*100:.1f}% | PnL: {df['pnl'].sum():+.0f} ₽")
-
-if __name__ == "__main__":
-    main()
+            qty = 1
+            cost = premium * qty
+            if cost > portfolio["cash"]: continue
+            
+            portfolio["pos
