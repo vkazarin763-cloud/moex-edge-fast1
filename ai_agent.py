@@ -1,26 +1,15 @@
-import os
-import json
-import time
-import math
-import requests
-import pandas as pd
-import numpy as np
-import warnings
+import os, json, time, math, requests, pandas as pd, numpy as np, warnings
 from datetime import datetime, timedelta
 from scipy.stats import norm
 warnings.filterwarnings('ignore')
 
 ISS_BASE = "https://iss.moex.com/iss"
-BOARD = "TQBR"
 PAUSE = 0.2
-
 OPTIONS_MODE = True
 SIGMA = 0.30
 DAYS_TO_EXPIRY = 30
-
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX", "GMKN", "PLZL", "CHMF", "ALRS", "T"]
 REF_TICKERS = {"IMOEX": ("SNDX", "index"), "BR": ("RTS", "share"), "Si": ("CETS", "share")}
-
 INITIAL_DEPOSIT = 10000
 COMMISSION = 0.0026
 MAX_POSITIONS = 4
@@ -28,76 +17,51 @@ PORTFOLIO_FILE = "ai_portfolio.json"
 WEIGHTS_FILE = "ai_weights.json"
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+DEFAULT_WEIGHTS = {'Keltner': 8, 'ATR': 8, 'Donchian55': 7, 'Donchian20': 7, 'VWAP': 7, 'OBV': 6, 'MACD': 6, 'Evening_Star': 6, 'Three_Black': 6, 'ADX+DI': 5, 'Bollinger': 4, 'RSI14': 4, 'Stochastic': 3, 'EMA20/50': 3, 'Morning_Star': 5, 'Bull_Harami': 4, 'Bear_Harami': 4, 'Hammer': 4, 'Shooting_Star': 4, 'Squeeze': 7, 'ZScore': 6, 'RelativeStrength': 7, 'InsideBar': 6, 'Pivot': 5, 'Intermarket': 7, 'GapAndGo': 6, 'VWAP_Reversion': 5, 'Seasonality': 4, 'Chandelier': 6}
 
-DEFAULT_WEIGHTS = {
-    'Keltner': 8, 'ATR': 8, 'Donchian55': 7, 'Donchian20': 7, 'VWAP': 7, 'OBV': 6,
-    'MACD': 6, 'Evening_Star': 6, 'Three_Black': 6, 'ADX+DI': 5, 'Bollinger': 4,
-    'RSI14': 4, 'Stochastic': 3, 'EMA20/50': 3, 'Morning_Star': 5, 'Bull_Harami': 4,
-    'Bear_Harami': 4, 'Hammer': 4, 'Shooting_Star': 4,
-    'Squeeze': 7, 'ZScore': 6, 'RelativeStrength': 7, 'InsideBar': 6, 'Pivot': 5,
-    'Intermarket': 7, 'GapAndGo': 6, 'VWAP_Reversion': 5, 'Seasonality': 4, 'Chandelier': 6
-}
+def bs(S, K, T, r, sig, opt):
+    if T <= 0: return max(0, (S-K) if opt == 'call' else (K-S))
+    d1 = (math.log(S/K) + (r + sig**2/2) * T) / (sig * math.sqrt(T))
+    d2 = d1 - sig * math.sqrt(T)
+    return S * norm.cdf(d1) - K * math.exp(-r*T) * norm.cdf(d2) if opt == 'call' else K * math.exp(-r*T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
-def black_scholes(S, K, T, r, sigma, option_type):
-    if T <= 0: return max(0, (S - K) if option_type == 'call' else (K - S))
-    d1 = (math.log(S/K) + (r + sigma**2/2) * T) / (sigma * math.sqrt(T))
-    d2 = d1 - sigma * math.sqrt(T)
-    if option_type == 'call':
-        return S * norm.cdf(d1) - K * math.exp(-r*T) * norm.cdf(d2)
-    else:
-        return K * math.exp(-r*T) * norm.cdf(-d2) - S * norm.cdf(-d1)
-
-def load_data(file, default):
-    if os.path.exists(file):
+def load(f, d):
+    if os.path.exists(f):
         try:
-            with open(file, "r", encoding="utf-8") as f: return json.load(f)
-        except: return default
-    return default
+            with open(f, "r", encoding="utf-8") as file: return json.load(file)
+        except: return d
+    return d
 
-def save_data(file, data):
-    with open(file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+def save(f, d):
+    with open(f, "w", encoding="utf-8") as file: json.dump(d, file, ensure_ascii=False, indent=2, default=str)
 
-def send_telegram(text):
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print(f"[TELEGRAM DISABLED] {text}")
-        return
-    try:
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
-                      json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=10)
-    except Exception as e:
-        print(f"Ошибка Telegram: {e}")
+def tg(text):
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: return
+    try: requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=10)
+    except: pass
 
-def fetch_candles(ticker, interval, dfrom, dtill, board="TQBR"):
-    if board == "SNDX":
-        url = f"{ISS_BASE}/engines/stock/markets/index/boards/SNDX/securities/{ticker}/candles.json"
-    elif board == "CETS":
-        url = f"{ISS_BASE}/engines/currency/markets/selt/boards/CETS/securities/{ticker}/candles.json"
-    else:
-        url = f"{ISS_BASE}/engines/stock/markets/shares/boards/{board}/securities/{ticker}/candles.json"
-        
+def fetch(t, i, dfrom, dtill, b="TQBR"):
+    url = f"{ISS_BASE}/engines/stock/markets/index/boards/SNDX/securities/{t}/candles.json" if b == "SNDX" else f"{ISS_BASE}/engines/currency/markets/selt/boards/CETS/securities/{t}/candles.json" if b == "CETS" else f"{ISS_BASE}/engines/stock/markets/shares/boards/{b}/securities/{t}/candles.json"
     rows, start = [], 0
     while True:
-        p = {"from": dfrom, "till": dtill, "interval": interval, "start": start, "iss.reverse": "false"}
+        p = {"from": dfrom, "till": dtill, "interval": i, "start": start, "iss.reverse": "false"}
         try: r = requests.get(url, params=p, timeout=30).json()
         except: break
         b = r.get("candles", {})
         data, cols = b.get("data", []), b.get("columns", [])
         if not data: break
-        idx = {c: i for i, c in enumerate(cols)}
-        for row in data:
-            rows.append([row[idx.get(c, 0)] for c in ["open", "high", "low", "close", "volume", "begin"]])
+        idx = {c: j for j, c in enumerate(cols)}
+        for row in data: rows.append([row[idx.get(c, 0)] for c in ["open", "high", "low", "close", "volume", "begin"]])
         if len(data) < 500: break
         start += len(data)
         time.sleep(PAUSE)
-        
     if not rows: return pd.DataFrame()
     df = pd.DataFrame(rows, columns=["open", "high", "low", "close", "volume", "begin"])
-    for c in ["open", "high", "low", "close", "volume"]:
-        df[c] = pd.to_numeric(df[c], errors='coerce')
+    for c in ["open", "high", "low", "close", "volume"]: df[c] = pd.to_numeric(df[c], errors='coerce')
     df["begin"] = pd.to_datetime(df["begin"])
     return df.dropna().sort_values("begin").reset_index(drop=True)
-    def calc_indicators(df, ref_data=None):
+
+def calc(df, ref=None):
     df = df.copy()
     df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
     df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
@@ -144,16 +108,15 @@ def fetch_candles(ticker, interval, dfrom, dtill, board="TQBR"):
     df['three_black'] = (df['close'] < df['open']) & (df['close'].shift() < df['open'].shift()) & (df['close'].shift(2) < df['open'].shift(2)) & (df['close'] < df['close'].shift()) & (df['close'].shift() < df['close'].shift(2))
     df['bull_harami'] = (df['close'].shift() < df['open'].shift()) & (df['close'] > df['open']) & (df['open'] > df['close'].shift()) & (df['close'] < df['open'].shift())
     df['bear_harami'] = (df['close'].shift() > df['open'].shift()) & (df['close'] < df['open']) & (df['open'] < df['close'].shift()) & (df['close'] > df['open'].shift())
-    
-    if ref_data:
-        for ref_name, ref_df in ref_data.items():
-            if not ref_df.empty and ref_name in ['IMOEX', 'BR', 'Si']:
-                ref_df = ref_df[['begin', 'close']].rename(columns={'close': f'{ref_name}_close'})
-                df = df.merge(ref_df, on='begin', how='left').ffill()
-                df[f'{ref_name}_ema20'] = df[f'{ref_name}_close'].ewm(span=20, adjust=False).mean()
+    if ref:
+        for rn, rdf in ref.items():
+            if not rdf.empty and rn in ['IMOEX', 'BR', 'Si']:
+                rdf = rdf[['begin', 'close']].rename(columns={'close': f'{rn}_close'})
+                df = df.merge(rdf, on='begin', how='left').ffill()
+                df[f'{rn}_ema20'] = df[f'{rn}_close'].ewm(span=20, adjust=False).mean()
     return df
-    def get_signals(df):
-    sigs = []
+
+def sigs(df):
     df['cross_ema_up'] = (df['ema20'] > df['ema50']) & (df['ema20'].shift() <= df['ema50'].shift())
     df['cross_ema_dn'] = (df['ema20'] < df['ema50']) & (df['ema20'].shift() >= df['ema50'].shift())
     df['cross_macd_up'] = (df['macd'] > df['macd_sig']) & (df['macd'].shift() <= df['macd_sig'].shift())
@@ -162,242 +125,117 @@ def fetch_candles(ticker, interval, dfrom, dtill, board="TQBR"):
     df['vwap_dn'] = (df['close'] < df['vwap']) & (df['close'].shift() >= df['vwap'].shift())
     df['obv_up'] = (df['obv'] > df['obv_ema']) & (df['obv'].shift() <= df['obv_ema'].shift())
     df['obv_dn'] = (df['obv'] < df['obv_ema']) & (df['obv'].shift() >= df['obv_ema'].shift())
-    df['squeeze_on'] = (df['bb_up'] < df['kc_up']) & (df['bb_dn'] > df['kc_dn'])
-    df['squeeze_fire'] = (df['squeeze_on'].shift() == True) & (df['squeeze_on'] == False)
+    df['sq'] = (df['bb_up'] < df['kc_up']) & (df['bb_dn'] > df['kc_dn'])
+    df['sqf'] = (df['sq'].shift() == True) & (df['sq'] == False)
     if 'IMOEX_close' in df.columns:
         df['rs'] = df['close'] / df['IMOEX_close']
         df['rs_ema'] = df['rs'].ewm(span=20, adjust=False).mean()
     df['is_bull'] = df['close'] > df['sma200']
     df['is_bear'] = df['close'] < df['sma200']
-    
     i = len(df) - 1
     t = df.iloc[i]['begin']
     c = df.iloc[i]
-    prev = df.iloc[i-1] if i > 0 else c
-    
+    p = df.iloc[i-1] if i > 0 else c
+    out = []
     if c['is_bull']:
-        if c['cross_ema_up']: sigs.append((t, 1, 'EMA20/50'))
-        if c['cross_macd_up']: sigs.append((t, 1, 'MACD'))
-        if c['close'] > c['don20_high']: sigs.append((t, 1, 'Donchian20'))
-        if c['close'] > c['don55_high']: sigs.append((t, 1, 'Donchian55'))
-        if c['close'] > c['kc_up'] and prev['close'] <= prev['kc_up']: sigs.append((t, 1, 'Keltner'))
-        if c['close'] > (c['don20_high'] + 0.25 * c['atr14']): sigs.append((t, 1, 'ATR'))
-        if c['vwap_up']: sigs.append((t, 1, 'VWAP'))
-        if c['obv_up']: sigs.append((t, 1, 'OBV'))
-        if c['bull_engulf']: sigs.append((t, 1, 'Bull_Engulf'))
-        if c['hammer']: sigs.append((t, 1, 'Hammer'))
-        if c['morning_star']: sigs.append((t, 1, 'Morning_Star'))
-        if c['bull_harami']: sigs.append((t, 1, 'Bull_Harami'))
-        if c['rsi14'] > 30 and prev['rsi14'] <= 30: sigs.append((t, 1, 'RSI14'))
-        if c['close'] > c['bb_dn'] and prev['close'] <= prev['bb_dn']: sigs.append((t, 1, 'Bollinger'))
-        if c['close'] < c['vwap'] * 0.98 and c['close'] > c['open']: sigs.append((t, 1, 'VWAP_Reversion'))
-        if c['squeeze_fire'] and c['close'] > c['open']: sigs.append((t, 1, 'Squeeze'))
-        if c['z_score'] < -2.0: sigs.append((t, 1, 'ZScore'))
-        if 'rs' in c and c['rs'] > c['rs_ema'] and prev['rs'] <= prev['rs_ema']: sigs.append((t, 1, 'RelativeStrength'))
-        if c['inside_bar'] and c['close'] > prev['high']: sigs.append((t, 1, 'InsideBar'))
-        if c['low'] <= c['s1'] and c['close'] > c['s1']: sigs.append((t, 1, 'Pivot'))
-        if 'BR_close' in c and 'Si_close' in c:
-            if c['BR_close'] > c['BR_ema20'] and c['Si_close'] < c['Si_ema20']: sigs.append((t, 1, 'Intermarket'))
-        if c['gap'] > 0.01 and c['close'] > c['open']: sigs.append((t, 1, 'GapAndGo'))
-        if c['begin'].weekday() == 0 and c['close'] > c['open']: sigs.append((t, 1, 'Seasonality'))
-        if c['close'] > c['sma200'] and c['low'] <= c['ema20'] and c['close'] > c['ema20']: sigs.append((t, 1, 'Chandelier'))
-        
+        lc = [(c['cross_ema_up'], 'EMA20/50'), (c['cross_macd_up'], 'MACD'), (c['close'] > c['don20_high'], 'Donchian20'), (c['close'] > c['don55_high'], 'Donchian55'), (c['close'] > c['kc_up'] and p['close'] <= p['kc_up'], 'Keltner'), (c['close'] > (c['don20_high'] + 0.25 * c['atr14']), 'ATR'), (c['vwap_up'], 'VWAP'), (c['obv_up'], 'OBV'), (c['bull_engulf'], 'Bull_Engulf'), (c['hammer'], 'Hammer'), (c['morning_star'], 'Morning_Star'), (c['bull_harami'], 'Bull_Harami'), (c['rsi14'] > 30 and p['rsi14'] <= 30, 'RSI14'), (c['close'] > c['bb_dn'] and p['close'] <= p['bb_dn'], 'Bollinger'), (c['close'] < c['vwap'] * 0.98 and c['close'] > c['open'], 'VWAP_Reversion'), (c['sqf'] and c['close'] > c['open'], 'Squeeze'), (c['z_score'] < -2.0, 'ZScore'), ('rs' in c and c['rs'] > c['rs_ema'] and p['rs'] <= p['rs_ema'], 'RelativeStrength'), (c['inside_bar'] and c['close'] > p['high'], 'InsideBar'), (c['low'] <= c['s1'] and c['close'] > c['s1'], 'Pivot'), ('BR_close' in c and 'Si_close' in c and c['BR_close'] > c['BR_ema20'] and c['Si_close'] < c['Si_ema20'], 'Intermarket'), (c['gap'] > 0.01 and c['close'] > c['open'], 'GapAndGo'), (c['begin'].weekday() == 0 and c['close'] > c['open'], 'Seasonality'), (c['close'] > c['sma200'] and c['low'] <= c['ema20'] and c['close'] > c['ema20'], 'Chandelier')]
+        out.extend([(t, 1, n) for cond, n in lc if cond])
     if c['is_bear']:
-        if c['cross_ema_dn']: sigs.append((t, -1, 'EMA20/50'))
-        if c['cross_macd_dn']: sigs.append((t, -1, 'MACD'))
-        if c['close'] < c['don20_low']: sigs.append((t, -1, 'Donchian20'))
-        if c['close'] < c['don55_low']: sigs.append((t, -1, 'Donchian55'))
-        if c['close'] < c['kc_dn'] and prev['close'] >= prev['kc_dn']: sigs.append((t, -1, 'Keltner'))
-        if c['close'] < (c['don20_low'] - 0.25 * c['atr14']): sigs.append((t, -1, 'ATR'))
-        if c['vwap_dn']: sigs.append((t, -1, 'VWAP'))
-        if c['obv_dn']: sigs.append((t, -1, 'OBV'))
-        if c['bear_engulf']: sigs.append((t, -1, 'Bear_Engulf'))
-        if c['shooting_star']: sigs.append((t, -1, 'Shooting_Star'))
-        if c['evening_star']: sigs.append((t, -1, 'Evening_Star'))
-        if c['bear_harami']: sigs.append((t, -1, 'Bear_Harami'))
-        if c['three_black']: sigs.append((t, -1, 'Three_Black'))
-        if c['rsi14'] < 70 and prev['rsi14'] >= 70: sigs.append((t, -1, 'RSI14'))
-        if c['close'] < c['bb_up'] and prev['close'] >= prev['bb_up']: sigs.append((t, -1, 'Bollinger'))
-        if c['close'] > c['vwap'] * 1.02 and c['close'] < c['open']: sigs.append((t, -1, 'VWAP_Reversion'))
-        if c['squeeze_fire'] and c['close'] < c['open']: sigs.append((t, -1, 'Squeeze'))
-        if c['z_score'] > 2.0: sigs.append((t, -1, 'ZScore'))
-        if 'rs' in c and c['rs'] < c['rs_ema'] and prev['rs'] >= prev['rs_ema']: sigs.append((t, -1, 'RelativeStrength'))
-        if c['inside_bar'] and c['close'] < prev['low']: sigs.append((t, -1, 'InsideBar'))
-        if c['high'] >= c['r1'] and c['close'] < c['r1']: sigs.append((t, -1, 'Pivot'))
-        if 'BR_close' in c and 'Si_close' in c:
-            if c['BR_close'] < c['BR_ema20'] and c['Si_close'] > c['Si_ema20']: sigs.append((t, -1, 'Intermarket'))
-        if c['gap'] < -0.01 and c['close'] < c['open']: sigs.append((t, -1, 'GapAndGo'))
-        if c['begin'].weekday() == 4 and c['close'] < c['open']: sigs.append((t, -1, 'Seasonality'))
-        if c['close'] < c['sma200'] and c['high'] >= c['ema20'] and c['close'] < c['ema20']: sigs.append((t, -1, 'Chandelier'))
-        
-    return sigs
-    def check_positions(portfolio):
-    still_open = []
-    for pos in portfolio["positions"]:
-        dfrom = pos["entry_time"][:10]
-        dtill = datetime.now().strftime('%Y-%m-%d')
-        h1 = fetch_candles(pos["ticker"], 60, dfrom, dtill)
-        if h1.empty:
-            still_open.append(pos)
+        sc = [(c['cross_ema_dn'], 'EMA20/50'), (c['cross_macd_dn'], 'MACD'), (c['close'] < c['don20_low'], 'Donchian20'), (c['close'] < c['don55_low'], 'Donchian55'), (c['close'] < c['kc_dn'] and p['close'] >= p['kc_dn'], 'Keltner'), (c['close'] < (c['don20_low'] - 0.25 * c['atr14']), 'ATR'), (c['vwap_dn'], 'VWAP'), (c['obv_dn'], 'OBV'), (c['bear_engulf'], 'Bear_Engulf'), (c['shooting_star'], 'Shooting_Star'), (c['evening_star'], 'Evening_Star'), (c['bear_harami'], 'Bear_Harami'), (c['three_black'], 'Three_Black'), (c['rsi14'] < 70 and p['rsi14'] >= 70, 'RSI14'), (c['close'] < c['bb_up'] and p['close'] >= p['bb_up'], 'Bollinger'), (c['close'] > c['vwap'] * 1.02 and c['close'] < c['open'], 'VWAP_Reversion'), (c['sqf'] and c['close'] < c['open'], 'Squeeze'), (c['z_score'] > 2.0, 'ZScore'), ('rs' in c and c['rs'] < c['rs_ema'] and p['rs'] >= p['rs_ema'], 'RelativeStrength'), (c['inside_bar'] and c['close'] < p['low'], 'InsideBar'), (c['high'] >= c['r1'] and c['close'] < c['r1'], 'Pivot'), ('BR_close' in c and 'Si_close' in c and c['BR_close'] < c['BR_ema20'] and c['Si_close'] > c['Si_ema20'], 'Intermarket'), (c['gap'] < -0.01 and c['close'] < c['open'], 'GapAndGo'), (c['begin'].weekday() == 4 and c['close'] < c['open'], 'Seasonality'), (c['close'] < c['sma200'] and c['high'] >= c['ema20'] and c['close'] < c['ema20'], 'Chandelier')]
+        out.extend([(t, -1, n) for cond, n in sc if cond])
+    return out
+
+def check_p(pf):
+    still = []
+    for p in pf["positions"]:
+        h1 = fetch(p["ticker"], 60, p["entry_time"][:10], datetime.now().strftime('%Y-%m-%d'))
+        if h1.empty: still.append(p); continue
+        h1 = h1[h1["begin"] >= pd.to_datetime(p["entry_time"])]
+        if h1.empty: still.append(p); continue
+        if p.get("is_option"):
+            if h1.iloc[-1]['begin'] >= pd.to_datetime(p["expiry_time"]):
+                S, K = h1.iloc[-1]['close'], p["strike"]
+                intr = max(0, K - S) if p["direction"] == "PUT" else max(0, S - K)
+                nr = (intr - p["premium"]) / p["premium"]
+                pnl = p["premium"] * p["qty"] * nr
+                pf["cash"] += p["premium"] * p["qty"] + pnl
+                pf["closed_trades"].append({**p, "exit_price": intr, "exit_reason": "EXP", "net_ret": nr, "pnl": pnl, "exit_time": str(h1.iloc[-1]['begin'])})
+                tg(f"⏰ <b>АГЕНТ ЗАКРЫЛ ОПЦИОН</b>\n{p['ticker']} {p['direction']}\nРезультат: {nr*100:+.2f}% ({pnl:+.0f} ₽)")
+            else: still.append(p)
             continue
-            
-        h1 = h1[h1["begin"] >= pd.to_datetime(pos["entry_time"])]
-        if h1.empty:
-            still_open.append(pos)
-            continue
-            
-        if pos.get("is_option"):
-            expiry = pd.to_datetime(pos["expiry_time"])
-            current_time = h1.iloc[-1]['begin']
-            
-            if current_time >= expiry:
-                S = h1.iloc[-1]['close']
-                K = pos["strike"]
-                if pos["direction"] == "PUT":
-                    intrinsic = max(0, K - S)
-                    net_ret = (intrinsic - pos["premium"]) / pos["premium"]
-                else:
-                    intrinsic = max(0, S - K)
-                    net_ret = (intrinsic - pos["premium"]) / pos["premium"]
-                    
-                pnl = pos["premium"] * pos["qty"] * net_ret
-                portfolio["cash"] += pos["premium"] * pos["qty"] + pnl
-                portfolio["closed_trades"].append({**pos, "exit_price": intrinsic, "exit_reason": "EXP", "net_ret": net_ret, "pnl": pnl, "exit_time": str(current_time)})
-                send_telegram(f"⏰ <b>АГЕНТ ЗАКРЫЛ ОПЦИОН (Экспирация)</b>\n{pos['ticker']} {pos['direction']}\nРезультат: {net_ret*100:+.2f}% ({pnl:+.0f} ₽)")
-            else:
-                still_open.append(pos)
-            continue
-            
-        direction = 1 if pos["direction"] == "LONG" else -1
-        sl, tp, be = pos["sl_price"], pos["tp_price"], pos["be_price"]
-        activated = pos.get("activated", False)
-        exit_price, reason = None, None
-        
+        d, sl, tp, be, act = (1 if p["direction"] == "LONG" else -1), p["sl_price"], p["tp_price"], p["be_price"], p.get("activated", False)
+        ex_p, rs = None, None
         for i in range(len(h1)):
-            row = h1.iloc[i]
-            op, hi, lo = row["open"], row["high"], row["low"]
-            if direction == 1:
-                if op >= tp or hi >= tp: exit_price, reason = tp, "TP"; break
-                if not activated:
-                    if op <= sl: exit_price, reason = op, "SL"; break
-                    if lo <= sl: exit_price, reason = sl, "SL"; break
-                    if hi >= be: activated = True
+            op, hi, lo = h1.iloc[i]['open'], h1.iloc[i]['high'], h1.iloc[i]['low']
+            if d == 1:
+                if op >= tp or hi >= tp: ex_p, rs = tp, "TP"; break
+                if not act:
+                    if op <= sl: ex_p, rs = op, "SL"; break
+                    if lo <= sl: ex_p, rs = sl, "SL"; break
+                    if hi >= be: act = True
                 else:
-                    if op <= be: exit_price, reason = op, "BE"; break
-                    if lo <= be: exit_price, reason = be, "BE"; break
+                    if op <= be: ex_p, rs = op, "BE"; break
+                    if lo <= be: ex_p, rs = be, "BE"; break
             else:
-                if op <= tp or lo <= tp: exit_price, reason = tp, "TP"; break
-                if not activated:
-                    if op >= sl: exit_price, reason = op, "SL"; break
-                    if hi >= sl: exit_price, reason = sl, "SL"; break
-                    if lo <= be: activated = True
+                if op <= tp or lo <= tp: ex_p, rs = tp, "TP"; break
+                if not act:
+                    if op >= sl: ex_p, rs = op, "SL"; break
+                    if hi >= sl: ex_p, rs = sl, "SL"; break
+                    if lo <= be: act = True
                 else:
-                    if op >= be: exit_price, reason = op, "BE"; break
-                    if hi >= be: exit_price, reason = be, "BE"; break
-                    
-        if exit_price:
-            net_ret = direction * (exit_price - pos["entry_price"]) / pos["entry_price"] - COMMISSION
-            pnl = pos["entry_price"] * pos["qty"] * net_ret
-            portfolio["cash"] += pos["entry_price"] * pos["qty"] + pnl
-            portfolio["closed_trades"].append({**pos, "exit_price": exit_price, "exit_reason": reason, "net_ret": net_ret, "pnl": pnl, "exit_time": str(h1.iloc[i]["begin"])})
-            emoji = "✅" if pnl > 0 else "❌"
-            send_telegram(f"{emoji} <b>АГЕНТ ЗАКРЫЛ СДЕЛКУ</b>\n{pos['ticker']} {pos['direction']}\nВход: {pos['entry_price']:.2f} -> Выход: {exit_price:.2f}\nПричина: {reason}\nРезультат: {net_ret*100:+.2f}% ({pnl:+.0f} ₽)")
-        else:
-            pos["activated"] = activated
-            still_open.append(pos)
-            
-    portfolio["positions"] = still_open
+                    if op >= be: ex_p, rs = op, "BE"; break
+                    if hi >= be: ex_p, rs = be, "BE"; break
+        if ex_p:
+            nr = d * (ex_p - p["entry_price"]) / p["entry_price"] - COMMISSION
+            pnl = p["entry_price"] * p["qty"] * nr
+            pf["cash"] += p["entry_price"] * p["qty"] + pnl
+            pf["closed_trades"].append({**p, "exit_price": ex_p, "exit_reason": rs, "net_ret": nr, "pnl": pnl, "exit_time": str(h1.iloc[i]["begin"])})
+            tg(f"{'✅' if pnl>0 else '❌'} <b>АГЕНТ ЗАКРЫЛ СДЕЛКУ</b>\n{p['ticker']} {p['direction']}\nВход: {p['entry_price']:.2f} -> Выход: {ex_p:.2f}\nПричина: {rs}\nРезультат: {nr*100:+.2f}% ({pnl:+.0f} ₽)")
+        else: p["activated"] = act; still.append(p)
+    pf["positions"] = still
 
 def main():
     print("=== AI VIRTUAL AGENT (Options Mode) ===")
-    weights = load_data(WEIGHTS_FILE, DEFAULT_WEIGHTS)
-    portfolio = load_data(PORTFOLIO_FILE, {"cash": INITIAL_DEPOSIT, "positions": [], "closed_trades": []})
-    
-    d1_from = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d')
-    d1_till = datetime.now().strftime('%Y-%m-%d')
-    
-    ref_data = {}
-    for ref_name, (board, _) in REF_TICKERS.items():
-        ref_data[ref_name] = fetch_candles(ref_name, 24, d1_from, d1_till, board)
-        
-    check_positions(portfolio)
-    open_tickers = {p["ticker"] for p in portfolio["positions"]}
-    slots = MAX_POSITIONS - len(portfolio["positions"])
-    
-    for ticker in TICKERS:
-        if slots <= 0 or ticker in open_tickers: continue
-        
-        d1 = fetch_candles(ticker, 24, d1_from, d1_till)
-        if len(d1) < 200: continue
-        d1 = calc_indicators(d1, ref_data)
-        sigs = get_signals(d1)
-        
-        if not sigs: continue
-        
-        best_sig = max(sigs, key=lambda x: weights.get(x[2], 0))
-        t, direction, strat = best_sig
-        
-        if weights.get(strat, 0) < 5: continue
-        
-        h1 = fetch_candles(ticker, 60, (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d'), datetime.now().strftime('%Y-%m-%d'))
+    w = load(WEIGHTS_FILE, DEFAULT_WEIGHTS)
+    pf = load(PORTFOLIO_FILE, {"cash": INITIAL_DEPOSIT, "positions": [], "closed_trades": []})
+    d1, d2 = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d'), datetime.now().strftime('%Y-%m-%d')
+    ref = {rn: fetch(rn, 24, d1, d2, b) for rn, (b, _) in REF_TICKERS.items()}
+    check_p(pf)
+    open_t = {p["ticker"] for p in pf["positions"]}
+    slots = MAX_POSITIONS - len(pf["positions"])
+    for t in TICKERS:
+        if slots <= 0 or t in open_t: continue
+        d = fetch(t, 24, d1, d2)
+        if len(d) < 200: continue
+        s = sigs(calc(d, ref))
+        if not s: continue
+        best = max(s, key=lambda x: w.get(x[2], 0))
+        if w.get(best[2], 0) < 5: continue
+        h1 = fetch(t, 60, (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d'), datetime.now().strftime('%Y-%m-%d'))
         if h1.empty: continue
         h1['ema20'] = h1['close'].ewm(span=20, adjust=False).mean()
-        entry_price = h1.iloc[-1]['close']
-        
-        if direction == 1 and entry_price < h1.iloc[-1]['ema20']: continue
-        if direction == -1 and entry_price > h1.iloc[-1]['ema20']: continue
-        
-        if OPTIONS_MODE and direction == -1:
-            K = entry_price * 0.97
-            T = DAYS_TO_EXPIRY / 365.0
-            premium = black_scholes(entry_price, K, T, 0.15, SIGMA, 'put')
-            
-            qty = 1
-            cost = premium * qty
-            if cost > portfolio["cash"]: continue
-            
-            portfolio["positions"].append({
-                "ticker": ticker, "direction": "PUT",
-                "entry_price": entry_price, "entry_time": str(t),
-                "qty": qty, "activated": False, "strategy": strat,
-                "strike": K, "premium": premium, "is_option": True,
-                "expiry_time": (datetime.now() + timedelta(days=DAYS_TO_EXPIRY)).strftime('%Y-%m-%d')
-            })
-            portfolio["cash"] -= cost
-            slots -= 1
-            open_tickers.add(ticker)
-            send_telegram(f"🛡️ <b>АГЕНТ КУПИЛ PUT-ОПЦИОН</b>\n{ticker} (Страйк: {K:.2f})\nПремия: {premium:.2f} руб.\nСтратегия: {strat}")
+        ep = h1.iloc[-1]['close']
+        if best[1] == 1 and ep < h1.iloc[-1]['ema20']: continue
+        if best[1] == -1 and ep > h1.iloc[-1]['ema20']: continue
+        if OPTIONS_MODE and best[1] == -1:
+            K = ep * 0.97; T = DAYS_TO_EXPIRY / 365.0
+            prem = bs(ep, K, T, 0.15, SIGMA, 'put')
+            if prem > pf["cash"]: continue
+            pf["positions"].append({"ticker": t, "direction": "PUT", "entry_price": ep, "entry_time": str(best[0]), "qty": 1, "activated": False, "strategy": best[2], "strike": K, "premium": prem, "is_option": True, "expiry_time": (datetime.now() + timedelta(days=DAYS_TO_EXPIRY)).strftime('%Y-%m-%d')})
+            pf["cash"] -= prem; slots -= 1; open_t.add(t)
+            tg(f"🛡️ <b>АГЕНТ КУПИЛ PUT-ОПЦИОН</b>\n{t} (Страйк: {K:.2f})\nПремия: {prem:.2f} руб.\nСтратегия: {best[2]}")
         else:
-            qty = 1 if (entry_price * 1) > portfolio["cash"] else int((portfolio["cash"] * 0.25) / entry_price)
-            if qty == 0: qty = 1
-            cost = entry_price * qty
-            if cost > portfolio["cash"]: continue
-            
-            if direction == 1:
-                sl, tp, be = entry_price * 0.97, entry_price * 1.05, entry_price * 1.02
-            else:
-                sl, tp, be = entry_price * 1.03, entry_price * 0.95, entry_price * 0.98
-                
-            portfolio["positions"].append({
-                "ticker": ticker, "direction": "LONG" if direction == 1 else "SHORT",
-                "entry_price": entry_price, "entry_time": str(t),
-                "qty": qty, "activated": False, "strategy": strat,
-                "sl_price": round(sl, 2), "tp_price": round(tp, 2), "be_price": round(be, 2)
-            })
-            portfolio["cash"] -= cost
-            slots -= 1
-            open_tickers.add(ticker)
-            emoji = "🟢" if direction == 1 else "🔴"
-            send_telegram(f"{emoji} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ</b>\n{ticker} {portfolio['positions'][-1]['direction']} ({strat})\nЦена: {entry_price:.2f}\nОбъем: {qty} шт.\nСтоп: {sl:.2f}\nТейк: {tp:.2f}")
-        
-    save_data(PORTFOLIO_FILE, portfolio)
-    
-    print(f"\nКэш: {portfolio['cash']:.2f} ₽ | Открытых: {len(portfolio['positions'])}")
-    if portfolio["closed_trades"]:
-        df = pd.DataFrame(portfolio["closed_trades"])
+            qty = 1 if ep > pf["cash"] else max(1, int((pf["cash"] * 0.25) / ep))
+            if ep * qty > pf["cash"]: continue
+            sl, tp, be = (ep * 0.97, ep * 1.05, ep * 1.02) if best[1] == 1 else (ep * 1.03, ep * 0.95, ep * 0.98)
+            pf["positions"].append({"ticker": t, "direction": "LONG" if best[1] == 1 else "SHORT", "entry_price": ep, "entry_time": str(best[0]), "qty": qty, "activated": False, "strategy": best[2], "sl_price": round(sl, 2), "tp_price": round(tp, 2), "be_price": round(be, 2)})
+            pf["cash"] -= ep * qty; slots -= 1; open_t.add(t)
+            tg(f"{'🟢' if best[1]==1 else '🔴'} <b>АГЕНТ ОТКРЫЛ СДЕЛКУ</b>\n{t} {pf['positions'][-1]['direction']} ({best[2]})\nЦена: {ep:.2f}\nОбъем: {qty} шт.\nСтоп: {sl:.2f}\nТейк: {tp:.2f}")
+    save(PORTFOLIO_FILE, pf)
+    print(f"\nКэш: {pf['cash']:.2f} ₽ | Открытых: {len(pf['positions'])}")
+    if pf["closed_trades"]:
+        df = pd.DataFrame(pf["closed_trades"])
         win = df[df["pnl"] > 0]
-        print(f"\n=== СТАТИСТИКА ===")
-        print(f"Сделок: {len(df)} | Win Rate: {len(win)/len(df)*100:.1f}% | PnL: {df['pnl'].sum():+.0f} ₽")
+        print(f"\n=== СТАТИСТИКА ===\nСделок: {len(df)} | Win Rate: {len(win)/len(df)*100:.1f}% | PnL: {df['pnl'].sum():+.0f} ₽")
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
