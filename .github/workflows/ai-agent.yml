@@ -3,28 +3,36 @@ name: AI Virtual Agent
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 7-20 * * 1-5"   # Агент: каждый час
-    - cron: "0 7-16 * * 6,0"   # Агент: каждый час в выходные
-    - cron: "0 20 * * 0"       # Тренер: раз в неделю (Вс, 23:00 МСК)
+    - cron: "0 7-20 * * 1-5"   # Будни: каждый час с 10:00 до 23:00 МСК
+    - cron: "0 7-16 * * 6,0"   # Выходные: каждый час с 10:00 до 19:00 МСК
+    - cron: "0 20 * * 0"       # Воскресенье 23:00 МСК: запуск тренера
 
 permissions:
   contents: write
 
 jobs:
   run_agent:
+    # Этот блок запускается по расписанию каждый час и вручную
     if: github.event.schedule != '0 20 * * 0'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { token: "${{ secrets.GITHUB_TOKEN }}" }
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
       - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-      - run: pip install pandas requests numpy
-      - name: Run Agent
+        with:
+          python-version: "3.11"
+          
+      - name: Install dependencies
+        run: pip install pandas requests numpy scipy
+        
+      - name: Run AI Agent
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python ai_agent.py
+        
       - name: Commit portfolio
         run: |
           git config user.name "github-actions[bot]"
@@ -33,16 +41,24 @@ jobs:
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update AI portfolio [skip ci]" && git push)
 
   train_agent:
+    # Этот блок запускается ТОЛЬКО по воскресеньям в 23:00 МСК
     if: github.event.schedule == '0 20 * * 0'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { token: "${{ secrets.GITHUB_TOKEN }}" }
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
       - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-      - run: pip install pandas requests numpy
-      - name: Run Trainer
+        with:
+          python-version: "3.11"
+          
+      - name: Install dependencies
+        run: pip install pandas requests numpy scipy
+        
+      - name: Run AI Trainer
         run: python ai_trainer.py
+        
       - name: Commit weights
         run: |
           git config user.name "github-actions[bot]"
