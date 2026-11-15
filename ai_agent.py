@@ -10,9 +10,11 @@ SIGMA = 0.30
 DAYS_TO_EXPIRY = 30
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX", "GMKN", "PLZL", "CHMF", "ALRS", "T"]
 REF_TICKERS = {"IMOEX": ("SNDX", "index"), "BR": ("RTS", "share"), "Si": ("CETS", "share")}
-INITIAL_DEPOSIT = 10000
+
+# УСТАНОВИЛИ ДЕПОЗИТ 150 000 РУБЛЕЙ
+INITIAL_DEPOSIT = 150000
 COMMISSION = 0.0026
-MAX_POSITIONS = 4
+MAX_POSITIONS = 10 # Теперь можем держать до 10 позиций
 PORTFOLIO_FILE = "ai_portfolio.json"
 WEIGHTS_FILE = "ai_weights.json"
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -36,8 +38,11 @@ def save(f, d):
     with open(f, "w", encoding="utf-8") as file: json.dump(d, file, ensure_ascii=False, indent=2, default=str)
 
 def tg(text):
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: return
-    try: requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=10)
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: 
+        print("Telegram не настроен (нет ключей)")
+        return
+    try: 
+        requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=10)
     except: pass
 
 def fetch(t, i, dfrom, dtill, b="TQBR"):
@@ -196,6 +201,7 @@ def check_p(pf):
 
 def main():
     print("=== AI VIRTUAL AGENT (Options Mode) ===")
+    tg("🧪 <b>Тест связи!</b>\nАгент запущен.\nВиртуальный депозит: 150 000 ₽.")
     w = load(WEIGHTS_FILE, DEFAULT_WEIGHTS)
     pf = load(PORTFOLIO_FILE, {"cash": INITIAL_DEPOSIT, "positions": [], "closed_trades": []})
     d1, d2 = (datetime.now() - timedelta(days=300)).strftime('%Y-%m-%d'), datetime.now().strftime('%Y-%m-%d')
@@ -225,7 +231,7 @@ def main():
             pf["cash"] -= prem; slots -= 1; open_t.add(t)
             tg(f"🛡️ <b>АГЕНТ КУПИЛ PUT-ОПЦИОН</b>\n{t} (Страйк: {K:.2f})\nПремия: {prem:.2f} руб.\nСтратегия: {best[2]}")
         else:
-            qty = 1 if ep > pf["cash"] else max(1, int((pf["cash"] * 0.25) / ep))
+            qty = max(1, int((pf["cash"] * 0.10) / ep))
             if ep * qty > pf["cash"]: continue
             sl, tp, be = (ep * 0.97, ep * 1.05, ep * 1.02) if best[1] == 1 else (ep * 1.03, ep * 0.95, ep * 0.98)
             pf["positions"].append({"ticker": t, "direction": "LONG" if best[1] == 1 else "SHORT", "entry_price": ep, "entry_time": str(best[0]), "qty": qty, "activated": False, "strategy": best[2], "sl_price": round(sl, 2), "tp_price": round(tp, 2), "be_price": round(be, 2)})
