@@ -79,6 +79,7 @@ def main():
         if not signals: continue
         h1 = fetch(t, 60, d1, d2)
         if h1.empty: continue
+        h1 = calc(h1) # <--- ВОТ ОНА, НАША СПАСИТЕЛЬНАЯ СТРОЧКА
         for sig_time, direction, entry_mode in signals:
             for exit_mode in ['FIXED', 'TRAIL', 'PARTIAL']:
                 res = simulate(h1, sig_time, direction, exit_mode)
