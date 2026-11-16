@@ -297,9 +297,9 @@ def main():
     summary.to_csv("backtest_results.csv", index=False)
     
     print("\n================ ТОП-20 ЛУЧШИХ КОМБИНАЦИЙ (Стратегия + Выход) ================")
-best = summary[(summary['trades'] >= 10)].sort_values('profit_factor', ascending=False).head(20)
-# Добавляем колонки act (БУ) и take (Тейк) в вывод
-print(best[['period', 'strategy', 'direction', 'act', 'take', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
+    best = summary[(summary['trades'] >= 10)].sort_values('profit_factor', ascending=False).head(20)
+    # Добавляем колонки act (БУ) и take (Тейк) в вывод
+    print(best[['period', 'strategy', 'direction', 'act', 'take', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
 
 if __name__ == "__main__":
     main()
