@@ -1,5 +1,5 @@
 {
-  "cash": 135425.781420048,
+  "cash": 121894.35142004801,
   "positions": [
     {
       "ticker": "ROSN",
@@ -77,6 +77,18 @@
       "premium": 56.7946685400716,
       "is_option": true,
       "expiry_time": "2026-12-16"
+    },
+    {
+      "ticker": "ALRS",
+      "direction": "LONG",
+      "entry_price": 23.21,
+      "entry_time": "2026-11-16 00:00:00",
+      "qty": 583,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 22.51,
+      "tp_price": 24.37,
+      "be_price": 23.67
     }
   ],
   "closed_trades": []
