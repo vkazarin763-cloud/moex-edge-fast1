@@ -1,5 +1,5 @@
 {
-  "cash": 121894.35142004801,
+  "cash": 121871.60970204801,
   "positions": [
     {
       "ticker": "ROSN",
@@ -81,6 +81,20 @@
     {
       "ticker": "ALRS",
       "direction": "LONG",
+      "entry_price": 23.45,
+      "entry_time": "2026-11-16 00:00:00",
+      "qty": 577,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 22.75,
+      "tp_price": 24.62,
+      "be_price": 23.92
+    }
+  ],
+  "closed_trades": [
+    {
+      "ticker": "ALRS",
+      "direction": "LONG",
       "entry_price": 23.21,
       "entry_time": "2026-11-16 00:00:00",
       "qty": 583,
@@ -88,8 +102,12 @@
       "strategy": "SMC_Sweep",
       "sl_price": 22.51,
       "tp_price": 24.37,
-      "be_price": 23.67
+      "be_price": 23.67,
+      "exit_price": 23.23,
+      "exit_reason": "BE",
+      "net_ret": -0.0017383024558380192,
+      "pnl": -23.52171800000025,
+      "exit_time": "2026-11-16 06:00:00"
     }
-  ],
-  "closed_trades": []
+  ]
 }
