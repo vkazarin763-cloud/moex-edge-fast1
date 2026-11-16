@@ -10,7 +10,13 @@ BOARD = "TQBR"
 PAUSE = 0.2
 
 TICKERS = ["SBER", "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "MTSS", "MOEX", "VTBR", "YDEX"]
-COMBOS = [(2, 5)] # Тестируем самую эффективную комбинацию выходов
+# Матрица: (Активация БУ %, Тейк-профит %). 99 = без безубытка
+COMBOS = [
+    (1, 3), (1, 5), (1, 7), (1, 10),
+    (2, 3), (2, 5), (2, 7), (2, 10),
+    (3, 3), (3, 5), (3, 7), (3, 10),
+    (99, 3), (99, 5), (99, 7), (99, 10)
+]
 FEE_ROUND = 0.0026
 SL_PCT = 0.03
 
@@ -290,9 +296,10 @@ def main():
     summary = df_res.groupby(['period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
     summary.to_csv("backtest_results.csv", index=False)
     
-    print("\n================ ТОП-15 ВСЕХ СТРАТЕГИЙ (минимум 10 сделок) ================")
-    best = summary[(summary['trades'] >= 10)].sort_values('profit_factor', ascending=False).head(15)
-    print(best[['period', 'strategy', 'direction', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
+    print("\n================ ТОП-20 ЛУЧШИХ КОМБИНАЦИЙ (Стратегия + Выход) ================")
+best = summary[(summary['trades'] >= 10)].sort_values('profit_factor', ascending=False).head(20)
+# Добавляем колонки act (БУ) и take (Тейк) в вывод
+print(best[['period', 'strategy', 'direction', 'act', 'take', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
 
 if __name__ == "__main__":
     main()
