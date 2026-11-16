@@ -112,7 +112,7 @@ def sigs(df):
         out.extend([(t, -1, n) for cond, n in sc if cond])
     return out
     def get_kelly_pct(pf, strat):
-    trades = [t for t in pf.get("closed_trades", []) if t.get("strategy") == strat]
+        trades = [t for t in pf.get("closed_trades", []) if t.get("strategy") == strat]
     if len(trades) < 10: return 0.10
     wins = [t for t in trades if t["pnl"] > 0]; losses = [t for t in trades if t["pnl"] <= 0]
     W = len(wins) / len(trades); avg_win = sum([t["pnl"] for t in wins]) / len(wins) if wins else 1
