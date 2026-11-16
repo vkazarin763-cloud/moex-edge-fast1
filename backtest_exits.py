@@ -290,15 +290,16 @@ def main():
         opn = g[g['exit_reason'] == 'OPEN']
         win = closed[closed['net_ret'] > 0]
         loss = closed[closed['net_ret'] <= 0]
-        pf = win['net_ret'].sum() / abs(loss['net_ret'].sum()) if len(loss) > 0 and loss['net_ret'].sum() != 0 else np.nan
+        loss_sum = abs(loss['net_ret'].sum())
+        pf = win['net_ret'].sum() / loss_sum if loss_sum > 0.0001 else 99.9
         return pd.Series({'trades': len(closed), 'win_rate': len(win) / len(closed) if len(closed) > 0 else 0, 'avg_ret': closed['net_ret'].mean(), 'profit_factor': pf, 'avg_bars': closed['bars'].mean(), 'open_trades': len(opn), 'worst_open_pnl': opn['net_ret'].min() if len(opn) > 0 else 0})
 
     summary = df_res.groupby(['period', 'strategy', 'direction', 'act', 'take']).apply(agg_stats).reset_index()
     summary.to_csv("backtest_results.csv", index=False)
     
-    print("\n================ ТОП-20 ЛУЧШИХ КОМБИНАЦИЙ (Стратегия + Выход) ================")
-    best = summary[(summary['trades'] >= 10)].sort_values('profit_factor', ascending=False).head(20)
-    # Добавляем колонки act (БУ) и take (Тейк) в вывод
+    print("\n================ ТОП-20 ЛУЧШИХ КОМБИНАЦИЙ (по средней доходности) ================")
+    # Сортируем по avg_ret, требуем минимум 15 сделок для статистической значимости
+    best = summary[(summary['trades'] >= 15)].sort_values('avg_ret', ascending=False).head(20)
     print(best[['period', 'strategy', 'direction', 'act', 'take', 'trades', 'win_rate', 'avg_ret', 'profit_factor']].to_string(index=False))
 
 if __name__ == "__main__":
