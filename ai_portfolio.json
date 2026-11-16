@@ -1,5 +1,5 @@
 {
-  "cash": 135482.57608858807,
+  "cash": 135425.781420048,
   "positions": [
     {
       "ticker": "ROSN",
@@ -62,6 +62,19 @@
       "strategy": "SMC_Sweep",
       "strike": 1076.1180000000002,
       "premium": 18.53721838139336,
+      "is_option": true,
+      "expiry_time": "2026-12-16"
+    },
+    {
+      "ticker": "YDEX",
+      "direction": "PUT",
+      "entry_price": 3399.0,
+      "entry_time": "2026-11-16 00:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "strike": 3297.0299999999997,
+      "premium": 56.7946685400716,
       "is_option": true,
       "expiry_time": "2026-12-16"
     }
