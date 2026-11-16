@@ -1,5 +1,5 @@
 {
-  "cash": 135502.13106609296,
+  "cash": 135482.57608858807,
   "positions": [
     {
       "ticker": "ROSN",
@@ -38,6 +38,32 @@
       "premium": 3.088700935461091,
       "is_option": true,
       "expiry_time": "2026-12-15"
+    },
+    {
+      "ticker": "VTBR",
+      "direction": "PUT",
+      "entry_price": 60.91,
+      "entry_time": "2026-11-16 00:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "strike": 59.082699999999996,
+      "premium": 1.0177591234997863,
+      "is_option": true,
+      "expiry_time": "2026-12-16"
+    },
+    {
+      "ticker": "PLZL",
+      "direction": "PUT",
+      "entry_price": 1109.4,
+      "entry_time": "2026-11-16 00:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "strike": 1076.1180000000002,
+      "premium": 18.53721838139336,
+      "is_option": true,
+      "expiry_time": "2026-12-16"
     }
   ],
   "closed_trades": []
