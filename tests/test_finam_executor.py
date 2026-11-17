@@ -48,6 +48,15 @@ class FinamExecutorTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 fe.get_trade_parameters("jwt", "SBER", "SHORT")
 
+    def test_position_limit_blocks_eleventh_new_position(self):
+        open_symbols = {f"T{i}" for i in range(10)}
+        self.assertEqual(fe.MAX_OPEN_POSITIONS, 10)
+        self.assertTrue(fe.position_limit_reached(open_symbols, "SBER"))
+
+    def test_position_limit_allows_new_position_below_cap(self):
+        open_symbols = {f"T{i}" for i in range(9)}
+        self.assertFalse(fe.position_limit_reached(open_symbols, "SBER"))
+
     def test_quantity_is_one_trading_lot_in_test_mode(self):
         with patch.object(fe, "TEST_MODE_MIN_VOLUME", True):
             self.assertEqual(fe.calculate_order_quantity("SBER", 999, 10), 10)
