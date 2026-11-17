@@ -54,3 +54,9 @@
 - Добавлены `tests/test_ai_agent.py` и workflow `.github/workflows/ai-virtual-agent-tests.yml`: компиляция `ai_agent.py`/`ai_trainer.py` и три unit-теста Kelly.
 - Состояние `ai_portfolio.json`, `ai_weights.json`, алгоритм `ai_trainer.py`, расписание AI Agent и торговые правила не менялись.
 - Исправление опубликовано в `main`. Проверка CI ожидается; реальный ручной запуск агента не выполнялся в рамках исправления.
+
+## 8. Finam Executor Telegram notifications — 2026-11-17
+- В отдельной feature-ветке подготовлено подключение `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` к шагу Finam Executor в обоих workflow: почасовом `moex-edge-fast.yml` и ручном `finam-executor.yml`.
+- Изменение ограничено передачей GitHub Actions secrets в окружение executor; торговая логика, `FINAM_DRY_RUN`, сканер, расписание и параметры ордеров не менялись.
+- Перед включением требуется проверить, что GitHub Actions secrets заведены под точными именами `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`. Значения секретов не читаются и не выводятся.
+- Подключение в `main` активируется только после проверки PR. При `FINAM_DRY_RUN=true` уведомления о фактическом исполнении не появятся, поскольку реальные заявки не отправляются.
