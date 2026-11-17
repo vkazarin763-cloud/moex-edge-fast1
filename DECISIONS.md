@@ -101,3 +101,10 @@
 - A terminal order with zero execution is recorded as `NO_FILL_TERMINAL`; the signal is still not automatically retried while the same signal remains active in CSV.
 - Both workflows that can run the executor share concurrency group `finam-executor-account` to prevent simultaneous read-modify-write updates to the state journal.
 - These controls do not establish full broker lifecycle safety. Live activation remains disabled until orphan-exposure recovery and broker integration risks are resolved.
+
+## 2026-11-17 — verified signal-journal CI
+- Run `44160419914` succeeded on PR merge commit `78f3a81` (branch code/test commit `682493b470758e26e4eb63355770d7633dfe0be0`): compile passed, 37/37 unit tests passed, including mocked GitHub Contents API journal read/write tests.
+- All four required Actions secrets were reported present without exposing values; effective `FINAM_DRY_RUN=true`.
+- Subsequent branch commits only changed project journals/handoff/PR description; tested executor code and test file were unchanged.
+- PR #5 remains Draft/open/unmerged. No executor workflow was dispatched and no real broker order was sent.
+- Live blockers remain: no demo account/full order lifecycle integration test, no safe automatic recovery from unprotected exposure, and actual Actions-token journal write still needs a non-trading workflow verification.
