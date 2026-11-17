@@ -1,8 +1,9 @@
 {
   "journal-integration-validation-20261117": {
     "direction": "LONG",
-    "status": "SUBMISSION_ATTEMPTED",
+    "status": "VALIDATION_COMPLETE",
     "ticker": "VALIDATION_ONLY",
-    "updated_at": "2026-11-17T19:50:57.674062Z"
+    "updated_at": "2026-11-17T19:50:59.229608Z",
+    "validation": "github_contents_api_read_write"
   }
 }
