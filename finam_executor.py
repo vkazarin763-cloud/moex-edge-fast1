@@ -33,16 +33,19 @@ TEST_MODE_MIN_VOLUME = True
 
 # По умолчанию безопасный режим: только проверка, без реальных заявок.
 # Для реальной торговли установить FINAM_DRY_RUN=false в GitHub Secrets/Variables.
-DRY_RUN_VALUE = os.getenv("FINAM_DRY_RUN", "true").strip().lower()
-if DRY_RUN_VALUE in ("1", "true", "yes", "да"):
-    DRY_RUN = True
-elif DRY_RUN_VALUE in ("0", "false", "no", "нет"):
-    DRY_RUN = False
-else:
+def parse_dry_run(value):
+    normalized = str(value).strip().lower()
+    if normalized in ("1", "true", "yes", "да"):
+        return True
+    if normalized in ("0", "false", "no", "нет"):
+        return False
     raise RuntimeError(
         "Некорректный FINAM_DRY_RUN. Допустимы true/false; "
         "при ошибке торговля запрещается."
     )
+
+
+DRY_RUN = parse_dry_run(os.getenv("FINAM_DRY_RUN", "true"))
 
 BASE_URL = "https://api.finam.ru"
 REQUEST_TIMEOUT = 20
