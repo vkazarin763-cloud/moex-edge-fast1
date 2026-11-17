@@ -203,7 +203,7 @@ def get_account_info(token):
 # INSTRUMENT PARAMETERS
 # ============================================================
 
-def get_trade_parameters(token, ticker):
+def get_trade_parameters(token, ticker, direction=None):
     """
     Получает параметры инструмента для конкретного счёта.
 
@@ -235,6 +235,22 @@ def get_trade_parameters(token, ticker):
             f"{ticker}: инструмент недоступен для торговли "
             f"(is_tradable={data.get('is_tradable')})"
         )
+
+    if direction in ("LONG", "SHORT"):
+        permission = data.get("longable" if direction == "LONG" else "shortable")
+        permission_value = (
+            permission.get("value") if isinstance(permission, dict) else permission
+        )
+        allowed = (
+            {"AVAILABLE", "1", 1}
+            if direction == "LONG"
+            else {"AVAILABLE", "AVAILABLE_STRATEGY", "1", "4", 1, 4}
+        )
+        if permission_value not in allowed:
+            raise ValueError(
+                f"{ticker}: Finam не подтвердил доступность {direction}; "
+                f"permission={permission_value}"
+            )
 
     raw_trade_lot = data.get("trade_lot_size")
 
@@ -904,7 +920,8 @@ def main():
             # Получаем параметры именно этого инструмента и счёта.
             trade_lot_size = get_trade_parameters(
                 token,
-                ticker
+                ticker,
+                direction
             )
 
             # Рассчитываем количество акций.
