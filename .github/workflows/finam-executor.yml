@@ -27,7 +27,7 @@ jobs:
           FINAM_DRY_RUN: ${{ vars.FINAM_DRY_RUN || 'true' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: python finam_executor.py
