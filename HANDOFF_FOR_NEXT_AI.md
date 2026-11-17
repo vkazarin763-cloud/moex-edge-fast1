@@ -178,3 +178,10 @@ Default branch: main
 - PR #3 Signal Bot remains Draft/open. CI run `44136770256` passed 5/5 tests and compile checks. User has reported that Telegram messages arrive and the schedule works; this is user-reported runtime evidence, not independently verified in this session. Do not merge/enable another scheduled notifier without checking for duplicate messages.
 - PR #5 remains Draft/open/unmerged. Its tested executor revision passed run `44160419914`: compile passed and 37/37 tests passed. Subsequent changes were documentation-only. PR #5 now needs reconciliation with the latest main commit (PR #6 merge) before merge; GitHub currently reports mergeable=false. Do not force-merge.
 - Main has changed only through the independent read-only futures workflow PR #6 in this session. Finam executor hardening remains only in PR #5; `FINAM_DRY_RUN=true`; no real broker order was sent.
+
+## 2026-11-17 — actual GitHub Contents API validation and branch fix
+- Integration workflow on test PR #7 initially failed because `GITHUB_REF_NAME` is a reserved runner variable. In pull_request context it remains `7/merge` even when an `env:` mapping tries to override it. GitHub Contents API returned 404 for branch `7/merge`.
+- Correct design: executor reads `FINAM_STATE_BRANCH` first, with fallback to built-in `GITHUB_REF_NAME`. Production scanner+executor and manual executor workflows pass `FINAM_STATE_BRANCH: ${{ github.ref_name }}`.
+- After this correction, real Actions-token integration run `44162894813` succeeded: Contents permission was write; journal reserve/read/update/read all passed on `test/finam-journal-validation`. No Finam credentials, broker endpoints, or Telegram were used.
+- Production fix is in branch `fix/finam-executor-journal-env-20261117`, PR pending; run its 38+ test suite before merge. The previous 37/37 CI result predates this branch-env change.
+- PR #7 is validation-only; do not merge it. Its test state is isolated to its branch.
