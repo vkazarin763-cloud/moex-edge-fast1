@@ -70,6 +70,8 @@ def get_closed_d1(ticker, now):
     start = (now - timedelta(days=D1_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
     end = now.strftime("%Y-%m-%d")
     df = clean_candles(edge.fetch_candles(ticker, 24, start, end))
+    if df.empty:
+        return df
     # Daily candle for the current Moscow date may still be forming: never use it.
     return df[df["begin"].dt.date < now.date()].reset_index(drop=True)
 
