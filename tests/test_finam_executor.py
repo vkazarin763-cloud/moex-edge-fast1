@@ -303,6 +303,33 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(payload["quantity_tp"]["value"], "7")
         self.assertEqual(payload["side"], "SIDE_SELL")
 
+    def test_sltp_timeout_reconciles_by_client_id_without_resubmitting(self):
+        readback = {
+            "order_id": "sltp-timeout",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "symbol": "SBER@MISX",
+                "side": "SIDE_SELL",
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post",
+                          side_effect=requests.Timeout("lost response")) as post, \
+             patch.object(fe, "find_order_by_client_id",
+                          return_value="sltp-timeout") as find_order, \
+             patch.object(fe, "get_order_state", return_value=readback):
+            ok = fe.place_sltp_order(
+                "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
+            )
+        payload = post.call_args.args[2]
+        self.assertTrue(ok)
+        self.assertEqual(post.call_count, 1)
+        find_order.assert_called_once_with("jwt", payload["client_order_id"])
+
     def test_sltp_http_200_without_order_confirmation_is_not_success(self):
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(200, {})):
