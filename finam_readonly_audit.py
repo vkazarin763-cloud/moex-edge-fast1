@@ -10,7 +10,7 @@ BASE_URL = "https://api.finam.ru"
 ACCOUNT_ID = os.getenv("FINAM_ACCOUNT_ID")
 API_SECRET = os.getenv("FINAM_API_SECRET")
 MIC = "MISX"
-PAUSE = 0.12
+PAUSE = 1.0
 
 TICKERS = [
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
@@ -32,26 +32,45 @@ def request_json(method, path, token=None, params=None, payload=None):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    try:
-        response = session.request(
-            method,
-            f"{BASE_URL}{path}",
-            headers=headers,
-            params=params,
-            json=payload,
-            timeout=20
-        )
-    except requests.RequestException as exc:
-        # Never print URLs, tokens, account identifiers or response bodies.
-        raise AuditError(f"network error ({type(exc).__name__})") from None
-    if response.status_code != 200:
-        raise AuditError(f"HTTP {response.status_code}")
+    response = None
+    for attempt in range(3):
+        try:
+            response = session.request(
+                method,
+                f"{BASE_URL}{path}",
+                headers=headers,
+                params=params,
+                json=payload,
+                timeout=20
+            )
+        except requests.RequestException as exc:
+            # Never print URLs, tokens, account identifiers or response bodies.
+            raise AuditError(f"network error ({type(exc).__name__})") from None
+
+        if response.status_code == 429 and attempt < 2:
+            retry_after = response.headers.get("Retry-After", "")
+            try:
+                delay = max(float(retry_after), PAUSE)
+            except (TypeError, ValueError):
+                delay = 5.0 * (attempt + 1)
+            time.sleep(delay)
+            continue
+        if response.status_code >= 500 and attempt < 2:
+            time.sleep(2 ** attempt)
+            continue
+        break
+
+    if response is None or response.status_code != 200:
+        code = response.status_code if response is not None else "no response"
+        raise AuditError(f"HTTP {code}")
     try:
         data = response.json()
     except ValueError:
         raise AuditError("invalid JSON response") from None
     if not isinstance(data, dict):
         raise AuditError("unexpected response type")
+    # Stay below Finam's shared request-rate limit.
+    time.sleep(PAUSE)
     return data
 
 
@@ -105,7 +124,6 @@ def main():
         raise AuditError("account identity mismatch")
     print("Finam authentication: OK")
     print("Finam account read: OK")
-    time.sleep(PAUSE)
 
     params_ok = 0
     tick_ok = 0
@@ -154,7 +172,6 @@ def main():
                 failures.append(f"{ticker}: invalid tick metadata")
         except AuditError as exc:
             failures.append(f"{ticker}: {exc}")
-        time.sleep(PAUSE)
 
     print(f"Instrument parameters with valid trade lot: {params_ok}/{len(TICKERS)}")
     print(f"Instrument tick metadata valid: {tick_ok}/{len(TICKERS)}")
