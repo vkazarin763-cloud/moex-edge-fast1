@@ -80,6 +80,15 @@ class FinamExecutorTests(unittest.TestCase):
             )
         self.assertEqual(rounded, Decimal("100.10"))
 
+    def test_missing_tick_metadata_raises_protection_error(self):
+        with patch.object(fe, "api_get", return_value={
+            "decimals": 2, "min_step": "0"
+        }):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.round_price_to_tick(
+                    "jwt", "SBER", Decimal("100.04"), fe.ROUND_CEILING
+                )
+
     def test_market_order_payload_has_no_account_id_and_has_client_id(self):
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(
