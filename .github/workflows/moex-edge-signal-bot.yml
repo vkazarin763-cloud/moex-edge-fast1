@@ -1,0 +1,41 @@
+name: MOEX EDGE Signal Bot
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Hourly checks on weekdays and weekends; GitHub cron uses UTC.
+    - cron: "15 4-20 * * 1-5"
+    - cron: "15 7-16 * * 6,0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: moex-edge-signal-bot
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/moex-edge-signal-bot-20261117
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pandas requests numpy
+      - name: Run read-only signal bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python signal_bot.py
+      - name: Commit signal state and log
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add signal_bot_state.json signal_bot_log.csv 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "Update signal bot state and log [skip ci]" && git push origin HEAD:feature/moex-edge-signal-bot-20261117)
