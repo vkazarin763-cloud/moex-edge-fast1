@@ -58,3 +58,10 @@
 - Выполнялись только read-only API запросы; order endpoints не вызывались, реальные сделки не совершались.
 
 - После успешного read-only аудита workflow переведён на ручной запуск (workflow_dispatch), чтобы не повторять массовые GET-запросы при каждом обновлении PR и не создавать лишнюю нагрузку на лимиты Finam.
+
+## 2026-11-17 — fill reconciliation and SL/TP read-back
+- Добавлен retry/polling истории сделок до точного совпадения с executed_quantity (10 попыток).
+- Добавлен GetOrder read-back после SL/TP POST с проверкой активного статуса, отсутствия срабатывания, order_id, symbol, side, quantities и prices.
+- Скрыты баланс и список открытых инструментов в workflow logs.
+- CI run 44144452367: compile success, 24/24 tests passed; secrets present, FINAM_DRY_RUN=safe.
+- Read-only Finam audit 44143080070 успешен; реальные заявки не отправлялись.
