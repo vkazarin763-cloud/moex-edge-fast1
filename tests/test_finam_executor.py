@@ -43,6 +43,14 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertLessEqual(len(payload["client_order_id"]), 20)
         self.assertEqual(result["order_id"], "ord-1")
 
+    def test_server_error_reconciles_without_resubmitting(self):
+        with patch.object(fe, "DRY_RUN", False), \\
+             patch.object(fe, "api_post", return_value=FakeResponse(502, text="gateway")) as post, \\
+             patch.object(fe, "find_order_by_client_id", return_value="ord-reconciled"):
+            result = fe.place_market_order("jwt", "SBER@MISX", 10, "SIDE_BUY")
+        self.assertEqual(result["order_id"], "ord-reconciled")
+        self.assertEqual(post.call_count, 1)
+
     def test_timeout_is_unknown_and_never_retried(self):
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", side_effect=requests.Timeout("lost")) as post, \
