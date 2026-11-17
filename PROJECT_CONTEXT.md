@@ -94,3 +94,11 @@
 - TEST_MODE_MIN_VOLUME=True сохранён: eventual live заявки ограничены одним минимальным лотом инструмента.
 - CI run 44143462329: compile success, 19/19 unit tests OK. Четыре secrets присутствуют; FINAM_DRY_RUN=safe.
 - PR #5 остаётся Draft/open, main не изменён, боевой режим не включён.
+
+## 13. Финальная проверка исполнения/защиты (2026-11-17)
+- Trade history после terminal order state теперь сверяется повторно до 10 раз, пока количество сделок не совпадёт с executed_quantity; несовпадение или превышение блокирует SL/TP и вызывает critical alert.
+- После POST SL/TP executor выполняет GET GetOrder read-back: проверяет активный статус, отсутствие triggered_order_id, совпадение order_id, symbol, exit side, SL/TP quantity и prices. Отказ/неизвестный статус/несовпадение останавливает следующие сигналы.
+- Баланс, список открытых инструментов и сектора больше не выводятся в workflow logs; логируются только количества.
+- Latest CI run 44144452367: compile success, 24/24 unit tests OK; secrets present; FINAM_DRY_RUN=safe.
+- Read-only audit 44143080070: 44/44 лот/шаг цены, 44/44 LONG и 44/44 SHORT; order endpoints не вызывались.
+- Реальные заявки и SL/TP не отправлялись. Фактический жизненный цикл SL/TP на реальном/демо ордере остаётся не проверен; PR #5 Draft/open, main не изменён.
