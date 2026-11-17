@@ -117,3 +117,8 @@
 - Official Finam docs confirm `SLTP_QTY_MEASURE_VALUE` means shares, `SLTP_QTY_MEASURE_PERCENT` means a percentage of position; GetAsset price-dependent tick selection uses `step` below threshold and `step_from_threshold` at/above threshold.
 - Remaining blockers: full demo-account order lifecycle test (market order, partial/late fill, cancel race, trades reconciliation, SL/TP create/read-back); reliable handling of unprotected/orphan exposure if SL/TP cannot be confirmed; durable signal deduplication (current executor can re-enter after a position closes if the same signal remains in `moex_signals.csv`); final live workflow review.
 - No live orders were sent; PR #5 is Draft/open/unmerged; main unchanged; `FINAM_DRY_RUN` remains true.
+
+ 
+## PR head after journal update
+- Journal-only follow-up commits advanced PR #5 to `531c9fe0e151be95e40a464a780f8653d04f421c`.
+- The executor code and tests validated by run `44157773263` are unchanged from code commit `bf7ed4f110f1a25551cef1d471ef5ade08d8ee0a`; the later commits only update project journals and PR documentation.
