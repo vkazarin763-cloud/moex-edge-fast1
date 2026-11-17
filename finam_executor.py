@@ -235,8 +235,11 @@ def get_active_order_symbols(token):
             or sltp.get("symbol")
             or item.get("symbol")
         )
-        if symbol:
-            symbols.add(str(symbol).split("@")[0].upper())
+        if not symbol:
+            raise RuntimeError(
+                "Finam вернул активную заявку без символа; новые заявки запрещены"
+            )
+        symbols.add(str(symbol).split("@")[0].upper())
     return symbols
 
 
@@ -476,7 +479,8 @@ def find_order_by_client_id(token, client_order_id):
         order for order in orders
         if str(
             order.get("client_order_id")
-            or (order.get("order") or {}).get("client_order_id", "")
+            or (order.get("order") or {}).get("client_order_id")
+            or (order.get("sltp_order") or {}).get("client_order_id", "")
         ) == client_order_id
     ]
     if len(matches) > 1:
@@ -776,13 +780,17 @@ def place_sltp_order(
         raise ValueError(f"Некорректное количество SL/TP: {quantity}")
 
     exit_side = "SIDE_SELL" if position_direction == "LONG" else "SIDE_BUY"
+    client_order_id = __import__("uuid").uuid4().hex[:20]
     payload = {
         "symbol": symbol,
         "side": exit_side,
         "quantity_sl": {"value": str(quantity)},
         "sl_price": {"value": str(sl_price)},
         "quantity_tp": {"value": str(quantity)},
-        "tp_price": {"value": str(tp_price)}
+        "tp_price": {"value": str(tp_price)},
+        "sl_qty_measure": "SLTP_QTY_MEASURE_VALUE",
+        "tp_qty_measure": "SLTP_QTY_MEASURE_VALUE",
+        "client_order_id": client_order_id
     }
 
     if DRY_RUN:
@@ -790,64 +798,55 @@ def place_sltp_order(
                         symbol, sl_price, tp_price)
         return True
 
-    response = api_post(
-        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/sltp-orders",
-        token,
-        payload
-    )
-    if response.status_code not in (200, 201):
-        logging.critical("Ошибка SL/TP %s: HTTP %s: %s",
-                         symbol, response.status_code, response.text)
-        return False
+    def reconcile_sltp_order():
+        last_error = None
+        for attempt in range(5):
+            try:
+                reconciled_id = find_order_by_client_id(token, client_order_id)
+                if reconciled_id:
+                    logging.warning(
+                        "%s: неоднозначный ответ SL/TP сверен по client_order_id",
+                        symbol
+                    )
+                    return reconciled_id
+            except requests.RequestException as exc:
+                last_error = exc
+            if attempt < 4:
+                time.sleep(1)
+        detail = f"; последняя ошибка сверки: {type(last_error).__name__}" if last_error else ""
+        raise OrderProtectionError(
+            f"{symbol}: результат отправки SL/TP неизвестен "
+            f"(client_order_id={client_order_id}); повтор запрещён{detail}. "
+            "Позиция может оставаться без защиты."
+        )
 
-    # HTTP 200 alone is not proof that the broker created the protective order.
-    # Finam returns OrderState; verify its order id and echoed SL/TP parameters.
     try:
-        data = response.json()
-    except (ValueError, AttributeError) as exc:
-        raise OrderProtectionError(
-            f"{symbol}: Finam вернул успешный HTTP, но ответ SL/TP "
-            "не удалось разобрать. Защита не подтверждена."
-        ) from exc
-
-    if not isinstance(data, dict) or not data.get("order_id"):
-        raise OrderProtectionError(
-            f"{symbol}: в ответе Finam отсутствует order_id SL/TP. "
-            "Защита не подтверждена."
+        response = api_post(
+            f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/sltp-orders",
+            token,
+            payload
         )
+    except requests.RequestException:
+        order_id = reconcile_sltp_order()
+    else:
+        if response.status_code not in (200, 201):
+            if response.status_code >= 500 or response.status_code == 408:
+                order_id = reconcile_sltp_order()
+            else:
+                logging.critical("Ошибка SL/TP %s: HTTP %s: %s",
+                                 symbol, response.status_code, response.text)
+                return False
+        else:
+            try:
+                data = response.json()
+            except (ValueError, AttributeError):
+                data = {}
+            order_id = data.get("order_id") if isinstance(data, dict) else None
+            if not order_id:
+                order_id = reconcile_sltp_order()
 
-    returned = data.get("sltp_order")
-    if not isinstance(returned, dict):
-        raise OrderProtectionError(
-            f"{symbol}: Finam не вернул sltp_order. Защита не подтверждена."
-        )
-
-    status = _normalized_order_status(data)
-    if status in {
-        "REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
-        "FAILED", "EXPIRED", "CANCELED", "CANCELLED"
-    }:
-        raise OrderProtectionError(
-            f"{symbol}: SL/TP заявка {data.get('order_id')} "
-            f"имеет отклонённый/закрытый статус {data.get('status')}."
-        )
-
-    expected_fields = {
-        "quantity_sl": Decimal(str(quantity)),
-        "quantity_tp": Decimal(str(quantity)),
-        "sl_price": Decimal(str(sl_price)),
-        "tp_price": Decimal(str(tp_price))
-    }
-    for field, expected in expected_fields.items():
-        actual = _decimal_value(returned.get(field), f"sltp_order.{field}")
-        if actual != expected:
-            raise OrderProtectionError(
-                f"{symbol}: Finam подтвердил SL/TP с неожиданным {field}: "
-                f"{actual}, ожидалось {expected}. Защита не подтверждена."
-            )
-
-    # Read the SL/TP order back from Finam. A successful POST response
-    # is not enough if the order is not visible/active in the account.
+    # Always read the broker's authoritative order state, including after
+    # reconciliation of an ambiguous POST response.
     readback = None
     active_statuses = {"NEW", "WAIT", "WATCHING", "FORWARDING", "LINK_WAIT"}
     pending_statuses = {"PENDING_NEW"}
@@ -860,12 +859,12 @@ def place_sltp_order(
     }
     for attempt in range(5):
         try:
-            readback = get_order_state(token, data["order_id"])
+            readback = get_order_state(token, order_id)
         except requests.RequestException as exc:
             if attempt == 4:
                 raise OrderProtectionError(
-                    f"{symbol}: не удалось прочитать SL/TP заявку "
-                    f"{data['order_id']} после отправки."
+                    f"{symbol}: не удалось прочитать SL/TP заявку {order_id}. "
+                    "Позиция может оставаться без защиты."
                 ) from exc
             time.sleep(1)
             continue
@@ -880,8 +879,8 @@ def place_sltp_order(
             break
         if readback_status in rejected_statuses:
             raise OrderProtectionError(
-                f"{symbol}: SL/TP заявка {data['order_id']} после "
-                f"повторного чтения имеет статус {readback.get('status')}."
+                f"{symbol}: SL/TP заявка {order_id} имеет статус "
+                f"{readback.get('status')}."
             )
         if readback_status in pending_statuses:
             time.sleep(1)
@@ -893,10 +892,10 @@ def place_sltp_order(
     else:
         raise OrderProtectionError(
             f"{symbol}: Finam не подтвердил активное состояние SL/TP "
-            f"заявки {data['order_id']}."
+            f"заявки {order_id}."
         )
 
-    if readback.get("order_id") != data["order_id"]:
+    if readback.get("order_id") != order_id:
         raise OrderProtectionError(
             f"{symbol}: order_id SL/TP не совпал при повторном чтении."
         )
@@ -919,6 +918,13 @@ def place_sltp_order(
         raise OrderProtectionError(
             f"{symbol}: сторона SL/TP не совпала при повторном чтении."
         )
+
+    expected_fields = {
+        "quantity_sl": Decimal(str(quantity)),
+        "quantity_tp": Decimal(str(quantity)),
+        "sl_price": Decimal(str(sl_price)),
+        "tp_price": Decimal(str(tp_price))
+    }
     for field, expected in expected_fields.items():
         actual = _decimal_value(
             readback_sltp.get(field), f"readback.sltp_order.{field}"
@@ -931,7 +937,7 @@ def place_sltp_order(
 
     logging.info(
         "%s: SL/TP подтверждены чтением, order_id=%s, quantity=%s",
-        symbol, data["order_id"], quantity
+        symbol, order_id, quantity
     )
     return True
 
@@ -1237,7 +1243,7 @@ def main():
                 f"🛡️ SL: {sl_price}\n🎯 TP: {tp_price}"
             )
 
-        except (OrderSubmissionUnknown, OrderProtectionError, requests.RequestException) as exc:
+        except Exception as exc:
             logging.critical(
                 "%s: КРИТИЧЕСКАЯ ОШИБКА ИСПОЛНЕНИЯ/ЗАЩИТЫ: %s. "
                 "Останавливаю обработку следующих сигналов.",
