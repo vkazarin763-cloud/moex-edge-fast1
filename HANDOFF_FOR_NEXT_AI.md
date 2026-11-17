@@ -57,3 +57,25 @@ Default branch: main
 - Clearly distinguish user-reported behavior from independently verified evidence.
 - Preserve journal trail in PROJECT_CONTEXT.md, DECISIONS.md, and CHANGELOG.md.
 - Avoid exposing secrets or account identifiers in logs, PR descriptions, or handoff files.
+
+
+## 2026-11-17 — follow-up Finam API audit and hardening
+- Latest branch commit after follow-up code/test changes: `c30cdd9ae5c1b99f6a0bd5130c1cd7d9f9aa9555`.
+- Latest verified successful CI remains run `44140543355` on the earlier commit `6e30a80733f8bfa463aac62974946ab1ed4a3cda` (compile + 10/10 tests). The GitHub connector did not return a PR-triggered run for the newer commits; do NOT claim the latest code has passed CI yet.
+- Reviewed official Finam REST documentation and public protobuf definitions:
+  - `client_order_id` is supported and limited to 20 characters.
+  - GetOrders returns order states with nested order data; GetOrder, CancelOrder, Trades and PlaceSLTPOrder paths used by the executor exist.
+  - AccountTrade exposes `order_id`, `price`, and `size`; the VWAP field mapping is consistent with the official protobuf.
+  - GetAsset exposes `decimals`, `min_step`, and optional price-dependent `price_step`; GetAssetParams exposes `trade_lot_size`.
+- Follow-up code change: SL/TP is no longer treated as confirmed from HTTP 200 alone. Executor now requires an order_id, returned sltp_order, non-rejected status, and matching echoed SL/TP quantities/prices; otherwise it raises OrderProtectionError and triggers the existing critical Telegram alert/halts later signals.
+- Follow-up code change: SL/TP prices are rounded using Finam GetAsset tick metadata, not a hard-coded 2 decimal places. For LONG, SL rounds down and TP up; for SHORT, SL rounds up and TP down. Missing/invalid tick metadata fails closed.
+- Added tests for SL/TP response validation and fixed/price-dependent tick rounding. These newer tests have not yet been verified by a completed CI run.
+- Remaining live blockers:
+  1. Confirm latest CI passes on commit `c30cdd9...`.
+  2. Verify repository Actions secrets exist with exact names `FINAM_API_SECRET`, `FINAM_ACCOUNT_ID`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; do not reveal values. This connector cannot inspect secret values/settings.
+  3. Verify Actions Variable `FINAM_DRY_RUN` is currently unset/true; it has not been set false by this work.
+  4. Confirm account and permissions, including long/short availability for the instruments, using owner-approved read-only broker checks. No broker credentials were available to this audit.
+  5. Resolve remaining operational edge cases: SLTP order read-back / status lifecycle, orphan exposure if protection is rejected, partial/late fills after cancellation, duplicate handling across workflow retries/restarts, and price precision with live instrument examples.
+  6. Confirm exact Finam account-specific behavior in sandbox or other non-live environment if available. Do not use real account as a test harness.
+- PR #5 remains Draft/open, not merged. Do not merge or enable live trading until the above items are completed and latest CI is green.
+- No broker API calls, live orders, secret reads/changes, or Actions variable changes were performed in this follow-up.
