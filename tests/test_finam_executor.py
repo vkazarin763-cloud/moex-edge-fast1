@@ -182,6 +182,36 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(qty, Decimal("10"))
         self.assertEqual(avg, Decimal("106"))
 
+    def test_weighted_average_retries_until_trade_history_is_visible(self):
+        empty = {"trades": []}
+        complete = {"trades": [
+            {"order_id": "ord-lag", "size": {"value": "3"},
+             "price": {"value": "100"}},
+            {"order_id": "ord-lag", "size": {"value": "2"},
+             "price": {"value": "110"}}
+        ]}
+        with patch.object(fe, "api_get", side_effect=[empty, complete]) as get_trades, \
+             patch.object(fe.time, "sleep"):
+            qty, avg = fe.get_weighted_average_fill(
+                "jwt", "ord-lag", fe.datetime.utcnow(), Decimal("5")
+            )
+        self.assertEqual(get_trades.call_count, 2)
+        self.assertEqual(qty, Decimal("5"))
+        self.assertEqual(avg, Decimal("104"))
+
+    def test_weighted_average_fails_closed_if_history_never_matches(self):
+        partial = {"trades": [
+            {"order_id": "ord-partial", "size": {"value": "3"},
+             "price": {"value": "100"}}
+        ]}
+        with patch.object(fe, "TRADE_RECONCILE_ATTEMPTS", 2), \
+             patch.object(fe, "api_get", return_value=partial), \
+             patch.object(fe.time, "sleep"):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.get_weighted_average_fill(
+                    "jwt", "ord-partial", fe.datetime.utcnow(), Decimal("5")
+                )
+
     def test_sltp_payload_uses_executed_quantity_and_no_account_id(self):
         accepted = {
             "order_id": "sltp-1",
