@@ -326,68 +326,241 @@ def calculate_order_quantity(ticker, row_qty, trade_lot_size):
 
 
 # ============================================================
-# MARKET ORDER
+# MARKET ORDER + EXECUTION RECONCILIATION
 # ============================================================
+
+class OrderSubmissionUnknown(RuntimeError):
+    """POST мог быть принят брокером, но ответ не получен. Повтор запрещён."""
+
+
+class OrderProtectionError(RuntimeError):
+    """Нельзя достоверно подтвердить исполнение или защитить позицию."""
+
+
+def _decimal_value(value, field_name):
+    if isinstance(value, dict):
+        value = value.get("value")
+    if value is None:
+        raise OrderProtectionError(f"В ответе Finam отсутствует {field_name}")
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, TypeError):
+        raise OrderProtectionError(f"Некорректное значение {field_name}: {value}")
+    if not result.is_finite():
+        raise OrderProtectionError(f"Неконечное значение {field_name}: {value}")
+    return result
+
+
+def find_order_by_client_id(token, client_order_id):
+    """Try to reconcile an ambiguous POST using the broker's order list."""
+    data = api_get(
+        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders",
+        token
+    )
+    orders = data.get("orders", []) if isinstance(data, dict) else []
+    matches = [
+        order for order in orders
+        if str(
+            order.get("client_order_id")
+            or (order.get("order") or {}).get("client_order_id", "")
+        ) == client_order_id
+    ]
+    if len(matches) > 1:
+        raise OrderProtectionError(
+            f"Найдено несколько заявок с client_order_id={client_order_id}"
+        )
+    if not matches:
+        return None
+    order_id = matches[0].get("order_id")
+    if not order_id:
+        raise OrderProtectionError(
+            f"Найдена заявка {client_order_id} без order_id"
+        )
+    return str(order_id)
+
 
 def place_market_order(token, symbol, quantity, side):
     if not isinstance(quantity, int) or quantity <= 0:
-        logging.error(
-            "Отказ от заявки %s: недопустимое количество %s",
-            symbol,
-            quantity
-        )
-        return False
+        raise ValueError(f"Недопустимое количество: {quantity}")
 
+    client_order_id = __import__("uuid").uuid4().hex[:20]
     payload = {
         "symbol": symbol,
-        "quantity": {
-            "value": str(quantity)
-        },
+        "quantity": {"value": str(quantity)},
         "side": side,
         "type": "ORDER_TYPE_MARKET",
-        "account_id": ACCOUNT_ID
+        "client_order_id": client_order_id
     }
 
     if DRY_RUN:
         logging.warning(
-            "[DRY RUN] Заявка не отправлена: %s %s %s шт.",
-            side,
-            symbol,
-            quantity
+            "[DRY RUN] Рыночная заявка НЕ отправлена: %s %s %s шт.",
+            side, symbol, quantity
         )
-        return True
+        return {"dry_run": True, "client_order_id": client_order_id}
 
     try:
         response = api_post(
-            f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/orders",
+            f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders",
             token,
             payload
         )
-
-        if response.status_code in (200, 201):
-            logging.info(
-                "Ордер %s %s (%s шт.) отправлен.",
-                side,
-                symbol,
-                quantity
-            )
-            return True
-
-        logging.error(
-            "Ошибка ордера %s: HTTP %s: %s",
-            symbol,
-            response.status_code,
-            response.text
-        )
-        return False
-
     except requests.RequestException as exc:
-        logging.error(
-            "Ошибка соединения при отправке %s: %s",
-            symbol,
-            exc
+        # POST мог дойти до брокера. Сначала сверяем список заявок,
+        # но никогда не отправляем повторный POST.
+        try:
+            reconciled_order_id = find_order_by_client_id(
+                token, client_order_id
+            )
+        except Exception as reconcile_exc:
+            raise OrderSubmissionUnknown(
+                f"Не удалось сверить отправку {symbol}; "
+                f"client_order_id={client_order_id}. Повтор запрещён. "
+                f"POST error={exc}; reconcile error={reconcile_exc}"
+            ) from exc
+        if not reconciled_order_id:
+            raise OrderSubmissionUnknown(
+                f"Заявка {symbol} не найдена при сверке после сетевой ошибки; "
+                f"client_order_id={client_order_id}. Результат всё ещё "
+                "неизвестен, повтор запрещён."
+            ) from exc
+        logging.warning(
+            "POST ответ потерян, но заявка найдена сверкой: %s",
+            reconciled_order_id
         )
-        return False
+        return {
+            "order_id": reconciled_order_id,
+            "client_order_id": client_order_id,
+            "submitted_at": datetime.utcnow()
+        }
+
+    if response.status_code not in (200, 201):
+        logging.error("Finam order rejected HTTP %s: %s",
+                      response.status_code, response.text)
+        raise OrderProtectionError(
+            f"Finam отклонил заявку {symbol}: HTTP {response.status_code}"
+        )
+
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise OrderSubmissionUnknown(
+            f"Finam вернул нечитаемый ответ для {symbol}; "
+            f"client_order_id={client_order_id}. Повтор запрещён."
+        ) from exc
+
+    order_id = data.get("order_id")
+    if not order_id:
+        raise OrderSubmissionUnknown(
+            f"Finam не вернул order_id для {symbol}; "
+            f"client_order_id={client_order_id}. Требуется сверка."
+        )
+
+    logging.info("Заявка принята: %s order_id=%s client_order_id=%s",
+                 symbol, order_id, client_order_id)
+    return {
+        "order_id": str(order_id),
+        "client_order_id": client_order_id,
+        "submitted_at": datetime.utcnow()
+    }
+
+
+def get_order_state(token, order_id):
+    return api_get(
+        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders/"
+        f"{quote(str(order_id), safe='')}",
+        token
+    )
+
+
+def cancel_order_remainder(token, order_id):
+    url = (
+        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders/"
+        f"{quote(str(order_id), safe='')}"
+    )
+    response = SESSION.delete(url, headers=auth_headers(token),
+                              timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    return response
+
+
+def _normalized_order_status(state):
+    """Normalize Finam enum strings such as ORDER_STATUS_FILLED."""
+    return str((state or {}).get("status", "")).removeprefix("ORDER_STATUS_")
+
+
+def wait_for_terminal_order(token, order_id, timeout_seconds=25):
+    # These states mean the exchange order will no longer execute further.
+    terminal = {
+        "FILLED", "EXECUTED", "CANCELED", "REJECTED",
+        "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
+        "EXPIRED", "FAILED", "DONE_FOR_DAY", "REPLACED"
+    }
+    deadline = time.monotonic() + timeout_seconds
+    state = None
+
+    while time.monotonic() < deadline:
+        state = get_order_state(token, order_id)
+        if _normalized_order_status(state) in terminal:
+            return state
+        time.sleep(1)
+
+    if state is None:
+        raise OrderProtectionError(f"Не удалось получить состояние {order_id}")
+
+    remaining = _decimal_value(state.get("remaining_quantity"), "remaining_quantity")
+    if remaining > 0:
+        logging.warning("Отменяю неисполненный остаток заявки %s: %s",
+                        order_id, remaining)
+        cancel_order_remainder(token, order_id)
+
+    # После отмены обязательно повторно сверяем состояние.
+    for _ in range(10):
+        state = get_order_state(token, order_id)
+        if _normalized_order_status(state) in terminal:
+            return state
+        time.sleep(1)
+
+    raise OrderProtectionError(
+        f"Не удалось подтвердить конечный статус заявки {order_id}"
+    )
+
+
+def get_weighted_average_fill(token, order_id, submitted_at, expected_quantity):
+    start_time = (submitted_at - timedelta(minutes=2)).isoformat(timespec="seconds") + "Z"
+    end_time = (datetime.utcnow() + timedelta(minutes=1)).isoformat(timespec="seconds") + "Z"
+    data = api_get(
+        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/trades",
+        token,
+        params={
+            "limit": 500,
+            "interval.start_time": start_time,
+            "interval.end_time": end_time
+        }
+    )
+
+    trades = data.get("trades", [])
+    matched = [t for t in trades if str(t.get("order_id")) == str(order_id)]
+    total_qty = Decimal("0")
+    total_value = Decimal("0")
+    for trade in matched:
+        size = _decimal_value(trade.get("size"), "trade.size")
+        price = _decimal_value(trade.get("price"), "trade.price")
+        if size <= 0 or price <= 0:
+            continue
+        total_qty += size
+        total_value += size * price
+
+    if total_qty != expected_quantity:
+        raise OrderProtectionError(
+            f"Сделки по {order_id} подтверждают {total_qty} шт., "
+            f"а статус заявки сообщает {expected_quantity} шт. "
+            "SL/TP не выставлены: требуется ручная сверка."
+        )
+    if total_qty <= 0:
+        raise OrderProtectionError(f"Не найдены исполнения для заявки {order_id}")
+
+    return total_qty, total_value / total_qty
 
 
 # ============================================================
@@ -395,89 +568,36 @@ def place_market_order(token, symbol, quantity, side):
 # ============================================================
 
 def place_sltp_order(
-    token,
-    symbol,
-    quantity,
-    position_direction,
-    sl_price,
-    tp_price
+    token, symbol, quantity, position_direction, sl_price, tp_price
 ):
-    """
-    SL/TP отправляются в штуках.
-
-    Для LONG защитные заявки направлены на продажу.
-    Для SHORT защитные заявки направлены на покупку.
-    """
-
     if not isinstance(quantity, int) or quantity <= 0:
-        logging.error(
-            "SL/TP %s: некорректное количество %s",
-            symbol,
-            quantity
-        )
-        return False
+        raise ValueError(f"Некорректное количество SL/TP: {quantity}")
 
-    exit_side = (
-        "SIDE_SELL"
-        if position_direction == "LONG"
-        else "SIDE_BUY"
-    )
-
+    exit_side = "SIDE_SELL" if position_direction == "LONG" else "SIDE_BUY"
     payload = {
         "symbol": symbol,
         "side": exit_side,
-        "quantity_sl": {
-            "value": str(quantity)
-        },
-        "sl_price": {
-            "value": str(sl_price)
-        },
-        "quantity_tp": {
-            "value": str(quantity)
-        },
-        "tp_price": {
-            "value": str(tp_price)
-        }
+        "quantity_sl": {"value": str(quantity)},
+        "sl_price": {"value": str(sl_price)},
+        "quantity_tp": {"value": str(quantity)},
+        "tp_price": {"value": str(tp_price)}
     }
 
     if DRY_RUN:
-        logging.warning(
-            "[DRY RUN] SL/TP не отправлены: %s SL=%s TP=%s",
-            symbol,
-            sl_price,
-            tp_price
-        )
+        logging.warning("[DRY RUN] SL/TP не отправлены: %s SL=%s TP=%s",
+                        symbol, sl_price, tp_price)
         return True
 
-    try:
-        response = api_post(
-            f"{BASE_URL}/v1/accounts/{ACCOUNT_ID}/sltp-orders",
-            token,
-            payload
-        )
-
-        if response.status_code in (200, 201):
-            logging.info(
-                "SL/TP для %s отправлены.",
-                symbol
-            )
-            return True
-
-        logging.error(
-            "Ошибка SL/TP %s: HTTP %s: %s",
-            symbol,
-            response.status_code,
-            response.text
-        )
+    response = api_post(
+        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/sltp-orders",
+        token,
+        payload
+    )
+    if response.status_code not in (200, 201):
+        logging.critical("Ошибка SL/TP %s: HTTP %s: %s",
+                         symbol, response.status_code, response.text)
         return False
-
-    except requests.RequestException as exc:
-        logging.error(
-            "Ошибка соединения SL/TP %s: %s",
-            symbol,
-            exc
-        )
-        return False
+    return True
 
 
 # ============================================================
@@ -671,68 +791,89 @@ def main():
             tp_price
         )
 
-        # Отправка рыночной заявки.
-        order_ok = place_market_order(
-            token,
-            symbol,
-            quantity,
-            side
-        )
+        # Отправка и обязательная сверка фактического исполнения.
+        try:
+            order_result = place_market_order(token, symbol, quantity, side)
+            if DRY_RUN:
+                continue
 
-        if not order_ok:
-            continue
+            order_id = order_result["order_id"]
+            final_state = wait_for_terminal_order(token, order_id)
+            status = str(final_state.get("status", ""))
+            executed = _decimal_value(
+                final_state.get("executed_quantity"), "executed_quantity"
+            )
+            remaining = _decimal_value(
+                final_state.get("remaining_quantity"), "remaining_quantity"
+            )
 
-        if not DRY_RUN:
-            # После принятия заявки не отправляем повторную заявку
-            # на этот тикер в рамках текущего запуска.
+            if _normalized_order_status(final_state) in {"REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER", "FAILED", "EXPIRED", "CANCELED", "DONE_FOR_DAY"} and executed <= 0:
+                logging.error("%s: заявка завершилась статусом %s",
+                              ticker, status)
+                continue
+
+            if executed <= 0:
+                logging.info("%s: заявка не исполнена (status=%s)",
+                             ticker, status)
+                continue
+            if executed != executed.to_integral_value():
+                raise OrderProtectionError(
+                    f"{ticker}: исполненное количество нецелое: {executed}"
+                )
+
+            filled_qty, avg_fill_price = get_weighted_average_fill(
+                token, order_id, order_result["submitted_at"], executed
+            )
+            filled_qty_int = int(filled_qty)
+
+            if remaining > 0:
+                logging.warning("%s: остаток %s шт. не исполнен; защищаю "
+                                "только исполненные %s шт.",
+                                ticker, remaining, filled_qty_int)
+
+            if direction == "LONG":
+                sl_price = round(float(avg_fill_price * Decimal("0.97")), 2)
+                tp_price = round(float(avg_fill_price * Decimal("1.05")), 2)
+            else:
+                sl_price = round(float(avg_fill_price * Decimal("1.03")), 2)
+                tp_price = round(float(avg_fill_price * Decimal("0.95")), 2)
+
             open_symbols.add(ticker)
-
             if sector:
                 busy_sectors.add(sector)
 
-        # Постановка SL/TP.
-        sltp_ok = place_sltp_order(
-            token,
-            symbol,
-            quantity,
-            direction,
-            sl_price,
-            tp_price
-        )
-
-        if not sltp_ok:
-            message = (
-                f"⚠️ <b>ВНИМАНИЕ: SL/TP не установлены!</b>\n\n"
-                f"Инструмент: {ticker}\n"
-                f"Направление: {direction}\n"
-                f"Количество: {quantity} шт.\n"
-                f"Требуется ручная проверка открытой позиции."
+            sltp_ok = place_sltp_order(
+                token, symbol, filled_qty_int, direction, sl_price, tp_price
             )
+            if not sltp_ok:
+                raise OrderProtectionError(
+                    f"{ticker}: позиция {filled_qty_int} шт. открыта, "
+                    "но SL/TP не подтверждены брокером."
+                )
 
-            logging.critical(
-                "SL/TP не установлены для %s. "
-                "Позиция требует проверки.",
-                ticker
-            )
-
-            if not DRY_RUN:
-                send_telegram_message(message)
-
-        else:
             emoji = "🟢" if direction == "LONG" else "🔴"
-
-            message = (
-                f"{emoji} <b>Заявка обработана</b>\n\n"
+            send_telegram_message(
+                f"{emoji} <b>Заявка исполнена и защищена</b>\n\n"
                 f"📈 <b>{ticker}</b> ({direction})\n"
-                f"Количество: {quantity} шт.\n"
-                f"Торговый лот: {trade_lot_size}\n"
-                f"Цена сигнала: {entry_price}\n\n"
-                f"🛡️ SL: {sl_price}\n"
-                f"🎯 TP: {tp_price}"
+                f"Исполнено: {filled_qty_int} шт.\n"
+                f"Средняя цена исполнения: {avg_fill_price}\n"
+                f"Статус заявки: {status}\n"
+                f"🛡️ SL: {sl_price}\n🎯 TP: {tp_price}"
             )
 
-            if not DRY_RUN:
-                send_telegram_message(message)
+        except (OrderSubmissionUnknown, OrderProtectionError, requests.RequestException) as exc:
+            logging.critical(
+                "%s: КРИТИЧЕСКАЯ ОШИБКА ИСПОЛНЕНИЯ/ЗАЩИТЫ: %s. "
+                "Останавливаю обработку следующих сигналов.",
+                ticker, exc
+            )
+            send_telegram_message(
+                f"🚨 <b>КРИТИЧЕСКАЯ ПРОБЛЕМА Finam Executor</b>\n"
+                f"Инструмент: {ticker}\n{exc}\n"
+                "Новые заявки в этом запуске остановлены. "
+                "Проверь позицию и заявки в терминале Finam."
+            )
+            break
 
         time.sleep(REQUEST_PAUSE)
 
