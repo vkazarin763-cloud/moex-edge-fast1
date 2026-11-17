@@ -1,5 +1,13 @@
 name: MOEX EDGE FAST (Hourly Trading)
 
+permissions:
+  contents: write
+
+# Serialize scanner+executor with manual executor runs to protect the durable signal journal.
+concurrency:
+  group: finam-executor-account
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
   schedule:
@@ -28,8 +36,12 @@ jobs:
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
           FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+          FINAM_DRY_RUN: ${{ vars.FINAM_DRY_RUN || 'true' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: python finam_executor.py
         
       - name: Upload signals log

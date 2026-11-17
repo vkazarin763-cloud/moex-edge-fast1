@@ -1,0 +1,28 @@
+name: Finam Read-only Account Audit
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: finam-readonly-audit
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install read-only audit dependency
+        run: pip install requests
+      - name: Audit Finam account and 44 instruments (read-only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+        run: python finam_readonly_audit.py

@@ -1,0 +1,45 @@
+name: Finam Executor Safety Tests
+
+on:
+  push:
+    branches:
+      - fix/finam-executor-*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install pandas requests
+      - name: Check runtime configuration presence (never print secret values)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FINAM_DRY_RUN: ${{ vars.FINAM_DRY_RUN || 'true' }}
+        run: |
+          for name in FINAM_API_SECRET FINAM_ACCOUNT_ID TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
+            if [ -n "${!name}" ]; then
+              echo "$name=present"
+            else
+              echo "$name=missing"
+            fi
+          done
+          case "$FINAM_DRY_RUN" in
+            true|1|yes|да) echo "FINAM_DRY_RUN=safe" ;;
+            false|0|no|нет) echo "FINAM_DRY_RUN=live" ;;
+            *) echo "FINAM_DRY_RUN=invalid" ;;
+          esac
+      - name: Compile Python files
+        run: python -m compileall -q finam_executor.py finam_readonly_audit.py
+      - name: Run executor unit tests
+        run: python -m unittest discover -s tests -p "test_finam_executor.py" -v

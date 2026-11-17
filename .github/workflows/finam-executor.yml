@@ -3,6 +3,13 @@ name: Finam Executor
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: finam-executor-account
+  cancel-in-progress: false
+
 jobs:
   execute:
     runs-on: ubuntu-latest
@@ -17,6 +24,10 @@ jobs:
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
           FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+          FINAM_DRY_RUN: ${{ vars.FINAM_DRY_RUN || 'true' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: python finam_executor.py

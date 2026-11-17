@@ -40,3 +40,71 @@
 - Изменение не включает/не отключает реальную торговлю: `FINAM_DRY_RUN` и торговая логика остаются без изменений.
 - Для снижения риска изменение вынесено в отдельную ветку и отдельный PR, без объединения более широкого PR с исправлениями исполнения ордеров.
 - Перед ожиданием уведомлений необходимо подтвердить наличие secrets с точными именами в Settings → Secrets and variables → Actions.
+
+## 2026-11-17 — усиление Finam Executor (Draft PR)
+- Решено исправить неоднозначную отправку рыночных заявок: `client_order_id`, сверка результата, запрет слепого повторения POST.
+- SL/TP должны рассчитываться от подтверждённой средней цены исполнения и выставляться только на реально исполненное количество.
+- В обоих workflow режим `FINAM_DRY_RUN` передаётся из GitHub Actions Variable; значение по умолчанию — `true`. Неизвестные значения должны завершать процесс с ошибкой.
+- Изменения изолированы в Draft PR. Не менять секреты, не запускать боевые заявки и не сливать в main до CI и аудита API.
+
+## 2026-11-17 — передача контекста другой ИИ
+- Источник передачи: `HANDOFF_FOR_NEXT_AI.md` в feature-ветке PR #5.
+- Передача включает состояние Finam Executor, Signal Bot, AI Agent/Trainer, PR #1/#3/#4/#5, CI evidence и неразрешённые вопросы.
+- Никакие секреты и реальные торговые данные в handoff не включать.
+- PR #5 остаётся Draft; включение реальной торговли отложено до завершения аудита брокерского API и отдельного контролируемого решения владельца.
+
+## 2026-11-17 — дополнительная проверка Finam API
+- Решено не считать HTTP 200 от SL/TP подтверждением защиты: код должен проверить возвращённый order_id, объект sltp_order, статус и фактические параметры SL/TP.
+- Решено использовать фактический шаг цены инструмента из GetAsset (min_step/decimals либо price_step), а не округление до двух знаков.
+- Новые проверки и тесты изолированы в Draft PR #5. До CI на актуальном SHA, проверки секретов/Actions Variable и подтверждения account-specific API поведения боевой режим не включать.
+
+- CI для follow-up hardening завершился успешно: run 44141464912, 14 тестов пройдены. Это подтверждает unit-сценарии и синтаксис, но не является интеграционным тестом с Finam и не разрешает автоматически включать live.
+
+## 2026-11-17 — проверка конфигурации и разрешений
+- Решено добавить в safety CI проверку присутствия обязательных секретов без вывода их значений.
+- Подтверждено: четыре обязательных секрета присутствуют; эффективный режим FINAM_DRY_RUN=safe.
+- Добавлена блокировка LONG/SHORT, если Finam account-specific параметры не подтверждают соответствующее разрешение.
+- CI: run 44141866777, 16 тестов успешно. Это не broker integration test; live по-прежнему не включать до проверки реального API поведения и защитных сценариев.
+
+## 2026-11-17 — read-only Finam validation and live risk limits
+- Read-only API check confirms account access and 44/44 valid lot/tick metadata. Latest pass showed LONG 44/44 and SHORT 44/44; earlier pass showed 43/44 SHORT, so permissions are checked at order time.
+- No order endpoint was called during this audit. No real trades were sent.
+- Enforce maximum 10 concurrent account positions and retain one-minimum-lot mode. These constraints are part of live readiness.
+- Latest CI run 44143462329 passed 19 tests; runtime secrets are present and FINAM_DRY_RUN remains safe.
+- Keep PR #5 Draft and do not enable live until SL/TP lifecycle and orphan-exposure handling receive final review.
+
+## 2026-11-17 — финальное подтверждение исполнения и защиты
+- До выставления SL/TP обязательно дождаться совпадения объёма в истории сделок с executed_quantity (до 10 read-only попыток).
+- После POST SL/TP обязательно читать заявку через GetOrder и сверять активный статус, symbol, side, количество и цены. Triggered/rejected/unknown состояния считаются критическими и останавливают обработку.
+- Не выводить в CI баланс и список открытых бумаг; сохранять только агрегированные логи.
+- CI run 44144452367 прошёл 24 теста; read-only account audit 44143080070 успешен. Live остаётся выключен до реального/демо подтверждения SL/TP lifecycle и контролируемой активации.
+
+## 2026-11-17 — резервирование лимита активными заявками
+- Лимит 10 теперь учитывает как открытые позиции, так и символы активных заявок из Finam GetOrders.
+- Неизвестные статусы считаются активными; если список заявок недоступен/повреждён, запуск прекращается без новых заявок.
+- Проверки покрыты тестами; CI run 44156645285: 27/27.
+- Не включать live: интеграционные проверки жизненного цикла SL/TP и сценариев частичного исполнения ещё не подтверждены на sandbox.
+
+ 
+## 2026-11-17 — неоднозначный результат SL/TP и контроль повторных сигналов
+- Для SL/TP добавлен отдельный client_order_id; при сетевой ошибке/HTTP 5xx/408 выполняется только read-only reconciliation через список заявок и GetOrder, без повторного POST.
+- Объёмы SL и TP явно задаются как SLTP_QTY_MEASURE_VALUE (штуки). Это соответствует enum Finam; значение по умолчанию также VALUE.
+- Активная заявка без распознанного тикера считается критической ошибкой и блокирует новые заявки.
+- Любое непредвиденное исключение после отправки рыночной заявки должно вызывать критическое уведомление и прекращать текущий запуск.
+- Несмотря на 30/30 mocked tests, live запрещён до демо-проверки полного жизненного цикла и решения проблемы orphan exposure.
+- Обнаружен риск повторного входа: CSV содержит ticker/direction/strategy/date/entry_price/qty, а executor не хранит долговременный журнал обработанных сигналов. Пока не добавлена/не проверена идемпотентность сигнала, повторный вход после закрытия позиции возможен.
+- PR #5 остаётся Draft/open; main и FINAM_DRY_RUN не менялись.
+
+## 2026-11-17 — signal journal safety decisions
+- The persistent GitHub signal journal is authoritative in live mode; missing token/repository, unreadable/corrupt state, or failed write must stop order submission (fail closed).
+- Signal reservation must be committed before the market-order POST. A reservation remains consumed after an ambiguous result; manual reconciliation is required rather than blind retry.
+- A terminal order with zero execution is recorded as `NO_FILL_TERMINAL`; the signal is still not automatically retried while the same signal remains active in CSV.
+- Both workflows that can run the executor share concurrency group `finam-executor-account` to prevent simultaneous read-modify-write updates to the state journal.
+- These controls do not establish full broker lifecycle safety. Live activation remains disabled until orphan-exposure recovery and broker integration risks are resolved.
+
+## 2026-11-17 — verified signal-journal CI
+- Run `44160419914` succeeded on PR merge commit `78f3a81` (branch code/test commit `682493b470758e26e4eb63355770d7633dfe0be0`): compile passed, 37/37 unit tests passed, including mocked GitHub Contents API journal read/write tests.
+- All four required Actions secrets were reported present without exposing values; effective `FINAM_DRY_RUN=true`.
+- Subsequent branch commits only changed project journals/handoff/PR description; tested executor code and test file were unchanged.
+- PR #5 remains Draft/open/unmerged. No executor workflow was dispatched and no real broker order was sent.
+- Live blockers remain: no demo account/full order lifecycle integration test, no safe automatic recovery from unprotected exposure, and actual Actions-token journal write still needs a non-trading workflow verification.
