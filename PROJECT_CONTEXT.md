@@ -86,3 +86,11 @@
 - В safety CI добавлена проверка только наличия runtime secrets (значения не печатаются). Run 44141866777 подтвердил наличие FINAM_API_SECRET, FINAM_ACCOUNT_ID, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID; эффективный FINAM_DRY_RUN=safe.
 - Перед заявкой добавлена проверка разрешения направления по Finam GetAssetParams: LONG требует AVAILABLE; SHORT — AVAILABLE или AVAILABLE_STRATEGY. HTB/запрещённые статусы блокируются.
 - Актуальный CI run 44141866777: compile success, 16/16 unit tests OK. Проверка конфигурации не обращалась к брокеру и не читала счёт.
+
+## 12. Read-only Finam integration and position cap (2026-11-17)
+- Выполнен read-only аудит через реальные Finam API credentials: авторизация и GET счёта успешны; 44/44 инструментов имеют корректные параметры лота и шага цены; последняя проверка подтвердила LONG 44/44 и SHORT 44/44, 0 неторгуемых инструментов, 0 ошибок (run 44143080070). Ранее один проход показал SHORT 43/44; разрешения проверяются непосредственно перед каждой заявкой.
+- Аудит использовал только POST /v1/sessions и GET endpoints аккаунта/инструментов; order endpoints не вызывались, реальные заявки не отправлялись.
+- В executor добавлен жёсткий MAX_OPEN_POSITIONS=10, учитывающий symbols из позиций Finam, включая теоретическую экспозицию активных заявок. При 10 позициях новые инструменты пропускаются.
+- TEST_MODE_MIN_VOLUME=True сохранён: eventual live заявки ограничены одним минимальным лотом инструмента.
+- CI run 44143462329: compile success, 19/19 unit tests OK. Четыре secrets присутствуют; FINAM_DRY_RUN=safe.
+- PR #5 остаётся Draft/open, main не изменён, боевой режим не включён.
