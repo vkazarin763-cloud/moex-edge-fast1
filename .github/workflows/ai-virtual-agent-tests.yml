@@ -1,0 +1,36 @@
+name: AI Virtual Agent Safety Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ai_agent.py"
+      - "ai_trainer.py"
+      - "tests/test_ai_agent.py"
+      - ".github/workflows/ai-virtual-agent-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ai_agent.py"
+      - "ai_trainer.py"
+      - "tests/test_ai_agent.py"
+      - ".github/workflows/ai-virtual-agent-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pandas requests numpy scipy
+      - name: Compile virtual agent and trainer
+        run: python -m py_compile ai_agent.py ai_trainer.py
+      - name: Run AI virtual agent unit tests
+        run: python -m unittest discover -s tests -p "test_ai_agent.py" -v
