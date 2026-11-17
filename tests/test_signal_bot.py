@@ -18,6 +18,12 @@ class SignalBotTests(unittest.TestCase):
         result = signal_bot.clean_candles(frame)
         self.assertEqual(len(result), 1)
 
+    def test_empty_daily_response_is_returned_as_empty(self):
+        now = datetime(2026, 11, 17, 15, 0, tzinfo=ZoneInfo("Europe/Moscow"))
+        with mock.patch.object(signal_bot.edge, "fetch_candles", return_value=pd.DataFrame()):
+            result = signal_bot.get_closed_d1("SBER", now)
+        self.assertTrue(result.empty)
+
     def test_current_day_daily_candle_is_excluded(self):
         now = datetime(2026, 11, 17, 15, 0, tzinfo=ZoneInfo("Europe/Moscow"))
         frame = pd.DataFrame([
