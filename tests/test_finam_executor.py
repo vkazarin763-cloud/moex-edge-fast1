@@ -187,6 +187,8 @@ class FinamExecutorTests(unittest.TestCase):
             "order_id": "sltp-1",
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
+                "symbol": "SBER@MISX",
+                "side": "SIDE_SELL",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -280,6 +282,32 @@ class FinamExecutorTests(unittest.TestCase):
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)), \
              patch.object(fe, "get_order_state", return_value=incomplete_readback):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.place_sltp_order(
+                    "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
+                )
+
+    def test_sltp_wrong_readback_side_is_rejected(self):
+        accepted = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "symbol": "SBER@MISX",
+                "side": "SIDE_SELL",
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
+        wrong_side = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": dict(accepted["sltp_order"], side="SIDE_BUY")
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)), \
+             patch.object(fe, "get_order_state", return_value=wrong_side):
             with self.assertRaises(fe.OrderProtectionError):
                 fe.place_sltp_order(
                     "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
