@@ -28,5 +28,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          GITHUB_REF_NAME: ${{ github.event.pull_request.head.ref }}
         run: python tests/test_github_signal_journal_integration.py
