@@ -3,6 +3,8 @@ from decimal import Decimal
 from unittest.mock import patch
 
 import requests
+import tempfile
+import os
 import finam_executor as fe
 
 # Stable dummy account id for URL construction in mocked tests; no API calls occur.
@@ -47,6 +49,46 @@ class FinamExecutorTests(unittest.TestCase):
         with patch.object(fe, "api_get", return_value=payload):
             with self.assertRaises(ValueError):
                 fe.get_trade_parameters("jwt", "SBER", "SHORT")
+
+    def test_signal_fingerprint_is_stable_and_distinguishes_strategy_date(self):
+        row = {
+            "ticker": "sber", "direction": "long", "strategy": "breakout",
+            "date": "2026-11-17", "entry_price": "100.00"
+        }
+        self.assertEqual(fe.signal_fingerprint(row), fe.signal_fingerprint(dict(row)))
+        changed = dict(row, date="2026-11-18")
+        self.assertNotEqual(fe.signal_fingerprint(row), fe.signal_fingerprint(changed))
+
+    def test_signal_fingerprint_requires_strategy_and_date(self):
+        with self.assertRaises(ValueError):
+            fe.signal_fingerprint({
+                "ticker": "SBER", "direction": "LONG", "entry_price": 100
+            })
+
+    def test_reserve_signal_prevents_duplicate(self):
+        state = {}
+        with patch.object(fe, "DRY_RUN", False), \\
+             patch.object(fe, "save_signal_state") as save:
+            self.assertTrue(fe.reserve_signal(state, "abc", "SBER", "LONG"))
+            self.assertFalse(fe.reserve_signal(state, "abc", "SBER", "LONG"))
+        self.assertEqual(state["abc"]["status"], "SUBMISSION_ATTEMPTED")
+        save.assert_called_once()
+
+    def test_update_signal_state_persists_terminal_status(self):
+        state = {"abc": {"ticker": "SBER"}}
+        with patch.object(fe, "DRY_RUN", False), \\
+             patch.object(fe, "save_signal_state") as save:
+            fe.update_signal_state(state, "abc", "EXECUTED_AND_PROTECTED",
+                                   order_id="123")
+        self.assertEqual(state["abc"]["status"], "EXECUTED_AND_PROTECTED")
+        self.assertEqual(state["abc"]["order_id"], "123")
+        save.assert_called_once()
+
+    def test_live_signal_state_fails_closed_without_github_token(self):
+        with patch.object(fe, "DRY_RUN", False), \\
+             patch.dict(os.environ, {"GITHUB_TOKEN": "", "GITHUB_REPOSITORY": ""}):
+            with self.assertRaises(RuntimeError):
+                fe.load_signal_state()
 
     def test_position_limit_blocks_eleventh_new_position(self):
         open_symbols = {f"T{i}" for i in range(10)}
