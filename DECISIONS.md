@@ -108,3 +108,8 @@
 - Subsequent branch commits only changed project journals/handoff/PR description; tested executor code and test file were unchanged.
 - PR #5 remains Draft/open/unmerged. No executor workflow was dispatched and no real broker order was sent.
 - Live blockers remain: no demo account/full order lifecycle integration test, no safe automatic recovery from unprotected exposure, and actual Actions-token journal write still needs a non-trading workflow verification.
+
+## 2026-11-17 — journal branch environment
+- Do not attempt to override GitHub's built-in `GITHUB_REF_NAME`; use a distinct `FINAM_STATE_BRANCH` variable for the branch where the durable state file should be read/written.
+- In schedule and workflow_dispatch contexts, set it from `${{ github.ref_name }}`. In PR-only integration checks, use the pull request head branch explicitly.
+- A live-token, no-broker GitHub Contents API integration check passed on a dedicated test branch. No broker endpoint was invoked.
