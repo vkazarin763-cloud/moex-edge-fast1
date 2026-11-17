@@ -204,6 +204,42 @@ def get_account_info(token):
     return data, Decimal(str(available_cash))
 
 
+def get_active_order_symbols(token):
+    """
+    Return symbols reserved by non-terminal account orders.
+    Unknown statuses are treated as active (fail closed).
+    """
+    data = api_get(
+        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders",
+        token
+    )
+    if not isinstance(data, dict) or not isinstance(data.get("orders"), list):
+        raise RuntimeError("Finam вернул некорректный список активных заявок")
+
+    terminal = {
+        "FILLED", "EXECUTED", "CANCELED", "CANCELLED",
+        "REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
+        "EXPIRED", "FAILED", "DONE_FOR_DAY", "REPLACED"
+    }
+    symbols = set()
+    for item in data["orders"]:
+        if not isinstance(item, dict):
+            raise RuntimeError("Finam вернул некорректную запись заявки")
+        status = _normalized_order_status(item)
+        if status in terminal and not item.get("triggered_order_id"):
+            continue
+        order = item.get("order") or {}
+        sltp = item.get("sltp_order") or {}
+        symbol = (
+            order.get("symbol")
+            or sltp.get("symbol")
+            or item.get("symbol")
+        )
+        if symbol:
+            symbols.add(str(symbol).split("@")[0].upper())
+    return symbols
+
+
 # ============================================================
 # INSTRUMENT PARAMETERS
 # ============================================================
@@ -984,10 +1020,14 @@ def main():
     logging.info("Свободные средства получены (значение скрыто)")
 
     open_symbols = {
-        p["symbol"].split("@")[0]
+        str(p["symbol"]).split("@")[0].upper()
         for p in account_data.get("positions", [])
         if p.get("symbol")
     }
+
+    # Pending orders reserve a slot too. If Finam cannot provide this list,
+    # abort this run rather than risk exceeding the account position cap.
+    open_symbols.update(get_active_order_symbols(token))
 
     busy_sectors = set()
 
