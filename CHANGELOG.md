@@ -65,3 +65,9 @@
 - Скрыты баланс и список открытых инструментов в workflow logs.
 - CI run 44144452367: compile success, 24/24 tests passed; secrets present, FINAM_DRY_RUN=safe.
 - Read-only Finam audit 44143080070 успешен; реальные заявки не отправлялись.
+
+## 2026-11-17 — active order position-cap hardening
+- Лимит MAX_OPEN_POSITIONS=10 теперь учитывает активные заявки вместе с открытыми позициями.
+- Неизвестные статусы активных заявок резервируют слот; ошибка чтения списка заявок блокирует новые заявки.
+- Добавлены unit-тесты. CI run 44156645285: compile success, 27/27 tests passed.
+- Secrets присутствуют; FINAM_DRY_RUN=safe. Реальные заявки не отправлялись.
