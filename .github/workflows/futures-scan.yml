@@ -1,8 +1,43 @@
-TARGET_ASSETS = [
-    # Вечные фьючерсы (без экспирации)
-    'USDRUBF', 'EURRUBF', 'CNYRUBF', 'GLDRUBF', 'IMOEXF',
-    # Обычные и мини-фьючерсы
-    'MIX', 'MXI', 'RTS', 'RTSM', 'Si', 'USDM', 'CNY', 'Eu', 
-    'BR', 'BRM', 'GOLD', 'GOLDM', 'SILV', 'SILVM', 'NG', 'WTI',
-    'SBRF', 'GAZR', 'LKOH', 'ROSN', 'VTBR', 'T', 'MGNT', 'NOTKM'
-]
+name: MOEX Futures Signal Scan
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Hourly on MOEX business days; scanner is read-only and publishes a CSV artifact.
+    - cron: "0 4-20 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moex-futures-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip pandas numpy requests
+
+      - name: Compile futures scanner
+        run: python -m py_compile futures_scanner.py
+
+      - name: Run read-only futures scanner
+        run: python futures_scanner.py
+
+      - name: Upload futures signals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-futures-signals
+          path: futures_signals.csv
+          if-no-files-found: warn
+          retention-days: 14
