@@ -54,3 +54,15 @@
 - В PR исправлена нормализация статусов `ORDER_STATUS_*` и изоляция теста тайм-аута от реального API.
 - До завершения CI и аудита полного diff не объединять PR. Не запускать executor с реальными заявками в рамках проверки. `FINAM_DRY_RUN` не переключать.
 - Сверка неоднозначного POST проверяет `client_order_id` в корне OrderState и внутри `order.client_order_id`.
+
+
+## 2026-11-17 — подключение Telegram к Finam Executor (PR #1)
+- В отдельной ветке PR #1 в оба workflow, запускающих `finam_executor.py`, добавлена передача GitHub Actions secrets:
+  - `TELEGRAM_BOT_TOKEN` из `secrets.TELEGRAM_BOT_TOKEN`
+  - `TELEGRAM_CHAT_ID` из `secrets.TELEGRAM_CHAT_ID`
+- Обновлены `.github/workflows/moex-edge-fast.yml` (основной почасовой scanner + executor) и `.github/workflows/finam-executor.yml` (ручной запуск executor).
+- Коммиты подключения: `4733a85cd925aabd88ef8ac4e2bf7b49a7c2b5f8`, `cfbbea835ac1a1ab172ace8eaf1bf0b4bb2681dd`.
+- Это только передача переменных окружения. Значения секретов не читались, не выводились и не коммитились. Наличие/корректность именно этих двух GitHub secret names требует проверки в Settings → Secrets and variables → Actions.
+- Важно: `finam_executor.py` вызывает отправку торговых Telegram-сообщений только при `FINAM_DRY_RUN=false`. При включённом `DRY_RUN` реальные заявки и сообщения о выполненных сделках не отправляются. Текущий известный запуск #168 был в DRY_RUN; поэтому он не доказывает доставку уведомлений о реальных исполнениях.
+- Изменения пока находятся в PR #1 / feature-ветке, не в `main`; до merge рабочий почасовой workflow на `main` не получит эти изменения.
+- Не менять `FINAM_DRY_RUN`, не запускать тестовые реальные заявки и не объединять PR без отдельного согласования.
