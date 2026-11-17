@@ -1,9 +1,11 @@
 name: Finam Signal Journal Integration (No Broker)
 
 on:
-  push:
-    branches:
-      - "test/finam-journal-validation"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tests/test_github_signal_journal_integration.py"
+      - ".github/workflows/finam-signal-journal-integration.yml"
 
 permissions:
   contents: write
@@ -26,5 +28,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_NAME: ${{ github.head_ref || github.ref_name }}
         run: python tests/test_github_signal_journal_integration.py
