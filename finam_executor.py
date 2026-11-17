@@ -481,16 +481,24 @@ def cancel_order_remainder(token, order_id):
     return response
 
 
+def _normalized_order_status(state):
+    """Normalize Finam enum strings such as ORDER_STATUS_FILLED."""
+    return str((state or {}).get("status", "")).removeprefix("ORDER_STATUS_")
+
+
 def wait_for_terminal_order(token, order_id, timeout_seconds=25):
-    # Finam OrderState status enum values.
-    terminal = {"FILLED", "CANCELED", "REJECTED", "EXPIRED", "FAILED"}
+    # These states mean the exchange order will no longer execute further.
+    terminal = {
+        "FILLED", "EXECUTED", "CANCELED", "REJECTED",
+        "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
+        "EXPIRED", "FAILED", "DONE_FOR_DAY", "REPLACED"
+    }
     deadline = time.monotonic() + timeout_seconds
     state = None
 
     while time.monotonic() < deadline:
         state = get_order_state(token, order_id)
-        status = str(state.get("status", ""))
-        if status in terminal:
+        if _normalized_order_status(state) in terminal:
             return state
         time.sleep(1)
 
@@ -506,7 +514,7 @@ def wait_for_terminal_order(token, order_id, timeout_seconds=25):
     # После отмены обязательно повторно сверяем состояние.
     for _ in range(10):
         state = get_order_state(token, order_id)
-        if str(state.get("status", "")).removeprefix("ORDER_STATUS_") in terminal:
+        if _normalized_order_status(state) in terminal:
             return state
         time.sleep(1)
 
@@ -796,7 +804,7 @@ def main():
                 final_state.get("remaining_quantity"), "remaining_quantity"
             )
 
-            if status.removeprefix("ORDER_STATUS_") in {"REJECTED", "FAILED", "EXPIRED"} and executed <= 0:
+            if _normalized_order_status(final_state) in {"REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER", "FAILED", "EXPIRED", "CANCELED", "DONE_FOR_DAY"} and executed <= 0:
                 logging.error("%s: заявка завершилась статусом %s",
                               ticker, status)
                 continue
