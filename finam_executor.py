@@ -459,7 +459,7 @@ def wait_for_terminal_order(token, order_id, timeout_seconds=25):
     # После отмены обязательно повторно сверяем состояние.
     for _ in range(10):
         state = get_order_state(token, order_id)
-        if str(state.get("status", "")).rsplit("_", 1)[-1] in terminal:
+        if str(state.get("status", "")).removeprefix("ORDER_STATUS_") in terminal:
             return state
         time.sleep(1)
 
@@ -749,7 +749,7 @@ def main():
                 final_state.get("remaining_quantity"), "remaining_quantity"
             )
 
-            if status.rsplit("_", 1)[-1] in {"REJECTED", "FAILED", "EXPIRED"} and executed <= 0:
+            if status.removeprefix("ORDER_STATUS_") in {"REJECTED", "FAILED", "EXPIRED"} and executed <= 0:
                 logging.error("%s: заявка завершилась статусом %s",
                               ticker, status)
                 continue
