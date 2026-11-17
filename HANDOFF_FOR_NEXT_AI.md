@@ -95,3 +95,17 @@ Default branch: main
 - The configuration audit is a GitHub Actions environment check only. It did NOT authenticate to Finam, read account positions, or send broker requests.
 - PR #5 remains Draft/open/unmerged; main remains unchanged. Do not set FINAM_DRY_RUN=false yet.
 - Still outstanding: non-live broker integration/read-only account verification; exact live account identity and permissions; read-back/status lifecycle for SL/TP; late/partial-fill and cancellation races; orphan exposure handling; final review of all executor paths. The GitHub connector cannot read/modify repository secrets or variables directly; the presence-only workflow check is the available evidence.
+
+## 2026-11-17 — read-only Finam integration and position cap
+- Latest executor code/test commit: `4b0587507eb786b569a21c0e9db76f9303e1eeb0`.
+- Latest executor safety CI: run `44143462329`, success; compile passed; `Ran 19 tests`; `OK`.
+- Configuration check in the same CI confirmed all four secrets present (values not printed) and effective `FINAM_DRY_RUN=safe`.
+- Read-only Finam API integration audit succeeded:
+  - Run `44143080070`: authentication OK; account GET OK; 44/44 instrument params with valid trade lot; 44/44 tick metadata valid; 44/44 LONG available; 44/44 SHORT available; 0 non-tradable; 0 errors.
+  - An earlier successful pass reported 43/44 SHORT available, so availability may vary. Executor now checks account-specific permissions immediately before each order and blocks unavailable/HTB statuses.
+  - Audit only used POST /v1/sessions for authentication and GET account/assets endpoints. No orders endpoint was called, and no broker order was sent.
+- Added `MAX_OPEN_POSITIONS = 10` and a live-loop guard based on symbols in Finam account positions (which may include theoretical exposure from active orders). New symbols are skipped once the account reaches 10. Added two unit tests.
+- `TEST_MODE_MIN_VOLUME = True` remains enabled: any eventual live entry is limited to one minimum trading lot for that instrument. Do not change without explicit user instruction.
+- Latest PR head at time of this note may advance with journal-only commits; PR #5 remains Draft/open/unmerged and main remains unchanged.
+- Remaining blockers before live: review SL/TP order lifecycle and failure/orphan exposure behavior against Finam's actual account-specific implementation; confirm no open position is left unprotected; ensure operator-approved controlled activation procedure. No live order has been used as a test.
+- Effective FINAM_DRY_RUN is still safe; do not set false until the remaining review is complete.
