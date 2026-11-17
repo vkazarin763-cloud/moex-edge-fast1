@@ -142,3 +142,8 @@ Default branch: main
 - Important newly confirmed blocker: the active scanner writes `moex_signals.csv` rows with `ticker,direction,strategy,h1_confirmed,date,entry_price,qty`; executor filters only H1-confirmed and positive qty and does not persist processed signal IDs. If a position closes while the same signal remains active, a later hourly run may enter again. Add and test durable signal idempotency before live.
 - Other blockers remain: demo account integration test for the entire order/fill/cancel/SLTP lifecycle; robust recovery/handling if protective SL/TP cannot be confirmed (current behavior alerts and halts later signals but does not automatically close the unprotected position); validate real account-specific SL/TP lifecycle.
 - PR #5 remains Draft/open/unmerged. Do not set `FINAM_DRY_RUN=false`, do not merge to main, and do not dispatch live executor until blockers are resolved. No live orders were sent.
+
+ 
+## PR head after journal update
+- Journal-only follow-up commits advanced PR #5 to `531c9fe0e151be95e40a464a780f8653d04f421c`.
+- The executor code and tests validated by run `44157773263` are unchanged from code commit `bf7ed4f110f1a25551cef1d471ef5ade08d8ee0a`; the later commits only update project journals and PR documentation.
