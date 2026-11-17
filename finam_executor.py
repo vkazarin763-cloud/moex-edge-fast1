@@ -445,6 +445,30 @@ def place_market_order(token, symbol, quantity, side):
         }
 
     if response.status_code not in (200, 201):
+        # 5xx/408 may be returned after the broker accepted the order.
+        # Reconcile by client_order_id; never retry the POST blindly.
+        if response.status_code >= 500 or response.status_code == 408:
+            try:
+                reconciled_order_id = find_order_by_client_id(
+                    token, client_order_id
+                )
+            except Exception as reconcile_exc:
+                raise OrderSubmissionUnknown(
+                    f"Не удалось сверить HTTP {response.status_code} для "
+                    f"{symbol}; client_order_id={client_order_id}. "
+                    f"Повтор запрещён: {reconcile_exc}"
+                )
+            if reconciled_order_id:
+                return {
+                    "order_id": reconciled_order_id,
+                    "client_order_id": client_order_id,
+                    "submitted_at": datetime.utcnow()
+                }
+            raise OrderSubmissionUnknown(
+                f"HTTP {response.status_code} для {symbol}; результат "
+                f"неоднозначен, client_order_id={client_order_id}. "
+                "Повтор запрещён."
+            )
         logging.error("Finam order rejected HTTP %s: %s",
                       response.status_code, response.text)
         raise OrderProtectionError(
@@ -453,18 +477,25 @@ def place_market_order(token, symbol, quantity, side):
 
     try:
         data = response.json()
-    except ValueError as exc:
-        raise OrderSubmissionUnknown(
-            f"Finam вернул нечитаемый ответ для {symbol}; "
-            f"client_order_id={client_order_id}. Повтор запрещён."
-        ) from exc
+    except ValueError:
+        data = {}
 
-    order_id = data.get("order_id")
+    order_id = data.get("order_id") if isinstance(data, dict) else None
     if not order_id:
-        raise OrderSubmissionUnknown(
-            f"Finam не вернул order_id для {symbol}; "
-            f"client_order_id={client_order_id}. Требуется сверка."
-        )
+        try:
+            order_id = find_order_by_client_id(token, client_order_id)
+        except Exception as reconcile_exc:
+            raise OrderSubmissionUnknown(
+                f"Finam не вернул order_id для {symbol}; "
+                f"client_order_id={client_order_id}; сверка не удалась: "
+                f"{reconcile_exc}. Повтор запрещён."
+            )
+        if not order_id:
+            raise OrderSubmissionUnknown(
+                f"Finam не вернул order_id для {symbol}; "
+                f"client_order_id={client_order_id}. Заявка не найдена "
+                "при сверке, повтор запрещён."
+            )
 
     logging.info("Заявка принята: %s order_id=%s client_order_id=%s",
                  symbol, order_id, client_order_id)
@@ -504,7 +535,7 @@ def wait_for_terminal_order(token, order_id, timeout_seconds=25):
     terminal = {
         "FILLED", "EXECUTED", "CANCELED", "REJECTED",
         "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
-        "EXPIRED", "FAILED", "DONE_FOR_DAY", "REPLACED"
+        "EXPIRED", "FAILED", "DONE_FOR_DAY", "REPLACED", "CANCELLED"
     }
     deadline = time.monotonic() + timeout_seconds
     state = None
