@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -23,7 +24,7 @@ class SignalBotTests(unittest.TestCase):
             {"begin": "2026-11-16", "open": 10, "high": 12, "low": 9, "close": 11, "volume": 100},
             {"begin": "2026-11-17", "open": 11, "high": 13, "low": 10, "close": 12, "volume": 100},
         ])
-        with unittest.mock.patch.object(signal_bot.edge, "fetch_candles", return_value=frame):
+        with mock.patch.object(signal_bot.edge, "fetch_candles", return_value=frame):
             result = signal_bot.get_closed_d1("SBER", now)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["begin"].date().isoformat(), "2026-11-16")
