@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/finam-executor-*
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
