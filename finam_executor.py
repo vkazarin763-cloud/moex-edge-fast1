@@ -834,6 +834,14 @@ def place_sltp_order(
         raise OrderProtectionError(
             f"{symbol}: повторное чтение не содержит sltp_order."
         )
+    if readback_sltp.get("symbol") != symbol:
+        raise OrderProtectionError(
+            f"{symbol}: символ SL/TP не совпал при повторном чтении."
+        )
+    if readback_sltp.get("side") != exit_side:
+        raise OrderProtectionError(
+            f"{symbol}: сторона SL/TP не совпала при повторном чтении."
+        )
     for field, expected in expected_fields.items():
         actual = _decimal_value(
             readback_sltp.get(field), f"readback.sltp_order.{field}"
