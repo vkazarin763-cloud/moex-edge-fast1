@@ -7,7 +7,7 @@ import finam_executor as executor
 
 
 def main():
-    required = ("GITHUB_TOKEN", "GITHUB_REPOSITORY", "GITHUB_REF_NAME")
+    required = ("GITHUB_TOKEN", "GITHUB_REPOSITORY", "FINAM_STATE_BRANCH")
     missing = [name for name in required if not os.getenv(name)]
     if missing:
         raise RuntimeError("Missing GitHub Actions context: " + ", ".join(missing))
@@ -39,7 +39,7 @@ def main():
         }
         probe = requests.get(
             url, headers=headers,
-            params={"ref": os.environ["GITHUB_REF_NAME"]}, timeout=20
+            params={"ref": os.environ["FINAM_STATE_BRANCH"]}, timeout=20
         )
         print("Journal GET diagnostic:", probe.status_code, probe.text[:300])
         encoded = base64.b64encode(b'{"diagnostic": true}').decode("ascii")
