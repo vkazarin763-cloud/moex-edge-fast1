@@ -31,6 +31,9 @@ MIC = "MISX"
 # False = использовать qty из CSV, считая его количеством акций.
 TEST_MODE_MIN_VOLUME = True
 
+# Жёсткий лимит открытых позиций, включая теоретические позиции по активным заявкам.
+MAX_OPEN_POSITIONS = 10
+
 # По умолчанию безопасный режим: только проверка, без реальных заявок.
 # Для реальной торговли установить FINAM_DRY_RUN=false в GitHub Secrets/Variables.
 def parse_dry_run(value):
@@ -821,6 +824,11 @@ def load_active_signals():
     return active
 
 
+def position_limit_reached(open_symbols, ticker):
+    """Block a new symbol when the live account already has MAX_OPEN_POSITIONS."""
+    return ticker not in open_symbols and len(open_symbols) >= MAX_OPEN_POSITIONS
+
+
 # ============================================================
 # MAIN
 # ============================================================
@@ -868,7 +876,18 @@ def main():
             busy_sectors.add(sector)
 
     logging.info("Открытые инструменты: %s", open_symbols)
+    logging.info(
+        "Открытых позиций: %s/%s",
+        len(open_symbols), MAX_OPEN_POSITIONS
+    )
     logging.info("Занятые сектора: %s", busy_sectors)
+
+    if len(open_symbols) >= MAX_OPEN_POSITIONS:
+        logging.warning(
+            "Достигнут лимит открытых позиций (%s). Новые заявки запрещены.",
+            MAX_OPEN_POSITIONS
+        )
+        return
 
     df_active = load_active_signals()
 
@@ -900,6 +919,13 @@ def main():
             logging.info(
                 "%s пропущен: позиция уже открыта",
                 ticker
+            )
+            continue
+
+        if position_limit_reached(open_symbols, ticker):
+            logging.warning(
+                "%s пропущен: достигнут лимит открытых позиций (%s)",
+                ticker, MAX_OPEN_POSITIONS
             )
             continue
 
