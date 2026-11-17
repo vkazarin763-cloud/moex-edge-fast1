@@ -193,11 +193,18 @@ class FinamExecutorTests(unittest.TestCase):
                 "tp_price": {"value": "105.0"}
             }
         }
+        readback = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": accepted["sltp_order"]
+        }
         with patch.object(fe, "DRY_RUN", False), \
-             patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)) as post:
+             patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)) as post, \
+             patch.object(fe, "get_order_state", return_value=readback) as get_state:
             ok = fe.place_sltp_order(
                 "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
             )
+        get_state.assert_called_once_with("jwt", "sltp-1")
         payload = post.call_args.args[2]
         self.assertTrue(ok)
         self.assertNotIn("account_id", payload)
@@ -226,6 +233,53 @@ class FinamExecutorTests(unittest.TestCase):
         }
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(200, rejected)):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.place_sltp_order(
+                    "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
+                )
+
+    def test_sltp_rejected_on_readback_is_not_success(self):
+        accepted = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
+        rejected_readback = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_REJECTED",
+            "sltp_order": accepted["sltp_order"]
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)), \
+             patch.object(fe, "get_order_state", return_value=rejected_readback):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.place_sltp_order(
+                    "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
+                )
+
+    def test_sltp_requires_readback_with_echoed_parameters(self):
+        accepted = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
+        incomplete_readback = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_NEW"
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)), \
+             patch.object(fe, "get_order_state", return_value=incomplete_readback):
             with self.assertRaises(fe.OrderProtectionError):
                 fe.place_sltp_order(
                     "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
