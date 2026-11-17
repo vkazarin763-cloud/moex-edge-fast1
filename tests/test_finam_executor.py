@@ -56,6 +56,16 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(get_state.call_count, 2)
         cancel.assert_not_called()
 
+    def test_reconcile_client_order_id_nested_in_order(self):
+        payload = {"orders": [
+            {"order_id": "other", "order": {"client_order_id": "different"}},
+            {"order_id": "wanted", "order": {"client_order_id": "client-123"}}
+        ]}
+        with patch.object(fe, "api_get", return_value=payload):
+            self.assertEqual(
+                fe.find_order_by_client_id("jwt", "client-123"), "wanted"
+            )
+
     def test_weighted_average_fill_price(self):
         trades = {"trades": [
             {"order_id": "ord-2", "size": {"value": "4"},
