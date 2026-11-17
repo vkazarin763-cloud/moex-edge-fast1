@@ -1,5 +1,5 @@
 {
-  "cash": 147237.16660004802,
+  "cash": 92036.85660004804,
   "positions": [
     {
       "ticker": "ROSN",
@@ -65,6 +65,66 @@
       "premium": 56.7946685400716,
       "is_option": true,
       "expiry_time": "2026-12-16"
+    },
+    {
+      "ticker": "SBER",
+      "direction": "LONG",
+      "entry_price": 299.04,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 49,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 290.07,
+      "tp_price": 313.99,
+      "be_price": 305.02
+    },
+    {
+      "ticker": "GAZP",
+      "direction": "LONG",
+      "entry_price": 118.46,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 111,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 114.91,
+      "tp_price": 124.38,
+      "be_price": 120.83
+    },
+    {
+      "ticker": "LKOH",
+      "direction": "LONG",
+      "entry_price": 6045.5,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 5864.14,
+      "tp_price": 6347.78,
+      "be_price": 6166.41
+    },
+    {
+      "ticker": "NVTK",
+      "direction": "LONG",
+      "entry_price": 1126.4,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 10,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 1092.61,
+      "tp_price": 1182.72,
+      "be_price": 1148.93
+    },
+    {
+      "ticker": "MOEX",
+      "direction": "LONG",
+      "entry_price": 165.39,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 61,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 160.43,
+      "tp_price": 173.66,
+      "be_price": 168.7
     }
   ],
   "closed_trades": [
