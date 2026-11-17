@@ -74,6 +74,20 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(get_state.call_count, 2)
         cancel.assert_not_called()
 
+    def test_cancel_timeout_rechecks_terminal_order_state(self):
+        partial = {"status": "ORDER_STATUS_PARTIALLY_FILLED",
+                   "executed_quantity": {"value": "5"},
+                   "remaining_quantity": {"value": "5"}}
+        canceled = {"status": "ORDER_STATUS_CANCELED",
+                    "executed_quantity": {"value": "5"},
+                    "remaining_quantity": {"value": "0"}}
+        with patch.object(fe, "get_order_state", side_effect=[partial, canceled]), \\
+             patch.object(fe, "cancel_order_remainder",
+                          side_effect=requests.Timeout("cancel response lost")), \\
+             patch.object(fe.time, "sleep"):
+            state = fe.wait_for_terminal_order("jwt", "ord-race", timeout_seconds=0.01)
+        self.assertEqual(state["status"], "ORDER_STATUS_CANCELED")
+
     def test_reconcile_client_order_id_nested_in_order(self):
         payload = {"orders": [
             {"order_id": "other", "order": {"client_order_id": "different"}},
