@@ -84,7 +84,8 @@ class FinamExecutorTests(unittest.TestCase):
         with patch.object(fe, "get_order_state", side_effect=[partial, canceled]), \
              patch.object(fe, "cancel_order_remainder",
                           side_effect=requests.Timeout("cancel response lost")), \
-             patch.object(fe.time, "sleep"):
+             patch.object(fe.time, "sleep"), \\
+             patch.object(fe.time, "monotonic", side_effect=[0, 0, 1]):
             state = fe.wait_for_terminal_order("jwt", "ord-race", timeout_seconds=0.01)
         self.assertEqual(state["status"], "ORDER_STATUS_CANCELED")
 
