@@ -940,10 +940,7 @@ def main():
 
     account_data, available_cash = get_account_info(token)
 
-    logging.info(
-        "Свободные средства: %s RUB",
-        available_cash
-    )
+    logging.info("Свободные средства получены (значение скрыто)")
 
     open_symbols = {
         p["symbol"].split("@")[0]
@@ -958,12 +955,12 @@ def main():
         if sector:
             busy_sectors.add(sector)
 
-    logging.info("Открытые инструменты: %s", open_symbols)
+    logging.info("Открытых инструментов: %s", len(open_symbols))
     logging.info(
         "Открытых позиций: %s/%s",
         len(open_symbols), MAX_OPEN_POSITIONS
     )
-    logging.info("Занятые сектора: %s", busy_sectors)
+    logging.info("Занятых секторов: %s", len(busy_sectors))
 
     if len(open_symbols) >= MAX_OPEN_POSITIONS:
         logging.warning(
