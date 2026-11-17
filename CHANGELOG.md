@@ -81,3 +81,9 @@
 - CI run 44157773263: compile success, 30/30 unit tests passed; все обязательные secrets present; FINAM_DRY_RUN=true.
 - Отдельный аудит выявил незакрытые production-вопросы: нет подтверждённого демо-интеграционного теста полного цикла; нет автоматического безопасного восстановления/закрытия позиции при неподтверждённой защите; executor не хранит постоянный идентификатор уже обработанного сигнала, поэтому после закрытия позиции повторный вход по всё ещё активному CSV-сигналу не исключён.
 - Реальные заявки не отправлялись; main, secrets и FINAM_DRY_RUN не менялись.
+
+## 2026-11-17 — Finam signal idempotency follow-up
+- Wired durable signal-state access into the scheduled scanner/executor workflow using the Actions runtime token and least-privilege contents-write permission.
+- Serialized scheduled and manual executor workflows under one concurrency group.
+- Recorded terminal no-fill order outcomes and reset per-row signal identifiers.
+- Pending CI verification on the latest PR #5 head. No live workflow dispatch or broker order was performed.
