@@ -1,0 +1,36 @@
+name: MOEX EDGE Signal Bot Tests
+
+on:
+  push:
+    branches: [feature/moex-edge-signal-bot-20261117]
+    paths:
+      - "signal_bot.py"
+      - "moex_edge_fast_33.py"
+      - "tests/test_signal_bot.py"
+      - ".github/workflows/moex-edge-signal-bot-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "signal_bot.py"
+      - "moex_edge_fast_33.py"
+      - "tests/test_signal_bot.py"
+      - ".github/workflows/moex-edge-signal-bot-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pandas requests numpy
+      - name: Compile bot and scanner
+        run: python -m py_compile signal_bot.py moex_edge_fast_33.py
+      - name: Run signal bot tests
+        run: python -m unittest discover -s tests -p "test_signal_bot.py" -v
