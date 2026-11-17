@@ -1,6 +1,9 @@
 
 import os
 import time
+import json
+import base64
+import hashlib
 import logging
 import requests
 import pandas as pd
@@ -25,6 +28,8 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 CSV_FILE = "moex_signals.csv"
+SIGNAL_STATE_FILE = "finam_signal_state.json"
+GITHUB_API = "https://api.github.com"
 MIC = "MISX"
 
 # True = минимальный допустимый торговый лот каждого инструмента.
@@ -956,6 +961,8 @@ def load_active_signals():
     required_columns = {
         "ticker",
         "direction",
+        "strategy",
+        "date",
         "entry_price",
         "qty",
         "h1_confirmed"
@@ -993,6 +1000,168 @@ def load_active_signals():
 def position_limit_reached(open_symbols, ticker):
     """Block a new symbol when the live account already has MAX_OPEN_POSITIONS."""
     return ticker not in open_symbols and len(open_symbols) >= MAX_OPEN_POSITIONS
+
+def signal_fingerprint(row):
+    """Stable identity for one scanner signal; independent of CSV row order."""
+    required = ("ticker", "direction", "strategy", "date", "entry_price")
+    missing = [name for name in required if name not in row or pd.isna(row[name])]
+    if missing:
+        raise ValueError(
+            "Нельзя безопасно идентифицировать сигнал; отсутствуют поля: "
+            + ", ".join(missing)
+        )
+    ticker = str(row["ticker"]).strip().upper()
+    direction = str(row["direction"]).strip().upper()
+    strategy = str(row["strategy"]).strip()
+    signal_date = str(row["date"]).strip()
+    price = Decimal(str(row["entry_price"])).normalize()
+    if not ticker or direction not in ("LONG", "SHORT") or not strategy or not signal_date:
+        raise ValueError("Некорректные поля идентификатора сигнала")
+    raw = "|".join((ticker, direction, strategy, signal_date, format(price, "f")))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _github_state_request(method, payload=None):
+    token = os.getenv("GITHUB_TOKEN")
+    repository = os.getenv("GITHUB_REPOSITORY")
+    branch = os.getenv("GITHUB_REF_NAME", "main")
+    if not token or not repository:
+        raise RuntimeError(
+            "Для постоянной защиты от повторных сделок нужны GITHUB_TOKEN "
+            "и GITHUB_REPOSITORY; новая заявка запрещена."
+        )
+    url = f"{GITHUB_API}/repos/{repository}/contents/{SIGNAL_STATE_FILE}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    response = requests.request(
+        method, url, headers=headers, json=payload, params={"ref": branch},
+        timeout=REQUEST_TIMEOUT
+    )
+    if response.status_code not in (200, 201):
+        raise RuntimeError(
+            f"Не удалось сохранить постоянный журнал сигналов "
+            f"(GitHub HTTP {response.status_code}); торговля остановлена."
+        )
+    return response.json()
+
+
+def load_signal_state():
+    # In live mode, the durable GitHub file is authoritative. Never fall back
+    # to an ephemeral runner file if the remote journal cannot be read.
+    if DRY_RUN:
+        if not os.path.exists(SIGNAL_STATE_FILE):
+            return {}
+        with open(SIGNAL_STATE_FILE, "r", encoding="utf-8") as stream:
+            state = json.load(stream)
+        if not isinstance(state, dict):
+            raise RuntimeError("Локальный журнал сигналов повреждён")
+        return state
+
+    token = os.getenv("GITHUB_TOKEN")
+    repository = os.getenv("GITHUB_REPOSITORY")
+    branch = os.getenv("GITHUB_REF_NAME", "main")
+    if not token or not repository:
+        raise RuntimeError("Нет доступа к постоянному журналу сигналов")
+    url = f"{GITHUB_API}/repos/{repository}/contents/{SIGNAL_STATE_FILE}"
+    response = requests.get(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        },
+        params={"ref": branch},
+        timeout=REQUEST_TIMEOUT
+    )
+    if response.status_code == 404:
+        return {}
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"Не удалось прочитать журнал сигналов (GitHub HTTP "
+            f"{response.status_code}); торговля остановлена."
+        )
+    try:
+        decoded = base64.b64decode(response.json()["content"]).decode("utf-8")
+        state = json.loads(decoded)
+    except Exception as exc:
+        raise RuntimeError("Постоянный журнал сигналов повреждён") from exc
+    if not isinstance(state, dict):
+        raise RuntimeError("Постоянный журнал сигналов имеет неверный формат")
+    return state
+
+
+def save_signal_state(state):
+    if DRY_RUN:
+        with open(SIGNAL_STATE_FILE, "w", encoding="utf-8") as stream:
+            json.dump(state, stream, ensure_ascii=False, indent=2, sort_keys=True)
+        return
+
+    token = os.getenv("GITHUB_TOKEN")
+    repository = os.getenv("GITHUB_REPOSITORY")
+    branch = os.getenv("GITHUB_REF_NAME", "main")
+    if not token or not repository:
+        raise RuntimeError("Нет доступа к постоянному журналу сигналов")
+    url = f"{GITHUB_API}/repos/{repository}/contents/{SIGNAL_STATE_FILE}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    current = requests.get(
+        url, headers=headers, params={"ref": branch}, timeout=REQUEST_TIMEOUT
+    )
+    sha = None
+    if current.status_code == 200:
+        sha = current.json().get("sha")
+    elif current.status_code != 404:
+        raise RuntimeError(
+            f"Не удалось проверить версию журнала сигналов "
+            f"(GitHub HTTP {current.status_code})"
+        )
+    content = base64.b64encode(
+        json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
+    ).decode("ascii")
+    payload = {
+        "message": "chore: persist Finam processed signal state",
+        "content": content,
+        "branch": branch
+    }
+    if sha:
+        payload["sha"] = sha
+    saved = requests.put(url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
+    if saved.status_code not in (200, 201):
+        raise RuntimeError(
+            f"Не удалось зафиксировать журнал сигналов "
+            f"(GitHub HTTP {saved.status_code}); заявка не отправляется."
+        )
+
+
+def reserve_signal(state, signal_id, ticker, direction):
+    if signal_id in state:
+        return False
+    # Reserve BEFORE market-order POST. A crash/timeout leaves the signal
+    # blocked until an operator reconciles it, preventing duplicate entries.
+    state[signal_id] = {
+        "ticker": ticker,
+        "direction": direction,
+        "status": "SUBMISSION_ATTEMPTED",
+        "updated_at": datetime.utcnow().isoformat() + "Z"
+    }
+    save_signal_state(state)
+    return True
+
+
+def update_signal_state(state, signal_id, status, **details):
+    if signal_id not in state:
+        raise RuntimeError("Попытка обновить незарезервированный сигнал")
+    state[signal_id].update(details)
+    state[signal_id]["status"] = status
+    state[signal_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
+    save_signal_state(state)
+
 
 
 # ============================================================
@@ -1057,6 +1226,7 @@ def main():
         return
 
     df_active = load_active_signals()
+    signal_state = load_signal_state()
 
     if df_active.empty:
         logging.info("Нет подтвержденных сигналов.")
@@ -1164,6 +1334,31 @@ def main():
             tp_price
         )
 
+        # Durable dedupe reservation is committed before any broker POST.
+        try:
+            signal_id = signal_fingerprint(row)
+            if signal_id in signal_state:
+                logging.warning(
+                    "%s: сигнал уже обработан/зарезервирован (status=%s); "
+                    "повторная заявка запрещена.",
+                    ticker, signal_state[signal_id].get("status", "UNKNOWN")
+                )
+                continue
+            if not DRY_RUN:
+                reserve_signal(signal_state, signal_id, ticker, direction)
+
+        except Exception as exc:
+            logging.critical(
+                "%s: не удалось безопасно зарезервировать сигнал: %s. "
+                "Новые заявки остановлены.",
+                ticker, exc
+            )
+            send_telegram_message(
+                f"🚨 <b>Журнал сигналов недоступен</b>\n"
+                f"Инструмент: {ticker}\n{exc}\nНовая заявка не отправлена."
+            )
+            break
+
         # Отправка и обязательная сверка фактического исполнения.
         try:
             order_result = place_market_order(token, symbol, quantity, side)
@@ -1233,6 +1428,13 @@ def main():
                     "но SL/TP не подтверждены брокером."
                 )
 
+            update_signal_state(
+                signal_state, signal_id, "EXECUTED_AND_PROTECTED",
+                order_id=str(order_id), filled_quantity=filled_qty_int,
+                average_fill_price=str(avg_fill_price),
+                sl_price=str(sl_price), tp_price=str(tp_price)
+            )
+
             emoji = "🟢" if direction == "LONG" else "🔴"
             send_telegram_message(
                 f"{emoji} <b>Заявка исполнена и защищена</b>\n\n"
@@ -1249,6 +1451,16 @@ def main():
                 "Останавливаю обработку следующих сигналов.",
                 ticker, exc
             )
+            if not DRY_RUN and "signal_id" in locals() and signal_id in signal_state:
+                try:
+                    update_signal_state(
+                        signal_state, signal_id, "REQUIRES_MANUAL_RECONCILIATION",
+                        error=str(exc)[:1000]
+                    )
+                except Exception as state_exc:
+                    logging.critical(
+                        "Не удалось обновить журнал после ошибки: %s", state_exc
+                    )
             send_telegram_message(
                 f"🚨 <b>КРИТИЧЕСКАЯ ПРОБЛЕМА Finam Executor</b>\n"
                 f"Инструмент: {ticker}\n{exc}\n"
