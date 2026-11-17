@@ -656,6 +656,57 @@ def place_sltp_order(
         logging.critical("Ошибка SL/TP %s: HTTP %s: %s",
                          symbol, response.status_code, response.text)
         return False
+
+    # HTTP 200 alone is not proof that the broker created the protective order.
+    # Finam returns OrderState; verify its order id and echoed SL/TP parameters.
+    try:
+        data = response.json()
+    except (ValueError, AttributeError) as exc:
+        raise OrderProtectionError(
+            f"{symbol}: Finam вернул успешный HTTP, но ответ SL/TP "
+            "не удалось разобрать. Защита не подтверждена."
+        ) from exc
+
+    if not isinstance(data, dict) or not data.get("order_id"):
+        raise OrderProtectionError(
+            f"{symbol}: в ответе Finam отсутствует order_id SL/TP. "
+            "Защита не подтверждена."
+        )
+
+    returned = data.get("sltp_order")
+    if not isinstance(returned, dict):
+        raise OrderProtectionError(
+            f"{symbol}: Finam не вернул sltp_order. Защита не подтверждена."
+        )
+
+    status = _normalized_order_status(data)
+    if status in {
+        "REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
+        "FAILED", "EXPIRED", "CANCELED", "CANCELLED"
+    }:
+        raise OrderProtectionError(
+            f"{symbol}: SL/TP заявка {data.get('order_id')} "
+            f"имеет отклонённый/закрытый статус {data.get('status')}."
+        )
+
+    expected_fields = {
+        "quantity_sl": Decimal(str(quantity)),
+        "quantity_tp": Decimal(str(quantity)),
+        "sl_price": Decimal(str(sl_price)),
+        "tp_price": Decimal(str(tp_price))
+    }
+    for field, expected in expected_fields.items():
+        actual = _decimal_value(returned.get(field), f"sltp_order.{field}")
+        if actual != expected:
+            raise OrderProtectionError(
+                f"{symbol}: Finam подтвердил SL/TP с неожиданным {field}: "
+                f"{actual}, ожидалось {expected}. Защита не подтверждена."
+            )
+
+    logging.info(
+        "%s: SL/TP подтверждены, order_id=%s, quantity=%s",
+        symbol, data["order_id"], quantity
+    )
     return True
 
 
