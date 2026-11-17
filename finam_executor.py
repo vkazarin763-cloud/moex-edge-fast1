@@ -1024,7 +1024,7 @@ def signal_fingerprint(row):
 def _github_state_request(method, payload=None):
     token = os.getenv("GITHUB_TOKEN")
     repository = os.getenv("GITHUB_REPOSITORY")
-    branch = os.getenv("GITHUB_REF_NAME", "main")
+    branch = os.getenv("FINAM_STATE_BRANCH") or os.getenv("GITHUB_REF_NAME", "main")
     if not token or not repository:
         raise RuntimeError(
             "Для постоянной защиты от повторных сделок нужны GITHUB_TOKEN "
@@ -1062,7 +1062,7 @@ def load_signal_state():
 
     token = os.getenv("GITHUB_TOKEN")
     repository = os.getenv("GITHUB_REPOSITORY")
-    branch = os.getenv("GITHUB_REF_NAME", "main")
+    branch = os.getenv("FINAM_STATE_BRANCH") or os.getenv("GITHUB_REF_NAME", "main")
     if not token or not repository:
         raise RuntimeError("Нет доступа к постоянному журналу сигналов")
     url = f"{GITHUB_API}/repos/{repository}/contents/{SIGNAL_STATE_FILE}"
@@ -1101,7 +1101,7 @@ def save_signal_state(state):
 
     token = os.getenv("GITHUB_TOKEN")
     repository = os.getenv("GITHUB_REPOSITORY")
-    branch = os.getenv("GITHUB_REF_NAME", "main")
+    branch = os.getenv("FINAM_STATE_BRANCH") or os.getenv("GITHUB_REF_NAME", "main")
     if not token or not repository:
         raise RuntimeError("Нет доступа к постоянному журналу сигналов")
     url = f"{GITHUB_API}/repos/{repository}/contents/{SIGNAL_STATE_FILE}"
