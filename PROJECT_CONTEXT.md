@@ -130,3 +130,10 @@
 - Executor now records terminal zero-fill outcomes as `NO_FILL_TERMINAL` with order id/status/zero filled quantity. The signal remains consumed to prevent a stale active CSV row from triggering a duplicate order.
 - Reset `signal_id` for each CSV row so an earlier iteration's identifier cannot leak into a later exception path.
 - Changes are on Draft PR #5 branch only. CI for the newest commits has not yet been observed. No executor workflow was dispatched and no broker order was sent. Keep `FINAM_DRY_RUN=true`.
+
+## 2026-11-17 — verified signal-journal CI
+- Run `44160419914` succeeded on PR merge commit `78f3a81` (branch code/test commit `682493b470758e26e4eb63355770d7633dfe0be0`): compile passed, 37/37 unit tests passed, including mocked GitHub Contents API journal read/write tests.
+- All four required Actions secrets were reported present without exposing values; effective `FINAM_DRY_RUN=true`.
+- Subsequent branch commits only changed project journals/handoff/PR description; tested executor code and test file were unchanged.
+- PR #5 remains Draft/open/unmerged. No executor workflow was dispatched and no real broker order was sent.
+- Live blockers remain: no demo account/full order lifecycle integration test, no safe automatic recovery from unprotected exposure, and actual Actions-token journal write still needs a non-trading workflow verification.
