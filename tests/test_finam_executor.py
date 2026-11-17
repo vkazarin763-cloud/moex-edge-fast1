@@ -1,4 +1,5 @@
 import unittest
+import base64
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -470,6 +471,43 @@ class FinamExecutorTests(unittest.TestCase):
                 fe.place_sltp_order(
                     "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
                 )
+
+
+    def test_live_signal_state_reads_github_contents(self):
+        encoded = base64.b64encode(b'{"abc": {"status": "SUBMISSION_ATTEMPTED"}}').decode("ascii")
+        response = FakeResponse(200, {"content": encoded, "sha": "blob-sha"})
+        env = {
+            "GITHUB_TOKEN": "masked-test-token",
+            "GITHUB_REPOSITORY": "owner/repo",
+            "GITHUB_REF_NAME": "main"
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.dict(os.environ, env), \
+             patch.object(fe.requests, "get", return_value=response) as get:
+            state = fe.load_signal_state()
+        self.assertEqual(state["abc"]["status"], "SUBMISSION_ATTEMPTED")
+        self.assertEqual(get.call_args.kwargs["params"], {"ref": "main"})
+
+    def test_live_signal_state_writes_contents_with_current_sha(self):
+        current = FakeResponse(200, {"sha": "current-blob-sha"})
+        saved = FakeResponse(200, {"content": {"sha": "new-blob-sha"}})
+        env = {
+            "GITHUB_TOKEN": "masked-test-token",
+            "GITHUB_REPOSITORY": "owner/repo",
+            "GITHUB_REF_NAME": "main"
+        }
+        state = {"abc": {"status": "SUBMISSION_ATTEMPTED"}}
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.dict(os.environ, env), \
+             patch.object(fe.requests, "get", return_value=current), \
+             patch.object(fe.requests, "put", return_value=saved) as put:
+            fe.save_signal_state(state)
+        payload = put.call_args.kwargs["json"]
+        self.assertEqual(payload["sha"], "current-blob-sha")
+        self.assertEqual(payload["branch"], "main")
+        written = json.loads(base64.b64decode(payload["content"]).decode("utf-8"))
+        self.assertEqual(written, state)
+
 
 
 if __name__ == "__main__":
