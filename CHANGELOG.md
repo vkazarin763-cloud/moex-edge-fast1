@@ -21,3 +21,10 @@
 ## 2026-11-17 — Finam Executor Telegram notifications
 - Добавлена передача `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` в окружение Finam Executor в почасовом и ручном GitHub Actions workflow.
 - Режим `FINAM_DRY_RUN`, торговая логика и расписание не изменялись.
+
+## 2026-11-17 — Finam Executor safety hardening (Draft PR)
+- Добавлены client_order_id, сверка после неоднозначной отправки, ожидание терминального статуса и проверка фактических сделок.
+- Защитные SL/TP рассчитываются по VWAP фактических исполнений и выставляются только на подтверждённое количество.
+- Добавлены mock unit-тесты и CI workflow.
+- Оба workflow передают `FINAM_DRY_RUN` из Actions Variable с default `true`; некорректное значение блокирует запуск.
+- Реальные заявки не отправлялись; main и секреты не менялись.
