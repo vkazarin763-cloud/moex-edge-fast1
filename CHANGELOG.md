@@ -17,3 +17,7 @@
 - Исправлена область видимости `get_kelly_pct` в `ai_agent.py`: функция была недоступна из `main`, что вызывало `NameError` при обработке сигнала.
 - Добавлены unit-тесты Kelly и GitHub Actions workflow для компиляции AI Agent/Trainer и тестирования функции.
 - Не менялись AI Trainer, портфель, веса, торговые правила и расписание.
+
+## 2026-11-17 — Finam Executor Telegram notifications
+- Добавлена передача `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` в окружение Finam Executor в почасовом и ручном GitHub Actions workflow.
+- Режим `FINAM_DRY_RUN`, торговая логика и расписание не изменялись.
