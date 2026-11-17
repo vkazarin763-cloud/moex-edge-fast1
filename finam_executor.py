@@ -297,23 +297,23 @@ def round_price_to_tick(token, ticker, price, rounding):
         params={"account_id": ACCOUNT_ID}
     )
     if not isinstance(data, dict):
-        raise ValueError(f"{ticker}: некорректные параметры шага цены")
+        raise OrderProtectionError(f"{ticker}: некорректные параметры шага цены")
 
     try:
         decimals = int(data.get("decimals"))
         min_step = Decimal(str(data.get("min_step", "0")))
     except (TypeError, ValueError, InvalidOperation):
-        raise ValueError(f"{ticker}: отсутствуют decimals/min_step")
+        raise OrderProtectionError(f"{ticker}: отсутствуют decimals/min_step")
 
     if decimals < 0 or not min_step.is_finite() or min_step < 0:
-        raise ValueError(f"{ticker}: некорректные decimals/min_step")
+        raise OrderProtectionError(f"{ticker}: некорректные decimals/min_step")
 
     if min_step > 0:
         tick = min_step / (Decimal(10) ** decimals)
     else:
         price_step = data.get("price_step")
         if not isinstance(price_step, dict):
-            raise ValueError(f"{ticker}: Finam не вернул price_step")
+            raise OrderProtectionError(f"{ticker}: Finam не вернул price_step")
         threshold = _decimal_value(
             price_step.get("threshold_price"), "price_step.threshold_price"
         )
@@ -324,7 +324,7 @@ def round_price_to_tick(token, ticker, price, rounding):
         )
         tick = _decimal_value(candidate, "price_step.step")
     if not tick.is_finite() or tick <= 0:
-        raise ValueError(f"{ticker}: недопустимый шаг цены {tick}")
+        raise OrderProtectionError(f"{ticker}: недопустимый шаг цены {tick}")
 
     price_decimal = Decimal(str(price))
     ticks = (price_decimal / tick).to_integral_value(rounding=rounding)
