@@ -1,0 +1,25 @@
+name: Finam Executor Safety Tests
+
+on:
+  push:
+    branches:
+      - fix/finam-executor-fill-protection-20261117
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install pandas requests
+      - name: Compile Python files
+        run: python -m compileall -q finam_executor.py
+      - name: Run executor unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
