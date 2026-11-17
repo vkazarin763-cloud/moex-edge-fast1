@@ -67,7 +67,7 @@ class FinamExecutorTests(unittest.TestCase):
 
     def test_reserve_signal_prevents_duplicate(self):
         state = {}
-        with patch.object(fe, "DRY_RUN", False), \\
+        with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "save_signal_state") as save:
             self.assertTrue(fe.reserve_signal(state, "abc", "SBER", "LONG"))
             self.assertFalse(fe.reserve_signal(state, "abc", "SBER", "LONG"))
@@ -76,7 +76,7 @@ class FinamExecutorTests(unittest.TestCase):
 
     def test_update_signal_state_persists_terminal_status(self):
         state = {"abc": {"ticker": "SBER"}}
-        with patch.object(fe, "DRY_RUN", False), \\
+        with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "save_signal_state") as save:
             fe.update_signal_state(state, "abc", "EXECUTED_AND_PROTECTED",
                                    order_id="123")
@@ -85,7 +85,7 @@ class FinamExecutorTests(unittest.TestCase):
         save.assert_called_once()
 
     def test_live_signal_state_fails_closed_without_github_token(self):
-        with patch.object(fe, "DRY_RUN", False), \\
+        with patch.object(fe, "DRY_RUN", False), \
              patch.dict(os.environ, {"GITHUB_TOKEN": "", "GITHUB_REPOSITORY": ""}):
             with self.assertRaises(RuntimeError):
                 fe.load_signal_state()
