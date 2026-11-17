@@ -5,6 +5,9 @@ from unittest.mock import patch
 import requests
 import finam_executor as fe
 
+# Stable dummy account id for URL construction in mocked tests; no API calls occur.
+fe.ACCOUNT_ID = "unit-test-account"
+
 
 class FakeResponse:
     def __init__(self, status_code=200, payload=None, text=""):
