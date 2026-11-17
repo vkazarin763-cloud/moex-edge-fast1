@@ -102,3 +102,8 @@
 - Latest CI run 44144452367: compile success, 24/24 unit tests OK; secrets present; FINAM_DRY_RUN=safe.
 - Read-only audit 44143080070: 44/44 лот/шаг цены, 44/44 LONG и 44/44 SHORT; order endpoints не вызывались.
 - Реальные заявки и SL/TP не отправлялись. Фактический жизненный цикл SL/TP на реальном/демо ордере остаётся не проверен; PR #5 Draft/open, main не изменён.
+
+- Дополнительно исправлен лимит позиций: теперь перед запуском объединяются символы реальных позиций и активных заявок из GET /orders; активные и неизвестные статусы резервируют слот; при ошибке чтения списка заявок новые сделки не отправляются. MAX_OPEN_POSITIONS=10.
+- CI для commit 011d9a98a4f25b12bef5e179ac88d01471d4f2e8: run 44156645285, compile + 27/27 unit tests passed. Секреты присутствуют, FINAM_DRY_RUN=safe.
+- Finam docs подтвердили GetOrders/GetOrder и длину client_order_id до 20 символов; не документируют idempotency guarantee, поэтому код только ищет заявку по id и не повторяет POST.
+- Live всё ещё не включён; нужны sandbox integration tests по partial fills, cancel race, SL/TP lifecycle и orphan exposure.
