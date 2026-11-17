@@ -72,3 +72,9 @@
 - Enforce maximum 10 concurrent account positions and retain one-minimum-lot mode. These constraints are part of live readiness.
 - Latest CI run 44143462329 passed 19 tests; runtime secrets are present and FINAM_DRY_RUN remains safe.
 - Keep PR #5 Draft and do not enable live until SL/TP lifecycle and orphan-exposure handling receive final review.
+
+## 2026-11-17 — финальное подтверждение исполнения и защиты
+- До выставления SL/TP обязательно дождаться совпадения объёма в истории сделок с executed_quantity (до 10 read-only попыток).
+- После POST SL/TP обязательно читать заявку через GetOrder и сверять активный статус, symbol, side, количество и цены. Triggered/rejected/unknown состояния считаются критическими и останавливают обработку.
+- Не выводить в CI баланс и список открытых бумаг; сохранять только агрегированные логи.
+- CI run 44144452367 прошёл 24 теста; read-only account audit 44143080070 успешен. Live остаётся выключен до реального/демо подтверждения SL/TP lifecycle и контролируемой активации.
