@@ -147,3 +147,12 @@ Default branch: main
 ## PR head after journal update
 - Journal-only follow-up commits advanced PR #5 to `531c9fe0e151be95e40a464a780f8653d04f421c`.
 - The executor code and tests validated by run `44157773263` are unchanged from code commit `bf7ed4f110f1a25551cef1d471ef5ade08d8ee0a`; the later commits only update project journals and PR documentation.
+
+## 2026-11-17 — durable signal deduplication follow-up (latest changes)
+- The executor branch contains stable signal fingerprinting based on `ticker,direction,strategy,date,entry_price` and a durable `finam_signal_state.json` journal stored through GitHub Contents API.
+- In live mode, journal reads/writes fail closed. The signal is reserved as `SUBMISSION_ATTEMPTED` before the broker market-order POST. Existing reservations block re-entry even after a position closes. Ambiguous outcomes are not retried automatically.
+- The active scanner's `.github/workflows/moex-edge-fast.yml` was corrected to grant `contents: write`, share concurrency group `finam-executor-account`, and pass `github.token`, repository and ref to the executor. The manual executor workflow now also uses `github.token` (it already shared the concurrency group and contents-write permission).
+- Terminal zero-fill outcomes are now journaled as `NO_FILL_TERMINAL`; the same signal remains consumed to avoid retrying a stale CSV signal. Per-row signal_id is reset before processing.
+- These changes are in PR #5 branch only. The latest commits still require CI confirmation. No workflow was dispatched and no broker order was sent.
+- Important remaining concerns: (1) test durable journal behavior against GitHub Contents API in an isolated non-trading test; (2) confirm no other workflow invokes Finam Executor outside the shared concurrency group; (3) resolve orphan exposure if SL/TP cannot be confirmed; (4) complete a full broker integration test in a non-live environment. The user has stated that a demo account is unavailable; do not use the real account as a test harness.
+- `FINAM_DRY_RUN=true`; do not merge/activate live execution based solely on unit tests.
