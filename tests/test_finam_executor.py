@@ -31,6 +31,34 @@ class FinamExecutorTests(unittest.TestCase):
         with patch.object(fe, "TEST_MODE_MIN_VOLUME", True):
             self.assertEqual(fe.calculate_order_quantity("SBER", 999, 10), 10)
 
+    def test_fixed_tick_size_rounds_protective_prices_directionally(self):
+        asset = {"decimals": 2, "min_step": "5"}
+        with patch.object(fe, "api_get", return_value=asset):
+            down = fe.round_price_to_tick(
+                "jwt", "SBER", Decimal("100.123"), fe.ROUND_FLOOR
+            )
+            up = fe.round_price_to_tick(
+                "jwt", "SBER", Decimal("100.123"), fe.ROUND_CEILING
+            )
+        self.assertEqual(down, Decimal("100.10"))
+        self.assertEqual(up, Decimal("100.15"))
+
+    def test_price_dependent_tick_size_uses_correct_band(self):
+        asset = {
+            "decimals": 2,
+            "min_step": "0",
+            "price_step": {
+                "step": {"value": "0.01"},
+                "threshold_price": {"value": "100"},
+                "step_from_threshold": {"value": "0.10"}
+            }
+        }
+        with patch.object(fe, "api_get", return_value=asset):
+            rounded = fe.round_price_to_tick(
+                "jwt", "SBER", Decimal("100.04"), fe.ROUND_CEILING
+            )
+        self.assertEqual(rounded, Decimal("100.10"))
+
     def test_market_order_payload_has_no_account_id_and_has_client_id(self):
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(
