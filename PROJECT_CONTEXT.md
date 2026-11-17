@@ -122,3 +122,11 @@
 ## PR head after journal update
 - Journal-only follow-up commits advanced PR #5 to `531c9fe0e151be95e40a464a780f8653d04f421c`.
 - The executor code and tests validated by run `44157773263` are unchanged from code commit `bf7ed4f110f1a25551cef1d471ef5ade08d8ee0a`; the later commits only update project journals and PR documentation.
+
+## 2026-11-17 — persistent signal deduplication and workflow wiring
+- Reviewed the current Finam Executor branch. Durable signal fingerprint/state functions were present in the executor, but the scheduled scanner+executor workflow did not pass the GitHub token/repository/ref and did not serialize against manual executor runs. Without those settings, live-mode signal-state persistence would fail closed before order submission.
+- Updated `.github/workflows/moex-edge-fast.yml`: grant only `contents: write`, serialize the full scan+execute workflow with concurrency group `finam-executor-account`, and pass `github.token`, repository and ref to the executor.
+- Updated `.github/workflows/finam-executor.yml` to use the Actions runtime token (`github.token`) for the durable journal; it already had the same concurrency group and contents-write permission.
+- Executor now records terminal zero-fill outcomes as `NO_FILL_TERMINAL` with order id/status/zero filled quantity. The signal remains consumed to prevent a stale active CSV row from triggering a duplicate order.
+- Reset `signal_id` for each CSV row so an earlier iteration's identifier cannot leak into a later exception path.
+- Changes are on Draft PR #5 branch only. CI for the newest commits has not yet been observed. No executor workflow was dispatched and no broker order was sent. Keep `FINAM_DRY_RUN=true`.
