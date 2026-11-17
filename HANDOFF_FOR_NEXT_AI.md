@@ -78,7 +78,7 @@ Default branch: main
   5. Resolve remaining operational edge cases: SLTP order read-back / status lifecycle, orphan exposure if protection is rejected, partial/late fills after cancellation, duplicate handling across workflow retries/restarts, and price precision with live instrument examples.
   6. Confirm exact Finam account-specific behavior in sandbox or other non-live environment if available. Do not use real account as a test harness.
 - PR #5 remains Draft/open, not merged. Do not merge or enable live trading until the above items are completed and latest CI is green.
-- No broker API calls, live orders, secret reads/changes, or Actions variable changes were performed in this follow-up.
+- At the time of the initial hardening note, no broker API calls were made. A later read-only Finam audit is documented below; it used only authentication and GET endpoints, never order endpoints. No live orders were sent and no secret values or Actions variables were changed.
 
 - CI follow-up completed successfully after the code, tests, and journal updates: run `44141464912`, job `unit-tests`, compile step passed, `Ran 14 tests`, `OK`. This run corresponds to commit `a19e63308cef5dec7345abcc87abd73e87380663`.
 
