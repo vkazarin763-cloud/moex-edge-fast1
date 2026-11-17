@@ -28,6 +28,7 @@ jobs:
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
           FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+          FINAM_DRY_RUN: ${{ vars.FINAM_DRY_RUN || 'true' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python finam_executor.py
