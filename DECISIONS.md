@@ -94,3 +94,10 @@
 - Несмотря на 30/30 mocked tests, live запрещён до демо-проверки полного жизненного цикла и решения проблемы orphan exposure.
 - Обнаружен риск повторного входа: CSV содержит ticker/direction/strategy/date/entry_price/qty, а executor не хранит долговременный журнал обработанных сигналов. Пока не добавлена/не проверена идемпотентность сигнала, повторный вход после закрытия позиции возможен.
 - PR #5 остаётся Draft/open; main и FINAM_DRY_RUN не менялись.
+
+## 2026-11-17 — signal journal safety decisions
+- The persistent GitHub signal journal is authoritative in live mode; missing token/repository, unreadable/corrupt state, or failed write must stop order submission (fail closed).
+- Signal reservation must be committed before the market-order POST. A reservation remains consumed after an ambiguous result; manual reconciliation is required rather than blind retry.
+- A terminal order with zero execution is recorded as `NO_FILL_TERMINAL`; the signal is still not automatically retried while the same signal remains active in CSV.
+- Both workflows that can run the executor share concurrency group `finam-executor-account` to prevent simultaneous read-modify-write updates to the state journal.
+- These controls do not establish full broker lifecycle safety. Live activation remains disabled until orphan-exposure recovery and broker integration risks are resolved.
