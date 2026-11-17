@@ -56,3 +56,5 @@
 - Оставлен TEST_MODE_MIN_VOLUME=True (один минимальный лот).
 - CI run 44143462329: compile success, 19/19 tests passed. Secrets present, effective FINAM_DRY_RUN=safe.
 - Выполнялись только read-only API запросы; order endpoints не вызывались, реальные сделки не совершались.
+
+- После успешного read-only аудита workflow переведён на ручной запуск (workflow_dispatch), чтобы не повторять массовые GET-запросы при каждом обновлении PR и не создавать лишнюю нагрузку на лимиты Finam.
