@@ -553,7 +553,25 @@ def wait_for_terminal_order(token, order_id, timeout_seconds=25):
     if remaining > 0:
         logging.warning("Отменяю неисполненный остаток заявки %s: %s",
                         order_id, remaining)
-        cancel_order_remainder(token, order_id)
+        try:
+            cancel_order_remainder(token, order_id)
+        except requests.RequestException as cancel_exc:
+            # Cancellation may have reached the broker even if its response
+            # was lost. Re-read state before deciding the order is unresolved.
+            try:
+                state = get_order_state(token, order_id)
+            except Exception as state_exc:
+                raise OrderProtectionError(
+                    f"Не удалось подтвердить отмену остатка {order_id}: "
+                    f"{cancel_exc}; повторная проверка: {state_exc}"
+                ) from cancel_exc
+            if _normalized_order_status(state) in terminal:
+                return state
+            logging.warning(
+                "Ответ отмены не получен, заявка %s ещё не терминальная; "
+                "продолжаю сверку.",
+                order_id
+            )
 
     # После отмены обязательно повторно сверяем состояние.
     for _ in range(10):
