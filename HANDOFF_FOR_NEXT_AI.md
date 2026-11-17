@@ -122,3 +122,12 @@ Default branch: main
 - Read-only Finam audit run `44143080070` verified account access and 44/44 lot/tick metadata; latest pass 44/44 LONG and 44/44 SHORT. It used only authentication and GET endpoints, no order endpoints.
 - These controls are unit-tested/mocked plus read-only account API validated. No live order or SL/TP order was submitted; actual SL/TP lifecycle on a live or sandbox order remains unverified.
 - PR #5 remains Draft/open/unmerged. Main remains unchanged. Effective FINAM_DRY_RUN remains safe; do not set false until final owner-approved activation review.
+
+## 2026-11-17 — active-order position cap follow-up
+- Added `get_active_order_symbols()`: read-only GET of account orders; active and unknown-status orders reserve a ticker slot. Terminal orders do not reserve a slot. Malformed/unavailable order list fails closed and prevents new submissions.
+- Open position symbols and active order symbols are combined before applying `MAX_OPEN_POSITIONS=10`. This fixes the earlier gap where only positions were counted.
+- Added tests for active order reservation, unknown statuses, and malformed order-list response.
+- Latest safety CI for commit `011d9a98a4f25b12bef5e179ac88d01471d4f2e8`: run `44156645285`, compile passed, 27/27 tests passed. Runtime secrets present; effective `FINAM_DRY_RUN=safe`.
+- Official Finam REST docs confirm GetOrders and GetOrder endpoints and that client_order_id is a unique identifier up to 20 chars; docs do NOT establish client_order_id as an idempotency guarantee. Implementation uses it for reconciliation only and never blindly retries POST.
+- PR #5 remains Draft/open/unmerged. No real orders sent. Live mode remains disabled.
+- Remaining live blockers: controlled broker sandbox test of market-order → partial-fill/cancel → trades reconciliation → SL/TP creation and GetOrder read-back; verify real SL/TP active lifecycle, failure/orphan exposure handling, tick-price rounding semantics and account-specific behavior. A read-only account audit is not a substitute for these checks.
