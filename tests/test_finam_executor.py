@@ -18,10 +18,11 @@ class FakeResponse:
 
 class FinamExecutorTests(unittest.TestCase):
 
-    def test_invalid_dry_run_value_fails_closed(self):
-        source = open("finam_executor.py", encoding="utf-8").read()
-        self.assertIn("Некорректный FINAM_DRY_RUN", source)
-        self.assertIn('else:\\n    raise RuntimeError(', source)
+    def test_dry_run_parser_defaults_safe_and_rejects_invalid_values(self):
+        self.assertTrue(fe.parse_dry_run("true"))
+        self.assertFalse(fe.parse_dry_run("false"))
+        with self.assertRaises(RuntimeError):
+            fe.parse_dry_run("typo")
 
     def test_quantity_is_one_trading_lot_in_test_mode(self):
         with patch.object(fe, "TEST_MODE_MIN_VOLUME", True):
