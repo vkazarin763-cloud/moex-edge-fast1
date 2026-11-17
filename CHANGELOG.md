@@ -101,3 +101,8 @@
 - Configuration check confirmed `FINAM_API_SECRET`, `FINAM_ACCOUNT_ID`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` are present (values masked); effective `FINAM_DRY_RUN=true`.
 - Later commits after this run only update journals/handoff documentation; the executor code and test file tested by this run are unchanged.
 - CI run details: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44160419914
+
+## 2026-11-17 — Finam signal journal branch fix
+- Fixed GitHub Actions branch selection by introducing `FINAM_STATE_BRANCH` instead of trying to override reserved `GITHUB_REF_NAME`.
+- Both executor workflows now pass the explicit state branch. Added a unit test for branch override precedence.
+- Isolated real GitHub Contents API read/write integration passed with the Actions token on a test branch; no Finam/broker calls.

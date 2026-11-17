@@ -86,6 +86,14 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(state["abc"]["order_id"], "123")
         save.assert_called_once()
 
+    def test_signal_journal_branch_override_takes_precedence(self):
+        with patch.dict(os.environ, {
+            "FINAM_STATE_BRANCH": "feature/test-branch",
+            "GITHUB_REF_NAME": "8/merge"
+        }):
+            branch = os.getenv("FINAM_STATE_BRANCH") or os.getenv("GITHUB_REF_NAME", "main")
+        self.assertEqual(branch, "feature/test-branch")
+
     def test_live_signal_state_fails_closed_without_github_token(self):
         with patch.object(fe, "DRY_RUN", False), \
              patch.dict(os.environ, {"GITHUB_TOKEN": "", "GITHUB_REPOSITORY": ""}):
@@ -480,7 +488,7 @@ class FinamExecutorTests(unittest.TestCase):
         env = {
             "GITHUB_TOKEN": "masked-test-token",
             "GITHUB_REPOSITORY": "owner/repo",
-            "GITHUB_REF_NAME": "main"
+            "FINAM_STATE_BRANCH": "main"
         }
         with patch.object(fe, "DRY_RUN", False), \
              patch.dict(os.environ, env), \
@@ -495,7 +503,7 @@ class FinamExecutorTests(unittest.TestCase):
         env = {
             "GITHUB_TOKEN": "masked-test-token",
             "GITHUB_REPOSITORY": "owner/repo",
-            "GITHUB_REF_NAME": "main"
+            "FINAM_STATE_BRANCH": "main"
         }
         state = {"abc": {"status": "SUBMISSION_ATTEMPTED"}}
         with patch.object(fe, "DRY_RUN", False), \
