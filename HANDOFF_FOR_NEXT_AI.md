@@ -156,3 +156,10 @@ Default branch: main
 - These changes are in PR #5 branch only. The latest commits still require CI confirmation. No workflow was dispatched and no broker order was sent.
 - Important remaining concerns: (1) test durable journal behavior against GitHub Contents API in an isolated non-trading test; (2) confirm no other workflow invokes Finam Executor outside the shared concurrency group; (3) resolve orphan exposure if SL/TP cannot be confirmed; (4) complete a full broker integration test in a non-live environment. The user has stated that a demo account is unavailable; do not use the real account as a test harness.
 - `FINAM_DRY_RUN=true`; do not merge/activate live execution based solely on unit tests.
+
+## 2026-11-17 — CI syntax regression and correction
+- CI run `44160110042` exposed a SyntaxError in `tests/test_finam_executor.py`: three line continuations contained two literal backslashes. Python compilation of production modules passed, but test discovery failed while importing the test module.
+- Corrected the three continuations and added mocked tests for reading and writing the GitHub Contents API signal journal, including SHA-based updates and branch selection.
+- Latest observed safety CI run: `44160419914`; dependency install and configuration-presence check passed, Python compile passed, unit tests were still running at last inspection. Do not report the latest suite as green until the run completes.
+- Initialized `finam_signal_state.json` as an empty object on the PR branch.
+- No real broker order or executor workflow dispatch was performed. Effective `FINAM_DRY_RUN=true`.
