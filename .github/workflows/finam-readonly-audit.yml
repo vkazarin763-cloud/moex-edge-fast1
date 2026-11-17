@@ -1,13 +1,14 @@
 name: Finam Read-only Account Audit
 
 on:
-  push:
-    branches:
-      - fix/finam-executor-*
   pull_request:
     branches:
       - main
   workflow_dispatch:
+
+concurrency:
+  group: finam-readonly-audit
+  cancel-in-progress: false
 
 jobs:
   readonly-audit:
