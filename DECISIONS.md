@@ -65,3 +65,10 @@
 - Подтверждено: четыре обязательных секрета присутствуют; эффективный режим FINAM_DRY_RUN=safe.
 - Добавлена блокировка LONG/SHORT, если Finam account-specific параметры не подтверждают соответствующее разрешение.
 - CI: run 44141866777, 16 тестов успешно. Это не broker integration test; live по-прежнему не включать до проверки реального API поведения и защитных сценариев.
+
+## 2026-11-17 — read-only Finam validation and live risk limits
+- Read-only API check confirms account access and 44/44 valid lot/tick metadata. Latest pass showed LONG 44/44 and SHORT 44/44; earlier pass showed 43/44 SHORT, so permissions are checked at order time.
+- No order endpoint was called during this audit. No real trades were sent.
+- Enforce maximum 10 concurrent account positions and retain one-minimum-lot mode. These constraints are part of live readiness.
+- Latest CI run 44143462329 passed 19 tests; runtime secrets are present and FINAM_DRY_RUN remains safe.
+- Keep PR #5 Draft and do not enable live until SL/TP lifecycle and orphan-exposure handling receive final review.
