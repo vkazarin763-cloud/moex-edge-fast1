@@ -111,3 +111,14 @@ Default branch: main
 - Effective FINAM_DRY_RUN is still safe; do not set false until the remaining review is complete.
 
 - After successful account/instrument validation (run `44143080070`), the read-only audit workflow was changed to `workflow_dispatch` only. This prevents repeated automatic 90-request audits on every PR metadata/journal update and avoids unnecessary Finam rate-limit pressure. Re-run manually only when a fresh read-only check is needed.
+
+## 2026-11-17 — final SL/TP and fill-reconciliation hardening
+- Latest executor code/test commit: `1b40331abc36bcbe05a94df953c6124fd00604e7`.
+- Latest CI run: `44144452367`, success; Python compile passed; `Ran 24 tests`; `OK`. Runtime secrets presence and `FINAM_DRY_RUN=safe` also reconfirmed.
+- Trade-history reconciliation now polls up to 10 times for the exact executed quantity, allowing Finam history propagation delay. If it remains mismatched or exceeds the order's executed quantity, it fails closed and alerts; SL/TP is not placed on an unverified quantity.
+- SL/TP placement now requires both POST response validation and GET read-back through GetOrder. It checks an active status, no triggered child order, matching order id, symbol, exit side, quantities, and prices. Triggered, rejected, unknown, or mismatched states stop the run and send a critical alert.
+- Account free cash, open symbols, and occupied sectors are no longer printed in workflow logs; only counts/statuses are logged.
+- MAX_OPEN_POSITIONS=10 and TEST_MODE_MIN_VOLUME=True remain active.
+- Read-only Finam audit run `44143080070` verified account access and 44/44 lot/tick metadata; latest pass 44/44 LONG and 44/44 SHORT. It used only authentication and GET endpoints, no order endpoints.
+- These controls are unit-tested/mocked plus read-only account API validated. No live order or SL/TP order was submitted; actual SL/TP lifecycle on a live or sandbox order remains unverified.
+- PR #5 remains Draft/open/unmerged. Main remains unchanged. Effective FINAM_DRY_RUN remains safe; do not set false until final owner-approved activation review.
