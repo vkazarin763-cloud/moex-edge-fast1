@@ -14,6 +14,9 @@ concurrency:
   group: finam-readonly-audit
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   readonly-audit:
     runs-on: ubuntu-latest
