@@ -35,7 +35,8 @@ class FinamExecutorTests(unittest.TestCase):
 
     def test_timeout_is_unknown_and_never_retried(self):
         with patch.object(fe, "DRY_RUN", False), \
-             patch.object(fe, "api_post", side_effect=requests.Timeout("lost")) as post:
+             patch.object(fe, "api_post", side_effect=requests.Timeout("lost")) as post, \
+             patch.object(fe, "find_order_by_client_id", return_value=None):
             with self.assertRaises(fe.OrderSubmissionUnknown):
                 fe.place_market_order("jwt", "SBER@MISX", 10, "SIDE_BUY")
         self.assertEqual(post.call_count, 1)
@@ -47,10 +48,13 @@ class FinamExecutorTests(unittest.TestCase):
         filled = {"status": "ORDER_STATUS_FILLED",
                   "executed_quantity": {"value": "10"},
                   "remaining_quantity": {"value": "0"}}
-        with patch.object(fe, "get_order_state", side_effect=[partial, filled]), \
+        with patch.object(fe, "get_order_state", side_effect=[partial, filled]) as get_state, \
+             patch.object(fe, "cancel_order_remainder") as cancel, \
              patch.object(fe.time, "sleep"):
             state = fe.wait_for_terminal_order("jwt", "ord-1", timeout_seconds=5)
         self.assertEqual(state["status"], "ORDER_STATUS_FILLED")
+        self.assertEqual(get_state.call_count, 2)
+        cancel.assert_not_called()
 
     def test_weighted_average_fill_price(self):
         trades = {"trades": [
