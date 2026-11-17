@@ -769,8 +769,83 @@ def place_sltp_order(
                 f"{actual}, ожидалось {expected}. Защита не подтверждена."
             )
 
+    # Read the SL/TP order back from Finam. A successful POST response
+    # is not enough if the order is not visible/active in the account.
+    readback = None
+    active_statuses = {"NEW", "WAIT", "WATCHING", "FORWARDING", "LINK_WAIT"}
+    pending_statuses = {"PENDING_NEW"}
+    rejected_statuses = {
+        "REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
+        "FAILED", "EXPIRED", "CANCELED", "CANCELLED", "DISABLED",
+        "EXECUTED", "FILLED", "SL_EXECUTED", "TP_EXECUTED",
+        "SL_GUARD_TIME", "TP_GUARD_TIME", "SL_FORWARDING",
+        "TP_FORWARDING", "TP_CORRECTION", "TP_CORR_GUARD_TIME"
+    }
+    for attempt in range(5):
+        try:
+            readback = get_order_state(token, data["order_id"])
+        except requests.RequestException as exc:
+            if attempt == 4:
+                raise OrderProtectionError(
+                    f"{symbol}: не удалось прочитать SL/TP заявку "
+                    f"{data['order_id']} после отправки."
+                ) from exc
+            time.sleep(1)
+            continue
+
+        if not isinstance(readback, dict):
+            readback = None
+            time.sleep(1)
+            continue
+
+        readback_status = _normalized_order_status(readback)
+        if readback_status in active_statuses:
+            break
+        if readback_status in rejected_statuses:
+            raise OrderProtectionError(
+                f"{symbol}: SL/TP заявка {data['order_id']} после "
+                f"повторного чтения имеет статус {readback.get('status')}."
+            )
+        if readback_status in pending_statuses:
+            time.sleep(1)
+            continue
+        raise OrderProtectionError(
+            f"{symbol}: неизвестный/неактивный статус SL/TP после "
+            f"повторного чтения: {readback.get('status')}."
+        )
+    else:
+        raise OrderProtectionError(
+            f"{symbol}: Finam не подтвердил активное состояние SL/TP "
+            f"заявки {data['order_id']}."
+        )
+
+    if readback.get("order_id") != data["order_id"]:
+        raise OrderProtectionError(
+            f"{symbol}: order_id SL/TP не совпал при повторном чтении."
+        )
+    if readback.get("triggered_order_id"):
+        raise OrderProtectionError(
+            f"{symbol}: SL/TP уже сработал; требуется сверка позиции "
+            "и дочерней заявки."
+        )
+
+    readback_sltp = readback.get("sltp_order")
+    if not isinstance(readback_sltp, dict):
+        raise OrderProtectionError(
+            f"{symbol}: повторное чтение не содержит sltp_order."
+        )
+    for field, expected in expected_fields.items():
+        actual = _decimal_value(
+            readback_sltp.get(field), f"readback.sltp_order.{field}"
+        )
+        if actual != expected:
+            raise OrderProtectionError(
+                f"{symbol}: параметры {field} в SL/TP read-back "
+                f"не совпадают: {actual}, ожидалось {expected}."
+            )
+
     logging.info(
-        "%s: SL/TP подтверждены, order_id=%s, quantity=%s",
+        "%s: SL/TP подтверждены чтением, order_id=%s, quantity=%s",
         symbol, data["order_id"], quantity
     )
     return True
