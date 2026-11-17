@@ -137,6 +137,8 @@ def main():
                     lot_ok = False
                 if lot_ok:
                     params_ok += 1
+                else:
+                    failures.append(f"{ticker}: invalid trade_lot_size")
             else:
                 not_tradable += 1
 
