@@ -57,6 +57,43 @@ class FinamExecutorTests(unittest.TestCase):
         open_symbols = {f"T{i}" for i in range(9)}
         self.assertFalse(fe.position_limit_reached(open_symbols, "SBER"))
 
+    def test_active_orders_reserve_position_slots(self):
+        payload = {"orders": [
+            {
+                "status": "ORDER_STATUS_NEW",
+                "order": {"symbol": "SBER@MISX"}
+            },
+            {
+                "status": "ORDER_STATUS_PARTIALLY_FILLED",
+                "order": {"symbol": "GAZP@MISX"}
+            },
+            {
+                "status": "ORDER_STATUS_FILLED",
+                "order": {"symbol": "LKOH@MISX"}
+            },
+            {
+                "status": "ORDER_STATUS_NEW",
+                "sltp_order": {"symbol": "SBER@MISX"}
+            }
+        ]}
+        with patch.object(fe, "api_get", return_value=payload):
+            self.assertEqual(
+                fe.get_active_order_symbols("jwt"), {"SBER", "GAZP"}
+            )
+
+    def test_unknown_order_status_reserves_slot(self):
+        payload = {"orders": [
+            {"status": "ORDER_STATUS_UNSPECIFIED",
+             "order": {"symbol": "NVTK@MISX"}}
+        ]}
+        with patch.object(fe, "api_get", return_value=payload):
+            self.assertEqual(fe.get_active_order_symbols("jwt"), {"NVTK"})
+
+    def test_invalid_active_orders_response_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={"orders": None}):
+            with self.assertRaises(RuntimeError):
+                fe.get_active_order_symbols("jwt")
+
     def test_quantity_is_one_trading_lot_in_test_mode(self):
         with patch.object(fe, "TEST_MODE_MIN_VOLUME", True):
             self.assertEqual(fe.calculate_order_quantity("SBER", 999, 10), 10)
