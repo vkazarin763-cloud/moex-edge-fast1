@@ -89,6 +89,25 @@ class FinamExecutorTests(unittest.TestCase):
         with patch.object(fe, "api_get", return_value=payload):
             self.assertEqual(fe.get_active_order_symbols("jwt"), {"NVTK"})
 
+    def test_find_sltp_order_by_client_id_nested(self):
+        payload = {"orders": [
+            {"order_id": "sltp-wanted",
+             "sltp_order": {"client_order_id": "sltp-client-123"}}
+        ]}
+        with patch.object(fe, "api_get", return_value=payload):
+            self.assertEqual(
+                fe.find_order_by_client_id("jwt", "sltp-client-123"),
+                "sltp-wanted"
+            )
+
+    def test_active_order_without_symbol_fails_closed(self):
+        payload = {"orders": [
+            {"status": "ORDER_STATUS_NEW", "order": {"client_order_id": "x"}}
+        ]}
+        with patch.object(fe, "api_get", return_value=payload):
+            with self.assertRaises(RuntimeError):
+                fe.get_active_order_symbols("jwt")
+
     def test_invalid_active_orders_response_fails_closed(self):
         with patch.object(fe, "api_get", return_value={"orders": None}):
             with self.assertRaises(RuntimeError):
@@ -277,6 +296,9 @@ class FinamExecutorTests(unittest.TestCase):
         payload = post.call_args.args[2]
         self.assertTrue(ok)
         self.assertNotIn("account_id", payload)
+        self.assertLessEqual(len(payload["client_order_id"]), 20)
+        self.assertEqual(payload["sl_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
+        self.assertEqual(payload["tp_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
         self.assertEqual(payload["quantity_sl"]["value"], "7")
         self.assertEqual(payload["quantity_tp"]["value"], "7")
         self.assertEqual(payload["side"], "SIDE_SELL")
