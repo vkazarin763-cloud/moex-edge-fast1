@@ -111,15 +111,25 @@ def sigs(df):
         sc = [(c['cross_ema_dn'], 'EMA20/50'), (c['cross_macd_dn'], 'MACD'), (c['close'] < c['don20_low'], 'Donchian20'), (c['close'] < c['don55_low'], 'Donchian55'), (c['close'] < c['kc_dn'] and p['close'] >= p['kc_dn'], 'Keltner'), (c['close'] < (c['don20_low'] - 0.25 * c['atr14']), 'ATR'), (c['vwap_dn'], 'VWAP'), (c['obv_dn'], 'OBV'), (c['bear_engulf'], 'Bear_Engulf'), (c['shooting_star'], 'Shooting_Star'), (c['evening_star'], 'Evening_Star'), (c['bear_harami'], 'Bear_Harami'), (c['three_black'], 'Three_Black'), (c['rsi14'] < 70 and p['rsi14'] >= 70, 'RSI14'), (c['close'] < c['bb_up'] and p['close'] >= p['bb_up'], 'Bollinger'), (c['close'] > c['vwap'] * 1.02 and c['close'] < c['open'], 'VWAP_Reversion'), (c['sqf'] and c['close'] < c['open'], 'Squeeze'), (c['z_score'] > 2.0, 'ZScore'), ('rs' in c and c['rs'] < c['rs_ema'] and p['rs'] >= p['rs_ema'], 'RelativeStrength'), (c['inside_bar'] and c['close'] < p['low'], 'InsideBar'), (c['high'] >= c['r1'] and c['close'] < c['r1'], 'Pivot'), ('BR_close' in c and 'Si_close' in c and c['BR_close'] < c['BR_ema20'] and c['Si_close'] > c['Si_ema20'], 'Intermarket'), (c['gap'] < -0.01 and c['close'] < c['open'], 'GapAndGo'), (c['begin'].weekday() == 4 and c['close'] < c['open'], 'Seasonality'), (c['close'] < c['sma200'] and c['high'] >= c['ema20'] and c['close'] < c['ema20'], 'Chandelier'), (c['sweep_dn'], 'SMC_Sweep'), (c['fvg_dn'], 'SMC_FVG')]
         out.extend([(t, -1, n) for cond, n in sc if cond])
     return out
-    def get_kelly_pct(pf, strat):
-        trades = [t for t in pf.get("closed_trades", []) if t.get("strategy") == strat]
-    if len(trades) < 10: return 0.10
-    wins = [t for t in trades if t["pnl"] > 0]; losses = [t for t in trades if t["pnl"] <= 0]
-    W = len(wins) / len(trades); avg_win = sum([t["pnl"] for t in wins]) / len(wins) if wins else 1
-    avg_loss = abs(sum([t["pnl"] for t in losses]) / len(losses)) if losses else 1
-    R = avg_win / avg_loss if avg_loss != 0 else 1.66
-    K = W - ((1 - W) / R)
-    return max(0.02, min(0.20, K * 0.5))
+
+
+def get_kelly_pct(pf, strat):
+    """Half-Kelly sizing estimate from at least ten closed virtual trades."""
+    trades = [
+        trade for trade in pf.get("closed_trades", [])
+        if trade.get("strategy") == strat
+    ]
+    if len(trades) < 10:
+        return 0.10
+
+    wins = [trade for trade in trades if trade["pnl"] > 0]
+    losses = [trade for trade in trades if trade["pnl"] <= 0]
+    win_rate = len(wins) / len(trades)
+    avg_win = sum(trade["pnl"] for trade in wins) / len(wins) if wins else 1
+    avg_loss = abs(sum(trade["pnl"] for trade in losses) / len(losses)) if losses else 1
+    reward_risk = avg_win / avg_loss if avg_loss else 1.66
+    kelly = win_rate - ((1 - win_rate) / reward_risk)
+    return max(0.02, min(0.20, kelly * 0.5))
 
 def check_p(pf):
     still = []
