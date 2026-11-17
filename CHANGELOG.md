@@ -87,3 +87,10 @@
 - Serialized scheduled and manual executor workflows under one concurrency group.
 - Recorded terminal no-fill order outcomes and reset per-row signal identifiers.
 - Pending CI verification on the latest PR #5 head. No live workflow dispatch or broker order was performed.
+
+## 2026-11-17 — CI syntax regression and correction
+- CI run `44160110042` exposed a SyntaxError in `tests/test_finam_executor.py`: three line continuations contained two literal backslashes. Python compilation of production modules passed, but test discovery failed while importing the test module.
+- Corrected the three continuations and added mocked tests for reading and writing the GitHub Contents API signal journal, including SHA-based updates and branch selection.
+- Latest observed safety CI run: `44160419914`; dependency install and configuration-presence check passed, Python compile passed, unit tests were still running at last inspection. Do not report the latest suite as green until the run completes.
+- Initialized `finam_signal_state.json` as an empty object on the PR branch.
+- No real broker order or executor workflow dispatch was performed. Effective `FINAM_DRY_RUN=true`.
