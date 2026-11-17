@@ -435,11 +435,8 @@ def cancel_order_remainder(token, order_id):
 
 
 def wait_for_terminal_order(token, order_id, timeout_seconds=25):
-    terminal = {
-        "ORDER_STATUS_FILLED", "ORDER_STATUS_CANCELED",
-        "ORDER_STATUS_REJECTED", "ORDER_STATUS_EXPIRED",
-        "ORDER_STATUS_FAILED"
-    }
+    # Finam OrderState status enum values.
+    terminal = {"FILLED", "CANCELED", "REJECTED", "EXPIRED", "FAILED"}
     deadline = time.monotonic() + timeout_seconds
     state = None
 
@@ -462,7 +459,7 @@ def wait_for_terminal_order(token, order_id, timeout_seconds=25):
     # После отмены обязательно повторно сверяем состояние.
     for _ in range(10):
         state = get_order_state(token, order_id)
-        if str(state.get("status", "")) in terminal:
+        if str(state.get("status", "")).rsplit("_", 1)[-1] in terminal:
             return state
         time.sleep(1)
 
@@ -752,8 +749,7 @@ def main():
                 final_state.get("remaining_quantity"), "remaining_quantity"
             )
 
-            if status in {"ORDER_STATUS_REJECTED", "ORDER_STATUS_FAILED",
-                          "ORDER_STATUS_EXPIRED"} and executed <= 0:
+            if status.rsplit("_", 1)[-1] in {"REJECTED", "FAILED", "EXPIRED"} and executed <= 0:
                 logging.error("%s: заявка завершилась статусом %s",
                               ticker, status)
                 continue
