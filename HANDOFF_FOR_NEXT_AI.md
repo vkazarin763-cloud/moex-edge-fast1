@@ -170,3 +170,11 @@ Default branch: main
 - Configuration check confirmed `FINAM_API_SECRET`, `FINAM_ACCOUNT_ID`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` are present (values masked); effective `FINAM_DRY_RUN=true`.
 - Later commits after this run only update journals/handoff documentation; the executor code and test file tested by this run are unchanged.
 - CI run details: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44160419914
+
+## 2026-11-17 — cross-project status reconciliation
+- PR #6 `Restore valid MOEX futures scan workflow` was merged to main (merge commit `2337fda89ec7ab875444feaa240c67b2747121e1`). The formerly malformed `.github/workflows/futures-scan.yml` is now valid YAML and runs the read-only `futures_scanner.py` on manual dispatch and hourly weekdays. A validation workflow checks YAML structure and Python compilation; run `44161381744` succeeded. This scanner does not place broker orders.
+- PR #1 (older Finam fill/SLTP hardening draft) was closed as superseded by PR #5; do not reopen/merge it.
+- PR #2 (AI Virtual Agent Kelly scope fix) remains Draft/open. Its CI run `44130237213` passed 3/3 tests and compile checks; branch is not mergeable against the current main revision, so it was not merged. The current main `ai_agent.py` already contains a module-level `get_kelly_pct`; no AI Trainer, weights, or virtual portfolio were changed in this follow-up.
+- PR #3 Signal Bot remains Draft/open. CI run `44136770256` passed 5/5 tests and compile checks. User has reported that Telegram messages arrive and the schedule works; this is user-reported runtime evidence, not independently verified in this session. Do not merge/enable another scheduled notifier without checking for duplicate messages.
+- PR #5 remains Draft/open/unmerged. Its tested executor revision passed run `44160419914`: compile passed and 37/37 tests passed. Subsequent changes were documentation-only. PR #5 now needs reconciliation with the latest main commit (PR #6 merge) before merge; GitHub currently reports mergeable=false. Do not force-merge.
+- Main has changed only through the independent read-only futures workflow PR #6 in this session. Finam executor hardening remains only in PR #5; `FINAM_DRY_RUN=true`; no real broker order was sent.
