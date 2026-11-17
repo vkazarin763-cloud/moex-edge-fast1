@@ -20,3 +20,9 @@
 - Боевой `main` не изменён. `DRY_RUN` не переключался. Реальные заявки не отправлялись. CI для последнего коммита ожидает проверки.
 
 - Уточнена сверка неоднозначного POST: поиск `client_order_id` учитывает как корневое поле, так и `order.client_order_id` из структуры ответа Finam; добавлен тест.
+
+
+## 2026-11-17 — Telegram secrets для Finam Executor (PR #1)
+- В `.github/workflows/moex-edge-fast.yml` и `.github/workflows/finam-executor.yml` добавлена передача `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` из GitHub Actions Secrets в окружение `finam_executor.py`.
+- Изменения сохранены в ветке PR #1; main не изменён. Значения секретов не раскрывались.
+- Важно: при `FINAM_DRY_RUN=true` исполнитель не отправляет реальные заявки и не отправляет сообщения о выполненных сделках. Переключение DRY_RUN не производилось.
