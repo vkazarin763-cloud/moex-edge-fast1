@@ -163,3 +163,10 @@ Default branch: main
 - Latest observed safety CI run: `44160419914`; dependency install and configuration-presence check passed, Python compile passed, unit tests were still running at last inspection. Do not report the latest suite as green until the run completes.
 - Initialized `finam_signal_state.json` as an empty object on the PR branch.
 - No real broker order or executor workflow dispatch was performed. Effective `FINAM_DRY_RUN=true`.
+
+## 2026-11-17 — latest verified safety CI after signal journal fixes
+- Safety CI run `44160419914` completed successfully on PR merge commit `78f3a81`, which includes branch commit `682493b470758e26e4eb63355770d7633dfe0be0`.
+- Python compilation passed; `37 tests` ran and all passed (`OK`). This includes the mocked GitHub Contents API journal read/write tests.
+- Configuration check confirmed `FINAM_API_SECRET`, `FINAM_ACCOUNT_ID`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` are present (values masked); effective `FINAM_DRY_RUN=true`.
+- Later commits after this run only update journals/handoff documentation; the executor code and test file tested by this run are unchanged.
+- CI run details: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44160419914
