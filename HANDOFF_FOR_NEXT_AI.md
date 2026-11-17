@@ -81,3 +81,17 @@ Default branch: main
 - No broker API calls, live orders, secret reads/changes, or Actions variable changes were performed in this follow-up.
 
 - CI follow-up completed successfully after the code, tests, and journal updates: run `44141464912`, job `unit-tests`, compile step passed, `Ran 14 tests`, `OK`. This run corresponds to commit `a19e63308cef5dec7345abcc87abd73e87380663`.
+
+## 2026-11-17 — configuration audit and direction permissions
+- Latest executor code/test commit: `6011ff6dd116182af016c7f793c7323a3ac8f338`.
+- Latest CI run: `44141866777`, completed successfully. Python compile passed; `Ran 16 tests`; `OK`.
+- The isolated safety workflow now checks only presence of runtime configuration and never prints secret values. On run `44141866777` it reported:
+  - `FINAM_API_SECRET=present`
+  - `FINAM_ACCOUNT_ID=present`
+  - `TELEGRAM_BOT_TOKEN=present`
+  - `TELEGRAM_CHAT_ID=present`
+  - `FINAM_DRY_RUN=safe` (effective safe mode; absent variable defaults to true, explicit live=false was not observed)
+- Added account-direction permission validation before an order: LONG requires Finam `longable=AVAILABLE`; SHORT requires `shortable=AVAILABLE` or `AVAILABLE_STRATEGY`; HTB/unavailable statuses are rejected. Added two tests.
+- The configuration audit is a GitHub Actions environment check only. It did NOT authenticate to Finam, read account positions, or send broker requests.
+- PR #5 remains Draft/open/unmerged; main remains unchanged. Do not set FINAM_DRY_RUN=false yet.
+- Still outstanding: non-live broker integration/read-only account verification; exact live account identity and permissions; read-back/status lifecycle for SL/TP; late/partial-fill and cancellation races; orphan exposure handling; final review of all executor paths. The GitHub connector cannot read/modify repository secrets or variables directly; the presence-only workflow check is the available evidence.
