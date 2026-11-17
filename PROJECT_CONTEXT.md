@@ -137,3 +137,10 @@
 - Subsequent branch commits only changed project journals/handoff/PR description; tested executor code and test file were unchanged.
 - PR #5 remains Draft/open/unmerged. No executor workflow was dispatched and no real broker order was sent.
 - Live blockers remain: no demo account/full order lifecycle integration test, no safe automatic recovery from unprotected exposure, and actual Actions-token journal write still needs a non-trading workflow verification.
+
+## 2026-11-17 — explicit branch variable for GitHub signal journal
+- Real GitHub Actions integration test exposed that `GITHUB_REF_NAME` is a reserved runner variable and cannot be overridden from workflow `env`. On pull_request runs it resolves to `<number>/merge`, which caused GitHub Contents API 404 when saving the durable journal.
+- Executor now prefers `FINAM_STATE_BRANCH` and falls back to the built-in `GITHUB_REF_NAME` only when the explicit variable is absent.
+- Both executor workflows pass `FINAM_STATE_BRANCH: ${{ github.ref_name }}` for their schedule/manual execution context.
+- A real, isolated integration run `44162894813` passed using the Actions token with Contents:write. It read and wrote a test-only signal state on branch `test/finam-journal-validation`; no Finam endpoint or broker order was used.
+- The production code/workflow fix is in a separate PR branch pending its own safety CI. Keep `FINAM_DRY_RUN=true`.
