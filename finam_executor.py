@@ -53,6 +53,8 @@ DRY_RUN = parse_dry_run(os.getenv("FINAM_DRY_RUN", "true"))
 BASE_URL = "https://api.finam.ru"
 REQUEST_TIMEOUT = 20
 REQUEST_PAUSE = 0.5
+TRADE_RECONCILE_ATTEMPTS = 10
+TRADE_RECONCILE_PAUSE = 1
 
 # ============================================================
 # SECTORS
@@ -652,41 +654,80 @@ def wait_for_terminal_order(token, order_id, timeout_seconds=25):
 
 
 def get_weighted_average_fill(token, order_id, submitted_at, expected_quantity):
-    start_time = (submitted_at - timedelta(minutes=2)).isoformat(timespec="seconds") + "Z"
-    end_time = (datetime.utcnow() + timedelta(minutes=1)).isoformat(timespec="seconds") + "Z"
-    data = api_get(
-        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/trades",
-        token,
-        params={
-            "limit": 500,
-            "interval.start_time": start_time,
-            "interval.end_time": end_time
-        }
-    )
-
-    trades = data.get("trades", [])
-    matched = [t for t in trades if str(t.get("order_id")) == str(order_id)]
+    start_time = (
+        submitted_at - timedelta(minutes=2)
+    ).isoformat(timespec="seconds") + "Z"
     total_qty = Decimal("0")
     total_value = Decimal("0")
-    for trade in matched:
-        size = _decimal_value(trade.get("size"), "trade.size")
-        price = _decimal_value(trade.get("price"), "trade.price")
-        if size <= 0 or price <= 0:
-            continue
-        total_qty += size
-        total_value += size * price
+    last_error = None
 
-    if total_qty != expected_quantity:
-        raise OrderProtectionError(
-            f"Сделки по {order_id} подтверждают {total_qty} шт., "
-            f"а статус заявки сообщает {expected_quantity} шт. "
-            "SL/TP не выставлены: требуется ручная сверка."
-        )
-    if total_qty <= 0:
-        raise OrderProtectionError(f"Не найдены исполнения для заявки {order_id}")
+    # Finam trade history may lag behind the terminal order state.
+    # Poll read-only history instead of declaring an execution mismatch
+    # after a single immediately-following request.
+    for attempt in range(TRADE_RECONCILE_ATTEMPTS):
+        end_time = (
+            datetime.utcnow() + timedelta(minutes=1)
+        ).isoformat(timespec="seconds") + "Z"
+        try:
+            data = api_get(
+                f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/trades",
+                token,
+                params={
+                    "limit": 500,
+                    "interval.start_time": start_time,
+                    "interval.end_time": end_time
+                }
+            )
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt + 1 < TRADE_RECONCILE_ATTEMPTS:
+                time.sleep(TRADE_RECONCILE_PAUSE)
+                continue
+            raise OrderProtectionError(
+                f"Не удалось получить историю сделок по заявке {order_id}; "
+                "исполнение не сверено, SL/TP не выставлены."
+            ) from exc
 
-    return total_qty, total_value / total_qty
+        trades = data.get("trades", []) if isinstance(data, dict) else []
+        matched = [
+            trade for trade in trades
+            if str(trade.get("order_id")) == str(order_id)
+        ]
+        total_qty = Decimal("0")
+        total_value = Decimal("0")
+        for trade in matched:
+            size = _decimal_value(trade.get("size"), "trade.size")
+            price = _decimal_value(trade.get("price"), "trade.price")
+            if size <= 0 or price <= 0:
+                continue
+            total_qty += size
+            total_value += size * price
 
+        if total_qty == expected_quantity:
+            if total_qty <= 0 or total_value <= 0:
+                raise OrderProtectionError(
+                    f"Некорректная история сделок по заявке {order_id}."
+                )
+            return total_qty, total_value / total_qty
+
+        if total_qty > expected_quantity:
+            raise OrderProtectionError(
+                f"История сделок по {order_id} подтверждает {total_qty} шт., "
+                f"что больше объёма исполнения заявки {expected_quantity}. "
+                "SL/TP не выставлены: требуется ручная сверка."
+            )
+
+        if attempt + 1 < TRADE_RECONCILE_ATTEMPTS:
+            time.sleep(TRADE_RECONCILE_PAUSE)
+
+    detail = f"последний объём в истории {total_qty} шт."
+    if last_error:
+        detail += f"; последняя ошибка {type(last_error).__name__}"
+    raise OrderProtectionError(
+        f"Сделки по {order_id} не подтверждают исполненный объём "
+        f"{expected_quantity} шт. за {TRADE_RECONCILE_ATTEMPTS} попыток "
+        f"({detail}). SL/TP не выставлены: требуется ручная сверка."
+    )
 
 # ============================================================
 # SL / TP
