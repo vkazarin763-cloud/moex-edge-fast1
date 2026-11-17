@@ -109,3 +109,5 @@ Default branch: main
 - Latest PR head at time of this note may advance with journal-only commits; PR #5 remains Draft/open/unmerged and main remains unchanged.
 - Remaining blockers before live: review SL/TP order lifecycle and failure/orphan exposure behavior against Finam's actual account-specific implementation; confirm no open position is left unprotected; ensure operator-approved controlled activation procedure. No live order has been used as a test.
 - Effective FINAM_DRY_RUN is still safe; do not set false until the remaining review is complete.
+
+- After successful account/instrument validation (run `44143080070`), the read-only audit workflow was changed to `workflow_dispatch` only. This prevents repeated automatic 90-request audits on every PR metadata/journal update and avoids unnecessary Finam rate-limit pressure. Re-run manually only when a fresh read-only check is needed.
