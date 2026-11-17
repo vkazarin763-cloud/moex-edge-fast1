@@ -1,0 +1,30 @@
+name: Finam Signal Journal Integration (No Broker)
+
+on:
+  push:
+    branches:
+      - "test/finam-journal-validation"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finam-journal-integration-validation
+  cancel-in-progress: false
+
+jobs:
+  journal-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install executor import dependencies
+        run: python -m pip install pandas requests
+      - name: Exercise real GitHub Contents API journal
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: python tests/test_github_signal_journal_integration.py
