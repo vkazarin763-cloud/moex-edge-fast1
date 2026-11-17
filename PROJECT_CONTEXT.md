@@ -107,3 +107,13 @@
 - CI для commit 011d9a98a4f25b12bef5e179ac88d01471d4f2e8: run 44156645285, compile + 27/27 unit tests passed. Секреты присутствуют, FINAM_DRY_RUN=safe.
 - Finam docs подтвердили GetOrders/GetOrder и длину client_order_id до 20 символов; не документируют idempotency guarantee, поэтому код только ищет заявку по id и не повторяет POST.
 - Live всё ещё не включён; нужны sandbox integration tests по partial fills, cancel race, SL/TP lifecycle и orphan exposure.
+
+ 
+## Finam Executor — follow-up audit (2026-11-17)
+- PR #5 branch head: `bf7ed4f110f1a25551cef1d471ef5ade08d8ee0a`; latest safety CI run `44157773263` completed successfully.
+- Latest CI: Python compile passed; 30/30 unit tests passed; required Finam/Telegram secrets present (values masked); effective `FINAM_DRY_RUN=true`.
+- Added SL/TP client_order_id and read-only reconciliation on timeout/5xx/408; no blind retry. SL/TP volume units explicitly set to `SLTP_QTY_MEASURE_VALUE`.
+- Active order without a resolvable symbol now fails closed. Unexpected exceptions after market-order submission are escalated through the critical alert path.
+- Official Finam docs confirm `SLTP_QTY_MEASURE_VALUE` means shares, `SLTP_QTY_MEASURE_PERCENT` means a percentage of position; GetAsset price-dependent tick selection uses `step` below threshold and `step_from_threshold` at/above threshold.
+- Remaining blockers: full demo-account order lifecycle test (market order, partial/late fill, cancel race, trades reconciliation, SL/TP create/read-back); reliable handling of unprotected/orphan exposure if SL/TP cannot be confirmed; durable signal deduplication (current executor can re-enter after a position closes if the same signal remains in `moex_signals.csv`); final live workflow review.
+- No live orders were sent; PR #5 is Draft/open/unmerged; main unchanged; `FINAM_DRY_RUN` remains true.
