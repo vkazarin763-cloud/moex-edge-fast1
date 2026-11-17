@@ -1,0 +1,44 @@
+name: Validate MOEX Futures Scanner
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/futures-scan.yml"
+      - ".github/workflows/futures-scan-validation.yml"
+      - "futures_scanner.py"
+  push:
+    branches:
+      - "fix/futures-scan-workflow-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install validation dependencies
+        run: python -m pip install --upgrade pip pyyaml pandas numpy requests
+      - name: Validate workflow YAML structure
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          path = Path(".github/workflows/futures-scan.yml")
+          data = yaml.safe_load(path.read_text(encoding="utf-8"))
+          assert isinstance(data, dict), "workflow root must be a mapping"
+          assert data.get("jobs"), "workflow must define jobs"
+          triggers = data.get("on", data.get(True))
+          assert triggers, "workflow must define at least one trigger"
+          assert "scan" in data["jobs"], "expected scan job is missing"
+          print("futures-scan.yml: valid YAML and expected workflow structure")
+          PY
+      - name: Compile futures scanner
+        run: python -m py_compile futures_scanner.py
