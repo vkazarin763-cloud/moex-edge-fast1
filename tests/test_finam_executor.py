@@ -116,8 +116,18 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(avg, Decimal("106"))
 
     def test_sltp_payload_uses_executed_quantity_and_no_account_id(self):
+        accepted = {
+            "order_id": "sltp-1",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
         with patch.object(fe, "DRY_RUN", False), \
-             patch.object(fe, "api_post", return_value=FakeResponse(200)) as post:
+             patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)) as post:
             ok = fe.place_sltp_order(
                 "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
             )
@@ -127,6 +137,32 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(payload["quantity_sl"]["value"], "7")
         self.assertEqual(payload["quantity_tp"]["value"], "7")
         self.assertEqual(payload["side"], "SIDE_SELL")
+
+    def test_sltp_http_200_without_order_confirmation_is_not_success(self):
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, {})):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.place_sltp_order(
+                    "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
+                )
+
+    def test_sltp_http_200_with_rejected_status_is_not_success(self):
+        rejected = {
+            "order_id": "sltp-rejected",
+            "status": "ORDER_STATUS_REJECTED",
+            "sltp_order": {
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, rejected)):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.place_sltp_order(
+                    "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
+                )
 
 
 if __name__ == "__main__":
