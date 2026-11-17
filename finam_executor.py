@@ -360,7 +360,10 @@ def find_order_by_client_id(token, client_order_id):
     orders = data.get("orders", []) if isinstance(data, dict) else []
     matches = [
         order for order in orders
-        if str(order.get("client_order_id", "")) == client_order_id
+        if str(
+            order.get("client_order_id")
+            or (order.get("order") or {}).get("client_order_id", "")
+        ) == client_order_id
     ]
     if len(matches) > 1:
         raise OrderProtectionError(
