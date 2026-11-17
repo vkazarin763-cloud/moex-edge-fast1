@@ -27,6 +27,27 @@ class FinamExecutorTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             fe.parse_dry_run("typo")
 
+    def test_trade_parameters_require_long_permission(self):
+        payload = {
+            "is_tradable": True,
+            "longable": {"value": "AVAILABLE"},
+            "shortable": {"value": "NOT_AVAILABLE"},
+            "trade_lot_size": "10"
+        }
+        with patch.object(fe, "api_get", return_value=payload):
+            self.assertEqual(fe.get_trade_parameters("jwt", "SBER", "LONG"), 10)
+
+    def test_trade_parameters_reject_unavailable_short_permission(self):
+        payload = {
+            "is_tradable": True,
+            "longable": {"value": "AVAILABLE"},
+            "shortable": {"value": "HTB"},
+            "trade_lot_size": "10"
+        }
+        with patch.object(fe, "api_get", return_value=payload):
+            with self.assertRaises(ValueError):
+                fe.get_trade_parameters("jwt", "SBER", "SHORT")
+
     def test_quantity_is_one_trading_lot_in_test_mode(self):
         with patch.object(fe, "TEST_MODE_MIN_VOLUME", True):
             self.assertEqual(fe.calculate_order_quantity("SBER", 999, 10), 10)
