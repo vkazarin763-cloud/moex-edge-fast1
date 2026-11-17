@@ -351,6 +351,31 @@ def _decimal_value(value, field_name):
     return result
 
 
+def find_order_by_client_id(token, client_order_id):
+    """Try to reconcile an ambiguous POST using the broker's order list."""
+    data = api_get(
+        f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders",
+        token
+    )
+    orders = data.get("orders", []) if isinstance(data, dict) else []
+    matches = [
+        order for order in orders
+        if str(order.get("client_order_id", "")) == client_order_id
+    ]
+    if len(matches) > 1:
+        raise OrderProtectionError(
+            f"Найдено несколько заявок с client_order_id={client_order_id}"
+        )
+    if not matches:
+        return None
+    order_id = matches[0].get("order_id")
+    if not order_id:
+        raise OrderProtectionError(
+            f"Найдена заявка {client_order_id} без order_id"
+        )
+    return str(order_id)
+
+
 def place_market_order(token, symbol, quantity, side):
     if not isinstance(quantity, int) or quantity <= 0:
         raise ValueError(f"Недопустимое количество: {quantity}")
@@ -378,11 +403,33 @@ def place_market_order(token, symbol, quantity, side):
             payload
         )
     except requests.RequestException as exc:
-        # POST мог дойти до брокера. Никаких повторов вслепую.
-        raise OrderSubmissionUnknown(
-            f"Неизвестен результат отправки {symbol}; client_order_id="
-            f"{client_order_id}. Повтор запрещён: {exc}"
-        ) from exc
+        # POST мог дойти до брокера. Сначала сверяем список заявок,
+        # но никогда не отправляем повторный POST.
+        try:
+            reconciled_order_id = find_order_by_client_id(
+                token, client_order_id
+            )
+        except Exception as reconcile_exc:
+            raise OrderSubmissionUnknown(
+                f"Не удалось сверить отправку {symbol}; "
+                f"client_order_id={client_order_id}. Повтор запрещён. "
+                f"POST error={exc}; reconcile error={reconcile_exc}"
+            ) from exc
+        if not reconciled_order_id:
+            raise OrderSubmissionUnknown(
+                f"Заявка {symbol} не найдена при сверке после сетевой ошибки; "
+                f"client_order_id={client_order_id}. Результат всё ещё "
+                "неизвестен, повтор запрещён."
+            ) from exc
+        logging.warning(
+            "POST ответ потерян, но заявка найдена сверкой: %s",
+            reconciled_order_id
+        )
+        return {
+            "order_id": reconciled_order_id,
+            "client_order_id": client_order_id,
+            "submitted_at": datetime.utcnow()
+        }
 
     if response.status_code not in (200, 201):
         logging.error("Finam order rejected HTTP %s: %s",
