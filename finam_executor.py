@@ -1233,7 +1233,8 @@ def main():
         return
 
     for _, row in df_active.iterrows():
-
+        # Never let a previous row's identifier leak into this row's error path.
+        signal_id = None
         ticker = str(row["ticker"]).strip().upper()
         direction = str(row["direction"]).strip().upper()
 
@@ -1376,11 +1377,21 @@ def main():
             )
 
             if _normalized_order_status(final_state) in {"REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER", "FAILED", "EXPIRED", "CANCELED", "DONE_FOR_DAY"} and executed <= 0:
-                logging.error("%s: заявка завершилась статусом %s",
+                update_signal_state(
+                    signal_state, signal_id, "NO_FILL_TERMINAL",
+                    order_id=str(order_id), broker_status=status,
+                    filled_quantity="0"
+                )
+                logging.error("%s: заявка завершилась без исполнения, статус %s",
                               ticker, status)
                 continue
 
             if executed <= 0:
+                update_signal_state(
+                    signal_state, signal_id, "NO_FILL_TERMINAL",
+                    order_id=str(order_id), broker_status=status,
+                    filled_quantity="0"
+                )
                 logging.info("%s: заявка не исполнена (status=%s)",
                              ticker, status)
                 continue
