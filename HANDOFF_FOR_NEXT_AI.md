@@ -131,3 +131,14 @@ Default branch: main
 - Official Finam REST docs confirm GetOrders and GetOrder endpoints and that client_order_id is a unique identifier up to 20 chars; docs do NOT establish client_order_id as an idempotency guarantee. Implementation uses it for reconciliation only and never blindly retries POST.
 - PR #5 remains Draft/open/unmerged. No real orders sent. Live mode remains disabled.
 - Remaining live blockers: controlled broker sandbox test of market-order → partial-fill/cancel → trades reconciliation → SL/TP creation and GetOrder read-back; verify real SL/TP active lifecycle, failure/orphan exposure handling, tick-price rounding semantics and account-specific behavior. A read-only account audit is not a substitute for these checks.
+
+ 
+## 2026-11-17 — latest follow-up audit
+- Current PR #5 head: `bf7ed4f110f1a25551cef1d471ef5ade08d8ee0a`.
+- Safety CI run `44157773263`: success; compile passed; 30/30 tests passed. The workflow confirmed all four required secrets are present (values masked) and `FINAM_DRY_RUN=true`.
+- SL/TP POST now uses its own 20-character client_order_id, explicitly sets `SLTP_QTY_MEASURE_VALUE` for both legs, and reconciles ambiguous timeout/5xx/408 responses via GetOrders then GetOrder. It never blindly repeats SL/TP POST.
+- GetOrders entries with missing symbols fail closed. Unexpected exceptions after market-order submission are caught by the critical alert/stop path.
+- Finam docs: `SLTP_QTY_MEASURE_VALUE` is shares and `SLTP_QTY_MEASURE_PERCENT` is percentage of position; price-dependent tick uses `step` below threshold and `step_from_threshold` at/above threshold.
+- Important newly confirmed blocker: the active scanner writes `moex_signals.csv` rows with `ticker,direction,strategy,h1_confirmed,date,entry_price,qty`; executor filters only H1-confirmed and positive qty and does not persist processed signal IDs. If a position closes while the same signal remains active, a later hourly run may enter again. Add and test durable signal idempotency before live.
+- Other blockers remain: demo account integration test for the entire order/fill/cancel/SLTP lifecycle; robust recovery/handling if protective SL/TP cannot be confirmed (current behavior alerts and halts later signals but does not automatically close the unprotected position); validate real account-specific SL/TP lifecycle.
+- PR #5 remains Draft/open/unmerged. Do not set `FINAM_DRY_RUN=false`, do not merge to main, and do not dispatch live executor until blockers are resolved. No live orders were sent.
