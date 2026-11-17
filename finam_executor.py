@@ -5,7 +5,7 @@ import logging
 import requests
 import pandas as pd
 
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_FLOOR, ROUND_CEILING
 from datetime import datetime, timedelta, time as dt_time
 from urllib.parse import quote
 
@@ -266,6 +266,53 @@ def get_trade_parameters(token, ticker):
         )
 
     return int(trade_lot_size)
+
+
+def round_price_to_tick(token, ticker, price, rounding):
+    """
+    Round a protective price to the instrument's actual Finam tick size.
+    GetAsset supplies decimals/min_step or a price-dependent price_step.
+    Fail closed if the broker does not return valid tick metadata.
+    """
+    symbol = f"{ticker}@{MIC}"
+    data = api_get(
+        f"{BASE_URL}/v1/assets/{quote(symbol, safe='')}",
+        token,
+        params={"account_id": ACCOUNT_ID}
+    )
+    if not isinstance(data, dict):
+        raise ValueError(f"{ticker}: некорректные параметры шага цены")
+
+    try:
+        decimals = int(data.get("decimals"))
+        min_step = Decimal(str(data.get("min_step", "0")))
+    except (TypeError, ValueError, InvalidOperation):
+        raise ValueError(f"{ticker}: отсутствуют decimals/min_step")
+
+    if decimals < 0 or not min_step.is_finite() or min_step < 0:
+        raise ValueError(f"{ticker}: некорректные decimals/min_step")
+
+    if min_step > 0:
+        tick = min_step / (Decimal(10) ** decimals)
+    else:
+        price_step = data.get("price_step")
+        if not isinstance(price_step, dict):
+            raise ValueError(f"{ticker}: Finam не вернул price_step")
+        threshold = _decimal_value(
+            price_step.get("threshold_price"), "price_step.threshold_price"
+        )
+        candidate = (
+            price_step.get("step")
+            if Decimal(str(price)) < threshold
+            else price_step.get("step_from_threshold")
+        )
+        tick = _decimal_value(candidate, "price_step.step")
+    if not tick.is_finite() or tick <= 0:
+        raise ValueError(f"{ticker}: недопустимый шаг цены {tick}")
+
+    price_decimal = Decimal(str(price))
+    ticks = (price_decimal / tick).to_integral_value(rounding=rounding)
+    return ticks * tick
 
 
 # ============================================================
@@ -868,16 +915,22 @@ def main():
             )
 
             if direction == "LONG":
-                sl_price = entry_price * Decimal("0.97")
-                tp_price = entry_price * Decimal("1.05")
+                sl_raw = entry_price * Decimal("0.97")
+                tp_raw = entry_price * Decimal("1.05")
                 side = "SIDE_BUY"
+                sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_price = entry_price * Decimal("1.03")
-                tp_price = entry_price * Decimal("0.95")
+                sl_raw = entry_price * Decimal("1.03")
+                tp_raw = entry_price * Decimal("0.95")
                 side = "SIDE_SELL"
+                sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
 
-            sl_price = round(float(sl_price), 2)
-            tp_price = round(float(tp_price), 2)
+            sl_price = round_price_to_tick(
+                token, ticker, sl_raw, sl_rounding
+            )
+            tp_price = round_price_to_tick(
+                token, ticker, tp_raw, tp_rounding
+            )
 
         except Exception as exc:
             logging.error(
@@ -942,11 +995,20 @@ def main():
                                 ticker, remaining, filled_qty_int)
 
             if direction == "LONG":
-                sl_price = round(float(avg_fill_price * Decimal("0.97")), 2)
-                tp_price = round(float(avg_fill_price * Decimal("1.05")), 2)
+                sl_raw = avg_fill_price * Decimal("0.97")
+                tp_raw = avg_fill_price * Decimal("1.05")
+                sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_price = round(float(avg_fill_price * Decimal("1.03")), 2)
-                tp_price = round(float(avg_fill_price * Decimal("0.95")), 2)
+                sl_raw = avg_fill_price * Decimal("1.03")
+                tp_raw = avg_fill_price * Decimal("0.95")
+                sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
+
+            sl_price = round_price_to_tick(
+                token, ticker, sl_raw, sl_rounding
+            )
+            tp_price = round_price_to_tick(
+                token, ticker, tp_raw, tp_rounding
+            )
 
             open_symbols.add(ticker)
             if sector:
