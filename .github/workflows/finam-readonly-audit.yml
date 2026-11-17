@@ -1,13 +1,6 @@
 name: Finam Read-only Account Audit
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - finam_executor.py
-      - finam_readonly_audit.py
-      - .github/workflows/finam-readonly-audit.yml
   workflow_dispatch:
 
 concurrency:
