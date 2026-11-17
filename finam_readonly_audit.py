@@ -129,6 +129,8 @@ def main():
     tick_ok = 0
     long_allowed = 0
     short_allowed = 0
+    long_blocked = []
+    short_blocked = []
     not_tradable = 0
     failures = []
 
@@ -162,10 +164,14 @@ def main():
 
             if enum_value(params.get("longable")) in ("AVAILABLE", "1", 1):
                 long_allowed += 1
+            else:
+                long_blocked.append(ticker)
             if enum_value(params.get("shortable")) in (
                 "AVAILABLE", "AVAILABLE_STRATEGY", "1", "4", 1, 4
             ):
                 short_allowed += 1
+            else:
+                short_blocked.append(ticker)
             if valid_tick_metadata(asset):
                 tick_ok += 1
             else:
@@ -177,6 +183,8 @@ def main():
     print(f"Instrument tick metadata valid: {tick_ok}/{len(TICKERS)}")
     print(f"LONG permission available: {long_allowed}/{len(TICKERS)}")
     print(f"SHORT permission available: {short_allowed}/{len(TICKERS)}")
+    print(f"LONG blocked tickers: {', '.join(long_blocked) if long_blocked else 'none'}")
+    print(f"SHORT blocked tickers: {', '.join(short_blocked) if short_blocked else 'none'}")
     print(f"Not tradable for this account: {not_tradable}/{len(TICKERS)}")
     print(f"Instrument audit errors: {len(failures)}")
     for failure in failures:
