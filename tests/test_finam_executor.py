@@ -17,6 +17,12 @@ class FakeResponse:
 
 
 class FinamExecutorTests(unittest.TestCase):
+
+    def test_invalid_dry_run_value_fails_closed(self):
+        source = open("finam_executor.py", encoding="utf-8").read()
+        self.assertIn("Некорректный FINAM_DRY_RUN", source)
+        self.assertIn('else:\\n    raise RuntimeError(', source)
+
     def test_quantity_is_one_trading_lot_in_test_mode(self):
         with patch.object(fe, "TEST_MODE_MIN_VOLUME", True):
             self.assertEqual(fe.calculate_order_quantity("SBER", 999, 10), 10)
