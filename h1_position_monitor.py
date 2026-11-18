@@ -180,6 +180,11 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
         record["quantity"] = abs(pos["quantity"])
 
         last = record.get("last_processed_candle")
+        if last and candles and last < candles[0]["timestamp"]:
+            raise H1MonitorError(
+                symbol + ": saved H1 cursor is older than the available 7-day "
+                "Finam history; missed candles cannot be ruled out"
+            )
         entry_time = record.get("entry_time")
         eligible = []
         for candle in candles:
