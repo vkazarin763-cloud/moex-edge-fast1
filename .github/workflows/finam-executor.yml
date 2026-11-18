@@ -48,7 +48,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: python -m pip install pandas requests
+        run: python -m pip install pandas requests numpy
+      - name: Generate fresh MOEX signals
+        run: python moex_edge_fast_33.py
       - name: Require explicit live-mode opt-in
         if: ${{ inputs.mode == 'LIVE_ONE_MIN_LOT' && vars.FINAM_DRY_RUN != 'false' }}
         run: |
@@ -67,3 +69,11 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
           FINAM_STATE_BRANCH: ${{ github.ref_name }}
         run: python finam_executor.py
+      - name: Upload scanner output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-moex-signals
+          path: moex_signals.csv
+          if-no-files-found: warn
+          retention-days: 7
