@@ -1,0 +1,71 @@
+name: Finam — one-shot test (max 1 order)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_live:
+        description: "Разрешить ОДНУ реальную заявку в этом запуске (иначе DRY_RUN)"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finam-executor-account
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Read-only Finam preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install audit dependency
+        run: python -m pip install requests
+      - name: Verify account and 44 instruments (GET-only; no orders)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+        run: python finam_readonly_audit.py
+
+  execute:
+    name: Execute at most one signal
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install pandas requests numpy
+      - name: Generate fresh MOEX signals
+        run: python moex_edge_fast_33.py
+      - name: Run one-shot executor
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+          FINAM_DRY_RUN: ${{ inputs.confirm_live == true && 'false' || 'true' }}
+          FINAM_LIVE_TRADING_ENABLED: ${{ inputs.confirm_live == true && 'true' || 'false' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: main
+          FINAM_STATE_BRANCH: main
+        run: python finam_executor.py
+      - name: Upload scanner output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finam-one-shot-signals
+          path: moex_signals.csv
+          if-no-files-found: warn
+          retention-days: 7
