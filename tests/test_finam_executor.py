@@ -40,6 +40,79 @@ class FinamExecutorTests(unittest.TestCase):
             fe.enforce_live_trading_gate(False, "")
         fe.enforce_live_trading_gate(False, "true")
 
+    def test_position_quantity_uses_signed_finAM_position(self):
+        self.assertEqual(
+            fe.get_position_quantity(
+                {"positions": [{"symbol": "SBER@MISX", "quantity": {"value": "5"}}]},
+                "SBER@MISX"
+            ),
+            Decimal("5")
+        )
+        self.assertEqual(
+            fe.get_position_quantity(
+                {"positions": [{"symbol": "SBER@MISX", "quantity": {"value": "-5"}}]},
+                "SBER@MISX"
+            ),
+            Decimal("-5")
+        )
+
+    def test_wait_for_long_position_to_appear_before_sltp(self):
+        responses = [
+            {"account_id": fe.ACCOUNT_ID, "positions": []},
+            {"account_id": fe.ACCOUNT_ID, "positions": [
+                {"symbol": "SBER@MISX", "quantity": {"value": "7"}}
+            ]}
+        ]
+        with patch.object(fe, "api_get", side_effect=responses) as get, \
+             patch.object(fe.time, "sleep"):
+            result = fe.wait_for_position_quantity(
+                "jwt", "SBER@MISX", "LONG", 7, attempts=2, pause=0
+            )
+        self.assertEqual(result, Decimal("7"))
+        self.assertEqual(get.call_count, 2)
+
+    def test_wait_for_short_position_requires_negative_quantity(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID,
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "-3"}}]
+        }):
+            self.assertEqual(
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "SHORT", 3, attempts=1
+                ),
+                Decimal("-3")
+            )
+
+    def test_position_direction_mismatch_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID,
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "-7"}}]
+        }):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=1
+                )
+
+    def test_position_quantity_excess_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID,
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "8"}}]
+        }):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=1
+                )
+
+    def test_position_account_mismatch_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": "another-account",
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "7"}}]
+        }):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=1
+                )
+
     def test_protective_prices_for_long_and_short(self):
         long_sl, long_tp = fe.calculate_protective_prices("100", "LONG")
         short_sl, short_tp = fe.calculate_protective_prices("100", "SHORT")
