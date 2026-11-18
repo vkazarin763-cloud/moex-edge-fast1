@@ -131,11 +131,11 @@ def parse_position_quantity(account, target_symbol):
     return total
 
 
-def count_active_orders_for_symbol(response, target_symbol):
+def matching_active_orders_for_symbol(response, target_symbol):
     orders = response.get("orders")
     if not isinstance(orders, list):
         raise AuditError("active orders response has no valid orders array")
-    matching = 0
+    matching = []
     for order in orders:
         if not isinstance(order, dict):
             raise AuditError("malformed active order entry")
@@ -151,8 +151,43 @@ def count_active_orders_for_symbol(response, target_symbol):
         if not isinstance(symbol, str) or not symbol:
             raise AuditError("active order entry has no valid symbol")
         if symbol == target_symbol:
-            matching += 1
+            matching.append(order)
     return matching
+
+
+def safe_order_summary(order):
+    # Print only whitelisted order-identification and trading fields.
+    allowed = {
+        "id", "order_id", "client_order_id", "order_num", "symbol",
+        "status", "side", "quantity", "price", "type", "order_type",
+        "stop_loss", "take_profit", "trigger_price", "stop_price",
+        "quantity_sl", "quantity_tp", "time_in_force", "expiration",
+        "created_at", "updated_at", "direction", "operation",
+        "instrument", "stop", "take_profit_price", "stop_loss_price"
+    }
+    summary = {}
+    for key in allowed:
+        if key in order:
+            value = order[key]
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                summary[key] = value
+            elif isinstance(value, dict):
+                summary[key] = {
+                    k: v for k, v in value.items()
+                    if k in allowed and (
+                        isinstance(v, (str, int, float, bool)) or v is None
+                    )
+                }
+    for container in ("order", "sltp_order"):
+        nested = order.get(container)
+        if isinstance(nested, dict):
+            summary[container] = {
+                key: value for key, value in nested.items()
+                if key in allowed and (
+                    isinstance(value, (str, int, float, bool)) or value is None
+                )
+            }
+    return summary
 
 
 def main():
@@ -182,9 +217,12 @@ def main():
         f"/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders",
         token=token
     )
-    t_order_count = count_active_orders_for_symbol(active_orders, target_symbol)
+    t_orders = matching_active_orders_for_symbol(active_orders, target_symbol)
+    t_order_count = len(t_orders)
     print(f"T position quantity ({target_symbol}): {t_quantity}")
     print(f"Active T orders ({target_symbol}, including stop orders): {t_order_count}")
+    for index, order in enumerate(t_orders, start=1):
+        print(f"T active order {index} (sanitized): {safe_order_summary(order)}")
     if t_quantity != 0 or t_order_count != 0:
         raise AuditError("T position or active orders remain; stop before any trading")
 
