@@ -1373,6 +1373,7 @@ def main():
         "wait_for_terminal_order": wait_for_terminal_order,
         "get_account_info": get_account_info,
         "get_position_quantity": get_position_quantity,
+        "get_active_order_symbols": get_active_order_symbols,
         "place_market_order": place_market_order,
         "send_telegram_message": send_telegram_message,
         "logger": logging,
