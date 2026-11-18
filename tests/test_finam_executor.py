@@ -31,6 +31,12 @@ class FinamExecutorTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             fe.parse_dry_run("typo")
 
+    def test_live_order_limit_is_one_per_invocation(self):
+        self.assertTrue(fe.can_submit_live_order(0))
+        self.assertFalse(fe.can_submit_live_order(1))
+        self.assertFalse(fe.can_submit_live_order(2))
+        self.assertEqual(fe.MAX_NEW_ORDERS_PER_RUN, 1)
+
     def test_trade_parameters_require_long_permission(self):
         payload = {
             "is_tradable": True,
