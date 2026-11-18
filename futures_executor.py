@@ -82,6 +82,12 @@ def place_sltp_order(token, symbol, quantity, side, sl_price, tp_price):
     return False
 
 def main():
+    # Fail-closed pause: futures execution is disabled unless an explicit
+    # repository/workflow environment flag is deliberately enabled later.
+    if os.getenv("FUTURES_LIVE_TRADING_ENABLED", "false").strip().lower() != "true":
+        logging.warning("FUTURES TRADING PAUSED: live executor blocked; no broker API calls or orders.")
+        return
+
     now_msk = datetime.utcnow() + timedelta(hours=3)
     current_time = now_msk.time()
     is_weekend = now_msk.weekday() >= 5
