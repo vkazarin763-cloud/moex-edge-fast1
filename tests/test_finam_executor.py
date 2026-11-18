@@ -8,6 +8,7 @@ import requests
 import tempfile
 import os
 import finam_executor as fe
+import finam_readonly_audit as fra
 
 # Stable dummy account id for URL construction in mocked tests; no API calls occur.
 fe.ACCOUNT_ID = "unit-test-account"
@@ -544,6 +545,62 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(payload["branch"], "main")
         written = json.loads(base64.b64decode(payload["content"]).decode("utf-8"))
         self.assertEqual(written, state)
+
+
+
+class FinamReadOnlyAuditTests(unittest.TestCase):
+    def test_t_position_absent_means_zero_only_with_valid_positions_array(self):
+        self.assertEqual(
+            fra.parse_position_quantity({"positions": []}, "T@MISX"),
+            Decimal("0")
+        )
+
+    def test_t_position_quantity_is_read_from_broker_payload(self):
+        account = {
+            "positions": [
+                {"symbol": "SBER@MISX", "quantity": {"value": "2"}},
+                {"symbol": "T@MISX", "quantity": {"value": "1"}}
+            ]
+        }
+        self.assertEqual(
+            fra.parse_position_quantity(account, "T@MISX"),
+            Decimal("1")
+        )
+
+    def test_malformed_positions_fail_closed(self):
+        with self.assertRaises(fra.AuditError):
+            fra.parse_position_quantity({}, "T@MISX")
+        with self.assertRaises(fra.AuditError):
+            fra.parse_position_quantity({"positions": [{"quantity": "1"}]}, "T@MISX")
+
+    def test_no_active_t_orders(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [{"symbol": "SBER@MISX"}]}, "T@MISX"
+            ),
+            0
+        )
+
+    def test_active_t_order_is_counted(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [
+                    {"symbol": "T@MISX", "status": "ORDER_STATUS_NEW"},
+                    {"symbol": "SBER@MISX", "status": "ORDER_STATUS_NEW"}
+                ]},
+                "T@MISX"
+            ),
+            1
+        )
+
+    def test_malformed_orders_fail_closed(self):
+        with self.assertRaises(fra.AuditError):
+            fra.count_active_orders_for_symbol({}, "T@MISX")
+        with self.assertRaises(fra.AuditError):
+            fra.count_active_orders_for_symbol(
+                {"orders": [{"status": "ORDER_STATUS_NEW"}]}, "T@MISX"
+            )
+
 
 
 
