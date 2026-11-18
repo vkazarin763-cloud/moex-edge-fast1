@@ -3,7 +3,7 @@
 MOEX timestamps are interpreted as Europe/Moscow when the ISS response omits
 an offset. The caller must still persist the last processed candle timestamp.
 """
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import requests
@@ -46,7 +46,7 @@ def parse_closed_h1_rows(columns, rows, now=None):
     if not isinstance(columns, list) or not isinstance(rows, list):
         raise CandleDataError("Malformed MOEX ISS candles payload")
     index = {name: i for i, name in enumerate(columns)}
-    required = ("begin", "open", "high", "low", "close")
+    required = ("begin", "end", "open", "high", "low", "close")
     if any(name not in index for name in required):
         raise CandleDataError("MOEX ISS candles response misses required columns")
 
@@ -60,7 +60,9 @@ def parse_closed_h1_rows(columns, rows, now=None):
         if not isinstance(row, list) or len(row) < len(columns):
             raise CandleDataError("Malformed MOEX ISS candle row")
         begin = _parse_iss_datetime(row[index["begin"]])
-        end = begin + timedelta(hours=1)
+        end = _parse_iss_datetime(row[index["end"]])
+        if end <= begin:
+            raise CandleDataError("MOEX candle end must be after begin")
         if end > current:
             continue
         stamp = begin.isoformat()
