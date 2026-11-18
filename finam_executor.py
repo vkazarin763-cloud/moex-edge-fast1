@@ -62,6 +62,18 @@ def parse_dry_run(value):
 
 DRY_RUN = parse_dry_run(os.getenv("FINAM_DRY_RUN", "true"))
 
+
+def enforce_live_trading_gate(dry_run, live_enabled):
+    """Require a second, explicit kill-switch before any live broker order."""
+    if dry_run:
+        return
+    if str(live_enabled).strip().lower() != "true":
+        raise RuntimeError(
+            "LIVE trading заблокирован: для разблокировки нужны "
+            "FINAM_DRY_RUN=false и отдельный FINAM_LIVE_TRADING_ENABLED=true. "
+            "До завершения проверки SL/TP реальные заявки запрещены."
+        )
+
 BASE_URL = "https://api.finam.ru"
 REQUEST_TIMEOUT = 20
 REQUEST_PAUSE = 0.5
@@ -822,11 +834,17 @@ def place_sltp_order(
     if not isinstance(quantity, int) or quantity <= 0:
         raise ValueError(f"Некорректное количество SL/TP: {quantity}")
 
-    exit_side = "SIDE_SELL" if position_direction == "LONG" else "SIDE_BUY"
+    if position_direction not in ("LONG", "SHORT"):
+        raise ValueError(
+            f"Некорректное направление защищаемой позиции: {position_direction}"
+        )
+    # Finam SLTP "side" identifies the protected position direction.
+    # Official REST example uses SIDE_BUY for a long position with SL below TP.
+    position_side = "SIDE_BUY" if position_direction == "LONG" else "SIDE_SELL"
     client_order_id = __import__("uuid").uuid4().hex[:20]
     payload = {
         "symbol": symbol,
-        "side": exit_side,
+        "side": position_side,
         "quantity_sl": {"value": str(quantity)},
         "sl_price": {"value": str(sl_price)},
         "quantity_tp": {"value": str(quantity)},
@@ -957,7 +975,7 @@ def place_sltp_order(
         raise OrderProtectionError(
             f"{symbol}: символ SL/TP не совпал при повторном чтении."
         )
-    if readback_sltp.get("side") != exit_side:
+    if readback_sltp.get("side") != position_side:
         raise OrderProtectionError(
             f"{symbol}: сторона SL/TP не совпала при повторном чтении."
         )
@@ -1207,6 +1225,9 @@ def update_signal_state(state, signal_id, status, **details):
 # ============================================================
 
 def main():
+    enforce_live_trading_gate(
+        DRY_RUN, os.getenv("FINAM_LIVE_TRADING_ENABLED", "false")
+    )
     now_msk = datetime.utcnow() + timedelta(hours=3)
     current_time = now_msk.time()
     is_weekend = now_msk.weekday() >= 5
