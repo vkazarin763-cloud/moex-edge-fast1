@@ -5,6 +5,8 @@ on:
     branches:
       - fix/finam-executor-*
       - safety/live-gate-sltp-audit-*
+      - safety/combined-sltp-audit-*
+      - safety/read-only-position-orders-audit-*
       - safety/disable-live-*
   pull_request:
     branches:
