@@ -197,13 +197,19 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
                 symbol + ": saved H1 cursor is older than the available 7-day "
                 "Finam history; missed candles cannot be ruled out"
             )
+        # DRY_RUN has its own cursor. A simulated exit must never consume the
+        # live cursor, otherwise a later live run could skip the same exit.
+        cursor = (
+            record.get("last_dry_run_candle") or last
+            if dry_run else last
+        )
         entry_time = record.get("entry_time")
         eligible = []
         for candle in candles:
             stamp = candle["timestamp"]
-            if last and stamp <= last:
+            if cursor and stamp <= cursor:
                 continue
-            if not last and entry_time:
+            if not cursor and entry_time:
                 candle_dt = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
                 entry_dt = datetime.fromisoformat(entry_time.replace("Z", "+00:00"))
                 if candle_dt < entry_dt:
@@ -218,10 +224,15 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
                 break
 
         if trigger is None:
-            if candles and candles[-1]["timestamp"] != last:
-                record["last_processed_candle"] = candles[-1]["timestamp"]
-                record["updated_at"] = datetime.utcnow().isoformat() + "Z"
-                deps["save_state"](state)
+            if candles:
+                if dry_run and candles[-1]["timestamp"] != cursor:
+                    record["last_dry_run_candle"] = candles[-1]["timestamp"]
+                    record["updated_at"] = datetime.utcnow().isoformat() + "Z"
+                    deps["save_state"](state)
+                elif not dry_run and candles[-1]["timestamp"] != last:
+                    record["last_processed_candle"] = candles[-1]["timestamp"]
+                    record["updated_at"] = datetime.utcnow().isoformat() + "Z"
+                    deps["save_state"](state)
             continue
 
         candle, reason = trigger
@@ -234,7 +245,7 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
                 "[DRY RUN] H1 %s %s candle=%s qty=%s; no order sent",
                 reason, symbol, candle["timestamp"], qty
             )
-            record["last_processed_candle"] = candle["timestamp"]
+            record["last_dry_run_candle"] = candle["timestamp"]
             record["last_dry_run_exit"] = reason
             deps["save_state"](state)
             continue
