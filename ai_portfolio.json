@@ -1,5 +1,5 @@
 {
-  "cash": 92036.85660004804,
+  "cash": 104757.67904404804,
   "positions": [
     {
       "ticker": "ROSN",
@@ -77,18 +77,6 @@
       "sl_price": 290.07,
       "tp_price": 313.99,
       "be_price": 305.02
-    },
-    {
-      "ticker": "GAZP",
-      "direction": "LONG",
-      "entry_price": 118.46,
-      "entry_time": "2026-11-17 18:00:00",
-      "qty": 111,
-      "activated": false,
-      "strategy": "SMC_Sweep",
-      "sl_price": 114.91,
-      "tp_price": 124.38,
-      "be_price": 120.83
     },
     {
       "ticker": "LKOH",
@@ -246,6 +234,23 @@
       "net_ret": -0.03259834354811995,
       "pnl": -472.31088000000034,
       "exit_time": "2026-11-17 07:00:00"
+    },
+    {
+      "ticker": "GAZP",
+      "direction": "LONG",
+      "entry_price": 118.46,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 111,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 114.91,
+      "tp_price": 124.38,
+      "be_price": 120.83,
+      "exit_price": 114.91,
+      "exit_reason": "SL",
+      "net_ret": -0.032567921661320255,
+      "pnl": -428.2375559999997,
+      "exit_time": "2026-11-18 18:00:00"
     }
   ]
 }
