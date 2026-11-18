@@ -353,6 +353,18 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertLessEqual(len(payload["client_order_id"]), 20)
         self.assertEqual(result["order_id"], "ord-1")
 
+    def test_market_exit_uses_pre_reserved_client_order_id(self):
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(
+                 200, {"order_id": "exit-ord"}
+             )) as post:
+            result = fe.place_market_order(
+                "jwt", "T@MISX", 2, "SIDE_SELL",
+                client_order_id="exit-client-123"
+            )
+        self.assertEqual(post.call_args.args[2]["client_order_id"], "exit-client-123")
+        self.assertEqual(result["client_order_id"], "exit-client-123")
+
     def test_server_error_reconciles_without_resubmitting(self):
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(502, text="gateway")) as post, \

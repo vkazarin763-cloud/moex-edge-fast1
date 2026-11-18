@@ -11,6 +11,9 @@ import pandas as pd
 from decimal import Decimal, InvalidOperation, ROUND_FLOOR, ROUND_CEILING
 from datetime import datetime, timedelta, time as dt_time
 from urllib.parse import quote
+import uuid
+
+from h1_position_monitor import monitor_open_positions, initialize_position_state
 
 logging.basicConfig(
     level=logging.INFO,
@@ -649,11 +652,13 @@ def find_order_by_client_id(token, client_order_id):
     return str(order_id)
 
 
-def place_market_order(token, symbol, quantity, side):
+def place_market_order(token, symbol, quantity, side, client_order_id=None):
     if not isinstance(quantity, int) or quantity <= 0:
         raise ValueError(f"Недопустимое количество: {quantity}")
 
-    client_order_id = __import__("uuid").uuid4().hex[:20]
+    client_order_id = client_order_id or uuid.uuid4().hex[:20]
+    if not isinstance(client_order_id, str) or not (1 <= len(client_order_id) <= 20):
+        raise ValueError("Некорректный client_order_id")
     payload = {
         "symbol": symbol,
         "quantity": {"value": str(quantity)},
@@ -1358,6 +1363,24 @@ def main():
 
     logging.info("Свободные средства получены (значение скрыто)")
 
+    # Run H1 exits before considering any new entries.
+    signal_state = load_signal_state()
+    monitor_open_positions(token, account_data, signal_state, DRY_RUN, {
+        "api_get": api_get,
+        "decimal_value": _decimal_value,
+        "save_state": save_signal_state,
+        "find_order_by_client_id": find_order_by_client_id,
+        "wait_for_terminal_order": wait_for_terminal_order,
+        "get_account_info": get_account_info,
+        "get_position_quantity": get_position_quantity,
+        "get_active_order_symbols": get_active_order_symbols,
+        "place_market_order": place_market_order,
+        "send_telegram_message": send_telegram_message,
+        "logger": logging,
+    })
+
+    # Refresh after possible H1 exit before computing available slots.
+    account_data, available_cash = get_account_info(token)
     open_symbols = get_open_position_symbols(account_data)
 
     # Pending orders reserve a slot too. If Finam cannot provide this list,
@@ -1386,7 +1409,6 @@ def main():
         return
 
     df_active = load_active_signals()
-    signal_state = load_signal_state()
 
     if df_active.empty:
         logging.info("Нет подтвержденных сигналов.")
@@ -1463,22 +1485,10 @@ def main():
                 trade_lot_size
             )
 
-            sl_raw, tp_raw = calculate_protective_prices(
-                entry_price, direction
-            )
             if direction == "LONG":
                 side = "SIDE_BUY"
-                sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
                 side = "SIDE_SELL"
-                sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
-
-            sl_price = round_price_to_tick(
-                token, ticker, sl_raw, sl_rounding
-            )
-            tp_price = round_price_to_tick(
-                token, ticker, tp_raw, tp_rounding
-            )
 
         except Exception as exc:
             logging.error(
@@ -1490,16 +1500,9 @@ def main():
             continue
 
         logging.info(
-            "Подготовлена заявка: %s %s, "
-            "лот=%s, количество=%s шт., "
-            "вход=%s, SL=%s, TP=%s",
-            ticker,
-            direction,
-            trade_lot_size,
-            quantity,
-            entry_price,
-            sl_price,
-            tp_price
+            "Подготовлена заявка: %s %s, лот=%s, количество=%s шт., "
+            "сигнальная цена=%s; выход: закрытая H1, SL 3%% / TP 5%%",
+            ticker, direction, trade_lot_size, quantity, entry_price
         )
 
         # Durable dedupe reservation is committed before any broker POST.
@@ -1587,49 +1590,33 @@ def main():
                                 "только исполненные %s шт.",
                                 ticker, remaining, filled_qty_int)
 
-            sl_raw, tp_raw = calculate_protective_prices(
-                avg_fill_price, direction
-            )
-            if direction == "LONG":
-                sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
-            else:
-                sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
-
-            sl_price = round_price_to_tick(
-                token, ticker, sl_raw, sl_rounding
-            )
-            tp_price = round_price_to_tick(
-                token, ticker, tp_raw, tp_rounding
-            )
-
             open_symbols.add(ticker)
             if sector:
                 busy_sectors.add(sector)
 
-            sltp_ok = place_sltp_order(
-                token, symbol, filled_qty_int, direction, sl_price, tp_price
+            signed_quantity = filled_qty_int if direction == "LONG" else -filled_qty_int
+            initialize_position_state(
+                signal_state, symbol, ticker, direction, signed_quantity,
+                avg_fill_price, save_signal_state,
+                entry_time=datetime.now().astimezone().isoformat()
             )
-            if not sltp_ok:
-                raise OrderProtectionError(
-                    f"{ticker}: позиция {filled_qty_int} шт. открыта, "
-                    "но SL/TP не подтверждены брокером."
-                )
 
             update_signal_state(
-                signal_state, signal_id, "EXECUTED_AND_PROTECTED",
+                signal_state, signal_id, "EXECUTED_H1_MONITORING",
                 order_id=str(order_id), filled_quantity=filled_qty_int,
                 average_fill_price=str(avg_fill_price),
-                sl_price=str(sl_price), tp_price=str(tp_price)
+                exit_rule="Closed H1 candle: SL 3%, TP 5%; market exit on next run"
             )
 
             emoji = "🟢" if direction == "LONG" else "🔴"
             send_telegram_message(
-                f"{emoji} <b>Заявка исполнена и защищена</b>\n\n"
+                f"{emoji} <b>Позиция открыта; H1-контроль записан</b>\n\n"
                 f"📈 <b>{ticker}</b> ({direction})\n"
                 f"Исполнено: {filled_qty_int} шт.\n"
                 f"Средняя цена исполнения: {avg_fill_price}\n"
-                f"Статус заявки: {status}\n"
-                f"🛡️ SL: {sl_price}\n🎯 TP: {tp_price}"
+                "SL 3% / TP 5% по закрытым H1-свечам.\n"
+                "Это не биржевые стоп-заявки: выход проверяется "
+                "при следующем запуске системы."
             )
 
         except Exception as exc:
