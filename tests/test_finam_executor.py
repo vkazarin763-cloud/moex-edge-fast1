@@ -504,8 +504,8 @@ class FinamExecutorTests(unittest.TestCase):
                 "tp_price": {"value": "105.0"}
             }
         }
-        with patch.object(fe, "DRY_RUN", False), \\
-             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \\
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \
              patch.object(fe, "get_order_state", return_value=readback):
             self.assertTrue(
                 fe.place_sltp_order("jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0)
@@ -525,8 +525,8 @@ class FinamExecutorTests(unittest.TestCase):
                 "tp_price": {"value": "95.0"}
             }
         }
-        with patch.object(fe, "DRY_RUN", False), \\
-             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \\
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \
              patch.object(fe, "get_order_state", return_value=readback):
             self.assertTrue(
                 fe.place_sltp_order("jwt", "SBER@MISX", 7, "SHORT", 103.0, 95.0)
