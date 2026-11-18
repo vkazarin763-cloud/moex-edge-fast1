@@ -659,8 +659,7 @@ def place_market_order(token, symbol, quantity, side):
         "quantity": {"value": str(quantity)},
         "side": side,
         "type": "ORDER_TYPE_MARKET",
-        "client_order_id": client_order_id,
-        "valid_before": "VALID_BEFORE_GOOD_TILL_CANCEL"
+        "client_order_id": client_order_id
     }
 
     if DRY_RUN:
@@ -949,7 +948,8 @@ def place_sltp_order(
         "tp_price": {"value": str(tp_price)},
         "sl_qty_measure": "SLTP_QTY_MEASURE_VALUE",
         "tp_qty_measure": "SLTP_QTY_MEASURE_VALUE",
-        "client_order_id": client_order_id
+        "client_order_id": client_order_id,
+        "valid_before": "VALID_BEFORE_GOOD_TILL_CANCEL"
     }
 
     if DRY_RUN:
