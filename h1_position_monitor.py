@@ -87,7 +87,7 @@ def _reconcile_pending(token, state, key, position, deps):
         deps["send_telegram_message"](
             "Position closed after order reconciliation: " + position["symbol"]
         )
-        return
+        return True
     if (remaining > 0) != (position["quantity"] > 0):
         raise H1MonitorError(position["symbol"] + ": position direction changed after exit")
     record.update(status="MONITORING", quantity=int(abs(remaining)),
@@ -111,7 +111,8 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
         record = state.get(key)
 
         if record and record.get("status") == "EXIT_SUBMISSION_ATTEMPTED":
-            _reconcile_pending(token, state, key, pos, deps)
+            if _reconcile_pending(token, state, key, pos, deps):
+                continue
             record = state[key]
 
         if record and record.get("status") == "CLOSED":
