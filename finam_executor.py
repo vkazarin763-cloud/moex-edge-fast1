@@ -62,6 +62,22 @@ def parse_dry_run(value):
 
 DRY_RUN = parse_dry_run(os.getenv("FINAM_DRY_RUN", "true"))
 
+# Keep in sync with REC_SL_PCT / REC_TAKE_PCT in moex_edge_fast_33.py.
+PROTECTIVE_SL_PCT = Decimal("3.0")
+PROTECTIVE_TP_PCT = Decimal("5.0")
+
+
+def enforce_live_trading_gate(dry_run, live_enabled):
+    """Require a second, explicit kill-switch before any live broker order."""
+    if dry_run:
+        return
+    if str(live_enabled).strip().lower() != "true":
+        raise RuntimeError(
+            "LIVE trading заблокирован: для разблокировки нужны "
+            "FINAM_DRY_RUN=false и отдельный FINAM_LIVE_TRADING_ENABLED=true. "
+            "До завершения проверки SL/TP реальные заявки запрещены."
+        )
+
 BASE_URL = "https://api.finam.ru"
 REQUEST_TIMEOUT = 20
 REQUEST_PAUSE = 0.5
@@ -338,6 +354,24 @@ def get_trade_parameters(token, ticker, direction=None):
         )
 
     return int(trade_lot_size)
+
+
+def calculate_protective_prices(reference_price, position_direction):
+    """Calculate SL/TP around a reference price using the current 3%/5% policy."""
+    try:
+        price = Decimal(str(reference_price))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError(f"Некорректная опорная цена: {reference_price}")
+    if not price.is_finite() or price <= 0:
+        raise ValueError(f"Некорректная опорная цена: {reference_price}")
+
+    sl_fraction = PROTECTIVE_SL_PCT / Decimal("100")
+    tp_fraction = PROTECTIVE_TP_PCT / Decimal("100")
+    if position_direction == "LONG":
+        return price * (Decimal("1") - sl_fraction), price * (Decimal("1") + tp_fraction)
+    if position_direction == "SHORT":
+        return price * (Decimal("1") + sl_fraction), price * (Decimal("1") - tp_fraction)
+    raise ValueError(f"Некорректное направление: {position_direction}")
 
 
 def round_price_to_tick(token, ticker, price, rounding):
@@ -822,11 +856,17 @@ def place_sltp_order(
     if not isinstance(quantity, int) or quantity <= 0:
         raise ValueError(f"Некорректное количество SL/TP: {quantity}")
 
-    exit_side = "SIDE_SELL" if position_direction == "LONG" else "SIDE_BUY"
+    if position_direction not in ("LONG", "SHORT"):
+        raise ValueError(
+            f"Некорректное направление защищаемой позиции: {position_direction}"
+        )
+    # Finam SLTP "side" identifies the protected position direction.
+    # Official REST example uses SIDE_BUY for a long position with SL below TP.
+    position_side = "SIDE_BUY" if position_direction == "LONG" else "SIDE_SELL"
     client_order_id = __import__("uuid").uuid4().hex[:20]
     payload = {
         "symbol": symbol,
-        "side": exit_side,
+        "side": position_side,
         "quantity_sl": {"value": str(quantity)},
         "sl_price": {"value": str(sl_price)},
         "quantity_tp": {"value": str(quantity)},
@@ -957,7 +997,7 @@ def place_sltp_order(
         raise OrderProtectionError(
             f"{symbol}: символ SL/TP не совпал при повторном чтении."
         )
-    if readback_sltp.get("side") != exit_side:
+    if readback_sltp.get("side") != position_side:
         raise OrderProtectionError(
             f"{symbol}: сторона SL/TP не совпала при повторном чтении."
         )
@@ -1207,6 +1247,9 @@ def update_signal_state(state, signal_id, status, **details):
 # ============================================================
 
 def main():
+    enforce_live_trading_gate(
+        DRY_RUN, os.getenv("FINAM_LIVE_TRADING_ENABLED", "false")
+    )
     now_msk = datetime.utcnow() + timedelta(hours=3)
     current_time = now_msk.time()
     is_weekend = now_msk.weekday() >= 5
@@ -1337,14 +1380,13 @@ def main():
                 trade_lot_size
             )
 
+            sl_raw, tp_raw = calculate_protective_prices(
+                entry_price, direction
+            )
             if direction == "LONG":
-                sl_raw = entry_price * Decimal("0.97")
-                tp_raw = entry_price * Decimal("1.05")
                 side = "SIDE_BUY"
                 sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_raw = entry_price * Decimal("1.03")
-                tp_raw = entry_price * Decimal("0.95")
                 side = "SIDE_SELL"
                 sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
 
@@ -1456,13 +1498,12 @@ def main():
                                 "только исполненные %s шт.",
                                 ticker, remaining, filled_qty_int)
 
+            sl_raw, tp_raw = calculate_protective_prices(
+                avg_fill_price, direction
+            )
             if direction == "LONG":
-                sl_raw = avg_fill_price * Decimal("0.97")
-                tp_raw = avg_fill_price * Decimal("1.05")
                 sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_raw = avg_fill_price * Decimal("1.03")
-                tp_raw = avg_fill_price * Decimal("0.95")
                 sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
 
             sl_price = round_price_to_tick(
