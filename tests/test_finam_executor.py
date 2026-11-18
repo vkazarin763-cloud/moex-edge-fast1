@@ -362,7 +362,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -389,7 +389,7 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(payload["tp_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
         self.assertEqual(payload["quantity_sl"]["value"], "7")
         self.assertEqual(payload["quantity_tp"]["value"], "7")
-        self.assertEqual(payload["side"], "SIDE_SELL")
+        self.assertEqual(payload["side"], "SIDE_BUY")
 
     def test_sltp_timeout_reconciles_by_client_id_without_resubmitting(self):
         readback = {
@@ -397,7 +397,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
