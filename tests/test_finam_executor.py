@@ -103,6 +103,16 @@ class FinamExecutorTests(unittest.TestCase):
                     "jwt", "SBER@MISX", "LONG", 7, attempts=1
                 )
 
+    def test_missing_position_times_out_and_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID, "positions": []
+        }) as get, patch.object(fe.time, "sleep"):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=2, pause=0
+                )
+        self.assertEqual(get.call_count, 2)
+
     def test_position_account_mismatch_fails_closed(self):
         with patch.object(fe, "api_get", return_value={
             "account_id": "another-account",
@@ -476,6 +486,7 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertLessEqual(len(payload["client_order_id"]), 20)
         self.assertEqual(payload["sl_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
         self.assertEqual(payload["tp_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
+        self.assertEqual(payload["valid_before"], "VALID_BEFORE_GOOD_TILL_CANCEL")
         self.assertEqual(payload["quantity_sl"]["value"], "7")
         self.assertEqual(payload["quantity_tp"]["value"], "7")
         self.assertEqual(payload["side"], "SIDE_BUY")
