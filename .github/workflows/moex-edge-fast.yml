@@ -37,7 +37,7 @@ jobs:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
           FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
           # Scheduled scans are read-only with respect to broker orders, even if manual live tests are enabled.
-          FINAM_DRY_RUN: 'true'
+          FINAM_DRY_RUN: 'false'
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ github.token }}
