@@ -106,6 +106,47 @@ def valid_tick_metadata(asset):
     ))
 
 
+def parse_position_quantity(account, target_symbol):
+    positions = account.get("positions")
+    if not isinstance(positions, list):
+        raise AuditError("account positions field is missing or malformed")
+    total = Decimal("0")
+    for position in positions:
+        if not isinstance(position, dict):
+            raise AuditError("malformed position entry")
+        symbol = position.get("symbol")
+        if not isinstance(symbol, str) or not symbol:
+            raise AuditError("position entry has no valid symbol")
+        if symbol == target_symbol:
+            quantity = position.get("quantity")
+            if isinstance(quantity, dict):
+                quantity = quantity.get("value")
+            try:
+                parsed = Decimal(str(quantity))
+            except (InvalidOperation, TypeError, ValueError):
+                raise AuditError("T position quantity is malformed") from None
+            if not parsed.is_finite():
+                raise AuditError("T position quantity is not finite")
+            total += parsed
+    return total
+
+
+def count_active_orders_for_symbol(response, target_symbol):
+    orders = response.get("orders")
+    if not isinstance(orders, list):
+        raise AuditError("active orders response has no valid orders array")
+    matching = 0
+    for order in orders:
+        if not isinstance(order, dict):
+            raise AuditError("malformed active order entry")
+        symbol = order.get("symbol")
+        if not isinstance(symbol, str) or not symbol:
+            raise AuditError("active order entry has no valid symbol")
+        if symbol == target_symbol:
+            matching += 1
+    return matching
+
+
 def main():
     if not API_SECRET or not ACCOUNT_ID:
         raise AuditError("required Finam credentials are missing")
@@ -124,6 +165,20 @@ def main():
         raise AuditError("account identity mismatch")
     print("Finam authentication: OK")
     print("Finam account read: OK")
+
+    # Reconcile the previously traded instrument using GET-only endpoints.
+    target_symbol = "T@MISX"
+    t_quantity = parse_position_quantity(account, target_symbol)
+    active_orders = request_json(
+        "GET",
+        f"/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders",
+        token=token
+    )
+    t_order_count = count_active_orders_for_symbol(active_orders, target_symbol)
+    print(f"T position quantity ({target_symbol}): {t_quantity}")
+    print(f"Active T orders ({target_symbol}, including stop orders): {t_order_count}")
+    if t_quantity != 0 or t_order_count != 0:
+        raise AuditError("T position or active orders remain; stop before any trading")
 
     params_ok = 0
     tick_ok = 0
@@ -193,7 +248,7 @@ def main():
     if failures or params_ok + not_tradable != len(TICKERS):
         raise AuditError("one or more instruments could not be fully audited")
     print("READ-ONLY FINAM AUDIT: SUCCESS")
-    print("No order endpoints were called; no broker orders were submitted.")
+    print("Account positions and active orders were checked using GET only; no broker orders were submitted.")
 
 
 if __name__ == "__main__":
