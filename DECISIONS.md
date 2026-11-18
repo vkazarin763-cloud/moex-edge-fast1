@@ -153,3 +153,17 @@
 - Important state distinction: the user previously set repository variable `FINAM_DRY_RUN=false` for a manual live test; one prior run `44234763883` confirmed it was false, but submitted no order because there were no confirmed signals. The scheduled workflow is hard-pinned to dry-run. Do not infer the current repository variable value without a fresh safe check.
 - Previous manual run `44238708231` was DRY_RUN, audit succeeded, but executor logged 1 open position; it prepared DOMRF without submitting and skipped T because a position was already counted. That run predates PR #11.
 - No new broker order was submitted by PR #11, its CI, or the merge. The next run must remain DRY_RUN.
+
+
+## 2026-11-18 — controlled live-trial request; latest DRY_RUN checkpoint
+
+- User asked to record the latest result and proceed with a real-mode trial for one day. This is an explicit request for live trading, but it does not mean a live workflow has already been dispatched or that any order has been submitted.
+- Latest verified workflow run: `44253089210`, completed SUCCESS on main at commit `60f30705bacfe81fcbc990aa4cc41e8d3027e38a`.
+- Read-only Finam preflight passed: authentication/account read OK; valid lot and tick metadata 44/44; LONG/SHORT permissions 44/44; no instrument audit errors; no blocked tickers.
+- Fresh scanner signals: DOMRF LONG (Donchian55), H1 confirmed; T LONG (Keltner), H1 confirmed.
+- Executor reported 0 open positions out of 10. Environment explicitly had `FINAM_DRY_RUN=true`; both signals were prepared in dry-run only; no broker order endpoint was called and no order was submitted.
+- Executor reported `trade_lot_size=1` and prepared quantity 1 share for both DOMRF and T. Scanner printed risk-sized quantities of 1 DOMRF and 11 T. This is a sizing-source mismatch that must remain visible in trial review; do not interpret scanner quantity as the executor's live quantity. Scanner/executor SL/TP for T also differed slightly due to rounding.
+- Artifact `manual-moex-signals` uploaded for 7 days: run artifact ID `14404369409`.
+- Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
+- No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
+- Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
