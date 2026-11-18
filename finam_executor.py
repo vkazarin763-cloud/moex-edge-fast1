@@ -39,6 +39,13 @@ TEST_MODE_MIN_VOLUME = True
 # Жёсткий лимит открытых позиций, включая теоретические позиции по активным заявкам.
 MAX_OPEN_POSITIONS = 10
 
+# Live test guard: no more than one new broker order per manual invocation.
+MAX_NEW_ORDERS_PER_RUN = 1
+
+
+def can_submit_live_order(submitted_count):
+    return submitted_count < MAX_NEW_ORDERS_PER_RUN
+
 # По умолчанию безопасный режим: только проверка, без реальных заявок.
 # Для реальной торговли установить FINAM_DRY_RUN=false в GitHub Secrets/Variables.
 def parse_dry_run(value):
@@ -1232,7 +1239,15 @@ def main():
         logging.info("Нет подтвержденных сигналов.")
         return
 
+    live_orders_submitted = 0
+
     for _, row in df_active.iterrows():
+        if not DRY_RUN and not can_submit_live_order(live_orders_submitted):
+            logging.warning(
+                "Достигнут лимит боевого запуска: не более %s новой заявки за запуск.",
+                MAX_NEW_ORDERS_PER_RUN
+            )
+            break
         # Never let a previous row's identifier leak into this row's error path.
         signal_id = None
         ticker = str(row["ticker"]).strip().upper()
@@ -1362,6 +1377,10 @@ def main():
 
         # Отправка и обязательная сверка фактического исполнения.
         try:
+            # Count the attempt before POST: an ambiguous timeout must not allow
+            # another live order to be submitted in the same workflow run.
+            if not DRY_RUN:
+                live_orders_submitted += 1
             order_result = place_market_order(token, symbol, quantity, side)
             if DRY_RUN:
                 continue
