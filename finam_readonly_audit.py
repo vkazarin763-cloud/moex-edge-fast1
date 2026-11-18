@@ -106,6 +106,102 @@ def valid_tick_metadata(asset):
     ))
 
 
+def parse_position_quantity(account, target_symbol):
+    positions = account.get("positions")
+    if not isinstance(positions, list):
+        raise AuditError("account positions field is missing or malformed")
+    total = Decimal("0")
+    for position in positions:
+        if not isinstance(position, dict):
+            raise AuditError("malformed position entry")
+        symbol = position.get("symbol")
+        if not isinstance(symbol, str) or not symbol:
+            raise AuditError("position entry has no valid symbol")
+        if symbol == target_symbol:
+            quantity = position.get("quantity")
+            if isinstance(quantity, dict):
+                quantity = quantity.get("value")
+            try:
+                parsed = Decimal(str(quantity))
+            except (InvalidOperation, TypeError, ValueError):
+                raise AuditError("T position quantity is malformed") from None
+            if not parsed.is_finite():
+                raise AuditError("T position quantity is not finite")
+            total += parsed
+    return total
+
+
+def matching_active_orders_for_symbol(response, target_symbol):
+    orders = response.get("orders")
+    if not isinstance(orders, list):
+        raise AuditError("active orders response has no valid orders array")
+    matching = []
+    for order in orders:
+        if not isinstance(order, dict):
+            raise AuditError("malformed active order entry")
+        nested_order = order.get("order") or {}
+        nested_sltp = order.get("sltp_order") or {}
+        if not isinstance(nested_order, dict) or not isinstance(nested_sltp, dict):
+            raise AuditError("malformed nested active order payload")
+        symbol = (
+            nested_order.get("symbol")
+            or nested_sltp.get("symbol")
+            or order.get("symbol")
+        )
+        if not isinstance(symbol, str) or not symbol:
+            raise AuditError("active order entry has no valid symbol")
+        status = str(order.get("status", "")).removeprefix("ORDER_STATUS_")
+        terminal = {
+            "FILLED", "EXECUTED", "CANCELED", "CANCELLED",
+            "REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
+            "EXPIRED", "FAILED", "DONE_FOR_DAY", "REPLACED"
+        }
+        if status in terminal and not order.get("triggered_order_id"):
+            continue
+        if symbol == target_symbol:
+            matching.append(order)
+    return matching
+
+
+def count_active_orders_for_symbol(response, target_symbol):
+    return len(matching_active_orders_for_symbol(response, target_symbol))
+
+
+def safe_order_summary(order):
+    # Print only whitelisted order-identification and trading fields.
+    allowed = {
+        "id", "order_id", "client_order_id", "order_num", "symbol",
+        "status", "side", "quantity", "price", "type", "order_type",
+        "stop_loss", "take_profit", "trigger_price", "stop_price",
+        "quantity_sl", "quantity_tp", "time_in_force", "expiration",
+        "created_at", "updated_at", "direction", "operation",
+        "instrument", "stop", "take_profit_price", "stop_loss_price"
+    }
+    summary = {}
+    for key in allowed:
+        if key in order:
+            value = order[key]
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                summary[key] = value
+            elif isinstance(value, dict):
+                summary[key] = {
+                    k: v for k, v in value.items()
+                    if k in allowed and (
+                        isinstance(v, (str, int, float, bool)) or v is None
+                    )
+                }
+    for container in ("order", "sltp_order"):
+        nested = order.get(container)
+        if isinstance(nested, dict):
+            summary[container] = {
+                key: value for key, value in nested.items()
+                if key in allowed and (
+                    isinstance(value, (str, int, float, bool)) or value is None
+                )
+            }
+    return summary
+
+
 def main():
     if not API_SECRET or not ACCOUNT_ID:
         raise AuditError("required Finam credentials are missing")
@@ -124,6 +220,23 @@ def main():
         raise AuditError("account identity mismatch")
     print("Finam authentication: OK")
     print("Finam account read: OK")
+
+    # Reconcile the previously traded instrument using GET-only endpoints.
+    target_symbol = "T@MISX"
+    t_quantity = parse_position_quantity(account, target_symbol)
+    active_orders = request_json(
+        "GET",
+        f"/v1/accounts/{quote(ACCOUNT_ID, safe='')}/orders",
+        token=token
+    )
+    t_orders = matching_active_orders_for_symbol(active_orders, target_symbol)
+    t_order_count = len(t_orders)
+    print(f"T position quantity ({target_symbol}): {t_quantity}")
+    print(f"Active T orders ({target_symbol}, including stop orders): {t_order_count}")
+    for index, order in enumerate(t_orders, start=1):
+        print(f"T active order {index} (sanitized): {safe_order_summary(order)}")
+    if t_quantity != 0 or t_order_count != 0:
+        raise AuditError("T position or active orders remain; stop before any trading")
 
     params_ok = 0
     tick_ok = 0
@@ -193,7 +306,7 @@ def main():
     if failures or params_ok + not_tradable != len(TICKERS):
         raise AuditError("one or more instruments could not be fully audited")
     print("READ-ONLY FINAM AUDIT: SUCCESS")
-    print("No order endpoints were called; no broker orders were submitted.")
+    print("Account positions and active orders were checked using GET only; no broker orders were submitted.")
 
 
 if __name__ == "__main__":
