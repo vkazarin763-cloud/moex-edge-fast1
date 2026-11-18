@@ -62,6 +62,10 @@ def parse_dry_run(value):
 
 DRY_RUN = parse_dry_run(os.getenv("FINAM_DRY_RUN", "true"))
 
+# Keep in sync with REC_SL_PCT / REC_TAKE_PCT in moex_edge_fast_33.py.
+PROTECTIVE_SL_PCT = Decimal("3.0")
+PROTECTIVE_TP_PCT = Decimal("5.0")
+
 
 def enforce_live_trading_gate(dry_run, live_enabled):
     """Require a second, explicit kill-switch before any live broker order."""
@@ -350,6 +354,24 @@ def get_trade_parameters(token, ticker, direction=None):
         )
 
     return int(trade_lot_size)
+
+
+def calculate_protective_prices(reference_price, position_direction):
+    """Calculate SL/TP around a reference price using the current 3%/5% policy."""
+    try:
+        price = Decimal(str(reference_price))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError(f"Некорректная опорная цена: {reference_price}")
+    if not price.is_finite() or price <= 0:
+        raise ValueError(f"Некорректная опорная цена: {reference_price}")
+
+    sl_fraction = PROTECTIVE_SL_PCT / Decimal("100")
+    tp_fraction = PROTECTIVE_TP_PCT / Decimal("100")
+    if position_direction == "LONG":
+        return price * (Decimal("1") - sl_fraction), price * (Decimal("1") + tp_fraction)
+    if position_direction == "SHORT":
+        return price * (Decimal("1") + sl_fraction), price * (Decimal("1") - tp_fraction)
+    raise ValueError(f"Некорректное направление: {position_direction}")
 
 
 def round_price_to_tick(token, ticker, price, rounding):
@@ -1358,14 +1380,13 @@ def main():
                 trade_lot_size
             )
 
+            sl_raw, tp_raw = calculate_protective_prices(
+                entry_price, direction
+            )
             if direction == "LONG":
-                sl_raw = entry_price * Decimal("0.97")
-                tp_raw = entry_price * Decimal("1.05")
                 side = "SIDE_BUY"
                 sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_raw = entry_price * Decimal("1.03")
-                tp_raw = entry_price * Decimal("0.95")
                 side = "SIDE_SELL"
                 sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
 
@@ -1477,13 +1498,12 @@ def main():
                                 "только исполненные %s шт.",
                                 ticker, remaining, filled_qty_int)
 
+            sl_raw, tp_raw = calculate_protective_prices(
+                avg_fill_price, direction
+            )
             if direction == "LONG":
-                sl_raw = avg_fill_price * Decimal("0.97")
-                tp_raw = avg_fill_price * Decimal("1.05")
                 sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_raw = avg_fill_price * Decimal("1.03")
-                tp_raw = avg_fill_price * Decimal("0.95")
                 sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
 
             sl_price = round_price_to_tick(
