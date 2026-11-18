@@ -132,3 +132,17 @@
 - Latest CI confirmed `FINAM_DRY_RUN=safe` (true). No live order has been submitted. The manual live workflow has not been dispatched.
 - Remaining live risk: if broker confirms a fill but SL/TP creation/read-back fails, executor alerts and halts; it does not automatically close exposure. Live runs must not be unattended; operator must be able to inspect account and manually intervene. This is not yet a fully self-recovering autonomous live system.
 - Before first real run: owner deliberately changes repository variable `FINAM_DRY_RUN` to exact string `false`, then dispatches workflow `Finam Executor — controlled manual run` with mode `LIVE_ONE_MIN_LOT`. Do not change scheduled workflow; it remains pinned to dry-run.
+
+
+## 2026-11-18 — zero-quantity Finam positions fix and validation
+- User checked Finam manually and confirmed there are currently no open positions and no active orders (user-reported UI state; not independently queried from broker API in this session).
+- Investigated why executor still logged 1 open instrument in DRY_RUN run `44238708231`. The previous code counted every `account_data["positions"]` record with a symbol, even if Finam's signed `quantity.value` was zero.
+- PR #11 merged to main: https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/11 ; squash merge commit `d8d87051d423013b2ca7d1c55cb677334a322760`.
+- New helper `get_open_position_symbols(account_data)` counts only non-zero signed quantities. It fails closed on malformed position lists, missing symbols, or missing/invalid quantity. No strategy, signal rules, lot size, live-mode settings, or order submission behavior was changed.
+- Added four tests: zero-quantity records ignored; empty positions list; missing quantity rejected; malformed positions response rejected.
+- GitHub Actions run `44240882740` completed SUCCESS: Python compilation passed; all 43 unit tests passed. Relevant new tests all passed.
+- Main branch file `finam_executor.py` verified to contain the merged helper and use it in `main()`.
+- Next mandatory step: manually dispatch `Finam Executor — controlled manual run` in `DRY_RUN` mode only. Check fresh scanner output and confirm executor logs `Открытых позиций: 0/10` (or exact zero count) and no false occupied-symbol skip. Do not dispatch LIVE until this dry-run is reviewed and the actual broker state is independently reconciled.
+- Important state distinction: the user previously set repository variable `FINAM_DRY_RUN=false` for a manual live test; one prior run `44234763883` confirmed it was false, but submitted no order because there were no confirmed signals. The scheduled workflow is hard-pinned to dry-run. Do not infer the current repository variable value without a fresh safe check.
+- Previous manual run `44238708231` was DRY_RUN, audit succeeded, but executor logged 1 open position; it prepared DOMRF without submitting and skipped T because a position was already counted. That run predates PR #11.
+- No new broker order was submitted by PR #11, its CI, or the merge. The next run must remain DRY_RUN.
