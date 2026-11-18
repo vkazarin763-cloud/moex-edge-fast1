@@ -88,8 +88,8 @@ if __name__ == "__main__":
         print(f"ТЕСТ ОСТАНОВЛЕН: {type(exc).__name__}: {exc}", file=sys.stderr)
         if not fe.DRY_RUN:
             fe.send_telegram_message(
-                "🚨 <b>Тест SL/TP по T остановлен</b>\\n"
+                "🚨 <b>Тест SL/TP по T остановлен</b>\n"
                 + str(exc)[:2500]
-                + "\\nПроверь позицию и заявки T в Finam вручную."
+                + "\nПроверь позицию и заявки T в Finam вручную."
             )
         raise
