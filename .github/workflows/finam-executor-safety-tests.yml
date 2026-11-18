@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/finam-executor-*
+      - safety/read-only-position-orders-audit-*
   pull_request:
     branches:
       - main

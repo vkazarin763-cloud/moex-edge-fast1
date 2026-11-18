@@ -2,6 +2,9 @@ name: Finam Read-only Account Audit
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - safety/read-only-position-orders-audit-20261118
 
 concurrency:
   group: finam-readonly-audit
