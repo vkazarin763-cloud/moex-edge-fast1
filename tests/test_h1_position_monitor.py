@@ -112,7 +112,8 @@ class H1PositionMonitorTests(unittest.TestCase):
                 "jwt", self.account, self.state, True, self.deps
             )
         self.assertEqual(rec["last_dry_run_exit"], "STOP_LOSS")
-        self.assertEqual(rec["last_processed_candle"], self.candle_stop["timestamp"])
+        self.assertEqual(rec["last_dry_run_candle"], self.candle_stop["timestamp"])
+        self.assertEqual(rec["last_processed_candle"], self.candle_safe["timestamp"])
         self.assertEqual(self.orders, [])
 
     def test_live_exit_reservation_is_saved_before_market_order(self):
@@ -122,6 +123,8 @@ class H1PositionMonitorTests(unittest.TestCase):
         )
         rec = self.state[hm.position_key(self.symbol)]
         rec["last_processed_candle"] = self.candle_safe["timestamp"]
+        # A prior DRY_RUN saw the stop, but must not consume the live cursor.
+        rec["last_dry_run_candle"] = self.candle_stop["timestamp"]
         with patch.object(hm, "fetch_closed_h1_candles",
                           return_value=[self.candle_safe, self.candle_stop]):
             hm.monitor_open_positions(
