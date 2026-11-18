@@ -597,7 +597,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_BUY",
+                "side": "SIDE_SELL",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -610,7 +610,7 @@ class FinamExecutorTests(unittest.TestCase):
             self.assertTrue(
                 fe.place_sltp_order("jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0)
             )
-        self.assertEqual(post.call_args.args[2]["side"], "SIDE_BUY")
+        self.assertEqual(post.call_args.args[2]["side"], "SIDE_SELL")
 
     def test_sltp_short_uses_closing_order_side_buy(self):
         readback = {
@@ -631,7 +631,7 @@ class FinamExecutorTests(unittest.TestCase):
             self.assertTrue(
                 fe.place_sltp_order("jwt", "SBER@MISX", 7, "SHORT", 103.0, 95.0)
             )
-        self.assertEqual(post.call_args.args[2]["side"], "SIDE_SELL")
+        self.assertEqual(post.call_args.args[2]["side"], "SIDE_BUY")
 
     def test_sltp_wrong_readback_side_is_rejected(self):
         accepted = {
@@ -639,7 +639,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_BUY",
+                "side": "SIDE_SELL",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -649,7 +649,7 @@ class FinamExecutorTests(unittest.TestCase):
         wrong_side = {
             "order_id": "sltp-1",
             "status": "ORDER_STATUS_NEW",
-            "sltp_order": dict(accepted["sltp_order"], side="SIDE_SELL")
+            "sltp_order": dict(accepted["sltp_order"], side="SIDE_BUY")
         }
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)), \
