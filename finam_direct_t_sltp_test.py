@@ -19,7 +19,7 @@ def check_session():
 
 
 def main():
-    if os.getenv("FINAM_DIRECT_TEST_CONFIRM", "") != CONFIRMATION:
+    if not fe.DRY_RUN and os.getenv("FINAM_DIRECT_TEST_CONFIRM", "") != CONFIRMATION:
         raise RuntimeError("Нет отдельного подтверждения BUY_T_ONCE.")
     fe.enforce_live_trading_gate(
         fe.DRY_RUN, os.getenv("FINAM_LIVE_TRADING_ENABLED", "false")
