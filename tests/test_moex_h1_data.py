@@ -25,7 +25,11 @@ class MoexH1DataTests(unittest.TestCase):
             ["100", "101", "102", "99", "2026-11-18 12:00:00"],
         ]
         now = datetime(2026, 11, 18, 9, 30, tzinfo=timezone.utc)  # 12:30 Moscow
-        self.assertEqual(parse_closed_h1_rows(self.columns, rows, now=now), [])
+        result = parse_closed_h1_rows(self.columns, rows, now=now)
+        # 11:00 Moscow candle ended at 12:00 and is closed at 12:30;
+        # 12:00 Moscow candle is still in progress and must be excluded.
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["timestamp"], "2026-11-18T08:00:00+00:00")
 
     def test_naive_iss_timestamps_are_moscow_time(self):
         rows = [["100", "101", "102", "99", "2026-11-18 10:00:00"]]
