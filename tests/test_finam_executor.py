@@ -106,6 +106,28 @@ class FinamExecutorTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 fe.load_signal_state()
 
+    def test_zero_quantity_position_records_do_not_block_new_signals(self):
+        account = {"positions": [
+            {"symbol": "SBER@MISX", "quantity": {"value": "0"}},
+            {"symbol": "GAZP@MISX", "quantity": {"value": "10"}},
+            {"symbol": "LKOH@MISX", "quantity": {"value": "-2.5"}}
+        ]}
+        self.assertEqual(
+            fe.get_open_position_symbols(account), {"GAZP", "LKOH"}
+        )
+
+    def test_empty_positions_return_empty_symbol_set(self):
+        self.assertEqual(fe.get_open_position_symbols({"positions": []}), set())
+
+    def test_position_without_quantity_fails_closed(self):
+        account = {"positions": [{"symbol": "SBER@MISX"}]}
+        with self.assertRaises(fe.OrderProtectionError):
+            fe.get_open_position_symbols(account)
+
+    def test_malformed_positions_response_fails_closed(self):
+        with self.assertRaises(RuntimeError):
+            fe.get_open_position_symbols({"positions": None})
+
     def test_position_limit_blocks_eleventh_new_position(self):
         open_symbols = {f"T{i}" for i in range(10)}
         self.assertEqual(fe.MAX_OPEN_POSITIONS, 10)
