@@ -45,6 +45,7 @@ class H1PositionMonitorTests(unittest.TestCase):
             },
             "get_account_info": lambda *a: ({"positions": []}, Decimal("0")),
             "get_position_quantity": lambda account, symbol: Decimal("0"),
+            "get_active_order_symbols": lambda token: set(),
             "place_market_order": self.place_order,
             "send_telegram_message": self.sent.append,
             "logger": self.logger,
@@ -85,6 +86,17 @@ class H1PositionMonitorTests(unittest.TestCase):
         self.assertEqual(rec["entry_price"], "100")
         self.assertEqual(rec["last_processed_candle"], self.candle_stop["timestamp"])
         self.assertTrue(rec["baseline_only"])
+        self.assertEqual(self.orders, [])
+
+    def test_active_order_blocks_theoretical_position_enrollment(self):
+        self.deps["get_active_order_symbols"] = lambda token: {"T"}
+        with patch.object(hm, "fetch_closed_h1_candles") as candles:
+            with self.assertRaisesRegex(hm.H1MonitorError, "active broker order"):
+                hm.monitor_open_positions(
+                    "jwt", self.account, self.state, True, self.deps
+                )
+        self.assertNotIn(hm.position_key(self.symbol), self.state)
+        candles.assert_not_called()
         self.assertEqual(self.orders, [])
 
     def test_new_closed_stop_candle_triggers_dry_run_without_order(self):
