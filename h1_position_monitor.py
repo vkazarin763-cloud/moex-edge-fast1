@@ -49,12 +49,21 @@ def _position_rows(account_data, decimal_value):
         if symbol in seen:
             raise H1MonitorError("Duplicate position record: " + symbol)
         seen.add(symbol)
-        quantity = decimal_value(row.get("quantity"), "position.quantity")
-        if quantity == 0:
-            continue
-        if quantity != quantity.to_integral_value():
-            raise H1MonitorError("Fractional share position cannot be auto-closed: " + symbol)
-        entry = decimal_value(row.get("average_price"), "position.average_price")
+        try:
+            quantity = decimal_value(row.get("quantity"), "position.quantity")
+            if quantity == 0:
+                continue
+            if quantity != quantity.to_integral_value():
+                raise H1MonitorError(
+                    "Fractional share position cannot be auto-closed: " + symbol
+                )
+            entry = decimal_value(row.get("average_price"), "position.average_price")
+        except H1MonitorError:
+            raise
+        except Exception as exc:
+            raise H1MonitorError(
+                symbol + ": broker position quantity/average entry price is missing or invalid"
+            ) from exc
         result.append({
             "symbol": symbol,
             "ticker": symbol.split("@")[0].upper(),
