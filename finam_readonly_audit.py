@@ -150,6 +150,14 @@ def matching_active_orders_for_symbol(response, target_symbol):
         )
         if not isinstance(symbol, str) or not symbol:
             raise AuditError("active order entry has no valid symbol")
+        status = str(order.get("status", "")).removeprefix("ORDER_STATUS_")
+        terminal = {
+            "FILLED", "EXECUTED", "CANCELED", "CANCELLED",
+            "REJECTED", "REJECTED_BY_EXCHANGE", "DENIED_BY_BROKER",
+            "EXPIRED", "FAILED", "DONE_FOR_DAY", "REPLACED"
+        }
+        if status in terminal and not order.get("triggered_order_id"):
+            continue
         if symbol == target_symbol:
             matching.append(order)
     return matching
