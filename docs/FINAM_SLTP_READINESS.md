@@ -18,7 +18,7 @@ The percentages are centralized in `finam_executor.py` and must remain aligned w
 
 The official REST documentation defines `POST /v1/accounts/{account_id}/sltp-orders`, describes `side` as the side for both protective orders, and shows `SIDE_BUY` in its example with a lower stop and a higher take-profit price. The executor therefore maps the protected LONG position to `SIDE_BUY` and SHORT to `SIDE_SELL`.
 
-The executor uses explicit share units (`SLTP_QTY_MEASURE_VALUE`) and validates broker read-back:
+The executor first waits for the account snapshot to show the exact signed position quantity (positive LONG / negative SHORT) confirmed by trade history. It does not submit SL/TP while the account snapshot is missing, stale, or inconsistent. Protective orders explicitly use `VALID_BEFORE_GOOD_TILL_CANCEL` (the API default is also GTC). It uses explicit share units (`SLTP_QTY_MEASURE_VALUE`) and validates broker read-back:
 - order ID and active status;
 - symbol and protected-position side;
 - exact SL and TP quantities;
