@@ -190,6 +190,79 @@ class H1PositionMonitorTests(unittest.TestCase):
             hm.monitor_open_positions("jwt", self.account, self.state, False, self.deps)
         self.assertEqual(self.orders, [])
 
+    def test_same_closed_candle_is_never_processed_twice(self):
+        hm.initialize_position_state(
+            self.state, self.symbol, "T", "LONG", 10, "100",
+            self.deps["save_state"], "2026-11-18T10:30:00+00:00"
+        )
+        rec = self.state[hm.position_key(self.symbol)]
+        rec["last_processed_candle"] = self.candle_stop["timestamp"]
+        with patch.object(hm, "fetch_closed_h1_candles",
+                          return_value=[self.candle_safe, self.candle_stop]):
+            hm.monitor_open_positions("jwt", self.account, self.state, True, self.deps)
+        self.assertNotIn("last_dry_run_exit", rec)
+        self.assertEqual(self.orders, [])
+
+    def test_cursor_older_than_seven_day_history_fails_closed(self):
+        hm.initialize_position_state(
+            self.state, self.symbol, "T", "LONG", 10, "100",
+            self.deps["save_state"], "2026-11-01T00:00:00+00:00"
+        )
+        rec = self.state[hm.position_key(self.symbol)]
+        rec["last_processed_candle"] = "2026-11-01T00:00:00+00:00"
+        newest = dict(self.candle_stop, timestamp="2026-11-18T11:00:00+00:00")
+        with patch.object(hm, "fetch_closed_h1_candles",
+                          return_value=[newest]):
+            with self.assertRaises(hm.H1MonitorError):
+                hm.monitor_open_positions("jwt", self.account, self.state, True, self.deps)
+
+    def test_partial_exit_reconciliation_updates_remaining_quantity(self):
+        hm.initialize_position_state(
+            self.state, self.symbol, "T", "LONG", 10, "100",
+            self.deps["save_state"]
+        )
+        rec = self.state[hm.position_key(self.symbol)]
+        rec.update(status="EXIT_SUBMISSION_ATTEMPTED",
+                   exit_client_order_id="partial-client",
+                   exit_quantity=10,
+                   exit_candle=self.candle_stop["timestamp"])
+        self.deps["wait_for_terminal_order"] = lambda *a: {
+            "status": "ORDER_STATUS_CANCELED",
+            "executed_quantity": {"value": "4"},
+        }
+        self.deps["get_account_info"] = lambda *a: ({
+            "positions": [{"symbol": self.symbol,
+                           "quantity": {"value": "6"},
+                           "average_price": {"value": "100"}}]
+        }, Decimal("0"))
+        self.deps["get_position_quantity"] = lambda account, symbol: Decimal("6")
+        with patch.object(hm, "fetch_closed_h1_candles") as candles:
+            with self.assertRaises(hm.H1MonitorError):
+                hm.monitor_open_positions("jwt", self.account, self.state, False, self.deps)
+        self.assertEqual(rec["status"], "MONITORING")
+        self.assertEqual(rec["quantity"], 6)
+        self.assertEqual(rec["last_exit_filled_quantity"], "4")
+        candles.assert_not_called()
+        self.assertEqual(self.orders, [])
+
+    def test_terminal_full_fill_with_stale_position_snapshot_is_not_retried(self):
+        hm.initialize_position_state(
+            self.state, self.symbol, "T", "LONG", 10, "100",
+            self.deps["save_state"]
+        )
+        rec = self.state[hm.position_key(self.symbol)]
+        rec.update(status="EXIT_FILLED_AWAITING_POSITION_SYNC",
+                   exit_order_id="already-filled",
+                   exit_quantity=10)
+        self.deps["get_account_info"] = lambda *a: (self.account, Decimal("0"))
+        self.deps["get_position_quantity"] = lambda account, symbol: Decimal("10")
+        with patch.object(hm, "fetch_closed_h1_candles") as candles:
+            with self.assertRaises(hm.H1MonitorError):
+                hm.monitor_open_positions("jwt", self.account, self.state, False, self.deps)
+        self.assertEqual(rec["status"], "EXIT_FILLED_AWAITING_POSITION_SYNC")
+        self.assertEqual(self.orders, [])
+        candles.assert_not_called()
+
     def test_position_increase_fails_closed(self):
         hm.initialize_position_state(
             self.state, self.symbol, "T", "LONG", 10, "100",
