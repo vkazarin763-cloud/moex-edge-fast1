@@ -480,6 +480,37 @@ def _decimal_value(value, field_name):
     return result
 
 
+def get_open_position_symbols(account_data):
+    """
+    Return only symbols with a non-zero signed position quantity.
+
+    Finam's account response may include position records with zero quantity.
+    Counting every record that has a symbol incorrectly blocks fresh signals
+    after a position has been closed. Missing or malformed quantities fail
+    closed so an incomplete broker response cannot enable a new order.
+    """
+    positions = account_data.get("positions", [])
+    if not isinstance(positions, list):
+        raise RuntimeError("Finam вернул некорректный список позиций")
+
+    symbols = set()
+    for position in positions:
+        if not isinstance(position, dict):
+            raise RuntimeError("Finam вернул некорректную запись позиции")
+        symbol = position.get("symbol")
+        if not symbol:
+            raise RuntimeError(
+                "Finam вернул позицию без symbol; новые заявки запрещены"
+            )
+        quantity = _decimal_value(
+            position.get("quantity"), "positions[].quantity"
+        )
+        if quantity == 0:
+            continue
+        symbols.add(str(symbol).split("@")[0].upper())
+    return symbols
+
+
 def find_order_by_client_id(token, client_order_id):
     """Try to reconcile an ambiguous POST using the broker's order list."""
     data = api_get(
@@ -1201,11 +1232,7 @@ def main():
 
     logging.info("Свободные средства получены (значение скрыто)")
 
-    open_symbols = {
-        str(p["symbol"]).split("@")[0].upper()
-        for p in account_data.get("positions", [])
-        if p.get("symbol")
-    }
+    open_symbols = get_open_position_symbols(account_data)
 
     # Pending orders reserve a slot too. If Finam cannot provide this list,
     # abort this run rather than risk exceeding the account position cap.
