@@ -545,6 +545,81 @@ def get_open_position_symbols(account_data):
     return symbols
 
 
+def get_position_quantity(account_data, symbol):
+    """Return the signed broker position quantity for one exact symbol."""
+    if not isinstance(account_data, dict):
+        raise OrderProtectionError("Finam вернул некорректные данные счёта")
+    positions = account_data.get("positions")
+    if not isinstance(positions, list):
+        raise OrderProtectionError(
+            "Finam не вернул корректный список позиций; SL/TP не отправляются"
+        )
+    total = Decimal("0")
+    for position in positions:
+        if not isinstance(position, dict):
+            raise OrderProtectionError("Finam вернул некорректную запись позиции")
+        current_symbol = position.get("symbol")
+        if not isinstance(current_symbol, str) or not current_symbol:
+            raise OrderProtectionError("Finam вернул позицию без символа")
+        if current_symbol == symbol:
+            total += _decimal_value(
+                position.get("quantity"), f"positions[{symbol}].quantity"
+            )
+    return total
+
+
+def wait_for_position_quantity(
+    token, symbol, direction, expected_quantity, attempts=10, pause=1
+):
+    """
+    Wait until the signed position is visible in Finam before attaching SL/TP.
+    A delayed/missing position is never treated as proof that protection is safe.
+    """
+    if direction not in ("LONG", "SHORT"):
+        raise OrderProtectionError(f"{symbol}: неизвестное направление {direction}")
+    if not isinstance(expected_quantity, int) or expected_quantity <= 0:
+        raise OrderProtectionError(
+            f"{symbol}: некорректный ожидаемый объём позиции {expected_quantity}"
+        )
+    expected = (
+        Decimal(expected_quantity)
+        if direction == "LONG"
+        else -Decimal(expected_quantity)
+    )
+    last_quantity = None
+    for attempt in range(attempts):
+        account = api_get(
+            f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}",
+            token
+        )
+        if account.get("account_id") and str(account["account_id"]) != str(ACCOUNT_ID):
+            raise OrderProtectionError(
+                f"{symbol}: Finam вернул другой account_id; SL/TP не отправляются"
+            )
+        actual = get_position_quantity(account, symbol)
+        last_quantity = actual
+        if actual == expected:
+            logging.info(
+                "%s: позиция подтверждена Finam перед SL/TP: %s шт.",
+                symbol, actual
+            )
+            return actual
+        if actual != 0 and (
+            (actual > 0) != (expected > 0) or abs(actual) > abs(expected)
+        ):
+            raise OrderProtectionError(
+                f"{symbol}: позиция Finam {actual} шт. не совпадает "
+                f"с ожидаемой {expected} шт.; SL/TP не отправляются."
+            )
+        if attempt + 1 < attempts:
+            time.sleep(pause)
+    raise OrderProtectionError(
+        f"{symbol}: Finam не подтвердил позицию {expected} шт. "
+        f"за {attempts} проверок (последнее значение {last_quantity}); "
+        "SL/TP не отправляются, требуется ручная сверка."
+    )
+
+
 def find_order_by_client_id(token, client_order_id):
     """Try to reconcile an ambiguous POST using the broker's order list."""
     data = api_get(
@@ -584,7 +659,8 @@ def place_market_order(token, symbol, quantity, side):
         "quantity": {"value": str(quantity)},
         "side": side,
         "type": "ORDER_TYPE_MARKET",
-        "client_order_id": client_order_id
+        "client_order_id": client_order_id,
+        "valid_before": "VALID_BEFORE_GOOD_TILL_CANCEL"
     }
 
     if DRY_RUN:
@@ -1492,6 +1568,12 @@ def main():
                 token, order_id, order_result["submitted_at"], executed
             )
             filled_qty_int = int(filled_qty)
+
+            # Finam may expose trade history before the position snapshot updates.
+            # Confirm the signed account position before submitting protective orders.
+            wait_for_position_quantity(
+                token, symbol, direction, filled_qty_int
+            )
 
             if remaining > 0:
                 logging.warning("%s: остаток %s шт. не исполнен; защищаю "
