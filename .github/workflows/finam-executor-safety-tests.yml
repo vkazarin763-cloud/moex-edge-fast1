@@ -41,10 +41,11 @@ jobs:
             *) echo "FINAM_DRY_RUN=invalid" ;;
           esac
       - name: Compile Python files
-        run: python -m compileall -q finam_executor.py finam_readonly_audit.py h1_percent_exit.py moex_h1_data.py finam_h1_data.py
+        run: python -m compileall -q finam_executor.py finam_readonly_audit.py h1_percent_exit.py moex_h1_data.py finam_h1_data.py h1_position_monitor.py
       - name: Run executor unit tests
         run: |
           python -m unittest discover -s tests -p "test_finam_executor.py" -v
           python -m unittest discover -s tests -p "test_h1_percent_exit.py" -v
           python -m unittest discover -s tests -p "test_moex_h1_data.py" -v
           python -m unittest discover -s tests -p "test_finam_h1_data.py" -v
+          python -m unittest discover -s tests -p "test_h1_position_monitor.py" -v
