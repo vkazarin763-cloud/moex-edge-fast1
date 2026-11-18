@@ -593,6 +593,40 @@ class FinamReadOnlyAuditTests(unittest.TestCase):
             1
         )
 
+    def test_nested_order_symbol_is_counted(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [
+                    {"status": "ORDER_STATUS_NEW",
+                     "order": {"symbol": "T@MISX"}},
+                    {"status": "ORDER_STATUS_NEW",
+                     "order": {"symbol": "SBER@MISX"}}
+                ]},
+                "T@MISX"
+            ),
+            1
+        )
+
+    def test_nested_sltp_order_symbol_is_counted(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [
+                    {"status": "ORDER_STATUS_NEW",
+                     "sltp_order": {"symbol": "T@MISX"}},
+                    {"status": "ORDER_STATUS_NEW",
+                     "sltp_order": {"symbol": "SBER@MISX"}}
+                ]},
+                "T@MISX"
+            ),
+            1
+        )
+
+    def test_malformed_nested_order_payload_fails_closed(self):
+        with self.assertRaises(fra.AuditError):
+            fra.count_active_orders_for_symbol(
+                {"orders": [{"order": "not-an-object"}]}, "T@MISX"
+            )
+
     def test_malformed_orders_fail_closed(self):
         with self.assertRaises(fra.AuditError):
             fra.count_active_orders_for_symbol({}, "T@MISX")
