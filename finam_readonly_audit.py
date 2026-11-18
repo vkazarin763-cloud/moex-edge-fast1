@@ -139,7 +139,15 @@ def count_active_orders_for_symbol(response, target_symbol):
     for order in orders:
         if not isinstance(order, dict):
             raise AuditError("malformed active order entry")
-        symbol = order.get("symbol")
+        nested_order = order.get("order") or {}
+        nested_sltp = order.get("sltp_order") or {}
+        if not isinstance(nested_order, dict) or not isinstance(nested_sltp, dict):
+            raise AuditError("malformed nested active order payload")
+        symbol = (
+            nested_order.get("symbol")
+            or nested_sltp.get("symbol")
+            or order.get("symbol")
+        )
         if not isinstance(symbol, str) or not symbol:
             raise AuditError("active order entry has no valid symbol")
         if symbol == target_symbol:
