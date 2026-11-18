@@ -67,15 +67,24 @@ def _position_rows(account_data, decimal_value):
 
 def _reconcile_pending(token, state, key, position, deps):
     record = state[key]
-    client_id = record.get("exit_client_order_id")
-    if not client_id:
-        raise H1MonitorError(position["symbol"] + ": pending exit has no client id")
-    order_id = deps["find_order_by_client_id"](token, client_id)
-    if not order_id:
-        raise H1MonitorError(
-            position["symbol"] + ": exit submission outcome unknown; no retry permitted"
-        )
-    final = deps["wait_for_terminal_order"](token, order_id)
+    pending_status = record.get("status")
+    if pending_status == "EXIT_SUBMISSION_ATTEMPTED":
+        client_id = record.get("exit_client_order_id")
+        if not client_id:
+            raise H1MonitorError(position["symbol"] + ": pending exit has no client id")
+        order_id = deps["find_order_by_client_id"](token, client_id)
+        if not order_id:
+            raise H1MonitorError(
+                position["symbol"] + ": exit submission outcome unknown; no retry permitted"
+            )
+        final = deps["wait_for_terminal_order"](token, order_id)
+    elif pending_status == "EXIT_FILLED_AWAITING_POSITION_SYNC":
+        order_id = record.get("exit_order_id")
+        if not order_id:
+            raise H1MonitorError(position["symbol"] + ": missing terminal exit order id")
+        final = deps["wait_for_terminal_order"](token, order_id)
+    else:
+        raise H1MonitorError(position["symbol"] + ": unsupported exit reconciliation state")
     filled = deps["decimal_value"](final.get("executed_quantity"), "exit.executed_quantity")
     account, _ = deps["get_account_info"](token)
     remaining = deps["get_position_quantity"](account, position["symbol"])
@@ -90,6 +99,17 @@ def _reconcile_pending(token, state, key, position, deps):
         return True
     if (remaining > 0) != (position["quantity"] > 0):
         raise H1MonitorError(position["symbol"] + ": position direction changed after exit")
+    requested = int(record.get("exit_quantity", abs(position["quantity"])))
+    expected_remaining = Decimal(requested) - filled
+    if expected_remaining < 0 or abs(remaining) != expected_remaining:
+        record["status"] = "EXIT_FILLED_AWAITING_POSITION_SYNC"
+        record["exit_order_id"] = str(order_id)
+        record["exit_filled_quantity"] = str(filled)
+        deps["save_state"](state)
+        raise H1MonitorError(
+            position["symbol"] + ": broker position quantity does not yet match "
+            "the terminal exit fill; no second order will be sent"
+        )
     record.update(status="MONITORING", quantity=int(abs(remaining)),
                   last_exit_order_id=str(order_id),
                   last_exit_filled_quantity=str(filled))
@@ -110,7 +130,9 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
         key = position_key(symbol)
         record = state.get(key)
 
-        if record and record.get("status") == "EXIT_SUBMISSION_ATTEMPTED":
+        if record and record.get("status") in (
+            "EXIT_SUBMISSION_ATTEMPTED", "EXIT_FILLED_AWAITING_POSITION_SYNC"
+        ):
             if _reconcile_pending(token, state, key, pos, deps):
                 continue
             record = state[key]
@@ -227,15 +249,12 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
         if (remaining > 0) != (pos["quantity"] > 0):
             raise H1MonitorError(symbol + ": position direction changed after exit")
         record.update(
-            status="MONITORING",
-            quantity=int(abs(remaining)),
-            last_exit_order_id=str(result["order_id"]),
-            last_exit_filled_quantity=str(filled),
+            status="EXIT_FILLED_AWAITING_POSITION_SYNC",
+            exit_order_id=str(result["order_id"]),
+            exit_filled_quantity=str(filled),
         )
-        for field in ("exit_client_order_id", "exit_reason", "exit_candle",
-                      "exit_quantity", "exit_submitted_at"):
-            record.pop(field, None)
         deps["save_state"](state)
         raise H1MonitorError(
-            symbol + ": exit was partial; remaining shares will be checked next run"
+            symbol + ": terminal exit order does not yet match the broker position; "
+            "no duplicate exit will be submitted"
         )
