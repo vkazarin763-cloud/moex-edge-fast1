@@ -992,9 +992,16 @@ def place_sltp_order(
             if response.status_code >= 500 or response.status_code == 408:
                 order_id = reconcile_sltp_order()
             else:
-                logging.critical("Ошибка SL/TP %s: HTTP %s: %s",
-                                 symbol, response.status_code, response.text)
-                return False
+                # Preserve the broker's actual rejection reason. Returning False
+                # caused callers to replace this with a generic message, hiding
+                # the HTTP status and response body needed for diagnosis.
+                response_detail = (response.text or "<empty response body>")[:2000]
+                error_message = (
+                    f"{symbol}: Finam отклонил SL/TP: "
+                    f"HTTP {response.status_code}; ответ: {response_detail}"
+                )
+                logging.critical("%s", error_message)
+                raise OrderProtectionError(error_message)
         else:
             try:
                 data = response.json()
