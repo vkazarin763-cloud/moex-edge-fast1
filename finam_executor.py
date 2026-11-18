@@ -1484,22 +1484,10 @@ def main():
                 trade_lot_size
             )
 
-            sl_raw, tp_raw = calculate_protective_prices(
-                entry_price, direction
-            )
             if direction == "LONG":
                 side = "SIDE_BUY"
-                sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
                 side = "SIDE_SELL"
-                sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
-
-            sl_price = round_price_to_tick(
-                token, ticker, sl_raw, sl_rounding
-            )
-            tp_price = round_price_to_tick(
-                token, ticker, tp_raw, tp_rounding
-            )
 
         except Exception as exc:
             logging.error(
@@ -1511,16 +1499,9 @@ def main():
             continue
 
         logging.info(
-            "Подготовлена заявка: %s %s, "
-            "лот=%s, количество=%s шт., "
-            "вход=%s, SL=%s, TP=%s",
-            ticker,
-            direction,
-            trade_lot_size,
-            quantity,
-            entry_price,
-            sl_price,
-            tp_price
+            "Подготовлена заявка: %s %s, лот=%s, количество=%s шт., "
+            "сигнальная цена=%s; выход: закрытая H1, SL 3%% / TP 5%%",
+            ticker, direction, trade_lot_size, quantity, entry_price
         )
 
         # Durable dedupe reservation is committed before any broker POST.
