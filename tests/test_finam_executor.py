@@ -31,6 +31,14 @@ class FinamExecutorTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             fe.parse_dry_run("typo")
 
+    def test_live_mode_requires_separate_explicit_gate(self):
+        fe.enforce_live_trading_gate(True, "false")
+        with self.assertRaises(RuntimeError):
+            fe.enforce_live_trading_gate(False, "false")
+        with self.assertRaises(RuntimeError):
+            fe.enforce_live_trading_gate(False, "")
+        fe.enforce_live_trading_gate(False, "true")
+
     def test_live_order_limit_is_one_per_invocation(self):
         self.assertTrue(fe.can_submit_live_order(0))
         self.assertFalse(fe.can_submit_live_order(1))
@@ -354,7 +362,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -381,7 +389,7 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertEqual(payload["tp_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
         self.assertEqual(payload["quantity_sl"]["value"], "7")
         self.assertEqual(payload["quantity_tp"]["value"], "7")
-        self.assertEqual(payload["side"], "SIDE_SELL")
+        self.assertEqual(payload["side"], "SIDE_BUY")
 
     def test_sltp_timeout_reconciles_by_client_id_without_resubmitting(self):
         readback = {
@@ -389,7 +397,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -483,13 +491,55 @@ class FinamExecutorTests(unittest.TestCase):
                     "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
                 )
 
+    def test_sltp_long_uses_protected_position_side_buy(self):
+        readback = {
+            "order_id": "sltp-long",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "symbol": "SBER@MISX",
+                "side": "SIDE_BUY",
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \
+             patch.object(fe, "get_order_state", return_value=readback):
+            self.assertTrue(
+                fe.place_sltp_order("jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0)
+            )
+        self.assertEqual(post.call_args.args[2]["side"], "SIDE_BUY")
+
+    def test_sltp_short_uses_protected_position_side_sell(self):
+        readback = {
+            "order_id": "sltp-short",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "symbol": "SBER@MISX",
+                "side": "SIDE_SELL",
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "103.0"},
+                "tp_price": {"value": "95.0"}
+            }
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \
+             patch.object(fe, "get_order_state", return_value=readback):
+            self.assertTrue(
+                fe.place_sltp_order("jwt", "SBER@MISX", 7, "SHORT", 103.0, 95.0)
+            )
+        self.assertEqual(post.call_args.args[2]["side"], "SIDE_SELL")
+
     def test_sltp_wrong_readback_side_is_rejected(self):
         accepted = {
             "order_id": "sltp-1",
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -499,7 +549,7 @@ class FinamExecutorTests(unittest.TestCase):
         wrong_side = {
             "order_id": "sltp-1",
             "status": "ORDER_STATUS_NEW",
-            "sltp_order": dict(accepted["sltp_order"], side="SIDE_BUY")
+            "sltp_order": dict(accepted["sltp_order"], side="SIDE_SELL")
         }
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)), \
