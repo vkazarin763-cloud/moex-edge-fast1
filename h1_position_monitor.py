@@ -134,6 +134,7 @@ def _reconcile_pending(token, state, key, position, deps):
 
 def monitor_open_positions(token, account_data, state, dry_run, deps):
     positions = _position_rows(account_data, deps["decimal_value"])
+    active_symbols = deps["get_active_order_symbols"](token)
     for pos in positions:
         symbol = pos["symbol"]
         key = position_key(symbol)
@@ -153,7 +154,6 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
         # unfilled active orders. Never enroll or auto-close such a symbol as a
         # confirmed position; an existing journal entry is also paused because
         # the active order may change its broker-reported quantity.
-        active_symbols = deps["get_active_order_symbols"](token)
         if pos["ticker"] in active_symbols:
             raise H1MonitorError(
                 symbol + ": active broker order exists; position may be theoretical "
