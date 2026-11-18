@@ -40,6 +40,21 @@ class FinamExecutorTests(unittest.TestCase):
             fe.enforce_live_trading_gate(False, "")
         fe.enforce_live_trading_gate(False, "true")
 
+    def test_protective_prices_for_long_and_short(self):
+        long_sl, long_tp = fe.calculate_protective_prices("100", "LONG")
+        short_sl, short_tp = fe.calculate_protective_prices("100", "SHORT")
+        self.assertEqual(long_sl, Decimal("97.000"))
+        self.assertEqual(long_tp, Decimal("105.000"))
+        self.assertEqual(short_sl, Decimal("103.000"))
+        self.assertEqual(short_tp, Decimal("95.000"))
+
+    def test_protective_prices_reject_invalid_reference_and_direction(self):
+        for value in ("0", "-1", "NaN", "not-a-price"):
+            with self.assertRaises(ValueError):
+                fe.calculate_protective_prices(value, "LONG")
+        with self.assertRaises(ValueError):
+            fe.calculate_protective_prices("100", "SIDEWAYS")
+
     def test_live_order_limit_is_one_per_invocation(self):
         self.assertTrue(fe.can_submit_live_order(0))
         self.assertFalse(fe.can_submit_live_order(1))
