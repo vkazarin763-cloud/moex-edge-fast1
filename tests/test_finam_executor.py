@@ -635,6 +635,18 @@ class FinamReadOnlyAuditTests(unittest.TestCase):
                 {"orders": [{"status": "ORDER_STATUS_NEW"}]}, "T@MISX"
             )
 
+    def test_filled_t_orders_are_not_counted_as_active(self):
+        self.assertEqual(
+            len(fra.matching_active_orders_for_symbol(
+                {"orders": [
+                    {"status": "ORDER_STATUS_FILLED", "order": {"symbol": "T@MISX"}},
+                    {"status": "ORDER_STATUS_NEW", "order": {"symbol": "T@MISX"}}
+                ]},
+                "T@MISX"
+            )),
+            1
+        )
+
 
 
 
