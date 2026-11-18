@@ -8,6 +8,7 @@ import requests
 import tempfile
 import os
 import finam_executor as fe
+import finam_readonly_audit as fra
 
 # Stable dummy account id for URL construction in mocked tests; no API calls occur.
 fe.ACCOUNT_ID = "unit-test-account"
@@ -30,6 +31,112 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertFalse(fe.parse_dry_run("false"))
         with self.assertRaises(RuntimeError):
             fe.parse_dry_run("typo")
+
+    def test_live_mode_requires_separate_explicit_gate(self):
+        fe.enforce_live_trading_gate(True, "false")
+        with self.assertRaises(RuntimeError):
+            fe.enforce_live_trading_gate(False, "false")
+        with self.assertRaises(RuntimeError):
+            fe.enforce_live_trading_gate(False, "")
+        fe.enforce_live_trading_gate(False, "true")
+
+    def test_position_quantity_uses_signed_finAM_position(self):
+        self.assertEqual(
+            fe.get_position_quantity(
+                {"positions": [{"symbol": "SBER@MISX", "quantity": {"value": "5"}}]},
+                "SBER@MISX"
+            ),
+            Decimal("5")
+        )
+        self.assertEqual(
+            fe.get_position_quantity(
+                {"positions": [{"symbol": "SBER@MISX", "quantity": {"value": "-5"}}]},
+                "SBER@MISX"
+            ),
+            Decimal("-5")
+        )
+
+    def test_wait_for_long_position_to_appear_before_sltp(self):
+        responses = [
+            {"account_id": fe.ACCOUNT_ID, "positions": []},
+            {"account_id": fe.ACCOUNT_ID, "positions": [
+                {"symbol": "SBER@MISX", "quantity": {"value": "7"}}
+            ]}
+        ]
+        with patch.object(fe, "api_get", side_effect=responses) as get, \
+             patch.object(fe.time, "sleep"):
+            result = fe.wait_for_position_quantity(
+                "jwt", "SBER@MISX", "LONG", 7, attempts=2, pause=0
+            )
+        self.assertEqual(result, Decimal("7"))
+        self.assertEqual(get.call_count, 2)
+
+    def test_wait_for_short_position_requires_negative_quantity(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID,
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "-3"}}]
+        }):
+            self.assertEqual(
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "SHORT", 3, attempts=1
+                ),
+                Decimal("-3")
+            )
+
+    def test_position_direction_mismatch_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID,
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "-7"}}]
+        }):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=1
+                )
+
+    def test_position_quantity_excess_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID,
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "8"}}]
+        }):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=1
+                )
+
+    def test_missing_position_times_out_and_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": fe.ACCOUNT_ID, "positions": []
+        }) as get, patch.object(fe.time, "sleep"):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=2, pause=0
+                )
+        self.assertEqual(get.call_count, 2)
+
+    def test_position_account_mismatch_fails_closed(self):
+        with patch.object(fe, "api_get", return_value={
+            "account_id": "another-account",
+            "positions": [{"symbol": "SBER@MISX", "quantity": {"value": "7"}}]
+        }):
+            with self.assertRaises(fe.OrderProtectionError):
+                fe.wait_for_position_quantity(
+                    "jwt", "SBER@MISX", "LONG", 7, attempts=1
+                )
+
+    def test_protective_prices_for_long_and_short(self):
+        long_sl, long_tp = fe.calculate_protective_prices("100", "LONG")
+        short_sl, short_tp = fe.calculate_protective_prices("100", "SHORT")
+        self.assertEqual(long_sl, Decimal("97.000"))
+        self.assertEqual(long_tp, Decimal("105.000"))
+        self.assertEqual(short_sl, Decimal("103.000"))
+        self.assertEqual(short_tp, Decimal("95.000"))
+
+    def test_protective_prices_reject_invalid_reference_and_direction(self):
+        for value in ("0", "-1", "NaN", "not-a-price"):
+            with self.assertRaises(ValueError):
+                fe.calculate_protective_prices(value, "LONG")
+        with self.assertRaises(ValueError):
+            fe.calculate_protective_prices("100", "SIDEWAYS")
 
     def test_live_order_limit_is_one_per_invocation(self):
         self.assertTrue(fe.can_submit_live_order(0))
@@ -354,7 +461,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -379,9 +486,10 @@ class FinamExecutorTests(unittest.TestCase):
         self.assertLessEqual(len(payload["client_order_id"]), 20)
         self.assertEqual(payload["sl_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
         self.assertEqual(payload["tp_qty_measure"], "SLTP_QTY_MEASURE_VALUE")
+        self.assertEqual(payload["valid_before"], "VALID_BEFORE_GOOD_TILL_CANCEL")
         self.assertEqual(payload["quantity_sl"]["value"], "7")
         self.assertEqual(payload["quantity_tp"]["value"], "7")
-        self.assertEqual(payload["side"], "SIDE_SELL")
+        self.assertEqual(payload["side"], "SIDE_BUY")
 
     def test_sltp_timeout_reconciles_by_client_id_without_resubmitting(self):
         readback = {
@@ -389,7 +497,7 @@ class FinamExecutorTests(unittest.TestCase):
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -483,13 +591,55 @@ class FinamExecutorTests(unittest.TestCase):
                     "jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0
                 )
 
+    def test_sltp_long_uses_protected_position_side_buy(self):
+        readback = {
+            "order_id": "sltp-long",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "symbol": "SBER@MISX",
+                "side": "SIDE_BUY",
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "97.0"},
+                "tp_price": {"value": "105.0"}
+            }
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \
+             patch.object(fe, "get_order_state", return_value=readback):
+            self.assertTrue(
+                fe.place_sltp_order("jwt", "SBER@MISX", 7, "LONG", 97.0, 105.0)
+            )
+        self.assertEqual(post.call_args.args[2]["side"], "SIDE_BUY")
+
+    def test_sltp_short_uses_protected_position_side_sell(self):
+        readback = {
+            "order_id": "sltp-short",
+            "status": "ORDER_STATUS_NEW",
+            "sltp_order": {
+                "symbol": "SBER@MISX",
+                "side": "SIDE_SELL",
+                "quantity_sl": {"value": "7"},
+                "quantity_tp": {"value": "7"},
+                "sl_price": {"value": "103.0"},
+                "tp_price": {"value": "95.0"}
+            }
+        }
+        with patch.object(fe, "DRY_RUN", False), \
+             patch.object(fe, "api_post", return_value=FakeResponse(200, readback)) as post, \
+             patch.object(fe, "get_order_state", return_value=readback):
+            self.assertTrue(
+                fe.place_sltp_order("jwt", "SBER@MISX", 7, "SHORT", 103.0, 95.0)
+            )
+        self.assertEqual(post.call_args.args[2]["side"], "SIDE_SELL")
+
     def test_sltp_wrong_readback_side_is_rejected(self):
         accepted = {
             "order_id": "sltp-1",
             "status": "ORDER_STATUS_NEW",
             "sltp_order": {
                 "symbol": "SBER@MISX",
-                "side": "SIDE_SELL",
+                "side": "SIDE_BUY",
                 "quantity_sl": {"value": "7"},
                 "quantity_tp": {"value": "7"},
                 "sl_price": {"value": "97.0"},
@@ -499,7 +649,7 @@ class FinamExecutorTests(unittest.TestCase):
         wrong_side = {
             "order_id": "sltp-1",
             "status": "ORDER_STATUS_NEW",
-            "sltp_order": dict(accepted["sltp_order"], side="SIDE_BUY")
+            "sltp_order": dict(accepted["sltp_order"], side="SIDE_SELL")
         }
         with patch.object(fe, "DRY_RUN", False), \
              patch.object(fe, "api_post", return_value=FakeResponse(200, accepted)), \
@@ -545,6 +695,106 @@ class FinamExecutorTests(unittest.TestCase):
         written = json.loads(base64.b64decode(payload["content"]).decode("utf-8"))
         self.assertEqual(written, state)
 
+
+
+class FinamReadOnlyAuditTests(unittest.TestCase):
+    def test_t_position_absent_means_zero_only_with_valid_positions_array(self):
+        self.assertEqual(
+            fra.parse_position_quantity({"positions": []}, "T@MISX"),
+            Decimal("0")
+        )
+
+    def test_t_position_quantity_is_read_from_broker_payload(self):
+        account = {
+            "positions": [
+                {"symbol": "SBER@MISX", "quantity": {"value": "2"}},
+                {"symbol": "T@MISX", "quantity": {"value": "1"}}
+            ]
+        }
+        self.assertEqual(
+            fra.parse_position_quantity(account, "T@MISX"),
+            Decimal("1")
+        )
+
+    def test_malformed_positions_fail_closed(self):
+        with self.assertRaises(fra.AuditError):
+            fra.parse_position_quantity({}, "T@MISX")
+        with self.assertRaises(fra.AuditError):
+            fra.parse_position_quantity({"positions": [{"quantity": "1"}]}, "T@MISX")
+
+    def test_no_active_t_orders(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [{"symbol": "SBER@MISX"}]}, "T@MISX"
+            ),
+            0
+        )
+
+    def test_active_t_order_is_counted(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [
+                    {"symbol": "T@MISX", "status": "ORDER_STATUS_NEW"},
+                    {"symbol": "SBER@MISX", "status": "ORDER_STATUS_NEW"}
+                ]},
+                "T@MISX"
+            ),
+            1
+        )
+
+    def test_nested_order_symbol_is_counted(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [
+                    {"status": "ORDER_STATUS_NEW",
+                     "order": {"symbol": "T@MISX"}},
+                    {"status": "ORDER_STATUS_NEW",
+                     "order": {"symbol": "SBER@MISX"}}
+                ]},
+                "T@MISX"
+            ),
+            1
+        )
+
+    def test_nested_sltp_order_symbol_is_counted(self):
+        self.assertEqual(
+            fra.count_active_orders_for_symbol(
+                {"orders": [
+                    {"status": "ORDER_STATUS_NEW",
+                     "sltp_order": {"symbol": "T@MISX"}},
+                    {"status": "ORDER_STATUS_NEW",
+                     "sltp_order": {"symbol": "SBER@MISX"}}
+                ]},
+                "T@MISX"
+            ),
+            1
+        )
+
+    def test_malformed_nested_order_payload_fails_closed(self):
+        with self.assertRaises(fra.AuditError):
+            fra.count_active_orders_for_symbol(
+                {"orders": [{"order": "not-an-object"}]}, "T@MISX"
+            )
+
+    def test_malformed_orders_fail_closed(self):
+        with self.assertRaises(fra.AuditError):
+            fra.count_active_orders_for_symbol({}, "T@MISX")
+        with self.assertRaises(fra.AuditError):
+            fra.count_active_orders_for_symbol(
+                {"orders": [{"status": "ORDER_STATUS_NEW"}]}, "T@MISX"
+            )
+
+    def test_filled_t_orders_are_not_counted_as_active(self):
+        self.assertEqual(
+            len(fra.matching_active_orders_for_symbol(
+                {"orders": [
+                    {"status": "ORDER_STATUS_FILLED", "order": {"symbol": "T@MISX"}},
+                    {"status": "ORDER_STATUS_NEW", "order": {"symbol": "T@MISX"}}
+                ]},
+                "T@MISX"
+            )),
+            1
+        )
 
 
 if __name__ == "__main__":

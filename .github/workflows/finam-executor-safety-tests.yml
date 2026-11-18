@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/finam-executor-*
+      - safety/finam-protection-ready-*
   pull_request:
     branches:
       - main

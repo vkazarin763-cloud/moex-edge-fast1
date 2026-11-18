@@ -62,6 +62,22 @@ def parse_dry_run(value):
 
 DRY_RUN = parse_dry_run(os.getenv("FINAM_DRY_RUN", "true"))
 
+# Keep in sync with REC_SL_PCT / REC_TAKE_PCT in moex_edge_fast_33.py.
+PROTECTIVE_SL_PCT = Decimal("3.0")
+PROTECTIVE_TP_PCT = Decimal("5.0")
+
+
+def enforce_live_trading_gate(dry_run, live_enabled):
+    """Require a second, explicit kill-switch before any live broker order."""
+    if dry_run:
+        return
+    if str(live_enabled).strip().lower() != "true":
+        raise RuntimeError(
+            "LIVE trading заблокирован: для разблокировки нужны "
+            "FINAM_DRY_RUN=false и отдельный FINAM_LIVE_TRADING_ENABLED=true. "
+            "До завершения проверки SL/TP реальные заявки запрещены."
+        )
+
 BASE_URL = "https://api.finam.ru"
 REQUEST_TIMEOUT = 20
 REQUEST_PAUSE = 0.5
@@ -340,6 +356,24 @@ def get_trade_parameters(token, ticker, direction=None):
     return int(trade_lot_size)
 
 
+def calculate_protective_prices(reference_price, position_direction):
+    """Calculate SL/TP around a reference price using the current 3%/5% policy."""
+    try:
+        price = Decimal(str(reference_price))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError(f"Некорректная опорная цена: {reference_price}")
+    if not price.is_finite() or price <= 0:
+        raise ValueError(f"Некорректная опорная цена: {reference_price}")
+
+    sl_fraction = PROTECTIVE_SL_PCT / Decimal("100")
+    tp_fraction = PROTECTIVE_TP_PCT / Decimal("100")
+    if position_direction == "LONG":
+        return price * (Decimal("1") - sl_fraction), price * (Decimal("1") + tp_fraction)
+    if position_direction == "SHORT":
+        return price * (Decimal("1") + sl_fraction), price * (Decimal("1") - tp_fraction)
+    raise ValueError(f"Некорректное направление: {position_direction}")
+
+
 def round_price_to_tick(token, ticker, price, rounding):
     """
     Round a protective price to the instrument's actual Finam tick size.
@@ -509,6 +543,81 @@ def get_open_position_symbols(account_data):
             continue
         symbols.add(str(symbol).split("@")[0].upper())
     return symbols
+
+
+def get_position_quantity(account_data, symbol):
+    """Return the signed broker position quantity for one exact symbol."""
+    if not isinstance(account_data, dict):
+        raise OrderProtectionError("Finam вернул некорректные данные счёта")
+    positions = account_data.get("positions")
+    if not isinstance(positions, list):
+        raise OrderProtectionError(
+            "Finam не вернул корректный список позиций; SL/TP не отправляются"
+        )
+    total = Decimal("0")
+    for position in positions:
+        if not isinstance(position, dict):
+            raise OrderProtectionError("Finam вернул некорректную запись позиции")
+        current_symbol = position.get("symbol")
+        if not isinstance(current_symbol, str) or not current_symbol:
+            raise OrderProtectionError("Finam вернул позицию без символа")
+        if current_symbol == symbol:
+            total += _decimal_value(
+                position.get("quantity"), f"positions[{symbol}].quantity"
+            )
+    return total
+
+
+def wait_for_position_quantity(
+    token, symbol, direction, expected_quantity, attempts=10, pause=1
+):
+    """
+    Wait until the signed position is visible in Finam before attaching SL/TP.
+    A delayed/missing position is never treated as proof that protection is safe.
+    """
+    if direction not in ("LONG", "SHORT"):
+        raise OrderProtectionError(f"{symbol}: неизвестное направление {direction}")
+    if not isinstance(expected_quantity, int) or expected_quantity <= 0:
+        raise OrderProtectionError(
+            f"{symbol}: некорректный ожидаемый объём позиции {expected_quantity}"
+        )
+    expected = (
+        Decimal(expected_quantity)
+        if direction == "LONG"
+        else -Decimal(expected_quantity)
+    )
+    last_quantity = None
+    for attempt in range(attempts):
+        account = api_get(
+            f"{BASE_URL}/v1/accounts/{quote(ACCOUNT_ID, safe='')}",
+            token
+        )
+        if account.get("account_id") and str(account["account_id"]) != str(ACCOUNT_ID):
+            raise OrderProtectionError(
+                f"{symbol}: Finam вернул другой account_id; SL/TP не отправляются"
+            )
+        actual = get_position_quantity(account, symbol)
+        last_quantity = actual
+        if actual == expected:
+            logging.info(
+                "%s: позиция подтверждена Finam перед SL/TP: %s шт.",
+                symbol, actual
+            )
+            return actual
+        if actual != 0 and (
+            (actual > 0) != (expected > 0) or abs(actual) > abs(expected)
+        ):
+            raise OrderProtectionError(
+                f"{symbol}: позиция Finam {actual} шт. не совпадает "
+                f"с ожидаемой {expected} шт.; SL/TP не отправляются."
+            )
+        if attempt + 1 < attempts:
+            time.sleep(pause)
+    raise OrderProtectionError(
+        f"{symbol}: Finam не подтвердил позицию {expected} шт. "
+        f"за {attempts} проверок (последнее значение {last_quantity}); "
+        "SL/TP не отправляются, требуется ручная сверка."
+    )
 
 
 def find_order_by_client_id(token, client_order_id):
@@ -822,18 +931,25 @@ def place_sltp_order(
     if not isinstance(quantity, int) or quantity <= 0:
         raise ValueError(f"Некорректное количество SL/TP: {quantity}")
 
-    exit_side = "SIDE_SELL" if position_direction == "LONG" else "SIDE_BUY"
+    if position_direction not in ("LONG", "SHORT"):
+        raise ValueError(
+            f"Некорректное направление защищаемой позиции: {position_direction}"
+        )
+    # Finam SLTP "side" identifies the protected position direction.
+    # Official REST example uses SIDE_BUY for a long position with SL below TP.
+    position_side = "SIDE_BUY" if position_direction == "LONG" else "SIDE_SELL"
     client_order_id = __import__("uuid").uuid4().hex[:20]
     payload = {
         "symbol": symbol,
-        "side": exit_side,
+        "side": position_side,
         "quantity_sl": {"value": str(quantity)},
         "sl_price": {"value": str(sl_price)},
         "quantity_tp": {"value": str(quantity)},
         "tp_price": {"value": str(tp_price)},
         "sl_qty_measure": "SLTP_QTY_MEASURE_VALUE",
         "tp_qty_measure": "SLTP_QTY_MEASURE_VALUE",
-        "client_order_id": client_order_id
+        "client_order_id": client_order_id,
+        "valid_before": "VALID_BEFORE_GOOD_TILL_CANCEL"
     }
 
     if DRY_RUN:
@@ -957,7 +1073,7 @@ def place_sltp_order(
         raise OrderProtectionError(
             f"{symbol}: символ SL/TP не совпал при повторном чтении."
         )
-    if readback_sltp.get("side") != exit_side:
+    if readback_sltp.get("side") != position_side:
         raise OrderProtectionError(
             f"{symbol}: сторона SL/TP не совпала при повторном чтении."
         )
@@ -1207,6 +1323,9 @@ def update_signal_state(state, signal_id, status, **details):
 # ============================================================
 
 def main():
+    enforce_live_trading_gate(
+        DRY_RUN, os.getenv("FINAM_LIVE_TRADING_ENABLED", "false")
+    )
     now_msk = datetime.utcnow() + timedelta(hours=3)
     current_time = now_msk.time()
     is_weekend = now_msk.weekday() >= 5
@@ -1337,14 +1456,13 @@ def main():
                 trade_lot_size
             )
 
+            sl_raw, tp_raw = calculate_protective_prices(
+                entry_price, direction
+            )
             if direction == "LONG":
-                sl_raw = entry_price * Decimal("0.97")
-                tp_raw = entry_price * Decimal("1.05")
                 side = "SIDE_BUY"
                 sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_raw = entry_price * Decimal("1.03")
-                tp_raw = entry_price * Decimal("0.95")
                 side = "SIDE_SELL"
                 sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
 
@@ -1451,18 +1569,23 @@ def main():
             )
             filled_qty_int = int(filled_qty)
 
+            # Finam may expose trade history before the position snapshot updates.
+            # Confirm the signed account position before submitting protective orders.
+            wait_for_position_quantity(
+                token, symbol, direction, filled_qty_int
+            )
+
             if remaining > 0:
                 logging.warning("%s: остаток %s шт. не исполнен; защищаю "
                                 "только исполненные %s шт.",
                                 ticker, remaining, filled_qty_int)
 
+            sl_raw, tp_raw = calculate_protective_prices(
+                avg_fill_price, direction
+            )
             if direction == "LONG":
-                sl_raw = avg_fill_price * Decimal("0.97")
-                tp_raw = avg_fill_price * Decimal("1.05")
                 sl_rounding, tp_rounding = ROUND_FLOOR, ROUND_CEILING
             else:
-                sl_raw = avg_fill_price * Decimal("1.03")
-                tp_raw = avg_fill_price * Decimal("0.95")
                 sl_rounding, tp_rounding = ROUND_CEILING, ROUND_FLOOR
 
             sl_price = round_price_to_tick(
