@@ -149,6 +149,18 @@ def monitor_open_positions(token, account_data, state, dry_run, deps):
         if record and record.get("status") == "CLOSED":
             record = None
 
+        # Finam account positions may include theoretical quantities created by
+        # unfilled active orders. Never enroll or auto-close such a symbol as a
+        # confirmed position; an existing journal entry is also paused because
+        # the active order may change its broker-reported quantity.
+        active_symbols = deps["get_active_order_symbols"](token)
+        if pos["ticker"] in active_symbols:
+            raise H1MonitorError(
+                symbol + ": active broker order exists; position may be theoretical "
+                "or its quantity may change. Monitoring and new entries are blocked "
+                "until the order becomes terminal."
+            )
+
         candles = fetch_closed_h1_candles(token, symbol, deps["api_get"], days=7)
 
         # Legacy positions are enrolled from Finam's broker-reported average price.
