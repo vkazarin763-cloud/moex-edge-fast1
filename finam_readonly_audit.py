@@ -163,6 +163,10 @@ def matching_active_orders_for_symbol(response, target_symbol):
     return matching
 
 
+def count_active_orders_for_symbol(response, target_symbol):
+    return len(matching_active_orders_for_symbol(response, target_symbol))
+
+
 def safe_order_summary(order):
     # Print only whitelisted order-identification and trading fields.
     allowed = {
