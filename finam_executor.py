@@ -935,9 +935,9 @@ def place_sltp_order(
         raise ValueError(
             f"Некорректное направление защищаемой позиции: {position_direction}"
         )
-    # Finam SLTP "side" identifies the protected position direction.
-    # Official REST example uses SIDE_BUY for a long position with SL below TP.
-    position_side = "SIDE_BUY" if position_direction == "LONG" else "SIDE_SELL"
+    # SL/TP side is the side of the closing orders, not the held position.
+    # A LONG position is protected by SELL orders; a SHORT by BUY orders.
+    position_side = "SIDE_SELL" if position_direction == "LONG" else "SIDE_BUY"
     client_order_id = __import__("uuid").uuid4().hex[:20]
     payload = {
         "symbol": symbol,
