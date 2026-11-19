@@ -10,6 +10,7 @@ from .moex_iss import fetch_candles
 from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report
+from .portfolio import walk_forward_portfolio_report
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
 
@@ -30,6 +31,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     minimum_history_start = date.fromisoformat(HOLDOUT_START_DATE) - timedelta(days=3 * 365 + 2)
     fetch_from = min(date.fromisoformat(date_from), minimum_history_start).isoformat()
     results = {}
+    development_candles_by_ticker = {}
     for ticker in selected:
         try:
             candles = fetch_candles(ticker, fetch_from, date_till, interval=24, board="TQBR")
@@ -37,6 +39,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
             ]
+            development_candles_by_ticker[ticker] = development
             results[ticker] = {
                 "status": "ANALYZED",
                 "candles": len(candles),
@@ -56,6 +59,21 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     holdout_correction = apply_holm_correction(
         results, family_size=len(selected) * 5
     )
+    try:
+        development_portfolio = walk_forward_portfolio_report(
+            development_candles_by_ticker,
+            folds=4,
+            warmup_bars=200,
+        ) if development_candles_by_ticker else {
+            "status": "NO_DEVELOPMENT_DATA",
+            "warning": "No ticker supplied usable development candles.",
+        }
+    except ValueError as exc:
+        development_portfolio = {
+            "status": "INSUFFICIENT_DEVELOPMENT_DATA",
+            "reason": str(exc),
+            "warning": "No portfolio metrics were calculated.",
+        }
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source": "MOEX ISS public historical candles",
@@ -73,6 +91,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "multiple_testing_correction": holdout_correction,
         },
         "results": results,
+        "development_portfolio": development_portfolio,
         "safety": "Research only. No broker APIs, order placement, Telegram, or production-state writes.",
     }
 
