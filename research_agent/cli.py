@@ -6,10 +6,10 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from .moex_iss import fetch_candles
+from .moex_iss import fetch_candles, fetch_history_records
 from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
-from .quality import candle_quality_report
+from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
@@ -26,8 +26,6 @@ MOEX_FIRST_LISTING_44 = [
 
 def run_universe(date_from: str, date_till: str, tickers: list[str] | None = None) -> dict:
     selected = tickers or MOEX_FIRST_LISTING_44
-    # Preserve at least three full years of pre-cutoff development history even
-    # after the ordinary rolling fetch window has moved beyond the frozen date.
     minimum_history_start = date.fromisoformat(HOLDOUT_START_DATE) - timedelta(days=3 * 365 + 2)
     fetch_from = min(date.fromisoformat(date_from), minimum_history_start).isoformat()
     results = {}
@@ -39,12 +37,26 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
             ]
+            try:
+                history_records = fetch_history_records(
+                    ticker, fetch_from, date_till, board="TQBR"
+                )
+                history_crosscheck = audit_tqbr_history(
+                    candles, history_records, fetch_from, date_till
+                )
+            except Exception as history_exc:
+                history_crosscheck = {
+                    "status": "HISTORY_CROSSCHECK_UNAVAILABLE",
+                    "error": str(history_exc),
+                    "exchange_calendar_verified": False,
+                }
             results[ticker] = {
                 "status": "ANALYZED",
                 "candles": len(candles),
                 "first_timestamp": candles[0].timestamp.isoformat(),
                 "last_timestamp": candles[-1].timestamp.isoformat(),
                 "data_quality": candle_quality_report(candles, fetch_from, date_till),
+                "tqbr_history_crosscheck": history_crosscheck,
                 "development_period_end_exclusive": HOLDOUT_START_DATE,
                 "walk_forward": walk_forward_report(development),
                 "adversarial_cost_check": adversarial_cost_check(development),
@@ -54,7 +66,6 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             }
             development_candles_by_ticker[ticker] = development
         except Exception as exc:
-            # One failed symbol must not erase successful research for other symbols.
             results[ticker] = {"status": "DATA_OR_ANALYSIS_ERROR", "error": str(exc)}
     holdout_correction = apply_holm_correction(
         results, family_size=len(selected) * 5
@@ -76,7 +87,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         }
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "source": "MOEX ISS public historical candles",
+        "source": "MOEX ISS public historical candles and TQBR daily history",
         "board": "TQBR",
         "interval_minutes": 24 * 60,
         "date_from": fetch_from,

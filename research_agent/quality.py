@@ -1,16 +1,11 @@
-"""Descriptive candle-quality audit for the read-only MOEX research pipeline.
-
-This module deliberately does not infer missing exchange sessions from weekdays:
-MOEX holidays, suspensions, IPO dates and security-specific trading calendars can
-all create legitimate date gaps. Such gaps are reported for review, not labelled
-as missing candles.
-"""
+"""Descriptive candle-quality audits for the read-only MOEX research pipeline."""
 from __future__ import annotations
 
 from datetime import date
 from typing import Any
 
 from .core import Candle, validate_candles
+from .moex_iss import HistoryRecord
 
 
 def candle_quality_report(
@@ -20,7 +15,7 @@ def candle_quality_report(
     warmup_bars: int = 200,
     preferred_min_bars: int = 500,
 ) -> dict[str, Any]:
-    """Return validated-series diagnostics without making calendar assumptions."""
+    """Return validated-series diagnostics without assuming an exchange calendar."""
     if warmup_bars < 0 or preferred_min_bars < warmup_bars:
         raise ValueError("preferred_min_bars must be >= warmup_bars >= 0")
 
@@ -112,11 +107,82 @@ def candle_quality_report(
         "calendar_gap_count": len(gaps),
         "exchange_calendar_verified": False,
         "calendar_caveat": (
-            "Weekday dates inside gaps are not classified as missing sessions: "
-            "MOEX holidays, listing dates, suspensions and security-specific "
-            "trading schedules have not been checked."
+            "Per-security TQBR history can confirm a recorded trade date or a "
+            "zero-trade row. Missing history rows do not establish a holiday, "
+            "suspension, pre-listing date, or missing market session."
         ),
         "history_status": history_status,
         "warmup_bars_required": warmup_bars,
         "preferred_min_bars": preferred_min_bars,
+    }
+
+
+def audit_tqbr_history(
+    candles: list[Candle],
+    history_records: list[HistoryRecord],
+    requested_from: str,
+    requested_till: str,
+) -> dict[str, Any]:
+    """Cross-check candle dates only against explicit per-security TQBR rows."""
+    start = date.fromisoformat(requested_from)
+    end = date.fromisoformat(requested_till)
+    if start > end:
+        raise ValueError("requested_from must be on or before requested_till")
+    candle_dates = {row.timestamp.date() for row in validate_candles(candles)}
+    records_by_date: dict[date, HistoryRecord] = {}
+    for record in history_records:
+        if record.trade_date < start or record.trade_date > end:
+            raise ValueError(f"TQBR history date outside requested range: {record.trade_date}")
+        if record.trade_date in records_by_date:
+            raise ValueError(f"Duplicate TQBR history date: {record.trade_date}")
+        records_by_date[record.trade_date] = record
+
+    missing_on_trade_dates = []
+    zero_trade_without_candle = []
+    candle_with_zero_trades = []
+    unknown_trade_count = []
+    for trade_date, record in sorted(records_by_date.items()):
+        has_candle = trade_date in candle_dates
+        if record.num_trades is None:
+            unknown_trade_count.append(trade_date.isoformat())
+        elif record.num_trades > 0 and not has_candle:
+            missing_on_trade_dates.append({
+                "date": trade_date.isoformat(),
+                "num_trades": record.num_trades,
+            })
+        elif record.num_trades == 0 and not has_candle:
+            zero_trade_without_candle.append(trade_date.isoformat())
+        elif record.num_trades == 0 and has_candle:
+            candle_with_zero_trades.append(trade_date.isoformat())
+
+    candles_without_history = sorted(
+        trade_date.isoformat() for trade_date in candle_dates
+        if trade_date not in records_by_date
+    )
+    if not records_by_date:
+        status = "NO_HISTORY_RECORDS"
+    elif missing_on_trade_dates:
+        status = "MISSING_CANDLE_ON_RECORDED_TRADE_DATE"
+    else:
+        status = "NO_MISSING_CANDLE_DETECTED_ON_RECORDED_TRADE_DATES"
+
+    return {
+        "status": status,
+        "source": "MOEX ISS public TQBR per-security daily history",
+        "history_rows": len(records_by_date),
+        "history_rows_with_trades": sum(
+            record.num_trades is not None and record.num_trades > 0
+            for record in records_by_date.values()
+        ),
+        "missing_candles_on_trade_dates": missing_on_trade_dates,
+        "zero_trade_sessions_without_candles": zero_trade_without_candle,
+        "candles_present_on_zero_trade_dates": candle_with_zero_trades,
+        "history_rows_unknown_trade_count": unknown_trade_count,
+        "candles_without_history_record": candles_without_history,
+        "coverage_scope": (
+            "Only dates explicitly returned for this security on TQBR are checked. "
+            "No row is not proof of a holiday, suspension, listing boundary, or "
+            "exchange-wide non-trading day."
+        ),
+        "exchange_calendar_verified": False,
     }

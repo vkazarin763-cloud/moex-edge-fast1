@@ -1,12 +1,21 @@
 import unittest
 from urllib.parse import urlparse, parse_qs
 
-from research_agent.moex_iss import fetch_candles, ISSDataError
+from research_agent.moex_iss import (
+    fetch_candles, fetch_history_records, ISSDataError,
+)
 
 
 def response(rows):
     return {"candles": {
         "columns": ["begin", "open", "close", "high", "low", "volume"],
+        "data": rows,
+    }}
+
+
+def history_response(rows, columns=None):
+    return {"history": {
+        "columns": columns or ["BOARDID", "TRADEDATE", "SECID", "NUMTRADES"],
         "data": rows,
     }}
 
@@ -27,11 +36,8 @@ class MOEXISSTests(unittest.TestCase):
             self.assertNotIn("limit", params)
             return pages.pop(0)
 
-        data = fetch_candles("sber", "2025-01-01", "2025-01-02",
-                             getter=getter)
+        data = fetch_candles("sber", "2025-01-01", "2025-01-02", getter=getter)
         self.assertEqual(len(data), 3)
-        # A short non-empty page is not proof of completion; the loader
-        # must request the next offset and stop only on an empty page.
         self.assertEqual(calls, ["0", "2", "3"])
 
     def test_valid_weekend_session_candle_is_preserved(self):
@@ -55,6 +61,53 @@ class MOEXISSTests(unittest.TestCase):
         with self.assertRaises(ISSDataError):
             fetch_candles("SBER", "2025-01-01", "2025-01-02",
                           getter=lambda *a, **k: page)
+
+    def test_history_paginates_and_preserves_zero_trade_rows(self):
+        calls = []
+        pages = [
+            history_response([
+                ["TQBR", "2025-01-02", "AMEZ", 0],
+                ["TQBR", "2025-01-03", "AMEZ", 17],
+            ]),
+            history_response([]),
+        ]
+
+        def getter(url, **kwargs):
+            params = parse_qs(urlparse(url).query)
+            calls.append(params["start"][0])
+            self.assertIn("/history/engines/stock/markets/shares/boards/TQBR/securities/AMEZ.json", url)
+            return pages.pop(0)
+
+        records = fetch_history_records("amez", "2025-01-01", "2025-01-31", getter=getter)
+        self.assertEqual([(r.trade_date.isoformat(), r.num_trades) for r in records],
+                         [("2025-01-02", 0), ("2025-01-03", 17)])
+        self.assertEqual(calls, ["0", "2"])
+
+    def test_history_missing_columns_rejected(self):
+        with self.assertRaises(ISSDataError):
+            fetch_history_records(
+                "SBER", "2025-01-01", "2025-01-02",
+                getter=lambda *a, **k: history_response([], ["TRADEDATE", "SECID"]),
+            )
+
+    def test_history_duplicate_dates_rejected(self):
+        page = history_response([
+            ["TQBR", "2025-01-02", "SBER", 1],
+            ["TQBR", "2025-01-02", "SBER", 2],
+        ])
+        with self.assertRaises(ISSDataError):
+            fetch_history_records("SBER", "2025-01-01", "2025-01-03",
+                                  getter=lambda *a, **k: page)
+
+    def test_history_rejects_out_of_range_and_negative_trade_count(self):
+        outside = history_response([["TQBR", "2025-01-04", "SBER", 1]])
+        with self.assertRaises(ISSDataError):
+            fetch_history_records("SBER", "2025-01-01", "2025-01-03",
+                                  getter=lambda *a, **k: outside)
+        negative = history_response([["TQBR", "2025-01-02", "SBER", -1]])
+        with self.assertRaises(ISSDataError):
+            fetch_history_records("SBER", "2025-01-01", "2025-01-03",
+                                  getter=lambda *a, **k: negative)
 
 
 if __name__ == "__main__":
