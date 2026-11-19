@@ -251,6 +251,12 @@ def walk_forward_portfolio_report(
             if trade.signal_time >= development_start_time:
                 continuous_candidates.append(PortfolioTrade(ticker, trade))
 
+    from .regime import market_breadth_regime_report
+    continuous_regime_analysis = market_breadth_regime_report(
+        clean,
+        [(item.ticker, item.trade) for item in continuous_candidates],
+    )
+
     continuous_by_strategy = {}
     from .validation import CANDIDATE_SET_VERSION, REGISTERED_CANDIDATES
     for strategy in REGISTERED_CANDIDATES:
@@ -341,6 +347,7 @@ def walk_forward_portfolio_report(
             "candidate_trades": len(continuous_candidates),
             "combined": compare_position_limits(continuous_candidates, position_limits),
             "by_strategy": continuous_by_strategy,
+            "market_breadth_regime_analysis": continuous_regime_analysis,
             "warning": "Continuous development replay is not independent validation. It uses the full frozen development window for exit simulation and must not be interpreted as prospective holdout performance.",
         },
         "warning": "Development-only portfolio screening. Fold-isolated results reset to flat at fold boundaries; continuous_development_replay is reported separately. No independent holdout observations are used; results are not production approval or a live signal.",

@@ -23,7 +23,7 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
   at the bar open; target fills at the target level.
 - Fees and slippage are charged on both entry and exit.
 - Each candidate strategy is simulated independently with non-overlapping trades; terminal positions are labelled OPEN and excluded from realized performance statistics.
-- The event-driven portfolio engine reports two complementary development-only views: fold-isolated walk-forward portfolios (reset to flat at each fold) and a continuous replay over the same pre-holdout development window (positions may carry across fold boundaries). Both compare position caps 5/7/10, normalized cash-only equity, one-position-per-ticker overlap, realized drawdown, profit factor and slot utilization. Open terminal trades are excluded. Neither view is independent holdout evidence or production approval.
+- The event-driven portfolio engine reports two complementary development-only views: fold-isolated walk-forward portfolios (reset to flat at each fold) and a continuous replay over the same pre-holdout development window (positions may carry across fold boundaries). Both compare position caps 5/7/10, normalized cash-only equity, one-position-per-ticker overlap, realized drawdown, profit factor and slot utilization. Open terminal trades are excluded. Neither view is independent holdout evidence or production approval. The continuous replay also includes descriptive market-breadth stratification: the share of eligible tickers with close above EMA200 and EMA50 above EMA200 defines bullish (>=60%), bearish (<=40%) or neutral regimes; insufficient/stale breadth is UNKNOWN. Regimes are assigned as of the trade's signal close and are not used as an entry filter.
 - No parameter optimizer and no production promotion.
 
 ## Input format
@@ -44,7 +44,7 @@ independent or multiplicity-adjusted result. The separate prospective holdout
 is the only stage that applies HAC inference, block-bootstrap intervals and
 Holm correction.
 
-This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting, explicit portfolio risk sizing and exchange-calendar-aware session aggregation remain limitations. Regime analysis and independent adversarial validation also remain outstanding. The
+This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting, explicit portfolio risk sizing and exchange-calendar-aware session aggregation remain limitations. Market-breadth regimes are descriptive only and have not been independently validated or used to select strategies. Regime analysis and independent adversarial validation also remain outstanding. The
 prospective holdout includes HAC inference, moving-block bootstrap intervals and
 Holm correction, but those safeguards do not replace independent replication or
 portfolio-level testing. Exploratory statistics are not live signals or evidence
