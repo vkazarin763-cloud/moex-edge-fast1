@@ -1,0 +1,87 @@
+import unittest
+from datetime import datetime, timedelta
+from unittest.mock import patch
+
+from research_agent.core import BacktestConfig, Candle, Signal, Trade
+from research_agent.portfolio import walk_forward_portfolio_report
+
+
+def daily_candles(count, start=None):
+    start = start or datetime(2026, 1, 1)
+    return [
+        Candle(
+            start + timedelta(days=i),
+            100.0 + i,
+            101.0 + i,
+            99.0 + i,
+            100.5 + i,
+            1000.0,
+        )
+        for i in range(count)
+    ]
+
+
+class WalkForwardPortfolioTests(unittest.TestCase):
+    def test_each_fold_only_receives_its_own_candles_and_entries(self):
+        rows = daily_candles(61)
+        generated_history_lengths = []
+        backtest_windows = []
+
+        def fake_generate(history):
+            generated_history_lengths.append(len(history))
+            index = 55 if len(history) == 58 else 58
+            return [Signal(index, 1, "Donchian20")]
+
+        def fake_backtest(history, signals, config):
+            backtest_windows.append((history[signals[0].index].timestamp, history[-1].timestamp))
+            signal = signals[0]
+            entry_index = signal.index + 1
+            exit_index = signal.index + 2
+            return [Trade(
+                strategy=signal.strategy,
+                direction=signal.direction,
+                signal_time=history[signal.index].timestamp,
+                entry_time=history[entry_index].timestamp,
+                exit_time=history[exit_index].timestamp,
+                entry_price=100.0,
+                exit_price=110.0,
+                net_return=0.10,
+                status="CLOSED",
+                exit_reason="TEST",
+            )]
+
+        with (
+            patch("research_agent.portfolio.generate_signals", side_effect=fake_generate),
+            patch("research_agent.portfolio.backtest", side_effect=fake_backtest),
+        ):
+            report = walk_forward_portfolio_report(
+                {"AAA": rows}, folds=2, warmup_bars=55,
+                config=BacktestConfig(0, 0, None, None, None),
+                position_limits=(1,),
+            )
+
+        self.assertEqual(generated_history_lengths, [58, 61])
+        self.assertEqual(len(report["folds"]), 2)
+        self.assertEqual(report["folds"][0]["closed_trades"], 1)
+        self.assertEqual(report["folds"][1]["closed_trades"], 1)
+        self.assertEqual(report["combined"]["comparisons"]["1"]["closed_trades_accepted"], 2)
+        self.assertLess(backtest_windows[0][1], report["folds"][0]["end_exclusive"])
+        self.assertGreaterEqual(backtest_windows[1][0], datetime.fromisoformat(report["folds"][1]["start_inclusive"]))
+
+    def test_ticker_without_required_pre_fold_history_is_skipped(self):
+        long_history = daily_candles(61)
+        short_history = daily_candles(54, start=datetime(2026, 1, 1, 12))
+        with (
+            patch("research_agent.portfolio.generate_signals", return_value=[]),
+            patch("research_agent.portfolio.backtest", return_value=[]),
+        ):
+            report = walk_forward_portfolio_report(
+                {"AAA": long_history, "SHORT": short_history},
+                folds=2, warmup_bars=55, position_limits=(1,),
+            )
+        self.assertGreater(report["folds"][0]["tickers_skipped_for_short_history"], 0)
+        self.assertEqual(report["candidate_trades"], 0)
+
+
+if __name__ == "__main__":
+    unittest.main()
