@@ -40,12 +40,18 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             observed["cutoff"] = cutoff
             return {"status": "PROSPECTIVE_DATA_AVAILABLE"}
 
+        def capture_portfolio(rows, **kwargs):
+            observed["portfolio"] = list(rows["TEST"])
+            observed["portfolio_kwargs"] = kwargs
+            return {"status": "DEVELOPMENT_WALK_FORWARD_PORTFOLIO"}
+
         with (
             patch.object(cli, "fetch_candles", return_value=candles) as fetch,
             patch.object(cli, "candle_quality_report", return_value={"status": "TEST"}),
             patch.object(cli, "walk_forward_report", side_effect=capture_development),
             patch.object(cli, "adversarial_cost_check", side_effect=capture_cost_stress),
             patch.object(cli, "prospective_holdout_report", side_effect=capture_holdout),
+            patch.object(cli, "walk_forward_portfolio_report", side_effect=capture_portfolio),
         ):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["TEST"])
 
@@ -57,6 +63,8 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         self.assertTrue(all(row.timestamp.date() < cutoff for row in observed["development"]))
         self.assertTrue(all(row.timestamp.date() < cutoff for row in observed["stress"]))
         self.assertEqual(observed["holdout"], candles)
+        self.assertEqual(observed["portfolio"], candles[:2])
+        self.assertEqual(report["development_portfolio"]["status"], "DEVELOPMENT_WALK_FORWARD_PORTFOLIO")
         self.assertEqual(report["results"]["TEST"]["status"], "ANALYZED")
         fetch.assert_called_once()
         self.assertLessEqual(
