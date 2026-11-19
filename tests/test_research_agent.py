@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from research_agent.core import (
     Candle, Signal, BacktestConfig, validate_candles, backtest, summarize, generate_signals, _wilder_rsi,
@@ -47,11 +47,18 @@ class ValidationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_candles(data)
 
+    def test_mixed_naive_and_aware_timestamps_rejected(self):
+        data = bars([100, 101])
+        data[1] = Candle(data[1].timestamp.replace(tzinfo=timezone.utc),
+                         data[1].open, data[1].high, data[1].low,
+                         data[1].close, data[1].volume)
+        with self.assertRaisesRegex(ValueError, "Mixed timezone"):
+            validate_candles(data)
+
 
 class BacktestTests(unittest.TestCase):
     def test_signal_enters_next_bar_open(self):
         data = bars([100, 100, 100, 100, 100, 100])
-        # Entry at bar 2 open=100, target reached on bar 3.
         data[3] = Candle(data[3].timestamp, 100, 110, 99, 105, 1000)
         result = backtest(data, [Signal(1, 1, "test")],
                           BacktestConfig(0, 0, 0.05, 0.05, 5))
@@ -65,6 +72,38 @@ class BacktestTests(unittest.TestCase):
         result = backtest(data, [Signal(1, 1, "test")],
                           BacktestConfig(0, 0, 0.05, 0.05, 2))
         self.assertEqual(result[0].exit_reason, "STOP")
+
+    def test_long_stop_gap_fills_at_open_not_stop(self):
+        data = bars([100, 100, 100, 100])
+        data[3] = Candle(data[3].timestamp, 90, 92, 89, 91, 1000)
+        result = backtest(data, [Signal(1, 1, "test")],
+                          BacktestConfig(0, 0, 0.05, 0.10, 3))
+        self.assertEqual(result[0].exit_reason, "STOP_GAP")
+        self.assertEqual(result[0].exit_price, 90)
+
+    def test_short_stop_gap_fills_at_open_not_stop(self):
+        data = bars([100, 100, 100, 100])
+        data[3] = Candle(data[3].timestamp, 110, 112, 108, 111, 1000)
+        result = backtest(data, [Signal(1, -1, "test")],
+                          BacktestConfig(0, 0, 0.05, 0.10, 3))
+        self.assertEqual(result[0].exit_reason, "STOP_GAP")
+        self.assertEqual(result[0].exit_price, 110)
+
+    def test_target_gap_fills_at_target_limit(self):
+        data = bars([100, 100, 100, 100])
+        data[3] = Candle(data[3].timestamp, 110, 112, 108, 111, 1000)
+        result = backtest(data, [Signal(1, 1, "test")],
+                          BacktestConfig(0, 0, 0.05, 0.05, 3))
+        self.assertEqual(result[0].exit_reason, "TARGET_GAP")
+        self.assertAlmostEqual(result[0].exit_price, 105)
+
+    def test_max_bars_exit_uses_close_of_last_allowed_bar(self):
+        data = bars([100, 100, 100, 103, 104, 105])
+        result = backtest(data, [Signal(1, 1, "test")],
+                          BacktestConfig(0, 0, None, None, 2))
+        self.assertEqual(result[0].exit_reason, "TIME")
+        self.assertEqual(result[0].exit_time, data[3].timestamp)
+        self.assertEqual(result[0].exit_price, data[3].close)
 
     def test_open_terminal_trade_not_counted_as_closed(self):
         data = bars([100, 100, 100, 100])
