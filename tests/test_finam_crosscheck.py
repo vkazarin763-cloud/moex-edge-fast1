@@ -7,17 +7,25 @@ from research_agent.finam_crosscheck import compare_daily_series, _finam_daily_i
 
 
 class FinamMOEXCrosscheckTests(unittest.TestCase):
-    def test_daily_request_boundaries_use_utc_calendar_dates(self):
-        # A Moscow-midnight conversion starts at 21:00 UTC on the prior day,
-        # which makes Finam return the previous D1 session (timestamp 04:00Z).
-        # The API request must instead cover the requested UTC calendar dates.
-        from datetime import date
+    def test_daily_request_boundaries_exclude_the_following_utc_date(self):
+        # Start at UTC midnight to avoid pulling the prior UTC day's D1 bar.
+        # The exclusive end is the final representable instant of the
+        # requested final UTC date; live Finam returned a next-day 05:00Z bar
+        # when the end was exactly next-day 00:00Z.
+        from datetime import date, timedelta
 
         start_time, end_time = _finam_daily_interval(
             date(2026, 10, 20), date(2026, 11, 18)
         )
         self.assertEqual(start_time, datetime(2026, 10, 20, 0, tzinfo=timezone.utc))
-        self.assertEqual(end_time, datetime(2026, 11, 19, 0, tzinfo=timezone.utc))
+        self.assertEqual(
+            end_time,
+            datetime(2026, 11, 18, 23, 59, 59, 999999, tzinfo=timezone.utc),
+        )
+        self.assertEqual(
+            end_time + timedelta(microseconds=1),
+            datetime(2026, 11, 19, 0, tzinfo=timezone.utc),
+        )
 
     def setUp(self):
         self.moex = [
