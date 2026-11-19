@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       - "research_agent/**"
-      - "tests/test_research_agent.py"
+      - "tests/**"
       - ".github/workflows/research-agent-tests.yml"
 
 permissions:
