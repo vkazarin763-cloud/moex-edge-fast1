@@ -24,11 +24,11 @@ class MOEXISSTests(unittest.TestCase):
         def getter(url, **kwargs):
             params = parse_qs(urlparse(url).query)
             calls.append(params["start"][0])
-            self.assertEqual(params["limit"], ["2"])
+            self.assertNotIn("limit", params)
             return pages.pop(0)
 
         data = fetch_candles("sber", "2025-01-01", "2025-01-02",
-                             page_size=2, getter=getter)
+                             getter=getter)
         self.assertEqual(len(data), 3)
         # A short non-empty page is not proof of completion; the loader
         # must request the next offset and stop only on an empty page.
@@ -44,7 +44,7 @@ class MOEXISSTests(unittest.TestCase):
                          ["2025-01-01 10:00:00", 100, 101, 102, 99, 1000]])
         with self.assertRaises(ISSDataError):
             fetch_candles("SBER", "2025-01-01", "2025-01-02",
-                          page_size=10, getter=lambda *a, **k: page)
+                          getter=lambda *a, **k: page)
 
 
 if __name__ == "__main__":
