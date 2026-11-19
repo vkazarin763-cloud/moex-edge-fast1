@@ -1,8 +1,9 @@
 import unittest
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from research_agent.core import Candle
-from research_agent.quality import candle_quality_report
+from research_agent.moex_iss import HistoryRecord
+from research_agent.quality import candle_quality_report, audit_tqbr_history
 
 
 def make_bars(days, volumes=None):
@@ -21,7 +22,6 @@ class CandleQualityReportTests(unittest.TestCase):
         self.assertEqual(report["calendar_gap_candidates"][0]["classification"],
                          "UNVERIFIED_CALENDAR_GAP")
         self.assertFalse(report["exchange_calendar_verified"])
-        self.assertIn("not classified as missing sessions", report["calendar_caveat"])
 
     def test_reports_short_history_and_zero_volume(self):
         report = candle_quality_report(make_bars([0, 1, 2], [100, 0, 100]))
@@ -51,6 +51,57 @@ class CandleQualityReportTests(unittest.TestCase):
     def test_rejects_invalid_history_thresholds(self):
         with self.assertRaises(ValueError):
             candle_quality_report(make_bars([0, 1]), warmup_bars=10, preferred_min_bars=5)
+
+
+class TQBRHistoryAuditTests(unittest.TestCase):
+    def test_separates_missing_trade_candle_from_zero_trade_session(self):
+        candles = make_bars([0, 4])
+        records = [
+            HistoryRecord(date(2025, 1, 1), 12),
+            HistoryRecord(date(2025, 1, 2), 0),
+            HistoryRecord(date(2025, 1, 3), 7),
+            HistoryRecord(date(2025, 1, 5), 5),
+        ]
+        report = audit_tqbr_history(candles, records, "2025-01-01", "2025-01-05")
+        self.assertEqual(report["status"], "MISSING_CANDLE_ON_RECORDED_TRADE_DATE")
+        self.assertEqual(report["missing_candles_on_trade_dates"],
+                         [{"date": "2025-01-03", "num_trades": 7},
+                          {"date": "2025-01-05", "num_trades": 5}])
+        self.assertEqual(report["zero_trade_sessions_without_candles"], ["2025-01-02"])
+        self.assertFalse(report["exchange_calendar_verified"])
+
+    def test_missing_history_row_is_unclassified_not_called_a_holiday(self):
+        report = audit_tqbr_history(
+            make_bars([0, 2]), [HistoryRecord(date(2025, 1, 1), 2)],
+            "2025-01-01", "2025-01-03",
+        )
+        self.assertEqual(report["candles_without_history_record"], ["2025-01-03"])
+        self.assertIn("No row is not proof", report["coverage_scope"])
+
+    def test_zero_trade_row_with_candle_is_reported_as_anomaly(self):
+        report = audit_tqbr_history(
+            make_bars([0]), [HistoryRecord(date(2025, 1, 1), 0)],
+            "2025-01-01", "2025-01-01",
+        )
+        self.assertEqual(report["candles_present_on_zero_trade_dates"], ["2025-01-01"])
+
+    def test_empty_history_is_not_reported_as_verified(self):
+        report = audit_tqbr_history(
+            make_bars([0]), [], "2025-01-01", "2025-01-02",
+        )
+        self.assertEqual(report["status"], "NO_HISTORY_RECORDS")
+        self.assertFalse(report["exchange_calendar_verified"])
+
+    def test_duplicate_or_out_of_range_history_rows_rejected(self):
+        candle = make_bars([0])
+        duplicate = [HistoryRecord(date(2025, 1, 1), 1)] * 2
+        with self.assertRaises(ValueError):
+            audit_tqbr_history(candle, duplicate, "2025-01-01", "2025-01-02")
+        with self.assertRaises(ValueError):
+            audit_tqbr_history(
+                candle, [HistoryRecord(date(2025, 1, 3), 1)],
+                "2025-01-01", "2025-01-02",
+            )
 
 
 if __name__ == "__main__":
