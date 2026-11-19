@@ -75,6 +75,7 @@ class TQBRHistoryAuditTests(unittest.TestCase):
             "2025-01-01", "2025-01-03",
         )
         self.assertEqual(report["candles_without_history_record"], ["2025-01-03"])
+        self.assertEqual(report["status"], "CROSSCHECK_INCONCLUSIVE")
         self.assertIn("No row is not proof", report["coverage_scope"])
 
     def test_zero_trade_row_with_candle_is_reported_as_anomaly(self):
@@ -83,6 +84,15 @@ class TQBRHistoryAuditTests(unittest.TestCase):
             "2025-01-01", "2025-01-01",
         )
         self.assertEqual(report["candles_present_on_zero_trade_dates"], ["2025-01-01"])
+        self.assertEqual(report["status"], "CROSSCHECK_INCONCLUSIVE")
+
+    def test_unknown_trade_count_makes_crosscheck_inconclusive(self):
+        report = audit_tqbr_history(
+            make_bars([0]), [HistoryRecord(date(2025, 1, 1), None)],
+            "2025-01-01", "2025-01-01",
+        )
+        self.assertEqual(report["status"], "CROSSCHECK_INCONCLUSIVE")
+        self.assertEqual(report["history_rows_unknown_trade_count"], ["2025-01-01"])
 
     def test_empty_history_is_not_reported_as_verified(self):
         report = audit_tqbr_history(
@@ -90,6 +100,13 @@ class TQBRHistoryAuditTests(unittest.TestCase):
         )
         self.assertEqual(report["status"], "NO_HISTORY_RECORDS")
         self.assertFalse(report["exchange_calendar_verified"])
+
+    def test_candle_outside_audit_range_is_rejected(self):
+        with self.assertRaises(ValueError):
+            audit_tqbr_history(
+                make_bars([0, 2]), [HistoryRecord(date(2025, 1, 1), 1)],
+                "2025-01-01", "2025-01-02",
+            )
 
     def test_duplicate_or_out_of_range_history_rows_rejected(self):
         candle = make_bars([0])
