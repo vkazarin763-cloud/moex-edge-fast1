@@ -125,5 +125,18 @@ class PortfolioSimulationTests(unittest.TestCase):
                     compare_position_limits(rows, limits)
 
 
+    def test_zero_duration_trade_releases_ticker_before_next_same_time_entry(self):
+        when = datetime(2026, 1, 1, 10)
+        later = when + timedelta(hours=1)
+        candidates = [
+            PortfolioTrade("AAA", closed_trade("S1", when, when, 0.10)),
+            PortfolioTrade("AAA", closed_trade("S2", when, later, 0.10)),
+        ]
+        report = simulate_portfolio(candidates, max_positions=1)
+        self.assertEqual(report["closed_trades_accepted"], 2)
+        self.assertEqual(report["skipped_ticker_overlap"], 0)
+        self.assertAlmostEqual(report["final_equity_normalized"], 1.21)
+
+
 if __name__ == "__main__":
     unittest.main()
