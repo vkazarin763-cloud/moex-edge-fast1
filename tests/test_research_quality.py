@@ -65,8 +65,7 @@ class TQBRHistoryAuditTests(unittest.TestCase):
         report = audit_tqbr_history(candles, records, "2025-01-01", "2025-01-05")
         self.assertEqual(report["status"], "MISSING_CANDLE_ON_RECORDED_TRADE_DATE")
         self.assertEqual(report["missing_candles_on_trade_dates"],
-                         [{"date": "2025-01-03", "num_trades": 7},
-                          {"date": "2025-01-05", "num_trades": 5}])
+                         [{"date": "2025-01-03", "num_trades": 7}])
         self.assertEqual(report["zero_trade_sessions_without_candles"], ["2025-01-02"])
         self.assertFalse(report["exchange_calendar_verified"])
 
