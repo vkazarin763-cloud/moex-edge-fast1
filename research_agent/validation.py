@@ -89,3 +89,49 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
         "candidates": candidates,
         "warning": "Exploratory evidence only. No multiple-testing correction, bootstrap confidence intervals, cross-symbol portfolio simulation, or production approval.",
     }
+
+from dataclasses import replace
+
+
+def adversarial_cost_check(candles: list[Candle], folds: int = 4,
+                           warmup_bars: int = 200,
+                           min_total_trades: int = 30,
+                           min_trades_per_fold: int = 5,
+                           config: BacktestConfig = BacktestConfig()) -> dict[str, Any]:
+    """Re-run the same fixed hypotheses with doubled fees and slippage.
+
+    This is an execution-cost sensitivity test, not independent data validation.
+    """
+    baseline = walk_forward_report(
+        candles, folds, warmup_bars, min_total_trades, min_trades_per_fold, config
+    )
+    stressed_config = replace(
+        config,
+        fee_per_side=config.fee_per_side * 2.0,
+        slippage_per_side=config.slippage_per_side * 2.0,
+    )
+    stressed = walk_forward_report(
+        candles, folds, warmup_bars, min_total_trades, min_trades_per_fold,
+        stressed_config,
+    )
+    results = {}
+    for strategy, base in baseline["candidates"].items():
+        stress = stressed["candidates"].get(strategy)
+        survives = bool(
+            stress
+            and stress["status"] == "PROMISING_FOR_INDEPENDENT_REVIEW"
+            and stress["average_net_return"] is not None
+            and stress["average_net_return"] > 0
+        )
+        results[strategy] = {
+            "baseline_status": base["status"],
+            "double_cost_status": stress["status"] if stress else "NO_STRESS_SAMPLE",
+            "survives_double_costs": survives,
+            "baseline_average_net_return": base["average_net_return"],
+            "double_cost_average_net_return": stress["average_net_return"] if stress else None,
+        }
+    return {
+        "stress": "2x entry/exit fees and slippage",
+        "candidates": results,
+        "warning": "Cost sensitivity only; it does not replace a separate holdout dataset or independent review.",
+    }
