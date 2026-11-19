@@ -55,7 +55,7 @@ class FinamMarketDataTests(unittest.TestCase):
 
         def requester(url, **kwargs):
             calls.append((url, kwargs))
-            return {"bars": [bar()]}
+            return {"symbol": "SBER@MISX", "bars": [bar()]}
 
         client = FinamMarketDataClient("access-token", requester=requester)
         rows = client.fetch_bars("sber@misx", "TIME_FRAME_D", self.start, self.end)
@@ -78,17 +78,41 @@ class FinamMarketDataTests(unittest.TestCase):
             "open": 100, "high": 102, "low": 99, "close": 101, "volume": 12,
             "is_data_snapshot": True,
         }
-        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"bars": [row]})
+        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [row]})
         rows = client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
         self.assertTrue(rows[0].is_data_snapshot)
 
+    def test_missing_snapshot_metadata_is_not_coerced_to_false(self):
+        row = bar()
+        row.pop("is_data_snapshot")
+        client = FinamMarketDataClient(
+            "token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [row]}
+        )
+        rows = client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
+        self.assertIsNone(rows[0].is_data_snapshot)
+
+    def test_fetch_bars_rejects_non_boolean_snapshot_metadata(self):
+        row = bar(is_data_snapshot="false")
+        client = FinamMarketDataClient(
+            "token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [row]}
+        )
+        with self.assertRaises(FinamAPIError):
+            client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
+
+    def test_fetch_bars_rejects_response_for_another_symbol(self):
+        client = FinamMarketDataClient(
+            "token", requester=lambda *a, **k: {"symbol": "GAZP@MISX", "bars": []}
+        )
+        with self.assertRaises(FinamAPIError):
+            client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
+
     def test_fetch_bars_rejects_missing_mic(self):
-        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"bars": []})
+        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": []})
         with self.assertRaises(ValueError):
             client.fetch_bars("SBER", "TIME_FRAME_D", self.start, self.end)
 
     def test_fetch_bars_enforces_documented_lookback(self):
-        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"bars": []})
+        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": []})
         with self.assertRaises(ValueError):
             client.fetch_bars(
                 "SBER@MISX", "TIME_FRAME_H1", self.start,
@@ -96,7 +120,7 @@ class FinamMarketDataTests(unittest.TestCase):
             )
 
     def test_fetch_bars_requires_aware_and_ordered_interval(self):
-        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"bars": []})
+        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": []})
         with self.assertRaises(ValueError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D",
                               datetime(2026, 11, 18), self.end)
@@ -105,18 +129,18 @@ class FinamMarketDataTests(unittest.TestCase):
 
     def test_fetch_bars_rejects_bad_ohlcv_and_duplicate_timestamps(self):
         bad = bar(high={"value": "98"})
-        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"bars": [bad]})
+        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [bad]})
         with self.assertRaises(FinamAPIError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
         duplicate = [bar(), bar()]
-        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"bars": duplicate})
+        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": duplicate})
         with self.assertRaises(FinamAPIError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
     def test_fetch_bars_rejects_bars_outside_requested_interval(self):
         client = FinamMarketDataClient(
-            "token", requester=lambda *a, **k: {"bars": [bar("2026-11-19T00:00:00Z")]}
+            "token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [bar("2026-11-19T00:00:00Z")]}
         )
         with self.assertRaises(FinamAPIError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
