@@ -204,8 +204,9 @@ def backtest(candles: list[Candle], signals: list[Signal],
     are explicitly marked OPEN and have no realized net_return.
     """
     rows = validate_candles(candles)
-    if config.fee_per_side < 0 or config.slippage_per_side < 0:
-        raise ValueError("Costs cannot be negative")
+    if (not math.isfinite(config.fee_per_side) or not math.isfinite(config.slippage_per_side)
+            or not 0 <= config.fee_per_side < 1 or not 0 <= config.slippage_per_side < 1):
+        raise ValueError("Fees and slippage must be finite and between 0 and 1")
     if config.max_bars is not None and config.max_bars < 1:
         raise ValueError("max_bars must be >= 1 or None")
     for pct in (config.stop_pct, config.target_pct):
@@ -215,7 +216,6 @@ def backtest(candles: list[Candle], signals: list[Signal],
     trades: list[Trade] = []
     # Each strategy is simulated independently; cross-strategy signals do not compete.
     available_after: dict[str, int] = {}
-    cost = 2.0 * (config.fee_per_side + config.slippage_per_side)
     for signal in ordered:
         if signal.direction not in (-1, 1) or signal.index < 0 or signal.index + 1 >= len(rows):
             continue
@@ -256,11 +256,16 @@ def backtest(candles: list[Candle], signals: list[Signal],
                                 rows[entry_idx].timestamp, None, entry, None, None, "OPEN", "END_OF_DATA"))
             available_after[signal.strategy] = len(rows) - 1
         else:
-            gross = signal.direction * (exit_price - entry) / entry
-            net = gross - cost
+            # Adverse slippage is applied to both fills; fees are charged on both
+            # entry and exit notionals. Trade prices record modeled fill prices.
+            entry_fill = entry * (1.0 + signal.direction * config.slippage_per_side)
+            exit_fill = exit_price * (1.0 - signal.direction * config.slippage_per_side)
+            gross = signal.direction * (exit_fill - entry_fill) / entry_fill
+            fee_cost = config.fee_per_side * (entry_fill + exit_fill) / entry_fill
+            net = gross - fee_cost
             trades.append(Trade(signal.strategy, signal.direction, rows[signal.index].timestamp,
                                 rows[entry_idx].timestamp, rows[exit_idx].timestamp,
-                                entry, exit_price, net, "CLOSED", reason))
+                                entry_fill, exit_fill, net, "CLOSED", reason))
             available_after[signal.strategy] = exit_idx
     return trades
 
