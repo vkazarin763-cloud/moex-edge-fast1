@@ -126,3 +126,16 @@ dates, source-only dates, and raw OHLCV differences. It deliberately does not
 set a winner, impose an unvalidated price/volume tolerance, fill missing dates,
 or combine the two sources. The token is read from the environment and is not
 written to the report. The scheduled workflow remains MOEX-only.
+
+### Running it in GitHub Actions
+
+For a no-local-code run, add the Finam API token as a repository Actions secret
+named `FINAM_API_TOKEN` (Settings → Secrets and variables → Actions → New
+repository secret). If Finam issued a source application ID, optionally add
+`FINAM_SOURCE_APP_ID` the same way. Do not put either value in workflow inputs,
+commits, or chat messages.
+
+Then open Actions → **MOEX EDGE Finam Candle Cross-check (Manual, Read Only)**
+→ Run workflow. This workflow is manual-only, has `contents: read` permission,
+does not run on a schedule, and uploads the JSON comparison as an artifact.
+The scheduled MOEX research workflow is not given these credentials.
