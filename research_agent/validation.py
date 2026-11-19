@@ -234,6 +234,14 @@ def prospective_holdout_report(
     if not holdout_indices:
         return {
             "status": "WAITING_FOR_PROSPECTIVE_DATA",
+            "candidate_set_version": CANDIDATE_SET_VERSION,
+            "execution_config": {
+                "fee_per_side": config.fee_per_side,
+                "slippage_per_side": config.slippage_per_side,
+                "stop_pct": config.stop_pct,
+                "target_pct": config.target_pct,
+                "max_bars": config.max_bars,
+            },
             "holdout_start": holdout_start,
             "holdout_bars": 0,
             "strategies": {
