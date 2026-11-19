@@ -23,7 +23,7 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
   at the bar open; target fills at the target level.
 - Fees and slippage are charged on both entry and exit.
 - Each candidate strategy is simulated independently with non-overlapping trades; terminal positions are labelled OPEN and excluded from realized performance statistics.
-- A separate event-driven portfolio engine is now fed only by the CLI's development walk-forward folds. It compares position caps 5/7/10, normalized cash-only equity, one-position-per-ticker overlap, realized drawdown, profit factor and slot utilization. Each fold resets to flat; trades still open at a fold boundary are excluded. This is development-only evidence, not independent holdout or production approval.
+- The event-driven portfolio engine reports two complementary development-only views: fold-isolated walk-forward portfolios (reset to flat at each fold) and a continuous replay over the same pre-holdout development window (positions may carry across fold boundaries). Both compare position caps 5/7/10, normalized cash-only equity, one-position-per-ticker overlap, realized drawdown, profit factor and slot utilization. Open terminal trades are excluded. Neither view is independent holdout evidence or production approval.
 - No parameter optimizer and no production promotion.
 
 ## Input format
@@ -44,7 +44,7 @@ independent or multiplicity-adjusted result. The separate prospective holdout
 is the only stage that applies HAC inference, block-bootstrap intervals and
 Holm correction.
 
-This is not yet a fully validated discovery system. The multi-symbol portfolio report is now generated from chronological development folds, but fold-boundary position carry and mark-to-market accounting remain limitations. Regime analysis and independent adversarial validation also remain outstanding. The
+This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting, explicit portfolio risk sizing and exchange-calendar-aware session aggregation remain limitations. Regime analysis and independent adversarial validation also remain outstanding. The
 prospective holdout includes HAC inference, moving-block bootstrap intervals and
 Holm correction, but those safeguards do not replace independent replication or
 portfolio-level testing. Exploratory statistics are not live signals or evidence
