@@ -85,7 +85,8 @@ class BacktestTests(unittest.TestCase):
         result = backtest(data, [Signal(1, 1, "test")],
                           BacktestConfig(0.001, 0.0005, 0.05, 0.05, 3))
         entry_fill = 100 * (1 + 0.0005)
-        exit_fill = 105 * (1 - 0.0005)
+        target_price = entry_fill * (1 + 0.05)
+        exit_fill = target_price * (1 - 0.0005)
         expected = (exit_fill - entry_fill) / entry_fill - 0.001 * (entry_fill + exit_fill) / entry_fill
         self.assertAlmostEqual(result[0].net_return, expected)
         self.assertAlmostEqual(result[0].entry_price, entry_fill)
