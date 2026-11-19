@@ -1,7 +1,7 @@
 """Research-only event-driven portfolio simulation over closed strategy trades.
 
-The engine accepts trades produced by an out-of-sample process. It does not
-fetch data, generate signals, place orders, or interact with production state.
+The engine accepts closed trades from the isolated research pipeline. It does
+not place orders or interact with production state.
 """
 from __future__ import annotations
 
@@ -168,7 +168,7 @@ def simulate_portfolio(
             "only closed trades are eligible",
             "one open position per ticker; no leverage or short-sale collateral model",
             "entry allocation is equal-slot notional, not stop-risk sizing",
-            "candidate trades must come from a separate out-of-sample evaluation",
+            "portfolio conclusions inherit the validation limits of the candidate trade-generation process",
         ],
     }
 
