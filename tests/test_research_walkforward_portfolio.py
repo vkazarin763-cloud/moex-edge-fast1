@@ -69,8 +69,8 @@ class WalkForwardPortfolioTests(unittest.TestCase):
             report["continuous_development_replay"]["combined"]["comparisons"]["1"]["closed_trades_accepted"],
             1,
         )
-        self.assertLess(backtest_windows[0][1], datetime.fromisoformat(report["folds"][0]["end_exclusive"]))
-        self.assertGreaterEqual(backtest_windows[1][0], datetime.fromisoformat(report["folds"][1]["start_inclusive"]))
+        self.assertLess(backtest_windows[1][1], datetime.fromisoformat(report["folds"][0]["end_exclusive"]))
+        self.assertGreaterEqual(backtest_windows[2][0], datetime.fromisoformat(report["folds"][1]["start_inclusive"]))
 
 
     def test_real_signal_and_backtest_pipeline_runs_on_synthetic_history(self):
