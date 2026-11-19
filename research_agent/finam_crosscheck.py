@@ -18,6 +18,19 @@ MOSCOW = ZoneInfo("Europe/Moscow")
 DEFAULT_TICKERS = ["SBER", "GAZP", "LKOH", "VTBR", "T"]
 
 
+def _finam_daily_interval(start_day: date, end_day: date) -> tuple[datetime, datetime]:
+    """Return UTC calendar boundaries for inclusive Finam D1 trading dates.
+
+    Finam D1 bars are timestamped at the Moscow session's start (usually
+    07:00 Moscow / 04:00 UTC). Converting Moscow midnight to UTC shifts the
+    request start into the prior UTC date and can include the prior session.
+    """
+    return (
+        datetime.combine(start_day, time.min, tzinfo=timezone.utc),
+        datetime.combine(end_day + timedelta(days=1), time.min, tzinfo=timezone.utc),
+    )
+
+
 def _daily_index(rows, *, finam: bool) -> dict[date, object]:
     indexed = {}
     for row in rows:
@@ -111,8 +124,7 @@ def run_crosscheck(
         raise ValueError("At least one ticker is required")
 
     client = FinamMarketDataClient.from_api_token(api_token, source_app_id)
-    start_time = datetime.combine(start_day, time.min, tzinfo=MOSCOW)
-    end_time = datetime.combine(end_day + timedelta(days=1), time.min, tzinfo=MOSCOW)
+    start_time, end_time = _finam_daily_interval(start_day, end_day)
     results = {}
     for ticker in tickers:
         symbol = f"{ticker.upper()}@MISX"
