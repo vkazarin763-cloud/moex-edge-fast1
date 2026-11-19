@@ -51,7 +51,7 @@ def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 6
     board = board.strip().upper()
     if not ticker or not board:
         raise ValueError("ticker and board are required")
-    if interval not in (1, 10, hourly:=60, 24, 7, 31, 4):
+    if interval not in (1, 10, 60, 24, 7, 31, 4):
         raise ValueError("Unsupported MOEX candle interval")
     if page_size < 1:
         raise ValueError("page_size must be positive")
