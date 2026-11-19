@@ -88,6 +88,10 @@ class WalkForwardPortfolioTests(unittest.TestCase):
             {"5", "7", "10"},
         )
         self.assertIn("v1-frozen-2026-11-19", report["candidate_set_version"])
+        self.assertEqual(
+            report["continuous_development_replay"]["market_breadth_regime_analysis"]["status"],
+            "DESCRIPTIVE_DEVELOPMENT_REGIME_ANALYSIS",
+        )
         self.assertEqual(set(report["by_strategy"]), {
             "Donchian20", "EMA20x50", "RSI14Trend50",
             "MACD12x26", "Keltner20x2ATR",
