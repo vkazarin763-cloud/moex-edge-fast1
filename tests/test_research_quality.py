@@ -33,6 +33,24 @@ class CandleQualityReportTests(unittest.TestCase):
         report = candle_quality_report(make_bars([2, 3]), "2025-01-01", "2025-01-06")
         self.assertEqual(report["start_delay_calendar_days"], 2)
         self.assertEqual(report["end_lag_calendar_days"], 2)
+        self.assertEqual(report["range_boundary_status"], "BOUNDARY_REQUIRES_REVIEW")
+
+    def test_flags_candles_before_and_after_requested_range(self):
+        report = candle_quality_report(make_bars([-1, 0, 5, 6]),
+                                        "2025-01-01", "2025-01-06")
+        self.assertEqual(report["range_boundary_status"], "OUTSIDE_REQUESTED_RANGE")
+        self.assertTrue(report["starts_before_requested_range"])
+        self.assertTrue(report["ends_after_requested_range"])
+        self.assertEqual(report["out_of_range_bars"], 2)
+        self.assertEqual(report["status"], "VALID_WITH_CAVEATS")
+
+    def test_rejects_reversed_requested_range(self):
+        with self.assertRaises(ValueError):
+            candle_quality_report(make_bars([0, 1]), "2025-01-02", "2025-01-01")
+
+    def test_rejects_invalid_history_thresholds(self):
+        with self.assertRaises(ValueError):
+            candle_quality_report(make_bars([0, 1]), warmup_bars=10, preferred_min_bars=5)
 
 
 if __name__ == "__main__":
