@@ -219,8 +219,8 @@ def prospective_holdout_report(
     """Evaluate frozen candidates only on observations strictly after the freeze date.
 
     Pre-cutoff candles are indicator warm-up only. No pre-cutoff signal may enter
-    the holdout. The cutoff itself is exclusive to avoid reusing the last reviewed
-    historical date as independent evidence.
+    the holdout. Development excludes the holdout start date; holdout candles on
+    or after that date are included.
     """
     from datetime import date
     import hashlib
