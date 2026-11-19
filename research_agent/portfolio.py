@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable
 
-from .core import Trade
+from .core import BacktestConfig, Candle, Trade, backtest, generate_signals, validate_candles
 
 
 @dataclass(frozen=True)
@@ -187,4 +187,124 @@ def compare_position_limits(
             str(limit): simulate_portfolio(rows, max_positions=limit)
             for limit in limits
         },
+    }
+
+
+
+def walk_forward_portfolio_report(
+    candles_by_ticker: dict[str, list[Candle]],
+    folds: int = 4,
+    warmup_bars: int = 200,
+    config: BacktestConfig = BacktestConfig(),
+    position_limits: tuple[int, ...] = (5, 7, 10),
+) -> dict:
+    """Build a multi-symbol portfolio from strictly chronological development folds.
+
+    A common calendar timeline defines fold boundaries. Each ticker needs at least
+    warmup_bars of its own observations before a fold starts. For a given fold,
+    only candles strictly before its exclusive end boundary are passed to signal
+    generation and backtesting. Signals must occur inside the fold and their next
+    available entry candle must also be inside it. Any trade still open at the
+    fold boundary is retained as OPEN and excluded by the portfolio simulator.
+
+    The portfolio is flat at each fold boundary: positions are not carried across
+    folds. This avoids leaking later bars into earlier folds and makes the
+    concatenated closed-trade stream non-overlapping across folds, but is a
+    conservative reset approximation rather than a fully continuous live system.
+    """
+    if folds < 2:
+        raise ValueError("folds must be at least 2")
+    if warmup_bars < 55:
+        raise ValueError("warmup_bars must be >= 55")
+    if not candles_by_ticker:
+        raise ValueError("candles_by_ticker must not be empty")
+
+    clean: dict[str, list[Candle]] = {}
+    for ticker, rows in sorted(candles_by_ticker.items()):
+        if not ticker or ticker.strip() != ticker:
+            raise ValueError("ticker keys must be non-empty trimmed strings")
+        clean[ticker] = validate_candles(rows)
+
+    timeline = sorted({candle.timestamp for rows in clean.values() for candle in rows})
+    available = len(timeline) - warmup_bars
+    if available < folds * 2:
+        raise ValueError("not enough common timeline observations for requested folds")
+    fold_size = available // folds
+
+    all_candidates: list[PortfolioTrade] = []
+    fold_reports = []
+    for fold_index in range(folds):
+        start_index = warmup_bars + fold_index * fold_size
+        end_index = (
+            warmup_bars + (fold_index + 1) * fold_size
+            if fold_index < folds - 1 else len(timeline)
+        )
+        start_time = timeline[start_index]
+        end_exclusive = timeline[end_index] if end_index < len(timeline) else None
+        fold_candidates: list[PortfolioTrade] = []
+        eligible_tickers = 0
+        skipped_short_history = 0
+        signals_count = 0
+
+        for ticker, rows in clean.items():
+            history = [
+                candle for candle in rows
+                if end_exclusive is None or candle.timestamp < end_exclusive
+            ]
+            prior_bars = sum(candle.timestamp < start_time for candle in history)
+            if prior_bars < warmup_bars:
+                skipped_short_history += 1
+                continue
+            eligible_tickers += 1
+            signals = generate_signals(history)
+            fold_signals = [
+                signal for signal in signals
+                if history[signal.index].timestamp >= start_time
+                and (end_exclusive is None or history[signal.index + 1].timestamp < end_exclusive)
+            ]
+            signals_count += len(fold_signals)
+            ticker_trades = backtest(history, fold_signals, config)
+            for trade in ticker_trades:
+                if trade.signal_time < start_time:
+                    continue
+                if end_exclusive is not None and trade.entry_time >= end_exclusive:
+                    continue
+                fold_candidates.append(PortfolioTrade(ticker, trade))
+
+        all_candidates.extend(fold_candidates)
+        fold_reports.append({
+            "fold": fold_index + 1,
+            "start_inclusive": start_time.isoformat(),
+            "end_exclusive": end_exclusive.isoformat() if end_exclusive else None,
+            "eligible_tickers": eligible_tickers,
+            "tickers_skipped_for_short_history": skipped_short_history,
+            "signals": signals_count,
+            "closed_trades": sum(
+                item.trade.status == "CLOSED" for item in fold_candidates
+            ),
+            "open_trades_excluded_at_fold_boundary": sum(
+                item.trade.status != "CLOSED" for item in fold_candidates
+            ),
+        })
+
+    from .validation import CANDIDATE_SET_VERSION, REGISTERED_CANDIDATES
+
+    by_strategy = {}
+    for strategy in REGISTERED_CANDIDATES:
+        selected = [
+            item for item in all_candidates
+            if item.trade.strategy == strategy
+        ]
+        by_strategy[strategy] = compare_position_limits(selected, position_limits)
+
+    return {
+        "status": "DEVELOPMENT_WALK_FORWARD_PORTFOLIO",
+        "candidate_set_version": CANDIDATE_SET_VERSION,
+        "method": "common chronological folds; per-ticker indicator warm-up; signal and entry confined to each fold; fold-boundary reset to flat",
+        "warmup_bars": warmup_bars,
+        "folds": fold_reports,
+        "combined": compare_position_limits(all_candidates, position_limits),
+        "by_strategy": by_strategy,
+        "candidate_trades": len(all_candidates),
+        "warning": "Development-only portfolio screening. Fold-boundary resets exclude trades still open at each boundary; no independent holdout observations are used; results are not production approval or a live signal.",
     }
