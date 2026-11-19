@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from research_agent.core import (
-    Candle, Signal, BacktestConfig, validate_candles, backtest, summarize,
+    Candle, Signal, BacktestConfig, validate_candles, backtest, summarize, generate_signals,
 )
 
 
@@ -16,6 +16,19 @@ def bars(prices):
 
 
 class ValidationTests(unittest.TestCase):
+    def test_fixed_candidate_generator_uses_known_strategy_set(self):
+        data = []
+        start = datetime(2025, 1, 1)
+        for i in range(180):
+            price = 100 + i * 0.04 + (5 if (i // 12) % 2 else -5)
+            data.append(Candle(start + timedelta(hours=i), price, price + 1,
+                               price - 1, price, 1000))
+        signals = generate_signals(data)
+        allowed = {"Donchian20", "EMA20x50", "RSI14Trend50",
+                   "MACD12x26", "Keltner20x2ATR"}
+        self.assertTrue(all(signal.strategy in allowed for signal in signals))
+        self.assertTrue(all(0 <= signal.index < len(data) - 1 for signal in signals))
+
     def test_valid_series(self):
         self.assertEqual(len(validate_candles(bars([100, 101, 102]))), 3)
 
