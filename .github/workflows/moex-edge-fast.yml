@@ -11,9 +11,8 @@ concurrency:
 on:
   workflow_dispatch:
   schedule:
-    # Будние дни (ПН-ПТ): Запуск каждый час с 04:00 до 20:00 UTC (с 07:00 до 23:00 МСК)
+    # Signal scanning may continue, but live broker execution is disabled below.
     - cron: "0 4-20 * * 1-5"
-    # Выходные (СБ-ВС): Запуск каждый час с 07:00 до 16:00 UTC (с 10:00 до 19:00 МСК)
     - cron: "0 7-16 * * 6,0"
 
 jobs:
@@ -21,24 +20,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          
+
       - name: Install dependencies
         run: pip install pandas requests numpy
-        
+
       - name: Run Scanner (Find Signals)
         run: python moex_edge_fast_33.py
-        
-      - name: Run Finam Executor (Place Orders)
+
+      - name: Run Finam Executor (DRY RUN ONLY — LIVE TRADING DISABLED)
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
           FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
-          # Scheduled scans are read-only with respect to broker orders, even if manual live tests are enabled.
-          FINAM_DRY_RUN: 'false'
-          FINAM_LIVE_TRADING_ENABLED: 'true'
+          FINAM_DRY_RUN: 'true'
+          FINAM_LIVE_TRADING_ENABLED: 'false'
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ github.token }}
@@ -46,7 +44,7 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
           FINAM_STATE_BRANCH: ${{ github.ref_name }}
         run: python finam_executor.py
-        
+
       - name: Upload signals log
         if: always()
         uses: actions/upload-artifact@v4
