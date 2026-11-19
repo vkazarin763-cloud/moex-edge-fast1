@@ -235,6 +235,30 @@ def walk_forward_portfolio_report(
     if available < folds * 2:
         raise ValueError("not enough common timeline observations for requested folds")
     fold_size = available // folds
+    development_start_time = timeline[warmup_bars]
+
+    # Separate continuous replay over the same development-only window.
+    # Unlike the fold-isolated diagnostic below, exits may occur after a
+    # walk-forward fold boundary. Signals remain causal and parameters frozen.
+    continuous_candidates: list[PortfolioTrade] = []
+    for ticker, rows in clean.items():
+        signals = [
+            signal for signal in generate_signals(rows)
+            if rows[signal.index].timestamp >= development_start_time
+            and signal.index + 1 < len(rows)
+        ]
+        for trade in backtest(rows, signals, config):
+            if trade.signal_time >= development_start_time:
+                continuous_candidates.append(PortfolioTrade(ticker, trade))
+
+    continuous_by_strategy = {}
+    from .validation import CANDIDATE_SET_VERSION, REGISTERED_CANDIDATES
+    for strategy in REGISTERED_CANDIDATES:
+        selected = [
+            item for item in continuous_candidates
+            if item.trade.strategy == strategy
+        ]
+        continuous_by_strategy[strategy] = compare_position_limits(selected, position_limits)
 
     all_candidates: list[PortfolioTrade] = []
     fold_reports = []
@@ -292,8 +316,6 @@ def walk_forward_portfolio_report(
             ),
         })
 
-    from .validation import CANDIDATE_SET_VERSION, REGISTERED_CANDIDATES
-
     by_strategy = {}
     for strategy in REGISTERED_CANDIDATES:
         selected = [
@@ -311,5 +333,15 @@ def walk_forward_portfolio_report(
         "combined": compare_position_limits(all_candidates, position_limits),
         "by_strategy": by_strategy,
         "candidate_trades": len(all_candidates),
-        "warning": "Development-only portfolio screening. Fold-boundary resets exclude trades still open at each boundary; no independent holdout observations are used; results are not production approval or a live signal.",
+        "continuous_development_replay": {
+            "status": "DEVELOPMENT_CONTINUOUS_PORTFOLIO",
+            "method": "same frozen candidates on development-only window; causal signal generation; positions may carry across fold boundaries; open terminal trades excluded",
+            "development_start_inclusive": development_start_time.isoformat(),
+            "development_end_inclusive": timeline[-1].isoformat(),
+            "candidate_trades": len(continuous_candidates),
+            "combined": compare_position_limits(continuous_candidates, position_limits),
+            "by_strategy": continuous_by_strategy,
+            "warning": "Continuous development replay is not independent validation. It uses the full frozen development window for exit simulation and must not be interpreted as prospective holdout performance.",
+        },
+        "warning": "Development-only portfolio screening. Fold-isolated results reset to flat at fold boundaries; continuous_development_replay is reported separately. No independent holdout observations are used; results are not production approval or a live signal.",
     }
