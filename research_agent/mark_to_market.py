@@ -23,6 +23,7 @@ def simulate_mark_to_market(
     max_mark_staleness_days: float = 3.0,
     fee_per_side: float = 0.001,
     slippage_per_side: float = 0.0005,
+    include_equity_curve: bool = True,
 ) -> dict:
     """Replay closed candidate trades while marking open positions to market.
 
@@ -234,7 +235,8 @@ def simulate_mark_to_market(
         "final_unmarked_positions": (
             final_snapshot["unmarked_positions"] if final_snapshot else []
         ),
-        "equity_curve": snapshots,
+        "equity_curve": snapshots if include_equity_curve else [],
+        "equity_curve_points": len(snapshots),
         "limitations": [
             "normalized equity, not a RUB account forecast",
             "open-position marks estimate liquidation using configured fees and slippage",
