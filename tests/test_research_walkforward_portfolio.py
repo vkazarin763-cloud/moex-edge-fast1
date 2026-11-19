@@ -68,6 +68,27 @@ class WalkForwardPortfolioTests(unittest.TestCase):
         self.assertLess(backtest_windows[0][1], datetime.fromisoformat(report["folds"][0]["end_exclusive"]))
         self.assertGreaterEqual(backtest_windows[1][0], datetime.fromisoformat(report["folds"][1]["start_inclusive"]))
 
+
+    def test_real_signal_and_backtest_pipeline_runs_on_synthetic_history(self):
+        rows = daily_candles(320)
+        report = walk_forward_portfolio_report(
+            {"AAA": rows},
+            folds=4,
+            warmup_bars=200,
+            position_limits=(5, 7, 10),
+        )
+        self.assertEqual(report["status"], "DEVELOPMENT_WALK_FORWARD_PORTFOLIO")
+        self.assertEqual(len(report["folds"]), 4)
+        self.assertEqual(
+            set(report["combined"]["comparisons"]),
+            {"5", "7", "10"},
+        )
+        self.assertIn("v1-frozen-2026-11-19", report["candidate_set_version"])
+        self.assertEqual(set(report["by_strategy"]), {
+            "Donchian20", "EMA20x50", "RSI14Trend50",
+            "MACD12x26", "Keltner20x2ATR",
+        })
+
     def test_ticker_without_required_pre_fold_history_is_skipped(self):
         long_history = daily_candles(61)
         short_history = daily_candles(54, start=datetime(2026, 1, 1, 12))
