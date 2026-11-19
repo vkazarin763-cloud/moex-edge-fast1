@@ -59,6 +59,14 @@ class BacktestTests(unittest.TestCase):
         self.assertEqual(stats["open_terminal_trades_excluded"], 1)
         self.assertIsNone(stats["average_net_return"])
 
+    def test_summary_is_json_safe_when_there_are_no_losses(self):
+        data = bars([100, 100, 100, 110])
+        result = backtest(data, [Signal(1, 1, "test")],
+                          BacktestConfig(0, 0, 0.05, 0.05, 3))
+        stats = summarize(result)
+        self.assertIsNone(stats["profit_factor"])
+        self.assertTrue(stats["profit_factor_infinite"])
+
     def test_two_sided_costs(self):
         data = bars([100, 100, 100, 110])
         result = backtest(data, [Signal(1, 1, "test")],
