@@ -38,6 +38,7 @@ jobs:
         run: |
           END="${INPUT_TILL:-$(date -u +%F)}"
           START="${INPUT_FROM:-$(date -u -d '3 years ago' +%F)}"
+          export START END
           python - <<'PY'
           import os
           from datetime import date
@@ -50,12 +51,9 @@ jobs:
           if start > end:
               raise SystemExit("date_from must not be after date_till")
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
-              output.write(f"date_from={start.isoformat()}\\n")
-              output.write(f"date_till={end.isoformat()}\\n")
+              output.write(f"date_from={start.isoformat()}\n")
+              output.write(f"date_till={end.isoformat()}\n")
           PY
-        env:
-          START: ${{ github.event.inputs.date_from || '' }}
-          END: ${{ github.event.inputs.date_till || '' }}
       - name: Run read-only research across MOEX first-listing universe
         env:
           DATE_FROM: ${{ steps.dates.outputs.date_from }}
