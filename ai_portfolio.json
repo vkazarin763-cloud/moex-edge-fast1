@@ -1,5 +1,5 @@
 {
-  "cash": 115654.49264404803,
+  "cash": 115644.8647864391,
   "positions": [
     {
       "ticker": "ROSN",
@@ -101,6 +101,19 @@
       "sl_price": 160.43,
       "tp_price": 173.66,
       "be_price": 168.7
+    },
+    {
+      "ticker": "TATN",
+      "direction": "PUT",
+      "entry_price": 576.2,
+      "entry_time": "2026-11-19 14:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "Keltner",
+      "strike": 558.914,
+      "premium": 9.627857608940616,
+      "is_option": true,
+      "expiry_time": "2026-12-19"
     }
   ],
   "closed_trades": [
