@@ -137,6 +137,7 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
 
 
 # The candidate list and cutoff are frozen before any prospective observations.
+CANDIDATE_SET_VERSION = "v1-frozen-2026-11-19"
 REGISTERED_CANDIDATES = (
     "Donchian20", "EMA20x50", "RSI14Trend50", "MACD12x26", "Keltner20x2ATR",
 )
@@ -283,6 +284,14 @@ def prospective_holdout_report(
     return {
         "status": "PROSPECTIVE_DATA_AVAILABLE",
         "method": "frozen candidate set; signal close then next available open; pre-cutoff history is indicator warm-up only",
+        "candidate_set_version": CANDIDATE_SET_VERSION,
+        "execution_config": {
+            "fee_per_side": config.fee_per_side,
+            "slippage_per_side": config.slippage_per_side,
+            "stop_pct": config.stop_pct,
+            "target_pct": config.target_pct,
+            "max_bars": config.max_bars,
+        },
         "holdout_start": holdout_start,
         "first_holdout_bar": rows[first_index].timestamp.isoformat(),
         "last_bar": rows[-1].timestamp.isoformat(),
