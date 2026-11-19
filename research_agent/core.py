@@ -73,11 +73,27 @@ def load_csv(path: str | Path) -> list[Candle]:
 
 
 def validate_candles(candles: Iterable[Candle]) -> list[Candle]:
+    """Validate OHLCV and monotonic timestamps without silently mixing timezones.
+
+    Naive timestamps (as returned by MOEX ISS) remain naive exchange-local values.
+    A dataset may use all-naive or all-timezone-aware timestamps, but never a mix.
+    """
     rows = list(candles)
     if not rows:
         raise ValueError("No candles supplied")
     previous = None
+    timezone_aware = None
     for i, c in enumerate(rows):
+        if not isinstance(c.timestamp, datetime):
+            raise ValueError(f"Timestamp must be datetime at row {i}")
+        try:
+            aware = c.timestamp.tzinfo is not None and c.timestamp.utcoffset() is not None
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid timestamp timezone at row {i}: {exc}") from exc
+        if timezone_aware is None:
+            timezone_aware = aware
+        elif aware != timezone_aware:
+            raise ValueError(f"Mixed timezone-aware and naive timestamps at row {i}")
         values = (c.open, c.high, c.low, c.close, c.volume)
         if not all(math.isfinite(x) for x in values):
             raise ValueError(f"Non-finite OHLCV at row {i}")
@@ -85,8 +101,13 @@ def validate_candles(candles: Iterable[Candle]) -> list[Candle]:
             raise ValueError(f"Non-positive price or negative volume at row {i}")
         if c.high < max(c.open, c.close, c.low) or c.low > min(c.open, c.close, c.high):
             raise ValueError(f"Invalid OHLC relationship at row {i}")
-        if previous is not None and c.timestamp <= previous:
-            raise ValueError(f"Timestamps must be strictly increasing; duplicate/out-of-order at row {i}")
+        if previous is not None:
+            try:
+                out_of_order = c.timestamp <= previous
+            except TypeError as exc:
+                raise ValueError(f"Incomparable timestamps at row {i}: {exc}") from exc
+            if out_of_order:
+                raise ValueError(f"Timestamps must be strictly increasing; duplicate/out-of-order at row {i}")
         previous = c.timestamp
     return rows
 
@@ -164,34 +185,25 @@ def generate_signals(candles: list[Candle]) -> list[Signal]:
     ]
     signals: list[Signal] = []
     for i in range(55, len(rows) - 1):
-        # Donchian levels exclude the current completed candle.
         prior_high = max(c.high for c in rows[i - 20:i])
         prior_low = min(c.low for c in rows[i - 20:i])
         if rows[i].close > prior_high:
             signals.append(Signal(i, 1, "Donchian20"))
         elif rows[i].close < prior_low:
             signals.append(Signal(i, -1, "Donchian20"))
-
-        # EMA trend change, confirmed only at the current completed close.
         if ema20[i] > ema50[i] and ema20[i - 1] <= ema50[i - 1]:
             signals.append(Signal(i, 1, "EMA20x50"))
         elif ema20[i] < ema50[i] and ema20[i - 1] >= ema50[i - 1]:
             signals.append(Signal(i, -1, "EMA20x50"))
-
-        # RSI momentum crossing with a slow trend direction filter.
         if rsi14[i] is not None and rsi14[i - 1] is not None:
             if ema20[i] > ema50[i] and rsi14[i] > 50 and rsi14[i - 1] <= 50:
                 signals.append(Signal(i, 1, "RSI14Trend50"))
             elif ema20[i] < ema50[i] and rsi14[i] < 50 and rsi14[i - 1] >= 50:
                 signals.append(Signal(i, -1, "RSI14Trend50"))
-
-        # MACD signal-line crossover.
         if macd[i] > macd_signal[i] and macd[i - 1] <= macd_signal[i - 1]:
             signals.append(Signal(i, 1, "MACD12x26"))
         elif macd[i] < macd_signal[i] and macd[i - 1] >= macd_signal[i - 1]:
             signals.append(Signal(i, -1, "MACD12x26"))
-
-        # Keltner breakout uses ATR known at this completed candle.
         if keltner_upper[i] is not None and keltner_upper[i - 1] is not None:
             if rows[i].close > keltner_upper[i] and rows[i - 1].close <= keltner_upper[i - 1]:
                 signals.append(Signal(i, 1, "Keltner20x2ATR"))
@@ -219,7 +231,6 @@ def backtest(candles: list[Candle], signals: list[Signal],
             raise ValueError("Stop/target percentages must be between 0 and 1")
     ordered = sorted(signals, key=lambda s: (s.index, s.strategy, -s.direction))
     trades: list[Trade] = []
-    # Each strategy is simulated independently; cross-strategy signals do not compete.
     available_after: dict[str, int] = {}
     for signal in ordered:
         if signal.direction not in (-1, 1) or signal.index < 0 or signal.index + 1 >= len(rows):
@@ -262,8 +273,6 @@ def backtest(candles: list[Candle], signals: list[Signal],
                                 rows[entry_idx].timestamp, None, entry_fill, None, None, "OPEN", "END_OF_DATA"))
             available_after[signal.strategy] = len(rows) - 1
         else:
-            # Adverse slippage is applied to both fills; fees are charged on both
-            # entry and exit notionals. Trade prices record modeled fill prices.
             exit_fill = exit_price * (1.0 - signal.direction * config.slippage_per_side)
             gross = signal.direction * (exit_fill - entry_fill) / entry_fill
             fee_cost = config.fee_per_side * (entry_fill + exit_fill) / entry_fill
