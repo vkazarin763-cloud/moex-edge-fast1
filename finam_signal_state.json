@@ -6,6 +6,12 @@
     "ticker": "T",
     "updated_at": "2026-11-18T07:28:56.880985Z"
   },
+  "b0448bcfb8f3dc479591e8e7bdf38c1b3844d90e6bd92a305074952f6a8f9ea0": {
+    "direction": "SHORT",
+    "status": "SUBMISSION_ATTEMPTED",
+    "ticker": "HEAD",
+    "updated_at": "2026-11-19T12:02:30.558289Z"
+  },
   "c5333931d116e4b2fec398f744ccca5e9b7fe33df98597a44549cfbeb6aaca04": {
     "direction": "SHORT",
     "error": "Finam отклонил заявку BSPB@MISX: HTTP 400",
