@@ -21,9 +21,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Compile isolated research module
-        run: python -m compileall -q research_agent tests/test_research_agent.py
+        run: python -m compileall -q research_agent tests
       - name: Run research unit tests
         run: |
-          python -m unittest discover -s tests -p "test_research_agent.py" -v
+          python -m unittest discover -s tests -p "test_research_*.py" -v
           python -m unittest discover -s tests -p "test_moex_iss.py" -v
-          python -m unittest discover -s tests -p "test_research_validation.py" -v
