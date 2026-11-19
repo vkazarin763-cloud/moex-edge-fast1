@@ -58,7 +58,8 @@ def simulate_portfolio(
     for sequence, candidate in enumerate(valid):
         trade = candidate.trade
         events.append((trade.entry_time, 1, candidate.ticker, trade.strategy, sequence, "ENTRY", candidate))
-        events.append((trade.exit_time, 0, candidate.ticker, trade.strategy, sequence, "EXIT", candidate))
+        exit_priority = 0 if trade.exit_time > trade.entry_time else 2
+        events.append((trade.exit_time, exit_priority, candidate.ticker, trade.strategy, sequence, "EXIT", candidate))
     events.sort(key=lambda event: event[:5])
 
     cash = 1.0
@@ -75,6 +76,7 @@ def simulate_portfolio(
     total_seconds = 0.0
     previous_time = events[0][0] if events else None
     realized_returns: list[float] = []
+    completed_pnl: list[float] = []
 
     for timestamp, _, ticker, strategy, sequence, kind, candidate in events:
         if previous_time is not None:
@@ -96,6 +98,7 @@ def simulate_portfolio(
             pnl = position["notional"] * trade_return
             cash += position["notional"] + pnl
             realized_returns.append(trade_return)
+            completed_pnl.append(pnl)
             equity = cash + sum(p["notional"] for p in active_by_sequence.values())
             equity_peak = max(equity_peak, equity)
             drawdown = equity / equity_peak - 1.0 if equity_peak else 0.0
@@ -104,6 +107,7 @@ def simulate_portfolio(
                 "timestamp": timestamp.isoformat(),
                 "equity": equity,
                 "drawdown": drawdown,
+                "pnl": pnl,
             })
             continue
 
@@ -126,13 +130,6 @@ def simulate_portfolio(
         max_concurrent = max(max_concurrent, len(active_by_sequence))
 
     final_equity = cash + sum(p["notional"] for p in active_by_sequence.values())
-    gains = [p["notional"] * r for p, r in []]  # P&L is accumulated below from realized returns.
-    # Profit factor is computed in normalized initial-equity units using the
-    # actual slot notional recorded for each completed position.
-    completed_pnl = [
-        item["pnl"] for item in equity_curve[1:]
-        if "pnl" in item
-    ]
     gross_profit = sum(x for x in completed_pnl if x > 0)
     gross_loss = abs(sum(x for x in completed_pnl if x < 0))
     return {
