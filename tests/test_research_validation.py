@@ -23,7 +23,7 @@ class WalkForwardTests(unittest.TestCase):
         self.assertEqual(starts, sorted(starts))
         for candidate in report["candidates"].values():
             self.assertIn(candidate["status"], {
-                "PROMISING_FOR_INDEPENDENT_REVIEW",
+                "DEVELOPMENT_SCREEN_PASS_UNADJUSTED",
                 "REJECT_OR_INSUFFICIENT_EVIDENCE",
             })
 
