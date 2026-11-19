@@ -87,7 +87,9 @@ def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 6
                 raise ISSDataError(f"Duplicate candle timestamp returned by ISS: {candle.timestamp}")
             seen.add(candle.timestamp)
             result.append(candle)
-        if len(rows) < page_size:
+        # ISS paginates by start; only an empty data block proves completion.
+        # Do not infer completion from a short page.
+        if not rows:
             break
         start += len(rows)
     if not result:
