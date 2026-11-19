@@ -33,5 +33,11 @@
     "status": "REQUIRES_MANUAL_RECONCILIATION",
     "ticker": "BSPB",
     "updated_at": "2026-11-19T11:16:29.031338Z"
+  },
+  "e4ec936fb886f5c1cbc7f045b7ee272c1721a76f2b1589cc4ab9521b9964f6a0": {
+    "direction": "SHORT",
+    "status": "SUBMISSION_ATTEMPTED",
+    "ticker": "BSPB",
+    "updated_at": "2026-11-19T12:31:51.566348Z"
   }
 }
