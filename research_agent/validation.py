@@ -225,6 +225,8 @@ def prospective_holdout_report(
     from datetime import date
     import hashlib
 
+    if min_holdout_trades < 1 or bootstrap_samples < 100:
+        raise ValueError("min_holdout_trades must be >= 1 and bootstrap_samples >= 100")
     rows = validate_candles(candles)
     cutoff = date.fromisoformat(holdout_start)
     holdout_indices = [i for i, candle in enumerate(rows) if candle.timestamp.date() >= cutoff]
@@ -301,6 +303,8 @@ def apply_holm_correction(results: dict[str, dict[str, Any]], family_size: int |
                 tests.append((float(pvalue), ticker, strategy))
     total = family_size if family_size is not None else len(results) * len(REGISTERED_CANDIDATES)
     ordered = sorted(tests)
+    if total < len(ordered):
+        raise ValueError("family_size cannot be smaller than the number of eligible tests")
     previous_adjusted = 0.0
     for rank, (pvalue, ticker, strategy) in enumerate(ordered, start=1):
         adjusted = min(1.0, max(previous_adjusted, (total - rank + 1) * pvalue))
