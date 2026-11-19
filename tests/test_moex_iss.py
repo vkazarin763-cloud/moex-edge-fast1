@@ -34,6 +34,13 @@ class MOEXISSTests(unittest.TestCase):
         # must request the next offset and stop only on an empty page.
         self.assertEqual(calls, ["0", "2", "3"])
 
+    def test_valid_weekend_session_candle_is_preserved(self):
+        page = response([["2025-04-26 00:00:00", 100, 101, 102, 99, 1000]])
+        data = fetch_candles("AFKS", "2025-04-26", "2025-04-26",
+                             getter=lambda *a, **k: page)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0].timestamp.weekday(), 5)
+
     def test_missing_columns_rejected(self):
         with self.assertRaises(ISSDataError):
             fetch_candles("SBER", "2025-01-01", "2025-01-02",
