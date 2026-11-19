@@ -223,8 +223,9 @@ def backtest(candles: list[Candle], signals: list[Signal],
         if entry_idx <= available_after.get(signal.strategy, -1):
             continue
         entry = rows[entry_idx].open
-        stop = entry * (1.0 - signal.direction * config.stop_pct) if config.stop_pct else None
-        target = entry * (1.0 + signal.direction * config.target_pct) if config.target_pct else None
+        entry_fill = entry * (1.0 + signal.direction * config.slippage_per_side)
+        stop = entry_fill * (1.0 - signal.direction * config.stop_pct) if config.stop_pct else None
+        target = entry_fill * (1.0 + signal.direction * config.target_pct) if config.target_pct else None
         last_idx = min(len(rows) - 1, entry_idx + config.max_bars - 1) if config.max_bars else len(rows) - 1
         exit_idx, exit_price, reason = None, None, "OPEN"
         for j in range(entry_idx, last_idx + 1):
@@ -253,12 +254,11 @@ def backtest(candles: list[Candle], signals: list[Signal],
             exit_idx, exit_price, reason = last_idx, rows[last_idx].close, "TIME"
         if exit_idx is None:
             trades.append(Trade(signal.strategy, signal.direction, rows[signal.index].timestamp,
-                                rows[entry_idx].timestamp, None, entry, None, None, "OPEN", "END_OF_DATA"))
+                                rows[entry_idx].timestamp, None, entry_fill, None, None, "OPEN", "END_OF_DATA"))
             available_after[signal.strategy] = len(rows) - 1
         else:
             # Adverse slippage is applied to both fills; fees are charged on both
             # entry and exit notionals. Trade prices record modeled fill prices.
-            entry_fill = entry * (1.0 + signal.direction * config.slippage_per_side)
             exit_fill = exit_price * (1.0 - signal.direction * config.slippage_per_side)
             gross = signal.direction * (exit_fill - entry_fill) / entry_fill
             fee_cost = config.fee_per_side * (entry_fill + exit_fill) / entry_fill
