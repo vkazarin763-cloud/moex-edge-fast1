@@ -113,7 +113,12 @@ def _wilder_rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
         if i > period:
             avg_gain = (avg_gain * (period - 1) + gains[i - 1]) / period
             avg_loss = (avg_loss * (period - 1) + losses[i - 1]) / period
-        result[i] = 100.0 if avg_loss == 0 else 100.0 - 100.0 / (1.0 + avg_gain / avg_loss)
+        if avg_gain == 0 and avg_loss == 0:
+            result[i] = 50.0
+        elif avg_loss == 0:
+            result[i] = 100.0
+        else:
+            result[i] = 100.0 - 100.0 / (1.0 + avg_gain / avg_loss)
     return result
 
 
