@@ -44,6 +44,26 @@ formal multiple-testing correction, bootstrap confidence intervals, regime analy
 and independent adversarial validation remain outstanding. Exploratory statistics
 are not a live signal or evidence of profitability.
 
+## Prospective validation protocol
+
+The strategy definitions and parameters are frozen for prospective evaluation.
+The historical research period ends before **2026-11-20**; that date is the
+exclusive boundary for the untouched holdout. Data on or after that date is
+evaluated separately and is never included in the development walk-forward or
+its doubled-cost stress test. Until new post-cutoff candles arrive, each ticker
+must report `WAITING_FOR_PROSPECTIVE_DATA`; previously reviewed history is not
+relabelled as an independent holdout.
+
+The prospective screen requires at least 30 closed trades per ticker/strategy.
+It reports a one-sided Newey-West HAC test of mean net trade return, a 95%
+moving-block bootstrap confidence interval, and Holm-Bonferroni family-wise
+error correction over the full selected universe × five pre-registered
+strategies (220 hypotheses for the default 44-symbol universe). The confidence
+interval and corrected test are both required for a research-pass label.
+These are statistical screening safeguards, not proof of future profitability.
+The holdout is prospective and cumulative; keep the frozen start date and
+candidate definitions unchanged while collecting it.
+
 ## Safety boundary
 
 The scheduled research workflow is read-only and has no broker secrets. Nothing in this package can submit orders or alter the existing AI Trainer,
