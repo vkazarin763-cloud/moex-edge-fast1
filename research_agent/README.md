@@ -23,6 +23,7 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
   at the bar open; target fills at the target level.
 - Fees and slippage are charged on both entry and exit.
 - Each candidate strategy is simulated independently with non-overlapping trades; terminal positions are labelled OPEN and excluded from realized performance statistics.
+- A separate event-driven portfolio engine can replay fully closed ticker-level trades under a maximum-position cap (for example 5/7/10), with normalized equity, cash-only allocation, overlap rejection, drawdown and slot-utilization metrics. It is not yet wired to the CLI's walk-forward folds, so it must not be presented as an observed MOEX portfolio result until an out-of-sample trade feed is connected.
 - No parameter optimizer and no production promotion.
 
 ## Input format
@@ -43,8 +44,7 @@ independent or multiplicity-adjusted result. The separate prospective holdout
 is the only stage that applies HAC inference, block-bootstrap intervals and
 Holm correction.
 
-This is not yet a fully validated discovery system. Multi-symbol portfolio simulation,
-regime analysis and independent adversarial validation remain outstanding. The
+This is not yet a fully validated discovery system. The portfolio event engine exists, but an automated multi-symbol out-of-sample trade feed and fold-boundary position carry are still outstanding, as are regime analysis and independent adversarial validation. The
 prospective holdout includes HAC inference, moving-block bootstrap intervals and
 Holm correction, but those safeguards do not replace independent replication or
 portfolio-level testing. Exploratory statistics are not live signals or evidence
