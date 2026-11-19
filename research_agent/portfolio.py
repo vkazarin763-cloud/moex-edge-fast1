@@ -59,7 +59,7 @@ def simulate_portfolio(
     for sequence, candidate in enumerate(valid):
         trade = candidate.trade
         events.append((trade.entry_time, 1, candidate.ticker, trade.strategy, sequence, "ENTRY", candidate))
-        exit_priority = 0 if trade.exit_time > trade.entry_time else 2
+        exit_priority = 0 if trade.exit_time > trade.entry_time else 1
         events.append((trade.exit_time, exit_priority, candidate.ticker, trade.strategy, sequence, "EXIT", candidate))
     events.sort(key=lambda event: event[:5])
 
@@ -179,8 +179,13 @@ def compare_position_limits(
 ) -> dict:
     """Run the same immutable candidate trade stream under several position caps."""
     rows = list(candidates)
-    if not limits or len(set(limits)) != len(limits):
-        raise ValueError("limits must be a non-empty tuple of unique integers")
+    if not limits or any(
+        not isinstance(limit, int) or isinstance(limit, bool) or limit < 1
+        for limit in limits
+    ):
+        raise ValueError("limits must be a non-empty tuple of positive integers")
+    if len(set(limits)) != len(limits):
+        raise ValueError("limits must be unique")
     return {
         "method": "same candidate trades replayed independently for each position cap",
         "comparisons": {
