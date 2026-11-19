@@ -65,7 +65,8 @@ def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 6
         )
         query = urlencode({
             "from": date_from, "till": date_till, "interval": interval,
-            "start": start, "iss.meta": "off", "iss.reverse": "false",
+            "start": start, "limit": page_size,
+            "iss.meta": "off", "iss.reverse": "false",
         })
         payload = getter(f"{path}?{query}", timeout=timeout, retries=retries)
         block = payload.get("candles")
