@@ -266,7 +266,9 @@ def backtest(candles: list[Candle], signals: list[Signal],
                     exit_idx, exit_price, reason = j, target, "TARGET"
             if exit_idx is not None:
                 break
-        if exit_idx is None and config.max_bars and last_idx < len(rows) - 1:
+        # If the full bar horizon is present, time-exit even when it ends on the final dataset bar.
+        horizon_end = entry_idx + config.max_bars - 1 if config.max_bars else None
+        if exit_idx is None and horizon_end is not None and horizon_end < len(rows):
             exit_idx, exit_price, reason = last_idx, rows[last_idx].close, "TIME"
         if exit_idx is None:
             trades.append(Trade(signal.strategy, signal.direction, rows[signal.index].timestamp,
