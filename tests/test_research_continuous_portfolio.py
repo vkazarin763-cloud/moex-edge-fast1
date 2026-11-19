@@ -20,14 +20,19 @@ class ContinuousPortfolioTests(unittest.TestCase):
         boundary = rows[55].timestamp
 
         def generate(history):
-            # Signal is available in the development window; fold histories are truncated.
-            if len(history) == len(rows):
-                return [Signal(55, 1, "Donchian20")]
-            return []
+            return [Signal(55, 1, "Donchian20")] if len(history) >= 58 else []
 
         def simulate(history, signals, config):
             if not signals:
                 return []
+            if len(history) <= 58:
+                return [Trade(
+                    strategy="Donchian20", direction=1,
+                    signal_time=history[55].timestamp,
+                    entry_time=history[56].timestamp,
+                    exit_time=None, entry_price=100.0, exit_price=None,
+                    net_return=None, status="OPEN", exit_reason="END_OF_FOLD",
+                )]
             return [Trade(
                 strategy="Donchian20", direction=1,
                 signal_time=history[55].timestamp,
@@ -52,6 +57,7 @@ class ContinuousPortfolioTests(unittest.TestCase):
         self.assertEqual(
             continuous["combined"]["comparisons"]["1"]["closed_trades_accepted"], 1
         )
+        self.assertEqual(report["folds"][0]["open_trades_excluded_at_fold_boundary"], 1)
         self.assertEqual(report["combined"]["comparisons"]["1"]["closed_trades_accepted"], 0)
         self.assertEqual(continuous["development_start_inclusive"], boundary.isoformat())
 
