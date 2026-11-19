@@ -21,7 +21,7 @@ class ResearchWorkflowSafetyTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "research-agent-finam-crosscheck.yml").read_text()
         self.assertIn("workflow_dispatch:", workflow)
         self.assertNotIn("schedule:", workflow)
-        self.assertIn("permissions:\\n  contents: read", workflow)
+        self.assertIn("permissions:" + chr(10) + "  contents: read", workflow)
         self.assertIn("FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}", workflow)
         self.assertIn("python -m research_agent.finam_crosscheck", workflow)
         self.assertNotIn("finam_executor.py", workflow)
