@@ -81,3 +81,26 @@ The scheduled research workflow is read-only and has no broker secrets. Nothing 
 virtual trading state, Finam executors, futures executor, scheduled workflows,
 or production strategy configuration. Promotion requires independent review
 and explicit owner approval.
+
+## Optional Finam market-data cross-check
+
+`finam_market_data.py` is a separate read-only REST client for historical
+aggregated candles. It exchanges a Finam API token for a short-lived JWT and
+requests bars for exchange-qualified symbols such as `SBER@MISX`. It has no
+account, order, position, or execution methods and is not imported by the
+scheduled MOEX ISS research workflow.
+
+The adapter preserves Finam's `is_data_snapshot` field as source metadata; it
+does not assume that this field alone means a candle is complete or incomplete.
+Consumers must apply an explicit completed-session policy before using the
+latest bar in a signal calculation. OHLCV values, timestamps, ordering, and
+requested interval boundaries are validated. The documented per-timeframe
+history window is enforced locally (M1 7 days; M5-M30 and H1-H8 30 days; D1
+365 days; W1/MN/QR 5 years).
+
+Credentials must be supplied by the operator at runtime and must never be
+committed to the repository, printed in logs, or added to the scheduled
+workflow. The adapter is currently a test-covered integration component only:
+no live Finam credentialed request or MOEX-vs-Finam market-data comparison has
+yet been run. Finam data does not replace MOEX ISS and is not mixed into the
+frozen strategy/holdout dataset.
