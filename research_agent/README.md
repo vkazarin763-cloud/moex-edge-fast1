@@ -48,7 +48,9 @@ are not a live signal or evidence of profitability.
 
 The strategy definitions and parameters are frozen for prospective evaluation.
 The historical research period ends before **2026-11-20**; that date is the
-exclusive boundary for the untouched holdout. Data on or after that date is
+boundary for the untouched holdout. The loader retains at least three full
+years of pre-cutoff development history even after the normal rolling fetch
+window moves forward. Data on or after that date is
 evaluated separately and is never included in the development walk-forward or
 its doubled-cost stress test. Until new post-cutoff candles arrive, each ticker
 must report `WAITING_FOR_PROSPECTIVE_DATA`; previously reviewed history is not
