@@ -1,6 +1,5 @@
 import unittest
 from urllib.parse import urlparse, parse_qs
-from datetime import datetime
 
 from research_agent.moex_iss import fetch_candles, ISSDataError
 
@@ -21,13 +20,17 @@ class MOEXISSTests(unittest.TestCase):
             response([["2025-01-01 12:00:00", 102, 103, 104, 101, 1200]]),
             response([]),
         ]
+
         def getter(url, **kwargs):
             calls.append(parse_qs(urlparse(url).query)["start"][0])
             return pages.pop(0)
+
         data = fetch_candles("sber", "2025-01-01", "2025-01-02",
                              page_size=2, getter=getter)
         self.assertEqual(len(data), 3)
-        self.assertEqual(calls, ["0", "2"])
+        # A short non-empty page is not proof of completion; the loader
+        # must request the next offset and stop only on an empty page.
+        self.assertEqual(calls, ["0", "2", "3"])
 
     def test_missing_columns_rejected(self):
         with self.assertRaises(ISSDataError):
