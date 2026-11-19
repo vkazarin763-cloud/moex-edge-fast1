@@ -104,3 +104,25 @@ workflow. The adapter is currently a test-covered integration component only:
 no live Finam credentialed request or MOEX-vs-Finam market-data comparison has
 yet been run. Finam data does not replace MOEX ISS and is not mixed into the
 frozen strategy/holdout dataset.
+
+### Running the optional D1 cross-check
+
+After installing the project in its existing Python environment, supply the
+Finam API token through the process environment (not a command-line argument):
+
+```bash
+export FINAM_API_TOKEN="..."
+# Optional, only if Finam has issued a source application ID:
+export FINAM_SOURCE_APP_ID="..."
+python -m research_agent.finam_crosscheck \
+  --from 2026-11-01 --till 2026-11-19 \
+  --tickers SBER,GAZP,LKOH,VTBR,T \
+  --output finam_moex_crosscheck.json
+```
+
+The date range is inclusive and capped at 365 calendar dates. Daily timestamps
+are aligned by their calendar date in Europe/Moscow. The report lists matched
+dates, source-only dates, and raw OHLCV differences. It deliberately does not
+set a winner, impose an unvalidated price/volume tolerance, fill missing dates,
+or combine the two sources. The token is read from the environment and is not
+written to the report. The scheduled workflow remains MOEX-only.
