@@ -60,11 +60,15 @@ class WalkForwardPortfolioTests(unittest.TestCase):
                 position_limits=(1,),
             )
 
-        self.assertEqual(generated_history_lengths, [58, 61])
+        self.assertEqual(generated_history_lengths, [61, 58, 61])
         self.assertEqual(len(report["folds"]), 2)
         self.assertEqual(report["folds"][0]["closed_trades"], 1)
         self.assertEqual(report["folds"][1]["closed_trades"], 1)
         self.assertEqual(report["combined"]["comparisons"]["1"]["closed_trades_accepted"], 2)
+        self.assertEqual(
+            report["continuous_development_replay"]["combined"]["comparisons"]["1"]["closed_trades_accepted"],
+            1,
+        )
         self.assertLess(backtest_windows[0][1], datetime.fromisoformat(report["folds"][0]["end_exclusive"]))
         self.assertGreaterEqual(backtest_windows[1][0], datetime.fromisoformat(report["folds"][1]["start_inclusive"]))
 
