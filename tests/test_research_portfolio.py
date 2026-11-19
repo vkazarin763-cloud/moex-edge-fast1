@@ -43,7 +43,8 @@ class PortfolioSimulationTests(unittest.TestCase):
         ], max_positions=1)
         self.assertEqual(report["closed_trades_accepted"], 1)
         self.assertAlmostEqual(report["final_equity_normalized"], 1.10)
-        self.assertAlmostEqual(report["profit_factor"], 0.0 if False else float("inf")) if report["profit_factor"] is not None else self.assertTrue(report["profit_factor_infinite"])
+        self.assertIsNone(report["profit_factor"])
+        self.assertTrue(report["profit_factor_infinite"])
 
     def test_only_one_active_position_per_ticker(self):
         start = datetime(2026, 1, 1, 10)
