@@ -124,6 +124,7 @@ def simulate_portfolio(
         if notional <= 0:
             skipped_position_limit += 1
             continue
+        cash -= notional
         position = {"ticker": ticker, "strategy": strategy, "notional": notional}
         active_by_ticker[ticker] = position
         active_by_sequence[sequence] = position
