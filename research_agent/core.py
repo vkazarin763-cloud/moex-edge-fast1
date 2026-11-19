@@ -133,18 +133,21 @@ def backtest(candles: list[Candle], signals: list[Signal],
     rows = validate_candles(candles)
     if config.fee_per_side < 0 or config.slippage_per_side < 0:
         raise ValueError("Costs cannot be negative")
+    if config.max_bars is not None and config.max_bars < 1:
+        raise ValueError("max_bars must be >= 1 or None")
     for pct in (config.stop_pct, config.target_pct):
         if pct is not None and not (0 < pct < 1):
             raise ValueError("Stop/target percentages must be between 0 and 1")
     ordered = sorted(signals, key=lambda s: (s.index, s.strategy, -s.direction))
     trades: list[Trade] = []
-    available_after = -1
+    # Each strategy is simulated independently; cross-strategy signals do not compete.
+    available_after: dict[str, int] = {}
     cost = 2.0 * (config.fee_per_side + config.slippage_per_side)
     for signal in ordered:
         if signal.direction not in (-1, 1) or signal.index < 0 or signal.index + 1 >= len(rows):
             continue
         entry_idx = signal.index + 1
-        if entry_idx <= available_after:
+        if entry_idx <= available_after.get(signal.strategy, -1):
             continue
         entry = rows[entry_idx].open
         stop = entry * (1.0 - signal.direction * config.stop_pct) if config.stop_pct else None
@@ -178,14 +181,14 @@ def backtest(candles: list[Candle], signals: list[Signal],
         if exit_idx is None:
             trades.append(Trade(signal.strategy, signal.direction, rows[signal.index].timestamp,
                                 rows[entry_idx].timestamp, None, entry, None, None, "OPEN", "END_OF_DATA"))
-            available_after = len(rows) - 1
+            available_after[signal.strategy] = len(rows) - 1
         else:
             gross = signal.direction * (exit_price - entry) / entry
             net = gross - cost
             trades.append(Trade(signal.strategy, signal.direction, rows[signal.index].timestamp,
                                 rows[entry_idx].timestamp, rows[exit_idx].timestamp,
                                 entry, exit_price, net, "CLOSED", reason))
-            available_after = exit_idx
+            available_after[signal.strategy] = exit_idx
     return trades
 
 
