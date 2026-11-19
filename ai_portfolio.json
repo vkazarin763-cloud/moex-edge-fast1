@@ -1,5 +1,5 @@
 {
-  "cash": 104757.67904404804,
+  "cash": 115654.49264404803,
   "positions": [
     {
       "ticker": "ROSN",
@@ -89,18 +89,6 @@
       "sl_price": 5864.14,
       "tp_price": 6347.78,
       "be_price": 6166.41
-    },
-    {
-      "ticker": "NVTK",
-      "direction": "LONG",
-      "entry_price": 1126.4,
-      "entry_time": "2026-11-17 18:00:00",
-      "qty": 10,
-      "activated": false,
-      "strategy": "SMC_Sweep",
-      "sl_price": 1092.61,
-      "tp_price": 1182.72,
-      "be_price": 1148.93
     },
     {
       "ticker": "MOEX",
@@ -251,6 +239,23 @@
       "net_ret": -0.032567921661320255,
       "pnl": -428.2375559999997,
       "exit_time": "2026-11-18 18:00:00"
+    },
+    {
+      "ticker": "NVTK",
+      "direction": "LONG",
+      "entry_price": 1126.4,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 10,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 1092.61,
+      "tp_price": 1182.72,
+      "be_price": 1148.93,
+      "exit_price": 1092.61,
+      "exit_reason": "SL",
+      "net_ret": -0.03259822443181835,
+      "pnl": -367.18640000000187,
+      "exit_time": "2026-11-19 08:00:00"
     }
   ]
 }
