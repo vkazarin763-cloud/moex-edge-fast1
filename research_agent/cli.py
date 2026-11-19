@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from .moex_iss import fetch_candles
@@ -29,8 +29,6 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     for ticker in selected:
         try:
             candles = fetch_candles(ticker, date_from, date_till, interval=24, board="TQBR")
-            from datetime import date
-
             development = [
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
