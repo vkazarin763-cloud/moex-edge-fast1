@@ -87,5 +87,43 @@ class PortfolioSimulationTests(unittest.TestCase):
             ])
 
 
+    def test_profit_factor_uses_realized_position_pnl(self):
+        start = datetime(2026, 1, 1, 10)
+        candidates = [
+            PortfolioTrade("AAA", closed_trade("S", start, start + timedelta(hours=1), 0.10)),
+            PortfolioTrade("BBB", closed_trade("S", start, start + timedelta(hours=1), -0.05)),
+        ]
+        report = simulate_portfolio(candidates, max_positions=2)
+        self.assertAlmostEqual(report["profit_factor"], 2.0)
+        self.assertAlmostEqual(report["final_equity_normalized"], 1.025)
+
+    def test_closed_position_is_released_before_new_same_time_entry(self):
+        start = datetime(2026, 1, 1, 10)
+        middle = start + timedelta(hours=1)
+        end = middle + timedelta(hours=1)
+        candidates = [
+            PortfolioTrade("AAA", closed_trade("S", start, middle, 0.10)),
+            PortfolioTrade("BBB", closed_trade("S", middle, end, 0.10)),
+        ]
+        report = simulate_portfolio(candidates, max_positions=1)
+        self.assertEqual(report["closed_trades_accepted"], 2)
+        self.assertEqual(report["skipped_position_limit"], 0)
+        self.assertAlmostEqual(report["final_equity_normalized"], 1.21)
+
+    def test_invalid_limit_types_are_rejected(self):
+        for limit in (0, -1, True, 1.5):
+            with self.subTest(limit=limit):
+                with self.assertRaises(ValueError):
+                    simulate_portfolio([], max_positions=limit)
+
+    def test_comparison_rejects_invalid_or_duplicate_limits(self):
+        start = datetime(2026, 1, 1, 10)
+        rows = [PortfolioTrade("AAA", closed_trade("S", start, start, 0.01))]
+        for limits in ((), (1, 1), (0, 2), (True, 2)):
+            with self.subTest(limits=limits):
+                with self.assertRaises(ValueError):
+                    compare_position_limits(rows, limits)
+
+
 if __name__ == "__main__":
     unittest.main()
