@@ -39,7 +39,6 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
             ]
-            development_candles_by_ticker[ticker] = development
             results[ticker] = {
                 "status": "ANALYZED",
                 "candles": len(candles),
@@ -53,6 +52,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     candles, HOLDOUT_START_DATE
                 ),
             }
+            development_candles_by_ticker[ticker] = development
         except Exception as exc:
             # One failed symbol must not erase successful research for other symbols.
             results[ticker] = {"status": "DATA_OR_ANALYSIS_ERROR", "error": str(exc)}
