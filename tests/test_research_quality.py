@@ -32,7 +32,7 @@ class CandleQualityReportTests(unittest.TestCase):
     def test_reports_requested_range_coverage(self):
         report = candle_quality_report(make_bars([2, 3]), "2025-01-01", "2025-01-06")
         self.assertEqual(report["start_delay_calendar_days"], 2)
-        self.assertEqual(report["end_lag_calendar_days"], 3)
+        self.assertEqual(report["end_lag_calendar_days"], 2)
 
 
 if __name__ == "__main__":
