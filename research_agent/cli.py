@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .moex_iss import fetch_candles
-from .validation import walk_forward_report
+from .validation import walk_forward_report, adversarial_cost_check
 
 MOEX_FIRST_LISTING_44 = [
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
@@ -31,6 +31,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "first_timestamp": candles[0].timestamp.isoformat(),
                 "last_timestamp": candles[-1].timestamp.isoformat(),
                 "walk_forward": walk_forward_report(candles),
+                "adversarial_cost_check": adversarial_cost_check(candles),
             }
         except Exception as exc:
             # One failed symbol must not erase successful research for other symbols.
