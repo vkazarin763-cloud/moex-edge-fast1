@@ -28,8 +28,9 @@ def simulate_portfolio(
     Initial equity is normalized to 1.0 (not RUB). At each accepted entry,
     notional is min(available cash, current equity / max_positions). Only one
     position per ticker is allowed. If several entries share a timestamp,
-    ticker then strategy order breaks ties deterministically. Exits are processed
-    before entries at the same timestamp.
+    ticker then strategy order breaks ties deterministically. Exits of positions
+    already open are processed before new entries; a trade whose entry and exit
+    share a timestamp is entered first and closed immediately afterward.
 
     Trade net_return must already include the chosen fee/slippage assumptions.
     Only fully closed trades are eligible; open terminal trades are counted and
