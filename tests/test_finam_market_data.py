@@ -145,6 +145,10 @@ class FinamMarketDataTests(unittest.TestCase):
         with self.assertRaises(FinamAPIError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
+    def test_fetch_bars_rejects_missing_response_symbol(self):
+        client = FinamMarketDataClient("token", requester=lambda *a, **k: {"bars": []})
+        with self.assertRaises(FinamAPIError):
+            client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
     def test_fetch_bars_rejects_malformed_response(self):
         client = FinamMarketDataClient("token", requester=lambda *a, **k: {})
         with self.assertRaises(FinamAPIError):
