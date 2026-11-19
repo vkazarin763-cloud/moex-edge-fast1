@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import Any
 
 from .core import BacktestConfig, Candle, backtest, generate_signals, summarize, validate_candles
@@ -89,8 +90,6 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
         "candidates": candidates,
         "warning": "Exploratory evidence only. No multiple-testing correction, bootstrap confidence intervals, cross-symbol portfolio simulation, or production approval.",
     }
-
-from dataclasses import replace
 
 
 def adversarial_cost_check(candles: list[Candle], folds: int = 4,
