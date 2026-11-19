@@ -111,8 +111,12 @@ def run_crosscheck(
         raise ValueError("At least one ticker is required")
 
     client = FinamMarketDataClient.from_api_token(api_token, source_app_id)
-    start_time = datetime.combine(start_day, time.min, tzinfo=MOSCOW)
-    end_time = datetime.combine(end_day + timedelta(days=1), time.min, tzinfo=MOSCOW)
+    # Finam D1 timestamps are UTC instants on the Moscow trading date
+    # (typically 04:00 UTC / 07:00 Moscow). Query UTC calendar-day boundaries;
+    # converting Moscow midnight to UTC shifts the start into the prior UTC
+    # date and Finam can return that prior session's daily bar.
+    start_time = datetime.combine(start_day, time.min, tzinfo=timezone.utc)
+    end_time = datetime.combine(end_day + timedelta(days=1), time.min, tzinfo=timezone.utc)
     results = {}
     for ticker in tickers:
         symbol = f"{ticker.upper()}@MISX"
