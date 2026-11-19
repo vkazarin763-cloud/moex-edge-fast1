@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from research_agent.core import Candle
 from research_agent.finam_market_data import FinamBar
-from research_agent.finam_crosscheck import compare_daily_series
+from research_agent.finam_crosscheck import compare_daily_series, _finam_daily_interval
 
 
 class FinamMOEXCrosscheckTests(unittest.TestCase):
@@ -11,13 +11,11 @@ class FinamMOEXCrosscheckTests(unittest.TestCase):
         # A Moscow-midnight conversion starts at 21:00 UTC on the prior day,
         # which makes Finam return the previous D1 session (timestamp 04:00Z).
         # The API request must instead cover the requested UTC calendar dates.
-        from datetime import date, timedelta, time
+        from datetime import date
 
-        start_day = date(2026, 10, 20)
-        end_day = date(2026, 11, 18)
-        start_time = datetime.combine(start_day, time.min, tzinfo=timezone.utc)
-        end_time = datetime.combine(end_day + timedelta(days=1), time.min,
-                                    tzinfo=timezone.utc)
+        start_time, end_time = _finam_daily_interval(
+            date(2026, 10, 20), date(2026, 11, 18)
+        )
         self.assertEqual(start_time, datetime(2026, 10, 20, 0, tzinfo=timezone.utc))
         self.assertEqual(end_time, datetime(2026, 11, 19, 0, tzinfo=timezone.utc))
 
