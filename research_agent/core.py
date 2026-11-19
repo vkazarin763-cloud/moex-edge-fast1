@@ -203,6 +203,7 @@ def summarize(trades: list[Trade]) -> dict:
         "open_terminal_trades_excluded": opened,
         "win_rate": len(wins) / len(closed) if closed else None,
         "average_net_return": sum(closed) / len(closed) if closed else None,
-        "profit_factor": sum(wins) / loss_abs if loss_abs else (None if not wins else math.inf),
+        "profit_factor": sum(wins) / loss_abs if loss_abs else None,
+        "profit_factor_infinite": bool(wins) and not loss_abs,
         "sum_trade_returns_not_portfolio_return": sum(closed) if closed else 0.0,
     }
