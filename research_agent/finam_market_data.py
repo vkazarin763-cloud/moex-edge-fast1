@@ -46,7 +46,7 @@ class FinamBar:
     low: float
     close: float
     volume: float
-    is_data_snapshot: bool
+    is_data_snapshot: bool | None
 
     def as_candle(self) -> Candle:
         return Candle(self.timestamp, self.open, self.high, self.low,
@@ -212,6 +212,9 @@ class FinamMarketDataClient:
             headers={"Authorization": f"Bearer {self._access_token}"},
             timeout=self._timeout,
         )
+        returned_symbol = payload.get("symbol")
+        if not isinstance(returned_symbol, str) or returned_symbol.strip().upper() != symbol:
+            raise FinamAPIError("Finam response symbol does not match the requested instrument")
         raw_bars = payload.get("bars")
         if not isinstance(raw_bars, list):
             raise FinamAPIError("Finam response lacks a valid bars array")
@@ -221,6 +224,9 @@ class FinamMarketDataClient:
             if not isinstance(raw, dict):
                 raise FinamAPIError(f"Finam bar {index} is not an object")
             timestamp = _parse_timestamp(raw.get("timestamp"))
+            snapshot_value = raw.get("is_data_snapshot")
+            if snapshot_value is not None and not isinstance(snapshot_value, bool):
+                raise FinamAPIError(f"Finam bar {index} has invalid is_data_snapshot")
             bar = FinamBar(
                 timestamp=timestamp,
                 open=_parse_decimal(raw.get("open"), "open"),
@@ -228,7 +234,7 @@ class FinamMarketDataClient:
                 low=_parse_decimal(raw.get("low"), "low"),
                 close=_parse_decimal(raw.get("close"), "close"),
                 volume=_parse_decimal(raw.get("volume"), "volume"),
-                is_data_snapshot=raw.get("is_data_snapshot") is True,
+                is_data_snapshot=snapshot_value,
             )
             result.append(bar)
 

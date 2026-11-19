@@ -27,6 +27,8 @@ class ResearchWorkflowSafetyTests(unittest.TestCase):
         self.assertNotIn("finam_executor.py", workflow)
         self.assertNotIn("/orders", workflow)
         self.assertNotIn('echo "$FINAM_API_TOKEN"', workflow)
+        self.assertIn("ZoneInfo('Europe/Moscow')", workflow)
+        self.assertIn("moscow_today - timedelta(days=1)", workflow)
 
     def test_scheduled_scanner_executor_workflow_is_explicitly_dry_run(self):
         workflow = (ROOT / ".github" / "workflows" / "moex-edge-fast.yml").read_text()

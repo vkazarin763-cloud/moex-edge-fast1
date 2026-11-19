@@ -47,6 +47,11 @@ class FinamMOEXCrosscheckTests(unittest.TestCase):
         self.assertEqual(result["status"], "NO_OVERLAPPING_DATES")
         self.assertEqual(result["comparisons"], [])
 
+    def test_unknown_snapshot_metadata_stays_unknown(self):
+        finam = [FinamBar(datetime(2026, 11, 17, 21, tzinfo=timezone.utc),
+                          100, 102, 99, 101, 1000, None)]
+        result = compare_daily_series(self.moex[:1], finam)
+        self.assertIsNone(result['comparisons'][0]['finam_is_data_snapshot'])
     def test_rejects_duplicate_daily_dates_per_source(self):
         duplicate = self.moex + [
             Candle(datetime(2026, 11, 18, 12), 100, 102, 99, 101, 1000)

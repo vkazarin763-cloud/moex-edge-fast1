@@ -66,9 +66,7 @@ def compare_daily_series(moex_rows, finam_rows) -> dict:
                     if moex_volume else None
                 ),
             },
-            "finam_is_data_snapshot": bool(
-                getattr(right, "is_data_snapshot", False)
-            ),
+            "finam_is_data_snapshot": getattr(right, "is_data_snapshot", None),
         })
 
     if not matched_dates:

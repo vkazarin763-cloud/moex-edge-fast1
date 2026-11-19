@@ -90,8 +90,10 @@ requests bars for exchange-qualified symbols such as `SBER@MISX`. It has no
 account, order, position, or execution methods and is not imported by the
 scheduled MOEX ISS research workflow.
 
-The adapter preserves Finam's `is_data_snapshot` field as source metadata; it
-does not assume that this field alone means a candle is complete or incomplete.
+The adapter preserves Finam's `is_data_snapshot` field as source metadata and
+keeps it explicitly unknown if a response omits it; it does not assume that the
+flag alone means a candle is complete or incomplete. It also checks that the
+symbol echoed by Finam matches the requested ticker and MIC.
 Consumers must apply an explicit completed-session policy before using the
 latest bar in a signal calculation. OHLCV values, timestamps, ordering, and
 requested interval boundaries are validated. The documented per-timeframe
@@ -115,7 +117,7 @@ export FINAM_API_TOKEN="..."
 # Optional, only if Finam has issued a source application ID:
 export FINAM_SOURCE_APP_ID="..."
 python -m research_agent.finam_crosscheck \
-  --from 2026-11-01 --till 2026-11-19 \
+  --from 2026-11-01 --till 2026-11-18 \
   --tickers SBER,GAZP,LKOH,VTBR,T \
   --output finam_moex_crosscheck.json
 ```
@@ -136,6 +138,8 @@ repository secret). If Finam issued a source application ID, optionally add
 commits, or chat messages.
 
 Then open Actions → **MOEX EDGE Finam Candle Cross-check (Manual, Read Only)**
-→ Run workflow. This workflow is manual-only, has `contents: read` permission,
-does not run on a schedule, and uploads the JSON comparison as an artifact.
+→ Run workflow. If the end date is left blank, it defaults to the previous
+calendar day in the Moscow timezone, avoiding an unfinished current-day candle.
+This workflow is manual-only, has `contents: read` permission, does not run on a
+schedule, and uploads the JSON comparison as an artifact.
 The scheduled MOEX research workflow is not given these credentials.
