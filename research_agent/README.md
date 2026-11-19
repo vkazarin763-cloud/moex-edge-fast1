@@ -44,9 +44,11 @@ is the only stage that applies HAC inference, block-bootstrap intervals and
 Holm correction.
 
 This is not yet a fully validated discovery system. Multi-symbol portfolio simulation,
-formal multiple-testing correction, bootstrap confidence intervals, regime analysis
-and independent adversarial validation remain outstanding. Exploratory statistics
-are not a live signal or evidence of profitability.
+regime analysis and independent adversarial validation remain outstanding. The
+prospective holdout includes HAC inference, moving-block bootstrap intervals and
+Holm correction, but those safeguards do not replace independent replication or
+portfolio-level testing. Exploratory statistics are not live signals or evidence
+of profitability.
 
 ## Prospective validation protocol
 
