@@ -37,7 +37,11 @@ fetches daily candles from MOEX ISS for the fixed 44-symbol first-listing univer
 and produces a JSON report. `moex_iss.py` paginates responses, validates OHLCV and
 rejects duplicate timestamps without fabricating missing candles. Every analyzed ticker also receives a `data_quality` section with requested/actual date boundaries, zero-volume and weekend bar counts, history sufficiency, and long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
 evaluates fixed candidates on sequential walk-forward folds with expanding indicator
-history and explicit minimum-sample/stability gates.
+history and explicit minimum-sample/stability gates. A pass is labelled
+`DEVELOPMENT_SCREEN_PASS_UNADJUSTED`: it is only a development shortlist, not an
+independent or multiplicity-adjusted result. The separate prospective holdout
+is the only stage that applies HAC inference, block-bootstrap intervals and
+Holm correction.
 
 This is not yet a fully validated discovery system. Multi-symbol portfolio simulation,
 formal multiple-testing correction, bootstrap confidence intervals, regime analysis
@@ -46,7 +50,10 @@ are not a live signal or evidence of profitability.
 
 ## Prospective validation protocol
 
-The strategy definitions and parameters are frozen for prospective evaluation.
+The strategy definitions and parameters are frozen as candidate set
+`v1-frozen-2026-11-19` for prospective evaluation. Reports include this version
+and the exact execution assumptions (fees, slippage, stop, target and maximum
+bar horizon) so later cohorts cannot silently reuse the same label.
 The historical research period ends before **2026-11-20**; that date is the
 boundary for the untouched holdout. The loader retains at least three full
 years of pre-cutoff development history even after the normal rolling fetch

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .moex_iss import fetch_candles
 from .validation import (walk_forward_report, adversarial_cost_check,
-                         prospective_holdout_report, apply_holm_correction)
+                         prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
@@ -69,6 +69,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "holdout_start": HOLDOUT_START_DATE,
             "holdout_is_strictly_prospective": True,
             "candidate_set_frozen": True,
+            "candidate_set_version": CANDIDATE_SET_VERSION,
             "multiple_testing_correction": holdout_correction,
         },
         "results": results,

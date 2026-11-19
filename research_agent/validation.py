@@ -80,7 +80,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
             "positive_folds": positive_folds,
             "adequately_sampled_folds": adequately_sampled_folds,
             "folds": folds,
-            "status": "PROMISING_FOR_INDEPENDENT_REVIEW" if passes else "REJECT_OR_INSUFFICIENT_EVIDENCE",
+            "status": "DEVELOPMENT_SCREEN_PASS_UNADJUSTED" if passes else "REJECT_OR_INSUFFICIENT_EVIDENCE",
         }
     return {
         "method": "expanding-history indicators; sequential non-overlapping test folds; fixed candidates",
@@ -88,7 +88,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
         "warmup_bars": warmup_bars,
         "folds": fold_reports,
         "candidates": candidates,
-        "warning": "Exploratory evidence only. No multiple-testing correction, bootstrap confidence intervals, cross-symbol portfolio simulation, or production approval.",
+        "warning": "Development screening only. Candidate pass labels are unadjusted for multiple testing and are not independent validation, profitability evidence, or production approval.",
     }
 
 
@@ -118,7 +118,7 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
         stress = stressed["candidates"].get(strategy)
         survives = bool(
             stress
-            and stress["status"] == "PROMISING_FOR_INDEPENDENT_REVIEW"
+            and stress["status"] == "DEVELOPMENT_SCREEN_PASS_UNADJUSTED"
             and stress["average_net_return"] is not None
             and stress["average_net_return"] > 0
         )
@@ -137,6 +137,7 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
 
 
 # The candidate list and cutoff are frozen before any prospective observations.
+CANDIDATE_SET_VERSION = "v1-frozen-2026-11-19"
 REGISTERED_CANDIDATES = (
     "Donchian20", "EMA20x50", "RSI14Trend50", "MACD12x26", "Keltner20x2ATR",
 )
@@ -233,6 +234,14 @@ def prospective_holdout_report(
     if not holdout_indices:
         return {
             "status": "WAITING_FOR_PROSPECTIVE_DATA",
+            "candidate_set_version": CANDIDATE_SET_VERSION,
+            "execution_config": {
+                "fee_per_side": config.fee_per_side,
+                "slippage_per_side": config.slippage_per_side,
+                "stop_pct": config.stop_pct,
+                "target_pct": config.target_pct,
+                "max_bars": config.max_bars,
+            },
             "holdout_start": holdout_start,
             "holdout_bars": 0,
             "strategies": {
@@ -283,6 +292,14 @@ def prospective_holdout_report(
     return {
         "status": "PROSPECTIVE_DATA_AVAILABLE",
         "method": "frozen candidate set; signal close then next available open; pre-cutoff history is indicator warm-up only",
+        "candidate_set_version": CANDIDATE_SET_VERSION,
+        "execution_config": {
+            "fee_per_side": config.fee_per_side,
+            "slippage_per_side": config.slippage_per_side,
+            "stop_pct": config.stop_pct,
+            "target_pct": config.target_pct,
+            "max_bars": config.max_bars,
+        },
         "holdout_start": holdout_start,
         "first_holdout_bar": rows[first_index].timestamp.isoformat(),
         "last_bar": rows[-1].timestamp.isoformat(),
