@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       date_from:
-        description: "Start date YYYY-MM-DD (blank = 30 days ago)"
+        description: "Start date YYYY-MM-DD (blank = 30 days ending previous Moscow day)"
         required: false
         type: string
       date_till:
