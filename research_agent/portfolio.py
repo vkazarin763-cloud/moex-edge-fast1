@@ -257,6 +257,24 @@ def walk_forward_portfolio_report(
         [(item.ticker, item.trade) for item in continuous_candidates],
     )
 
+    # Mark-to-market is calculated only from the development candles supplied
+    # by the CLI. The frozen prospective holdout is never passed into this path.
+    from .mark_to_market import simulate_mark_to_market
+    continuous_mark_to_market = {
+        "method": "development-only closed-trade stream; causal as-of marks; same fee/slippage assumptions as backtest",
+        "combined": {
+            str(limit): simulate_mark_to_market(
+                continuous_candidates,
+                clean,
+                max_positions=limit,
+                fee_per_side=config.fee_per_side,
+                slippage_per_side=config.slippage_per_side,
+            )
+            for limit in position_limits
+        },
+        "by_strategy": {},
+    }
+
     continuous_by_strategy = {}
     from .validation import CANDIDATE_SET_VERSION, REGISTERED_CANDIDATES
     for strategy in REGISTERED_CANDIDATES:
@@ -265,6 +283,17 @@ def walk_forward_portfolio_report(
             if item.trade.strategy == strategy
         ]
         continuous_by_strategy[strategy] = compare_position_limits(selected, position_limits)
+        continuous_mark_to_market["by_strategy"][strategy] = {
+            str(limit): simulate_mark_to_market(
+                selected,
+                clean,
+                max_positions=limit,
+                fee_per_side=config.fee_per_side,
+                slippage_per_side=config.slippage_per_side,
+                include_equity_curve=False,
+            )
+            for limit in position_limits
+        }
 
     all_candidates: list[PortfolioTrade] = []
     fold_reports = []
@@ -348,6 +377,7 @@ def walk_forward_portfolio_report(
             "combined": compare_position_limits(continuous_candidates, position_limits),
             "by_strategy": continuous_by_strategy,
             "market_breadth_regime_analysis": continuous_regime_analysis,
+            "mark_to_market_portfolio": continuous_mark_to_market,
             "warning": "Continuous development replay is not independent validation. It uses the full frozen development window for exit simulation and must not be interpreted as prospective holdout performance.",
         },
         "warning": "Development-only portfolio screening. Fold-isolated results reset to flat at fold boundaries; continuous_development_replay is reported separately. No independent holdout observations are used; results are not production approval or a live signal.",
