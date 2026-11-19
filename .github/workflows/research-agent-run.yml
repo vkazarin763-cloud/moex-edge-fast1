@@ -30,7 +30,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Resolve research date range
+      - name: Resolve and validate research date range
         id: dates
         env:
           INPUT_FROM: ${{ github.event.inputs.date_from }}
@@ -38,13 +38,32 @@ jobs:
         run: |
           END="${INPUT_TILL:-$(date -u +%F)}"
           START="${INPUT_FROM:-$(date -u -d '3 years ago' +%F)}"
-          echo "date_from=$START" >> "$GITHUB_OUTPUT"
-          echo "date_till=$END" >> "$GITHUB_OUTPUT"
+          python - <<'PY'
+          import os
+          from datetime import date
+          from pathlib import Path
+
+          start = date.fromisoformat(os.environ["START"])
+          end = date.fromisoformat(os.environ["END"])
+          if start.isoformat() != os.environ["START"] or end.isoformat() != os.environ["END"]:
+              raise SystemExit("Dates must use YYYY-MM-DD")
+          if start > end:
+              raise SystemExit("date_from must not be after date_till")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"date_from={start.isoformat()}\\n")
+              output.write(f"date_till={end.isoformat()}\\n")
+          PY
+        env:
+          START: ${{ github.event.inputs.date_from || '' }}
+          END: ${{ github.event.inputs.date_till || '' }}
       - name: Run read-only research across MOEX first-listing universe
+        env:
+          DATE_FROM: ${{ steps.dates.outputs.date_from }}
+          DATE_TILL: ${{ steps.dates.outputs.date_till }}
         run: |
           python -m research_agent.cli \
-            --from "${{ steps.dates.outputs.date_from }}" \
-            --till "${{ steps.dates.outputs.date_till }}" \
+            --from "$DATE_FROM" \
+            --till "$DATE_TILL" \
             --output research_report.json
       - name: Upload research report
         if: always()
