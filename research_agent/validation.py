@@ -80,7 +80,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
             "positive_folds": positive_folds,
             "adequately_sampled_folds": adequately_sampled_folds,
             "folds": folds,
-            "status": "PROMISING_FOR_INDEPENDENT_REVIEW" if passes else "REJECT_OR_INSUFFICIENT_EVIDENCE",
+            "status": "DEVELOPMENT_SCREEN_PASS_UNADJUSTED" if passes else "REJECT_OR_INSUFFICIENT_EVIDENCE",
         }
     return {
         "method": "expanding-history indicators; sequential non-overlapping test folds; fixed candidates",
@@ -88,7 +88,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
         "warmup_bars": warmup_bars,
         "folds": fold_reports,
         "candidates": candidates,
-        "warning": "Exploratory evidence only. No multiple-testing correction, bootstrap confidence intervals, cross-symbol portfolio simulation, or production approval.",
+        "warning": "Development screening only. Candidate pass labels are unadjusted for multiple testing and are not independent validation, profitability evidence, or production approval.",
     }
 
 
@@ -118,7 +118,7 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
         stress = stressed["candidates"].get(strategy)
         survives = bool(
             stress
-            and stress["status"] == "PROMISING_FOR_INDEPENDENT_REVIEW"
+            and stress["status"] == "DEVELOPMENT_SCREEN_PASS_UNADJUSTED"
             and stress["average_net_return"] is not None
             and stress["average_net_return"] > 0
         )
