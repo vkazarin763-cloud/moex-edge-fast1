@@ -142,24 +142,29 @@ REGISTERED_CANDIDATES = (
 )
 
 
-def _binomial_upper_tail(n: int, k: int) -> float:
-    """Exact one-sided Binomial(n, 0.5) upper-tail probability."""
-    if n <= 0:
-        return 1.0
-    if k <= 0:
-        return 1.0
-    if k > n:
-        return 0.0
-    if k <= n // 2:
-        return max(0.0, min(1.0, 1.0 - _binomial_upper_tail(n, n - k + 1)))
-    log_term = math.lgamma(n + 1) - math.lgamma(k + 1) - math.lgamma(n - k + 1) - n * math.log(2.0)
-    term = math.exp(log_term) if log_term > -745 else 0.0
-    total = term
-    current = term
-    for j in range(k, n):
-        current *= (n - j) / (j + 1)
-        total += current
-    return min(1.0, max(0.0, total))
+def _newey_west_mean_test(values: list[float]) -> dict[str, Any]:
+    """One-sided HAC test of positive mean trade return with Bartlett weights."""
+    n = len(values)
+    if n < 5:
+        return {"pvalue": None, "z_statistic": None, "lags": None}
+    mean = sum(values) / n
+    residuals = [value - mean for value in values]
+    max_lag = min(n - 1, max(1, int(math.floor(math.sqrt(n)))))
+    long_run_variance = sum(value * value for value in residuals) / n
+    for lag in range(1, max_lag + 1):
+        covariance = sum(
+            residuals[index] * residuals[index - lag]
+            for index in range(lag, n)
+        ) / n
+        weight = 1.0 - lag / (max_lag + 1.0)
+        long_run_variance += 2.0 * weight * covariance
+    if not math.isfinite(long_run_variance) or long_run_variance <= 0:
+        return {"pvalue": 1.0, "z_statistic": None, "lags": max_lag}
+    standard_error = math.sqrt(long_run_variance / n)
+    z_statistic = mean / standard_error
+    pvalue = 0.5 * math.erfc(z_statistic / math.sqrt(2.0))
+    return {"pvalue": min(1.0, max(0.0, pvalue)),
+            "z_statistic": z_statistic, "lags": max_lag}
 
 
 def _block_bootstrap_mean_ci(
@@ -251,7 +256,7 @@ def prospective_holdout_report(
         values = [float(trade.net_return) for trade in selected]
         n = len(values)
         positive = sum(value > 0 for value in values)
-        nonzero = sum(value != 0 for value in values)
+        hac_test = _newey_west_mean_test(values)
         seed_material = f"{name}|{holdout_start}|{rows[-1].timestamp.isoformat()}"
         seed = int(hashlib.sha256(seed_material.encode("utf-8")).hexdigest()[:8], 16)
         ci = _block_bootstrap_mean_ci(values, samples=bootstrap_samples, seed=seed)
@@ -266,8 +271,10 @@ def prospective_holdout_report(
             "median_net_return": sorted(values)[n // 2] if n and n % 2 else
                                  ((sorted(values)[n // 2 - 1] + sorted(values)[n // 2]) / 2 if n else None),
             "block_bootstrap_mean_ci_95": ci,
-            "raw_sign_test_pvalue": _binomial_upper_tail(nonzero, positive),
-            "sign_test": "one-sided exact binomial test of positive vs non-positive trade outcomes; zeros excluded",
+            "raw_hac_pvalue": hac_test["pvalue"],
+            "hac_z_statistic": hac_test["z_statistic"],
+            "hac_lags": hac_test["lags"],
+            "pvalue_method": "one-sided Newey-West HAC normal approximation for mean net trade return",
             "minimum_trades_required": min_holdout_trades,
             "holm_adjusted_pvalue": None,
         }
@@ -289,7 +296,7 @@ def apply_holm_correction(results: dict[str, dict[str, Any]], family_size: int |
     for ticker, item in results.items():
         holdout = item.get("prospective_holdout", {})
         for strategy, detail in holdout.get("strategies", {}).items():
-            pvalue = detail.get("raw_sign_test_pvalue")
+            pvalue = detail.get("raw_hac_pvalue")
             if pvalue is not None and detail.get("closed_trades", 0) >= detail.get("minimum_trades_required", 30):
                 tests.append((float(pvalue), ticker, strategy))
     total = family_size if family_size is not None else len(results) * len(REGISTERED_CANDIDATES)
@@ -312,7 +319,7 @@ def apply_holm_correction(results: dict[str, dict[str, Any]], family_size: int |
         "family_size": total,
         "eligible_tests": len(ordered),
         "family_alpha": 0.05,
-        "pvalue_test": "one-sided exact sign test; positive vs non-positive trade outcomes",
+        "pvalue_test": "one-sided Newey-West HAC normal approximation for mean net trade return",
         "confidence_interval": "95% moving-block bootstrap percentile CI for mean net trade return",
         "note": "Unsampled hypotheses remain in the family-size denominator. Passing is only a research result.",
     }
