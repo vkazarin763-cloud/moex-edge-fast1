@@ -1,9 +1,10 @@
 {
   "2b0a489f65b107546d9dba33416355efeb1ef8aa1e3a6c667e3bdb9a645e316c": {
     "direction": "SHORT",
-    "status": "SUBMISSION_ATTEMPTED",
+    "error": "Finam отклонил заявку HEAD@MISX: HTTP 400",
+    "status": "REQUIRES_MANUAL_RECONCILIATION",
     "ticker": "HEAD",
-    "updated_at": "2026-11-19T12:47:16.252561Z"
+    "updated_at": "2026-11-19T12:47:17.824405Z"
   },
   "5babd8d0dbfa7168f2acdc865f3392a6dbf28ebe6b9fd7ee41bf2f4958ef0fbd": {
     "direction": "LONG",
