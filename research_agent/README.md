@@ -50,7 +50,10 @@ are not a live signal or evidence of profitability.
 
 ## Prospective validation protocol
 
-The strategy definitions and parameters are frozen for prospective evaluation.
+The strategy definitions and parameters are frozen as candidate set
+`v1-frozen-2026-11-19` for prospective evaluation. Reports include this version
+and the exact execution assumptions (fees, slippage, stop, target and maximum
+bar horizon) so later cohorts cannot silently reuse the same label.
 The historical research period ends before **2026-11-20**; that date is the
 boundary for the untouched holdout. The loader retains at least three full
 years of pre-cutoff development history even after the normal rolling fetch
