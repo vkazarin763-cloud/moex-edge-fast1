@@ -57,7 +57,8 @@ def candle_quality_report(
     zero_volume = sum(c.volume == 0 for c in rows)
     weekend = sum(c.timestamp.weekday() >= 5 for c in rows)
     return {
-        "status": "VALID_WITH_CAVEATS" if gaps or zero_volume or weekend or history_status != "PREFERRED_HISTORY_LENGTH" else "VALID",
+        "status": "VALID_WITH_CAVEATS" if (gaps or zero_volume or weekend or history_status != "PREFERRED_HISTORY_LENGTH" or (start_delay is not None and start_delay > 0) or (end_lag is not None and end_lag > 0)) else "VALID",
+        "range_boundary_status": "BOUNDARY_REQUIRES_REVIEW" if ((start_delay is not None and start_delay > 0) or (end_lag is not None and end_lag > 0)) else "REQUESTED_RANGE_COVERED",
         "bars": len(rows),
         "first_timestamp": rows[0].timestamp.isoformat(),
         "last_timestamp": rows[-1].timestamp.isoformat(),
