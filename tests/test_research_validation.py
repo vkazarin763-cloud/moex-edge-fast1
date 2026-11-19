@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from research_agent.core import Candle, BacktestConfig
-from research_agent.validation import walk_forward_report
+from research_agent.validation import walk_forward_report, adversarial_cost_check
 
 
 class WalkForwardTests(unittest.TestCase):
@@ -26,6 +26,14 @@ class WalkForwardTests(unittest.TestCase):
                 "PROMISING_FOR_INDEPENDENT_REVIEW",
                 "REJECT_OR_INSUFFICIENT_EVIDENCE",
             })
+
+    def test_adversarial_cost_check_is_explicitly_labeled(self):
+        rows = [Candle(datetime(2024, 1, 1) + timedelta(hours=i),
+                       100, 101, 99, 100, 1000) for i in range(320)]
+        report = adversarial_cost_check(rows, folds=2, warmup_bars=55,
+                                        min_total_trades=1, min_trades_per_fold=0)
+        self.assertEqual(report["stress"], "2x entry/exit fees and slippage")
+        self.assertIn("does not replace", report["warning"])
 
     def test_invalid_fold_count_rejected(self):
         rows = [Candle(datetime(2024, 1, 1) + timedelta(hours=i),
