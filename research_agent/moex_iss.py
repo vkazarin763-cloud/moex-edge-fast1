@@ -16,9 +16,6 @@ from urllib.request import Request, urlopen
 from .core import Candle, validate_candles
 
 ISS_BASE = "https://iss.moex.com/iss"
-PAGE_SIZE = 500
-
-
 class ISSDataError(RuntimeError):
     """Raised when MOEX ISS returns incomplete or malformed candle data."""
 
@@ -45,7 +42,7 @@ def _get_json(url: str, timeout: int = 20, retries: int = 3,
 
 def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 60,
                   board: str = "TQBR", timeout: int = 20, retries: int = 3,
-                  page_size: int = PAGE_SIZE, getter=_get_json) -> list[Candle]:
+                  getter=_get_json) -> list[Candle]:
     """Fetch all available candles for one symbol/timeframe; gaps are preserved."""
     ticker = ticker.strip().upper()
     board = board.strip().upper()
@@ -53,8 +50,6 @@ def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 6
         raise ValueError("ticker and board are required")
     if interval not in (1, 10, 60, 24, 7, 31, 4):
         raise ValueError("Unsupported MOEX candle interval")
-    if page_size < 1:
-        raise ValueError("page_size must be positive")
     start = 0
     result: list[Candle] = []
     seen = set()
@@ -65,8 +60,7 @@ def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 6
         )
         query = urlencode({
             "from": date_from, "till": date_till, "interval": interval,
-            "start": start, "limit": page_size,
-            "iss.meta": "off", "iss.reverse": "false",
+            "start": start, "iss.meta": "off", "iss.reverse": "false",
         })
         payload = getter(f"{path}?{query}", timeout=timeout, retries=retries)
         block = payload.get("candles")
