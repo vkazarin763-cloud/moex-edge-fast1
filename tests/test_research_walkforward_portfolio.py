@@ -65,7 +65,7 @@ class WalkForwardPortfolioTests(unittest.TestCase):
         self.assertEqual(report["folds"][0]["closed_trades"], 1)
         self.assertEqual(report["folds"][1]["closed_trades"], 1)
         self.assertEqual(report["combined"]["comparisons"]["1"]["closed_trades_accepted"], 2)
-        self.assertLess(backtest_windows[0][1], report["folds"][0]["end_exclusive"])
+        self.assertLess(backtest_windows[0][1], datetime.fromisoformat(report["folds"][0]["end_exclusive"]))
         self.assertGreaterEqual(backtest_windows[1][0], datetime.fromisoformat(report["folds"][1]["start_inclusive"]))
 
     def test_ticker_without_required_pre_fold_history_is_skipped(self):
