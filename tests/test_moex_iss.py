@@ -22,7 +22,9 @@ class MOEXISSTests(unittest.TestCase):
         ]
 
         def getter(url, **kwargs):
-            calls.append(parse_qs(urlparse(url).query)["start"][0])
+            params = parse_qs(urlparse(url).query)
+            calls.append(params["start"][0])
+            self.assertEqual(params["limit"], ["2"])
             return pages.pop(0)
 
         data = fetch_candles("sber", "2025-01-01", "2025-01-02",
