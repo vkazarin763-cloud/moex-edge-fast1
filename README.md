@@ -4,19 +4,18 @@
 
 This repository contains an hourly MOEX signal scanner and a Finam execution workflow. This section is the operational handoff: read it before changing code or enabling/changing execution.
 
-### Current operational configuration (verified 2026-11-18)
+### Current operational configuration (workflow re-audited 2026-11-19)
 
 - GitHub Actions workflow: `.github/workflows/moex-edge-fast.yml`
 - Scheduled runs are configured hourly:
   - Weekdays: `0 4-20 * * 1-5` UTC (07:00–23:00 Moscow time).
   - Weekends: `0 7-16 * * 6,0` UTC (10:00–19:00 Moscow time).
 - Manual workflow dispatch is enabled.
-- Workflow environment currently sets:
-  - `FINAM_DRY_RUN: 'false'`
-  - `FINAM_LIVE_TRADING_ENABLED: 'true'`
-- Therefore, workflow runs are configured for live broker execution, not simulation. Do not trigger a run casually: orders may be sent to the real Finam account.
-- Required GitHub Actions secrets (values must never be printed or committed): `FINAM_API_SECRET`, `FINAM_ACCOUNT_ID`. Optional notifications use `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+- The current workflow explicitly sets `FINAM_DRY_RUN: 'true'` and `FINAM_LIVE_TRADING_ENABLED: 'false'`; its executor step is labelled DRY RUN ONLY. This is a configuration-level safeguard, not evidence that a workflow run succeeded or that account state was checked.
+- Required GitHub Actions secrets are still referenced for the dry-run/preflight integration: `FINAM_API_SECRET`, `FINAM_ACCOUNT_ID`. Optional notifications use `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. Never print or commit secret values.
+- The separate `.github/workflows/finam-executor.yml` also forces `FINAM_DRY_RUN: 'true'` in its execution step.
 - Existing cron schedule is already configured. Do not create a second schedule or duplicate workflow.
+- Do not change either live-execution flag or trigger a live workflow as part of research-agent development.
 
 ### Agreed trading/execution constraints
 
@@ -65,4 +64,4 @@ This repository contains an hourly MOEX signal scanner and a Finam execution wor
 2. Check recent GitHub Actions runs and job logs before saying the system is running successfully.
 3. For any code change, add/update tests, run the full relevant test suite, and report actual results only.
 4. Preserve the user's current operating constraints unless the user explicitly changes them.
-5. Be especially careful: `FINAM_DRY_RUN=false` plus `FINAM_LIVE_TRADING_ENABLED=true` means live order submission is enabled in the workflow.
+5. Re-read the actual workflow before every operational claim. As last audited on 2026-11-19, the scheduled scanner workflow sets DRY RUN true and LIVE TRADING false; a later workflow change invalidates this statement.
