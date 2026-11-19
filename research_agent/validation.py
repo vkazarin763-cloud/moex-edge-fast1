@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import math
-from dataclasses import asdict
 from typing import Any
 
 from .core import BacktestConfig, Candle, backtest, generate_signals, summarize, validate_candles
@@ -48,7 +47,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
         fold_reports.append({
             "fold": fold + 1,
             "start": rows[start].timestamp.isoformat(),
-            "end_exclusive": rows[end - 1].timestamp.isoformat(),
+            "end_inclusive": rows[end - 1].timestamp.isoformat(),
             "strategies": per_strategy,
         })
 
@@ -70,8 +69,10 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
             and positive_folds >= math.ceil(0.75 * folds)
             and stats["average_net_return"] is not None
             and stats["average_net_return"] > 0
-            and stats["profit_factor"] is not None
-            and stats["profit_factor"] > 1.0
+            and (
+                stats["profit_factor_infinite"]
+                or (stats["profit_factor"] is not None and stats["profit_factor"] > 1.0)
+            )
         )
         candidates[strategy] = {
             **stats,
