@@ -7,8 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .moex_iss import fetch_candles
-from .validation import walk_forward_report, adversarial_cost_check
+from .validation import (walk_forward_report, adversarial_cost_check,
+                         prospective_holdout_report, apply_holm_correction)
 from .quality import candle_quality_report
+
+HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
 
 MOEX_FIRST_LISTING_44 = [
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
@@ -26,18 +29,31 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     for ticker in selected:
         try:
             candles = fetch_candles(ticker, date_from, date_till, interval=24, board="TQBR")
+            from datetime import date
+
+            development = [
+                candle for candle in candles
+                if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
+            ]
             results[ticker] = {
                 "status": "ANALYZED",
                 "candles": len(candles),
                 "first_timestamp": candles[0].timestamp.isoformat(),
                 "last_timestamp": candles[-1].timestamp.isoformat(),
                 "data_quality": candle_quality_report(candles, date_from, date_till),
-                "walk_forward": walk_forward_report(candles),
-                "adversarial_cost_check": adversarial_cost_check(candles),
+                "development_period_end_exclusive": HOLDOUT_START_DATE,
+                "walk_forward": walk_forward_report(development),
+                "adversarial_cost_check": adversarial_cost_check(development),
+                "prospective_holdout": prospective_holdout_report(
+                    candles, HOLDOUT_START_DATE
+                ),
             }
         except Exception as exc:
             # One failed symbol must not erase successful research for other symbols.
             results[ticker] = {"status": "DATA_OR_ANALYSIS_ERROR", "error": str(exc)}
+    holdout_correction = apply_holm_correction(
+        results, family_size=len(selected) * 5
+    )
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source": "MOEX ISS public historical candles",
@@ -46,6 +62,12 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         "date_from": date_from,
         "date_till": date_till,
         "universe": selected,
+        "development_holdout_policy": {
+            "holdout_start": HOLDOUT_START_DATE,
+            "holdout_is_strictly_prospective": True,
+            "candidate_set_frozen": True,
+            "multiple_testing_correction": holdout_correction,
+        },
         "results": results,
         "safety": "Research only. No broker APIs, order placement, Telegram, or production-state writes.",
     }
