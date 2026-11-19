@@ -84,7 +84,12 @@ class BacktestTests(unittest.TestCase):
         data = bars([100, 100, 100, 110])
         result = backtest(data, [Signal(1, 1, "test")],
                           BacktestConfig(0.001, 0.0005, 0.05, 0.05, 3))
-        self.assertAlmostEqual(result[0].net_return, 0.05 - 0.003)
+        entry_fill = 100 * (1 + 0.0005)
+        exit_fill = 105 * (1 - 0.0005)
+        expected = (exit_fill - entry_fill) / entry_fill - 0.001 * (entry_fill + exit_fill) / entry_fill
+        self.assertAlmostEqual(result[0].net_return, expected)
+        self.assertAlmostEqual(result[0].entry_price, entry_fill)
+        self.assertAlmostEqual(result[0].exit_price, exit_fill)
 
     def test_overlapping_signals_are_skipped(self):
         data = bars([100] * 8)
