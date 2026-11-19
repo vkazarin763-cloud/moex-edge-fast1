@@ -129,6 +129,11 @@ def audit_tqbr_history(
     if start > end:
         raise ValueError("requested_from must be on or before requested_till")
     candle_dates = {row.timestamp.date() for row in validate_candles(candles)}
+    out_of_range_candles = sorted(
+        day.isoformat() for day in candle_dates if day < start or day > end
+    )
+    if out_of_range_candles:
+        raise ValueError(f"Candle dates outside requested range: {out_of_range_candles}")
     records_by_date: dict[date, HistoryRecord] = {}
     for record in history_records:
         if record.trade_date < start or record.trade_date > end:
@@ -163,6 +168,8 @@ def audit_tqbr_history(
         status = "NO_HISTORY_RECORDS"
     elif missing_on_trade_dates:
         status = "MISSING_CANDLE_ON_RECORDED_TRADE_DATE"
+    elif unknown_trade_count or candle_with_zero_trades or candles_without_history:
+        status = "CROSSCHECK_INCONCLUSIVE"
     else:
         status = "NO_MISSING_CANDLE_DETECTED_ON_RECORDED_TRADE_DATES"
 
