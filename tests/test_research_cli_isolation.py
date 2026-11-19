@@ -76,6 +76,7 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         with patch.object(cli, "fetch_candles", return_value=[]):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["EMPTY"])
         self.assertEqual(report["results"]["EMPTY"]["status"], "DATA_OR_ANALYSIS_ERROR")
+        self.assertEqual(report["development_portfolio"]["status"], "NO_DEVELOPMENT_DATA")
 
 
 if __name__ == "__main__":
