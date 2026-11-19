@@ -25,9 +25,15 @@ def _finam_daily_interval(start_day: date, end_day: date) -> tuple[datetime, dat
     07:00 Moscow / 04:00 UTC). Converting Moscow midnight to UTC shifts the
     request start into the prior UTC date and can include the prior session.
     """
+    # Keep the exclusive end inside the requested final UTC calendar date.
+    # The live Finam D1 response included a next-day 05:00Z bar when the
+    # exclusive bound was exactly next-day 00:00Z. Using the final
+    # representable instant of end_day excludes that extra daily bucket while
+    # retaining normal D1 session-start timestamps from end_day.
     return (
         datetime.combine(start_day, time.min, tzinfo=timezone.utc),
-        datetime.combine(end_day + timedelta(days=1), time.min, tzinfo=timezone.utc),
+        datetime.combine(end_day + timedelta(days=1), time.min, tzinfo=timezone.utc)
+        - timedelta(microseconds=1),
     )
 
 
