@@ -243,6 +243,11 @@ class FinamMarketDataClient:
                 validate_candles([bar.as_candle() for bar in result])
             except ValueError as exc:
                 raise FinamAPIError(f"Invalid Finam OHLCV series: {exc}") from None
-            if any(bar.timestamp < start_utc or bar.timestamp >= end_utc for bar in result):
-                raise FinamAPIError("Finam returned a bar outside the requested interval")
+            outside = next((bar for bar in result if bar.timestamp < start_utc or bar.timestamp >= end_utc), None)
+            if outside is not None:
+                raise FinamAPIError(
+                    "Finam returned a bar outside the requested interval: "
+                    f"timestamp={outside.timestamp.isoformat()}, "
+                    f"requested=[{start_utc.isoformat()}, {end_utc.isoformat()})"
+                )
         return result
