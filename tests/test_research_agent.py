@@ -68,7 +68,7 @@ class BacktestTests(unittest.TestCase):
     def test_overlapping_signals_are_skipped(self):
         data = bars([100] * 8)
         data[3] = Candle(data[3].timestamp, 100, 106, 99, 105, 1000)
-        result = backtest(data, [Signal(1, 1, "a"), Signal(2, 1, "b")],
+        result = backtest(data, [Signal(1, 1, "same"), Signal(2, 1, "same")],
                           BacktestConfig(0, 0, 0.05, 0.05, 4))
         self.assertEqual(len(result), 1)
 
