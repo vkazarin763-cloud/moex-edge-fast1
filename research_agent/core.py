@@ -101,11 +101,62 @@ def _ema(values: list[float], period: int) -> list[float]:
     return out
 
 
+def _wilder_rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
+    result: list[Optional[float]] = [None] * len(closes)
+    if len(closes) <= period:
+        return result
+    gains = [max(closes[i] - closes[i - 1], 0.0) for i in range(1, len(closes))]
+    losses = [max(closes[i - 1] - closes[i], 0.0) for i in range(1, len(closes))]
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    for i in range(period, len(closes)):
+        if i > period:
+            avg_gain = (avg_gain * (period - 1) + gains[i - 1]) / period
+            avg_loss = (avg_loss * (period - 1) + losses[i - 1]) / period
+        result[i] = 100.0 if avg_loss == 0 else 100.0 - 100.0 / (1.0 + avg_gain / avg_loss)
+    return result
+
+
+def _wilder_atr(rows: list[Candle], period: int = 14) -> list[Optional[float]]:
+    tr = []
+    for i, candle in enumerate(rows):
+        if i == 0:
+            tr.append(candle.high - candle.low)
+        else:
+            previous_close = rows[i - 1].close
+            tr.append(max(candle.high - candle.low,
+                          abs(candle.high - previous_close),
+                          abs(candle.low - previous_close)))
+    result: list[Optional[float]] = [None] * len(rows)
+    if len(rows) < period:
+        return result
+    current = sum(tr[:period]) / period
+    result[period - 1] = current
+    for i in range(period, len(rows)):
+        current = (current * (period - 1) + tr[i]) / period
+        result[i] = current
+    return result
+
+
 def generate_signals(candles: list[Candle]) -> list[Signal]:
-    """Small pre-registered candidate set; no parameter fitting is performed."""
+    """Pre-registered candidate set; fixed parameters, no fitting or look-ahead."""
     rows = validate_candles(candles)
     closes = [c.close for c in rows]
-    ema20, ema50 = _ema(closes, 20), _ema(closes, 50)
+    ema12, ema20, ema26, ema50 = (
+        _ema(closes, 12), _ema(closes, 20), _ema(closes, 26), _ema(closes, 50)
+    )
+    macd = [fast - slow for fast, slow in zip(ema12, ema26)]
+    macd_signal = _ema(macd, 9)
+    rsi14 = _wilder_rsi(closes, 14)
+    atr14 = _wilder_atr(rows, 14)
+    keltner_upper = [
+        ema20[i] + 2.0 * atr14[i] if atr14[i] is not None else None
+        for i in range(len(rows))
+    ]
+    keltner_lower = [
+        ema20[i] - 2.0 * atr14[i] if atr14[i] is not None else None
+        for i in range(len(rows))
+    ]
     signals: list[Signal] = []
     for i in range(55, len(rows) - 1):
         # Donchian levels exclude the current completed candle.
@@ -115,10 +166,32 @@ def generate_signals(candles: list[Candle]) -> list[Signal]:
             signals.append(Signal(i, 1, "Donchian20"))
         elif rows[i].close < prior_low:
             signals.append(Signal(i, -1, "Donchian20"))
+
+        # EMA trend change, confirmed only at the current completed close.
         if ema20[i] > ema50[i] and ema20[i - 1] <= ema50[i - 1]:
             signals.append(Signal(i, 1, "EMA20x50"))
         elif ema20[i] < ema50[i] and ema20[i - 1] >= ema50[i - 1]:
             signals.append(Signal(i, -1, "EMA20x50"))
+
+        # RSI momentum crossing with a slow trend direction filter.
+        if rsi14[i] is not None and rsi14[i - 1] is not None:
+            if ema20[i] > ema50[i] and rsi14[i] > 50 and rsi14[i - 1] <= 50:
+                signals.append(Signal(i, 1, "RSI14Trend50"))
+            elif ema20[i] < ema50[i] and rsi14[i] < 50 and rsi14[i - 1] >= 50:
+                signals.append(Signal(i, -1, "RSI14Trend50"))
+
+        # MACD signal-line crossover.
+        if macd[i] > macd_signal[i] and macd[i - 1] <= macd_signal[i - 1]:
+            signals.append(Signal(i, 1, "MACD12x26"))
+        elif macd[i] < macd_signal[i] and macd[i - 1] >= macd_signal[i - 1]:
+            signals.append(Signal(i, -1, "MACD12x26"))
+
+        # Keltner breakout uses ATR known at this completed candle.
+        if keltner_upper[i] is not None and keltner_upper[i - 1] is not None:
+            if rows[i].close > keltner_upper[i] and rows[i - 1].close <= keltner_upper[i - 1]:
+                signals.append(Signal(i, 1, "Keltner20x2ATR"))
+            elif rows[i].close < keltner_lower[i] and rows[i - 1].close >= keltner_lower[i - 1]:
+                signals.append(Signal(i, -1, "Keltner20x2ATR"))
     return signals
 
 
