@@ -8,9 +8,10 @@
   },
   "7d62647930dd25c3aa955196d0ec1d66ce7bf6bf0d6ad2b854fc349bba982ebe": {
     "direction": "SHORT",
-    "status": "SUBMISSION_ATTEMPTED",
+    "error": "Finam отклонил заявку BSPB@MISX: HTTP 400",
+    "status": "REQUIRES_MANUAL_RECONCILIATION",
     "ticker": "BSPB",
-    "updated_at": "2026-11-19T12:16:59.379212Z"
+    "updated_at": "2026-11-19T12:17:00.838268Z"
   },
   "b0448bcfb8f3dc479591e8e7bdf38c1b3844d90e6bd92a305074952f6a8f9ea0": {
     "direction": "SHORT",
