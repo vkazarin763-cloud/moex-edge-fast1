@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from research_agent.core import (
-    Candle, Signal, BacktestConfig, validate_candles, backtest, summarize, generate_signals,
+    Candle, Signal, BacktestConfig, validate_candles, backtest, summarize, generate_signals, _wilder_rsi,
 )
 
 
@@ -16,6 +16,9 @@ def bars(prices):
 
 
 class ValidationTests(unittest.TestCase):
+    def test_flat_series_rsi_is_neutral(self):
+        self.assertEqual(_wilder_rsi([100.0] * 20)[14], 50.0)
+
     def test_fixed_candidate_generator_uses_known_strategy_set(self):
         data = []
         start = datetime(2025, 1, 1)
