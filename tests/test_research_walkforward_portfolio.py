@@ -92,6 +92,14 @@ class WalkForwardPortfolioTests(unittest.TestCase):
             report["continuous_development_replay"]["market_breadth_regime_analysis"]["status"],
             "DESCRIPTIVE_DEVELOPMENT_REGIME_ANALYSIS",
         )
+        self.assertEqual(
+            set(report["continuous_development_replay"]["mark_to_market_portfolio"]["combined"]),
+            {"5", "7", "10"},
+        )
+        self.assertIn(
+            "max_mark_to_market_drawdown",
+            report["continuous_development_replay"]["mark_to_market_portfolio"]["combined"]["5"],
+        )
         self.assertEqual(set(report["by_strategy"]), {
             "Donchian20", "EMA20x50", "RSI14Trend50",
             "MACD12x26", "Keltner20x2ATR",
