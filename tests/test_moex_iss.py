@@ -19,6 +19,7 @@ class MOEXISSTests(unittest.TestCase):
             response([["2025-01-01 10:00:00", 100, 101, 102, 99, 1000],
                       ["2025-01-01 11:00:00", 101, 102, 103, 100, 1100]]),
             response([["2025-01-01 12:00:00", 102, 103, 104, 101, 1200]]),
+            response([]),
         ]
         def getter(url, **kwargs):
             calls.append(parse_qs(urlparse(url).query)["start"][0])
