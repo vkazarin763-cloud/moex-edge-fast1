@@ -8,7 +8,7 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
 
 - Strict OHLCV validation (finite positive prices, valid OHLC relationships,
   non-negative volume, strictly increasing timestamps; gaps are not fabricated).
-- A small pre-registered candidate set: Donchian-20 breakout and EMA-20/50 cross.
+- A fixed, pre-registered candidate set: Donchian-20 breakout, EMA-20/50 cross, RSI-14 trend momentum, MACD-12/26 crossover and Keltner-20/2ATR breakout. Parameters are not fitted on the evaluation data.
 - Signal is calculated on a completed candle; entry is the next available candle open.
 - Conservative intrabar ambiguity: stop is checked before target; stop gaps fill
   at the bar open; target fills at the target level.
