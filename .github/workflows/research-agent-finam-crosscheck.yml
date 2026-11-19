@@ -47,8 +47,14 @@ jobs:
           from zoneinfo import ZoneInfo
 
           moscow_today = datetime.now(ZoneInfo('Europe/Moscow')).date()
-          end = date.fromisoformat(os.environ['INPUT_TILL']) if os.environ['INPUT_TILL'] else moscow_today - timedelta(days=1)
-          start = date.fromisoformat(os.environ['INPUT_FROM']) if os.environ['INPUT_FROM'] else end - timedelta(days=29)
+          raw_end = os.environ['INPUT_TILL']
+          raw_start = os.environ['INPUT_FROM']
+          end = date.fromisoformat(raw_end) if raw_end else moscow_today - timedelta(days=1)
+          start = date.fromisoformat(raw_start) if raw_start else end - timedelta(days=29)
+          if raw_end and end.isoformat() != raw_end:
+              raise SystemExit('date_till must use YYYY-MM-DD')
+          if raw_start and start.isoformat() != raw_start:
+              raise SystemExit('date_from must use YYYY-MM-DD')
           if start > end:
               raise SystemExit('date_from must not be after date_till')
           if (end - start).days + 1 > 365:
@@ -57,7 +63,7 @@ jobs:
               output.write(f'date_from={start.isoformat()}\n')
               output.write(f'date_till={end.isoformat()}\n')
           PY
-     - name: Verify Finam credential is configured (never print its value)
+      - name: Verify Finam credential is configured (never print its value)
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
         run: |
