@@ -4,7 +4,6 @@ from __future__ import annotations
 from bisect import bisect_right
 from collections import defaultdict
 from datetime import timedelta
-import math
 from typing import Any
 
 from .core import Candle, Trade, validate_candles
@@ -104,7 +103,7 @@ def market_breadth_regime_report(
         })
 
     observation_times = [item["timestamp"] for item in observations]
-    assigned: dict[str, list[Trade]] = defaultdict(list)
+    assigned: dict[str, list[tuple[str, Trade]]] = defaultdict(list)
     for ticker, trade in trades:
         index = bisect_right(observation_times, trade.signal_time) - 1
         regime = "UNKNOWN"
@@ -113,19 +112,18 @@ def market_breadth_regime_report(
             age = trade.signal_time.date() - observation["timestamp"].date()
             if age <= timedelta(days=max_staleness_days):
                 regime = observation["regime"]
-        assigned[regime].append(trade)
+        assigned[regime].append((ticker, trade))
 
     regimes = ("BULLISH", "NEUTRAL", "BEARISH", "UNKNOWN")
-    by_regime = {regime: _trade_stats(assigned[regime]) for regime in regimes}
+    by_regime = {regime: _trade_stats([trade for _, trade in assigned[regime]]) for regime in regimes}
     by_strategy: dict[str, dict[str, dict[str, Any]]] = {}
     strategy_names = sorted({trade.strategy for _, trade in trades})
     for strategy in strategy_names:
         by_strategy[strategy] = {}
         for regime in regimes:
             selected = [
-                trade for ticker, trade in trades
+                trade for _, trade in assigned[regime]
                 if trade.strategy == strategy
-                and trade in assigned[regime]
             ]
             by_strategy[strategy][regime] = _trade_stats(selected)
 
