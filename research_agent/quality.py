@@ -1,0 +1,88 @@
+"""Descriptive candle-quality audit for the read-only MOEX research pipeline.
+
+This module deliberately does not infer missing exchange sessions from weekdays:
+MOEX holidays, suspensions, IPO dates and security-specific trading calendars can
+all create legitimate date gaps. Such gaps are reported for review, not labelled
+as missing candles.
+"""
+from __future__ import annotations
+
+from datetime import date
+from typing import Any
+
+from .core import Candle, validate_candles
+
+
+def candle_quality_report(
+    candles: list[Candle],
+    requested_from: str | None = None,
+    requested_till: str | None = None,
+    warmup_bars: int = 200,
+    preferred_min_bars: int = 500,
+) -> dict[str, Any]:
+    """Return validated-series diagnostics without making calendar assumptions."""
+    rows = validate_candles(candles)
+    first = rows[0].timestamp.date()
+    last = rows[-1].timestamp.date()
+
+    gaps = []
+    for previous, current in zip(rows, rows[1:]):
+        delta = (current.timestamp.date() - previous.timestamp.date()).days
+        if delta > 3:
+            weekdays = sum(
+                date.fromordinal(ordinal).weekday() < 5
+                for ordinal in range(previous.timestamp.date().toordinal() + 1,
+                                     current.timestamp.date().toordinal())
+            )
+            gaps.append({
+                "from": previous.timestamp.date().isoformat(),
+                "to": current.timestamp.date().isoformat(),
+                "calendar_days_between": delta - 1,
+                "weekdays_between_unverified": weekdays,
+                "classification": "UNVERIFIED_CALENDAR_GAP",
+            })
+
+    requested_start = date.fromisoformat(requested_from) if requested_from else None
+    requested_end = date.fromisoformat(requested_till) if requested_till else None
+    start_delay = (first - requested_start).days if requested_start else None
+    end_lag = (requested_end - last).days if requested_end else None
+
+    if len(rows) < warmup_bars:
+        history_status = "BELOW_WARMUP"
+    elif len(rows) < preferred_min_bars:
+        history_status = "WARMUP_ONLY_SHORT_HISTORY"
+    else:
+        history_status = "PREFERRED_HISTORY_LENGTH"
+
+    zero_volume = sum(c.volume == 0 for c in rows)
+    weekend = sum(c.timestamp.weekday() >= 5 for c in rows)
+    return {
+        "status": "VALID_WITH_CAVEATS" if gaps or zero_volume or weekend or history_status != "PREFERRED_HISTORY_LENGTH" else "VALID",
+        "bars": len(rows),
+        "first_timestamp": rows[0].timestamp.isoformat(),
+        "last_timestamp": rows[-1].timestamp.isoformat(),
+        "requested_from": requested_from,
+        "requested_till": requested_till,
+        "start_delay_calendar_days": start_delay,
+        "end_lag_calendar_days": end_lag,
+        "checks": {
+            "strictly_increasing_timestamps": "PASS",
+            "duplicate_timestamps": "PASS (loader rejects duplicates before analysis)",
+            "finite_positive_ohlc": "PASS",
+            "ohlc_relationships": "PASS",
+            "non_negative_volume": "PASS",
+        },
+        "zero_volume_bars": zero_volume,
+        "weekend_bars": weekend,
+        "calendar_gap_candidates": gaps,
+        "calendar_gap_count": len(gaps),
+        "exchange_calendar_verified": False,
+        "calendar_caveat": (
+            "Weekday dates inside gaps are not classified as missing sessions: "
+            "MOEX holidays, listing dates, suspensions and security-specific "
+            "trading schedules have not been checked."
+        ),
+        "history_status": history_status,
+        "warmup_bars_required": warmup_bars,
+        "preferred_min_bars": preferred_min_bars,
+    }
