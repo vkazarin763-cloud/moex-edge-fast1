@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from research_agent.core import BacktestConfig, Candle
 from research_agent.validation import (
-    _binomial_upper_tail,
+    _newey_west_mean_test,
     apply_holm_correction,
     prospective_holdout_report,
 )
@@ -42,10 +42,11 @@ class ProspectiveHoldoutTests(unittest.TestCase):
         self.assertGreater(donchian["block_bootstrap_mean_ci_95"]["lower"], 0)
         self.assertEqual(donchian["status"], "AWAITING_MULTIPLE_TEST_CORRECTION")
 
-    def test_exact_sign_test_tail(self):
-        self.assertAlmostEqual(_binomial_upper_tail(2, 2), 0.25)
-        self.assertAlmostEqual(_binomial_upper_tail(2, 1), 0.75)
-        self.assertAlmostEqual(_binomial_upper_tail(4, 4), 0.0625)
+    def test_hac_mean_test_returns_one_sided_probability(self):
+        result = _newey_west_mean_test([0.01 + i * 0.0001 for i in range(40)])
+        self.assertIsNotNone(result["pvalue"])
+        self.assertGreater(result["z_statistic"], 0)
+        self.assertGreaterEqual(result["lags"], 1)
 
     def test_holm_correction_includes_full_family_size(self):
         results = {
@@ -53,7 +54,7 @@ class ProspectiveHoldoutTests(unittest.TestCase):
                 "prospective_holdout": {
                     "strategies": {
                         "Donchian20": {
-                            "raw_sign_test_pvalue": 0.001,
+                            "raw_hac_pvalue": 0.001,
                             "closed_trades": 40,
                             "minimum_trades_required": 30,
                             "block_bootstrap_mean_ci_95": {"lower": 0.01, "upper": 0.03},
