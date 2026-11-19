@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from research_agent.core import Candle
 from research_agent.finam_market_data import FinamBar
-from research_agent.finam_crosscheck import compare_daily_series, run_crosscheck
+from research_agent.finam_crosscheck import compare_daily_series
 
 
 class FinamMOEXCrosscheckTests(unittest.TestCase):
@@ -12,7 +12,6 @@ class FinamMOEXCrosscheckTests(unittest.TestCase):
         # which makes Finam return the previous D1 session (timestamp 04:00Z).
         # The API request must instead cover the requested UTC calendar dates.
         from datetime import date, timedelta, time
-        from zoneinfo import ZoneInfo
 
         start_day = date(2026, 10, 20)
         end_day = date(2026, 11, 18)
