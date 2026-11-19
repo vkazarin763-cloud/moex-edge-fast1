@@ -16,6 +16,8 @@ from urllib.request import Request, urlopen
 from .core import Candle, validate_candles
 
 ISS_BASE = "https://iss.moex.com/iss"
+
+
 class ISSDataError(RuntimeError):
     """Raised when MOEX ISS returns incomplete or malformed candle data."""
 
@@ -58,6 +60,8 @@ def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 6
             f"{ISS_BASE}/engines/stock/markets/shares/boards/{quote(board)}/"
             f"securities/{quote(ticker)}/candles.json"
         )
+        # The candle endpoint uses its server-defined page size; pagination
+        # advances by the actual number of rows returned (not a requested limit).
         query = urlencode({
             "from": date_from, "till": date_till, "interval": interval,
             "start": start, "iss.meta": "off", "iss.reverse": "false",
