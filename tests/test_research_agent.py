@@ -105,6 +105,15 @@ class BacktestTests(unittest.TestCase):
         self.assertEqual(result[0].exit_time, data[3].timestamp)
         self.assertEqual(result[0].exit_price, data[3].close)
 
+    def test_max_bars_exit_on_final_dataset_bar_is_closed(self):
+        data = bars([100, 100, 100, 103])
+        result = backtest(data, [Signal(1, 1, "test")],
+                          BacktestConfig(0, 0, None, None, 2))
+        self.assertEqual(result[0].status, "CLOSED")
+        self.assertEqual(result[0].exit_reason, "TIME")
+        self.assertEqual(result[0].exit_time, data[-1].timestamp)
+        self.assertEqual(result[0].exit_price, data[-1].close)
+
     def test_open_terminal_trade_not_counted_as_closed(self):
         data = bars([100, 100, 100, 100])
         result = backtest(data, [Signal(1, 1, "test")],
