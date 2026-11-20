@@ -93,9 +93,10 @@ class MOEXISSTests(unittest.TestCase):
             "TQBR", "2025-03-03", "SBER", 160752,
             309.84, 310.94, 300.20, 305.50, 69490830,
         ]], columns)
+        pages = [page, history_response([])]
         records = fetch_history_records(
             "SBER", "2025-03-01", "2025-03-04",
-            getter=lambda *a, **k: page,
+            getter=lambda *a, **k: pages.pop(0),
         )
         self.assertEqual(len(records), 1)
         record = records[0]
