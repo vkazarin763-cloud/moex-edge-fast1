@@ -70,17 +70,18 @@ def simulate_mark_to_market(
             raise ValueError("trade entry_time must not be after exit_time")
         valid.append(candidate)
 
-    events_by_time: dict[datetime, list[tuple[int, str, str, int, PortfolioTrade]]] = {}
+    events_by_time: dict[datetime, list[tuple[int, str, str, int, str, PortfolioTrade]]] = {}
     first_entry = min((item.trade.entry_time for item in valid), default=None)
     for sequence, candidate in enumerate(valid):
         trade = candidate.trade
         events_by_time.setdefault(trade.entry_time, []).append(
-            (1, candidate.ticker, trade.strategy, sequence, candidate)
+            (1, candidate.ticker, trade.strategy, sequence, "ENTRY", candidate)
         )
-        # Zero-duration trades enter first and exit second at the same instant.
-        exit_priority = 2 if trade.exit_time == trade.entry_time else 0
+        # Match simulate_portfolio: exits normally precede entries; a
+        # zero-duration trade enters and exits before the next same-time entry.
+        exit_priority = 0 if trade.exit_time > trade.entry_time else 1
         events_by_time.setdefault(trade.exit_time, []).append(
-            (exit_priority, candidate.ticker, trade.strategy, sequence, candidate)
+            (exit_priority, candidate.ticker, trade.strategy, sequence, "EXIT", candidate)
         )
 
     market_times = {
@@ -105,10 +106,10 @@ def simulate_mark_to_market(
     snapshots: list[dict] = []
 
     for timestamp in timeline:
-        events = sorted(events_by_time.get(timestamp, []), key=lambda item: item[:4])
-        for priority, ticker, strategy, sequence, candidate in events:
+        events = sorted(events_by_time.get(timestamp, []), key=lambda item: item[:5])
+        for priority, ticker, strategy, sequence, kind, candidate in events:
             trade = candidate.trade
-            if priority == 0 or priority == 2:
+            if kind == "EXIT":
                 position = active_by_sequence.pop(sequence, None)
                 if position is None:
                     continue

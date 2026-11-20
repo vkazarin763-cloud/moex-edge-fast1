@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from research_agent.core import Candle, Trade
-from research_agent.portfolio import PortfolioTrade
+from research_agent.portfolio import PortfolioTrade, simulate_portfolio
 from research_agent.mark_to_market import simulate_mark_to_market
 
 
@@ -101,6 +101,32 @@ class MarkToMarketPortfolioTests(unittest.TestCase):
         self.assertIsNone(row["mark_to_market_equity"])
         self.assertEqual(row["unmarked_positions"][0]["reason"], "NO_POST_ENTRY_CANDLE")
 
+
+    def test_zero_duration_exit_order_matches_portfolio_replay(self):
+        when = datetime(2026, 1, 1, 10)
+        end = datetime(2026, 1, 3)
+        candidates = [
+            make_trade("AAA", when, when, net_return=0.10),
+            make_trade("BBB", when, end, net_return=0.10),
+        ]
+        marks = {
+            "AAA": [candle("2026-01-01", 100.0)],
+            "BBB": [
+                candle("2026-01-01", 100.0),
+                candle("2026-01-02", 101.0),
+            ],
+        }
+
+        portfolio = simulate_portfolio(candidates, max_positions=1)
+        marked = simulate_mark_to_market(candidates, marks, max_positions=1)
+
+        self.assertEqual(marked["closed_trades_accepted"], portfolio["closed_trades_accepted"])
+        self.assertEqual(marked["skipped_position_limit"], portfolio["skipped_position_limit"])
+        self.assertEqual(marked["skipped_ticker_overlap"], portfolio["skipped_ticker_overlap"])
+        self.assertAlmostEqual(
+            marked["final_realized_equity_normalized"],
+            portfolio["final_equity_normalized"],
+        )
 
 if __name__ == "__main__":
     unittest.main()
