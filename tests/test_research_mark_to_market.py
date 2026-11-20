@@ -104,7 +104,6 @@ class MarkToMarketPortfolioTests(unittest.TestCase):
 
     def test_zero_duration_exit_order_matches_portfolio_replay(self):
         when = datetime(2026, 1, 1, 10)
-        next_day = datetime(2026, 1, 2)
         end = datetime(2026, 1, 3)
         candidates = [
             make_trade("AAA", when, when, net_return=0.10),
