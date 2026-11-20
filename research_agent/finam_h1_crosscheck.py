@@ -29,6 +29,7 @@ def compare_h1_series(moex_rows, finam_rows, now=None):
     current = current.astimezone(timezone.utc)
     moex = {}
     excluded_moex_0600 = 0
+    moex_0600_rows = []
     for row in moex_rows:
         moex_start = row.timestamp.replace(tzinfo=MOSCOW) if row.timestamp.tzinfo is None else row.timestamp.astimezone(MOSCOW)
         if moex_start.astimezone(timezone.utc) + timedelta(hours=1) > current:
@@ -36,18 +37,31 @@ def compare_h1_series(moex_rows, finam_rows, now=None):
         key = _local_key(row.timestamp)
         if key.hour in EXCLUDED_LOCAL_HOURS:
             excluded_moex_0600 += 1
+            moex_0600_rows.append({
+                "timestamp_moscow": key.isoformat(),
+                "open": float(row.open), "high": float(row.high),
+                "low": float(row.low), "close": float(row.close),
+                "volume": float(row.volume),
+            })
             continue
         if key in moex:
             raise ValueError(f"Duplicate MOEX H1 timestamp: {key.isoformat()}")
         moex[key] = row
     finam = {}
     excluded_finam_0600 = 0
+    finam_0600_rows = []
     for row in finam_rows:
         if row.is_data_snapshot is True or row.timestamp + timedelta(hours=1) > current:
             continue
         key = _local_key(row.timestamp)
         if key.hour in EXCLUDED_LOCAL_HOURS:
             excluded_finam_0600 += 1
+            finam_0600_rows.append({
+                "timestamp_moscow": key.isoformat(),
+                "open": float(row.open), "high": float(row.high),
+                "low": float(row.low), "close": float(row.close),
+                "volume": float(row.volume),
+            })
             continue
         if key in finam:
             raise ValueError(f"Duplicate Finam H1 timestamp: {key.isoformat()}")
@@ -76,8 +90,27 @@ def compare_h1_series(moex_rows, finam_rows, now=None):
             counts[label] = counts.get(label, 0) + 1
         return dict(sorted(counts.items()))
 
+    main_session_status = (
+        "NO_OVERLAP" if not overlap
+        else ("DATE_COVERAGE_MATCHES" if set(moex) == set(finam)
+              else "DATE_COVERAGE_DIFFERS")
+    )
+    if main_session_status == "DATE_COVERAGE_MATCHES" and (moex_0600_rows or finam_0600_rows):
+        overall_status = "MATCHED_WITH_0600_BUCKET_SEPARATED"
+    else:
+        overall_status = main_session_status
+    if moex_0600_rows and not finam_0600_rows:
+        opening_bucket_status = "MOEX_0600_ONLY"
+    elif finam_0600_rows and not moex_0600_rows:
+        opening_bucket_status = "FINAM_0600_ONLY"
+    elif moex_0600_rows and finam_0600_rows:
+        opening_bucket_status = "BOTH_SOURCES_HAVE_0600_BUCKET"
+    else:
+        opening_bucket_status = "NO_0600_BUCKETS"
+
     return {
-        "status": "NO_OVERLAP" if not overlap else ("DATE_COVERAGE_MATCHES" if set(moex) == set(finam) else "DATE_COVERAGE_DIFFERS"),
+        "status": overall_status,
+        "main_session_status": main_session_status,
         "moex_closed_bars": len(moex),
         "finam_closed_bars": len(finam),
         "matched_bars": len(overlap),
@@ -92,8 +125,26 @@ def compare_h1_series(moex_rows, finam_rows, now=None):
             "excluded_0600_finam_bars": excluded_finam_0600,
             "finam_snapshot_unknown_bars": sum(row.is_data_snapshot is None for row in finam.values()),
             "finam_snapshot_false_bars": sum(row.is_data_snapshot is False for row in finam.values())},
+        "session_scope_diagnostics": {
+            "status": opening_bucket_status,
+            "moex_0600_bars": moex_0600_rows,
+            "finam_0600_bars": finam_0600_rows,
+            "note": (
+                "The 06:00-06:59 Moscow H1 bucket overlaps the MOEX morning "
+                "opening auction window (06:50-07:00) for instruments admitted "
+                "to the morning session. These source-specific bars are reported "
+                "separately and are not treated as matched main-session bars."
+            ),
+        },
         "comparisons": comparisons,
-        "note": "Only completed bars are compared; snapshot=true and still-open hourly bars are excluded. H1 bars stamped 06:00 Moscow time are excluded from this comparison on both sources by policy, with exclusion counts reported. Raw source data is not modified. Unknown snapshot metadata is retained and flagged."
+        "note": (
+            "Only completed bars are compared; snapshot=true and still-open "
+            "hourly bars are excluded. Main-session coverage is evaluated "
+            "separately from the 06:00 Moscow bucket, which is retained in "
+            "session_scope_diagnostics rather than silently discarded. Raw "
+            "source data is not modified. Unknown snapshot metadata is retained "
+            "and flagged."
+        )
     }
 
 
