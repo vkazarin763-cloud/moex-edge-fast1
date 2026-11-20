@@ -136,6 +136,21 @@ def session_date_for_calendar_record(record: StockCalendarRecord) -> date:
     )
 
 
+def _resolve_session_date(
+    record: StockCalendarRecord,
+    calendar: dict[date, StockCalendarRecord],
+) -> date:
+    session_day = session_date_for_calendar_record(record)
+    if session_day != record.trade_date:
+        target = calendar.get(session_day)
+        if target is None or target.is_traded != 1 or target.reason not in ("N", "T"):
+            raise SessionCalendarError(
+                f"Weekend session target is not a verified trading date: "
+                f"{record.trade_date} -> {session_day}"
+            )
+    return session_day
+
+
 def latest_completed_session_date(
     calendar: dict[date, StockCalendarRecord],
     calendar_date_ceiling: str | date,
@@ -150,7 +165,7 @@ def latest_completed_session_date(
     for tradeday, record in calendar.items():
         if tradeday > ceiling or record.is_traded != 1:
             continue
-        session_day = session_date_for_calendar_record(record)
+        session_day = _resolve_session_date(record, calendar)
         if session_day <= ceiling:
             completed.append(session_day)
     if not completed:
@@ -182,7 +197,7 @@ def normalize_daily_candles(
             raise SessionCalendarError(
                 f"Missing MOEX stock-calendar row for candle date {source_date}"
             )
-        session_day = session_date_for_calendar_record(record)
+        session_day = _resolve_session_date(record, calendar)
         if record.reason == "W":
             mapped_weekend_dates.append({
                 "calendar_date": source_date.isoformat(),
