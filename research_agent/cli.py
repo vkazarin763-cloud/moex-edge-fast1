@@ -13,7 +13,7 @@ from .validation import (walk_forward_report, adversarial_cost_check,
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
 from .session_mapping import (earliest_session_date, latest_completed_session_date,
-                              normalize_daily_candles)
+                              normalize_daily_candles, research_eligible_candles)
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
 
@@ -94,8 +94,13 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             )
             if not candles:
                 raise ValueError("No candles remain after completed-session normalization")
+            research_candles, research_eligibility = research_eligible_candles(
+                candles, history_records
+            )
+            if not research_candles:
+                raise ValueError("No research-eligible candles remain after excluding unverified weekend sessions")
             development = [
-                candle for candle in candles
+                candle for candle in research_candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
             ]
             bounded_history_records = [
@@ -125,12 +130,14 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     ],
                 ),
                 "session_date_mapping": session_mapping_diagnostics,
+                "research_eligibility": research_eligibility,
+                "research_input_bars": len(research_candles),
                 "tqbr_history_crosscheck": history_crosscheck,
                 "development_period_end_exclusive": HOLDOUT_START_DATE,
                 "walk_forward": walk_forward_report(development),
                 "adversarial_cost_check": adversarial_cost_check(development),
                 "prospective_holdout": prospective_holdout_report(
-                    candles, HOLDOUT_START_DATE
+                    research_candles, HOLDOUT_START_DATE
                 ),
             }
             development_candles_by_ticker[ticker] = development
@@ -177,8 +184,8 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "The current Moscow calendar date is excluded. The effective end date is "
                 "the latest positive-trade TQBR history date. Weekend candles at or "
                 "before that cutoff remain on their original dates; same-date positive "
-                "NUMTRADES confirms a weekend date, otherwise its session classification "
-                "is marked unverified."
+                "NUMTRADES confirms a weekend date. Unverified weekend bars are retained "
+                "for diagnostics but excluded from all model inputs."
             ),
         },
         "session_date_policy": {
