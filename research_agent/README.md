@@ -12,10 +12,13 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
   (the format returned by MOEX ISS) or all timezone-aware timestamps. Mixed
   aware/naive timestamps are rejected rather than silently compared.
 - MOEX additional weekend sessions can produce valid Saturday/Sunday daily candles.
-  These are retained as separate calendar-day bars; they are not yet re-aggregated
-  into the next ordinary trading day. Therefore `max_bars` counts returned bars,
-  not Monday-Friday trading days. Calendar-aware session aggregation remains a
-  methodology item for review.
+  These remain on their original calendar dates in raw diagnostics. A weekend
+  bar is included in indicators, backtests, portfolio replay, and prospective
+  holdout only when same-date positive TQBR `NUMTRADES` confirms that date; otherwise
+  it is excluded from model inputs and reported separately. No forward mapping or
+  aggregation is performed. Therefore `max_bars` counts research-eligible bars,
+  not necessarily Monday-Friday calendar days. Calendar-aware session verification
+  remains a methodology item for review.
 - A fixed, pre-registered candidate set: Donchian-20 breakout, EMA-20/50 cross,
   RSI-14 trend momentum, MACD-12/26 crossover and Keltner-20/2ATR breakout. Parameters are not fitted on the evaluation data.
 - Signal is calculated on a completed candle; entry is the next available candle open.
