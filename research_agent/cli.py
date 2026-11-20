@@ -37,6 +37,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
             ]
+            history_records = None
             try:
                 history_records = fetch_history_records(
                     ticker, fetch_from, date_till, board="TQBR"
@@ -55,7 +56,10 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "candles": len(candles),
                 "first_timestamp": candles[0].timestamp.isoformat(),
                 "last_timestamp": candles[-1].timestamp.isoformat(),
-                "data_quality": candle_quality_report(candles, fetch_from, date_till),
+                "data_quality": candle_quality_report(
+                    candles, fetch_from, date_till,
+                    history_records=history_records,
+                ),
                 "tqbr_history_crosscheck": history_crosscheck,
                 "development_period_end_exclusive": HOLDOUT_START_DATE,
                 "walk_forward": walk_forward_report(development),

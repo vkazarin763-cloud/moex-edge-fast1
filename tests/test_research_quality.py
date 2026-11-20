@@ -29,6 +29,36 @@ class CandleQualityReportTests(unittest.TestCase):
         self.assertEqual(report["zero_volume_bars"], 1)
         self.assertEqual(report["checks"]["ohlc_relationships"], "PASS")
 
+    def test_verified_weekend_trade_is_not_flagged_as_calendar_anomaly(self):
+        saturday = make_bars([3])
+        records = [HistoryRecord(date(2025, 1, 4), 17)]
+        report = candle_quality_report(
+            saturday, warmup_bars=0, preferred_min_bars=0,
+            history_records=records,
+        )
+        self.assertEqual(report["weekend_bars"], 1)
+        self.assertEqual(report["weekend_session_diagnostics"]["verified_trade_bars"], 1)
+        self.assertEqual(report["weekend_session_diagnostics"]["unverified_bars"], 0)
+        self.assertEqual(report["status"], "VALID")
+
+    def test_unverified_weekend_trade_remains_a_quality_caveat(self):
+        saturday = make_bars([3])
+        report = candle_quality_report(
+            saturday, warmup_bars=0, preferred_min_bars=0,
+            history_records=[HistoryRecord(date(2025, 1, 4), 0)],
+        )
+        self.assertEqual(report["weekend_session_diagnostics"]["candles_on_zero_trade_dates"], 1)
+        self.assertEqual(report["weekend_session_diagnostics"]["unverified_bars"], 1)
+        self.assertEqual(report["status"], "VALID_WITH_CAVEATS")
+
+    def test_weekend_without_history_remains_unverified(self):
+        report = candle_quality_report(
+            make_bars([3]), warmup_bars=0, preferred_min_bars=0,
+        )
+        self.assertEqual(report["weekend_session_diagnostics"]["dates_without_history_rows"], 1)
+        self.assertEqual(report["weekend_session_diagnostics"]["unverified_bars"], 1)
+        self.assertEqual(report["status"], "VALID_WITH_CAVEATS")
+
     def test_reports_requested_range_coverage(self):
         report = candle_quality_report(make_bars([2, 3]), "2025-01-01", "2025-01-06")
         self.assertEqual(report["start_delay_calendar_days"], 2)
