@@ -144,7 +144,7 @@ def fetch_history_records(
         required = {"TRADEDATE", "SECID", "BOARDID", "NUMTRADES"}
         if not required.issubset(columns):
             raise ISSDataError(f"MOEX ISS history columns missing: {sorted(required - set(columns))}")
-        idx = {name: columns.index(name) for name in required}
+        idx = {name: columns.index(name) for name in columns}
         rows = block["data"]
         for row in rows:
             try:
