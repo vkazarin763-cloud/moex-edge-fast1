@@ -1,8 +1,9 @@
-"""History-backed MOEX daily session mapping.
+"""Conservative handling of MOEX daily candles and weekend-session evidence.
 
-The public per-security TQBR history is used to infer the trading-session date
-for weekend candles. This deliberately does not claim direct calendar access:
-the machine-readable MOEX calendar endpoint requires a subscription.
+Weekend candles remain on their original calendar dates. Public per-security
+TQBR history can confirm a same-date positive-trade session, but absence of a
+history row never causes a candle to be shifted or merged into another date.
+The subscription-only machine-readable MOEX calendar is not available here.
 """
 from __future__ import annotations
 
