@@ -41,91 +41,66 @@ class SessionDateBoundsTests(unittest.TestCase):
 
 
 class WeekendHistoryMappingTests(unittest.TestCase):
-    def test_weekend_bars_map_to_next_positive_history_date_and_aggregate(self):
-        history = [
-            HistoryRecord(date(2025, 3, 3), 15),
-            HistoryRecord(date(2025, 3, 4), 12),
-        ]
+    def test_weekend_bars_are_preserved_separately_without_history(self):
         raw = [
             Candle(datetime(2025, 3, 1), 100, 105, 99, 103, 10),
             Candle(datetime(2025, 3, 2), 103, 108, 102, 107, 20),
             Candle(datetime(2025, 3, 3), 107, 110, 106, 109, 30),
-            Candle(datetime(2025, 3, 4), 109, 112, 108, 111, 40),
         ]
-        normalized, diagnostics = normalize_daily_candles(
-            raw, history, max_session_date="2025-03-04"
-        )
+        normalized, diagnostics = normalize_daily_candles(raw, [
+            HistoryRecord(date(2025, 3, 3), 15),
+        ], max_session_date="2025-03-03")
         self.assertEqual(
             [item.timestamp.date() for item in normalized],
-            [date(2025, 3, 3), date(2025, 3, 4)],
+            [date(2025, 3, 1), date(2025, 3, 2), date(2025, 3, 3)],
         )
-        monday = normalized[0]
         self.assertEqual(
-            (monday.open, monday.high, monday.low, monday.close, monday.volume),
-            (100, 110, 99, 109, 60),
+            [(item.open, item.high, item.low, item.close, item.volume)
+             for item in normalized[:2]],
+            [(100, 105, 99, 103, 10), (103, 108, 102, 107, 20)],
         )
-        self.assertEqual(diagnostics["weekend_candles_mapped"], 2)
-        self.assertEqual(diagnostics["unresolved_weekend_candles"], [])
-        self.assertTrue(diagnostics["session_date_mapping_complete"])
+        self.assertEqual(diagnostics["weekend_candles_preserved"], 2)
+        self.assertEqual(len(diagnostics["unresolved_weekend_candles"]), 2)
+        self.assertEqual(diagnostics["sessions_combining_multiple_calendar_dates"], [])
+        self.assertFalse(diagnostics["session_date_mapping_complete"])
 
-    def test_same_date_positive_history_keeps_transferred_weekend_workday(self):
-        history = [
-            HistoryRecord(date(2025, 3, 1), 4),
-            HistoryRecord(date(2025, 3, 3), 15),
-        ]
+    def test_same_date_positive_history_confirms_weekend_bar_without_merging(self):
         raw = [
             Candle(datetime(2025, 3, 1), 100, 105, 99, 103, 10),
             Candle(datetime(2025, 3, 3), 103, 108, 102, 107, 20),
         ]
-        normalized, diagnostics = normalize_daily_candles(raw, history)
+        normalized, diagnostics = normalize_daily_candles(
+            raw, [HistoryRecord(date(2025, 3, 1), 4),
+                  HistoryRecord(date(2025, 3, 3), 15)]
+        )
         self.assertEqual(
             [item.timestamp.date() for item in normalized],
             [date(2025, 3, 1), date(2025, 3, 3)],
         )
-        self.assertEqual(
-            diagnostics["weekend_session_mappings"][0]["mapping_basis"],
-            "same-date positive NUMTRADES",
-        )
+        self.assertTrue(diagnostics["weekend_session_mappings"][0][
+            "verified_by_tqbr_history"
+        ])
+        self.assertTrue(diagnostics["session_date_mapping_complete"])
 
-    def test_weekend_session_is_excluded_until_target_date_completes(self):
-        history = [HistoryRecord(date(2025, 3, 3), 15)]
+    def test_unfinished_weekend_after_cutoff_is_excluded_without_relabeling(self):
         raw = [
             Candle(datetime(2025, 3, 1), 100, 105, 99, 103, 10),
             Candle(datetime(2025, 3, 2), 103, 108, 102, 107, 20),
         ]
         normalized, diagnostics = normalize_daily_candles(
-            raw, history, max_session_date="2025-03-02"
+            raw, [], max_session_date="2025-02-28"
         )
         self.assertEqual(normalized, [])
         self.assertEqual(
-            diagnostics["source_bars_excluded_beyond_completed_session_cutoff"],
-            2,
+            diagnostics["source_bars_excluded_beyond_completed_session_cutoff"], 2
         )
 
-    def test_weekend_without_confirmable_target_is_excluded_and_reported(self):
-        raw = [
-            Candle(datetime(2025, 3, 1), 100, 105, 99, 103, 10),
-            Candle(datetime(2025, 3, 2), 103, 108, 102, 107, 0),
-        ]
+    def test_weekend_zero_volume_is_preserved_but_unverified(self):
+        raw = [Candle(datetime(2025, 3, 1), 100, 105, 99, 103, 0)]
         normalized, diagnostics = normalize_daily_candles(raw, [])
-        self.assertEqual(normalized, [])
-        self.assertEqual(len(diagnostics["unresolved_weekend_candles"]), 2)
-        self.assertFalse(diagnostics["session_date_mapping_complete"])
-
-    def test_weekend_mapping_handles_extended_new_year_holiday_gap(self):
-        history = [HistoryRecord(date(2025, 1, 14), 25)]
-        raw = [
-            Candle(datetime(2025, 1, 4), 100, 104, 99, 103, 10),
-            Candle(datetime(2025, 1, 5), 103, 108, 102, 107, 20),
-            Candle(datetime(2025, 1, 14), 107, 110, 106, 109, 30),
-        ]
-        normalized, diagnostics = normalize_daily_candles(
-            raw, history, max_session_date="2025-01-14"
-        )
         self.assertEqual(len(normalized), 1)
-        self.assertEqual(normalized[0].timestamp.date(), date(2025, 1, 14))
-        self.assertEqual(normalized[0].volume, 60)
-        self.assertEqual(diagnostics["weekend_candles_mapped"], 2)
+        self.assertFalse(diagnostics["session_date_mapping_complete"])
+        self.assertEqual(diagnostics["unresolved_weekend_candles"][0]["volume"], 0)
 
     def test_duplicate_history_dates_are_rejected(self):
         duplicate = [

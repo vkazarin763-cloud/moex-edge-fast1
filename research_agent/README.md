@@ -38,8 +38,8 @@ fetches daily candles and per-security TQBR history from public MOEX ISS for the
 fixed 44-symbol first-listing universe and produces a JSON report. `moex_iss.py`
 paginates responses, validates OHLCV and rejects duplicate timestamps without
 fabricating missing candles. The subscription-only machine-readable stock calendar
-is not called; weekend session dates are inferred from each security's next
-positive-trade history date and unresolved weekend bars are excluded. Every analyzed ticker also receives a `data_quality` section with requested/actual date boundaries, zero-volume and weekend bar counts, history sufficiency, and long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
+is not called; weekend bars remain on their original dates and are flagged when
+same-date positive-trade TQBR history cannot confirm them. Every analyzed ticker also receives a `data_quality` section with requested/actual date boundaries, zero-volume and weekend bar counts, history sufficiency, and long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
 evaluates fixed candidates on sequential walk-forward folds with expanding indicator
 history and explicit minimum-sample/stability gates. A pass is labelled
 `DEVELOPMENT_SCREEN_PASS_UNADJUSTED`: it is only a development shortlist, not an

@@ -81,12 +81,12 @@ def normalize_daily_candles(
     history_records: list[HistoryRecord],
     max_session_date: str | date | None = None,
 ) -> tuple[list[Candle], dict]:
-    """Map weekend candles to the next positive TQBR history date and aggregate OHLCV.
+    """Preserve each MOEX candle date unless TQBR confirms that same date.
 
-    A positive same-date TQBR history row identifies a transferred weekend workday
-    and keeps that date. Otherwise a weekend candle with positive volume is mapped
-    to the next later positive-trade history date for that same security. If no
-    target date can be established, the weekend candle is excluded and reported.
+    TQBR history often has no row for weekend sessions. Absence of a history row
+    is not evidence that the weekend candle belongs to the following weekday.
+    Therefore this function never shifts or merges a weekend candle into a
+    future date. Unconfirmed weekend dates remain separate and are flagged.
     """
     rows = validate_candles(candles)
     ceiling = None
@@ -96,105 +96,64 @@ def normalize_daily_candles(
         ceiling = max_session_date
 
     by_date = _records_by_date(history_records)
-    future_trade_dates = sorted(
-        record.trade_date
-        for record in history_records
-        if record.num_trades is not None and record.num_trades > 0
-    )
-
-    grouped: dict[date, list[Candle]] = defaultdict(list)
-    weekend_mappings = []
-    unresolved_weekend = []
-    weekday_candles_without_history = []
-
+    normalized = []
+    weekend_diagnostics = []
+    excluded_after_cutoff = 0
     for candle in rows:
         source_date = candle.timestamp.date()
-        record = by_date.get(source_date)
+        if ceiling is not None and source_date > ceiling:
+            excluded_after_cutoff += 1
+            continue
         if source_date.weekday() >= 5:
-            if record is not None:
-                if record.num_trades is not None and record.num_trades > 0:
-                    session_day = source_date
-                else:
-                    unresolved_weekend.append({
-                        "calendar_date": source_date.isoformat(),
-                        "reason": "same-date TQBR history does not confirm positive trades",
-                    })
-                    continue
-            else:
-                if candle.volume <= 0:
-                    unresolved_weekend.append({
-                        "calendar_date": source_date.isoformat(),
-                        "reason": "zero-volume weekend candle has no same-date trade record",
-                    })
-                    continue
-                target_dates = [day for day in future_trade_dates if day > source_date]
-                if not target_dates:
-                    unresolved_weekend.append({
-                        "calendar_date": source_date.isoformat(),
-                        "reason": "no later positive-trade TQBR history date is available yet",
-                    })
-                    continue
-                session_day = target_dates[0]
-            weekend_mappings.append({
+            record = by_date.get(source_date)
+            confirmed = (
+                record is not None
+                and record.num_trades is not None
+                and record.num_trades > 0
+            )
+            weekend_diagnostics.append({
                 "calendar_date": source_date.isoformat(),
-                "trade_session_date": session_day.isoformat(),
+                "trade_session_date": source_date.isoformat(),
                 "mapping_basis": (
                     "same-date positive NUMTRADES"
-                    if session_day == source_date
-                    else "next later positive NUMTRADES date"
+                    if confirmed
+                    else "preserved as its own calendar date; TQBR session unverified"
                 ),
+                "verified_by_tqbr_history": confirmed,
+                "volume": candle.volume,
             })
-        else:
-            session_day = source_date
-            if record is None:
-                weekday_candles_without_history.append(source_date.isoformat())
-
-        grouped[session_day].append(candle)
-
-    normalized = []
-    excluded_source_bars = 0
-    combined_sessions = []
-    for session_day in sorted(grouped):
-        session_bars = sorted(grouped[session_day], key=lambda item: item.timestamp)
-        if ceiling is not None and session_day > ceiling:
-            excluded_source_bars += len(session_bars)
-            continue
-        tzinfo = session_bars[0].timestamp.tzinfo
-        timestamp = datetime.combine(session_day, time.min, tzinfo=tzinfo)
-        normalized.append(Candle(
-            timestamp=timestamp,
-            open=session_bars[0].open,
-            high=max(item.high for item in session_bars),
-            low=min(item.low for item in session_bars),
-            close=session_bars[-1].close,
-            volume=sum(item.volume for item in session_bars),
-        ))
-        if len(session_bars) > 1:
-            combined_sessions.append({
-                "trade_session_date": session_day.isoformat(),
-                "source_calendar_dates": [
-                    item.timestamp.date().isoformat() for item in session_bars
-                ],
-                "source_bar_count": len(session_bars),
-            })
+        normalized.append(candle)
 
     normalized = validate_candles(normalized) if normalized else []
+    unverified = [
+        item for item in weekend_diagnostics
+        if not item["verified_by_tqbr_history"]
+    ]
     diagnostics = {
-        "mapping_source": "MOEX ISS public per-security TQBR daily history",
+        "mapping_source": "MOEX ISS daily candles; optional same-date TQBR history cross-check",
         "mapping_rule": (
-            "Positive same-date NUMTRADES keeps a transferred weekend workday; "
-            "otherwise a positive-volume weekend candle maps to the next later "
-            "positive NUMTRADES date for that security."
+            "Weekend candles remain on their original calendar dates. No forward "
+            "mapping or aggregation is performed without an authoritative session calendar."
         ),
         "mapping_is_inferred_not_direct_calendar_lookup": True,
         "raw_candles": len(rows),
         "normalized_session_candles": len(normalized),
-        "weekend_candles_mapped": len(weekend_mappings),
-        "weekend_session_mappings": weekend_mappings,
-        "unresolved_weekend_candles": unresolved_weekend,
-        "weekday_candles_without_history_record": weekday_candles_without_history,
-        "sessions_combining_multiple_calendar_dates": combined_sessions,
-        "source_bars_excluded_beyond_completed_session_cutoff": excluded_source_bars,
-        "session_date_mapping_complete": not unresolved_weekend,
+        "weekend_candles_preserved": len(weekend_diagnostics),
+        "weekend_session_mappings": weekend_diagnostics,
+        "unresolved_weekend_candles": unverified,
+        "weekday_candles_without_history_record": [
+            candle.timestamp.date().isoformat()
+            for candle in normalized
+            if candle.timestamp.weekday() < 5
+            and candle.timestamp.date() not in by_date
+        ],
+        "sessions_combining_multiple_calendar_dates": [],
+        "source_bars_excluded_beyond_completed_session_cutoff": excluded_after_cutoff,
+        "session_date_mapping_complete": not unverified,
+        "warning": (
+            "Weekend candles are retained as separate bars but their official "
+            "trading-session classification is unverified."
+            if unverified else None
+        ),
     }
     return normalized, diagnostics
