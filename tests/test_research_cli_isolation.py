@@ -101,6 +101,10 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
             patch.object(cli, "fetch_history_records", return_value=history_records),
             patch.object(cli, "fetch_candles", side_effect=RuntimeError("raw candles unavailable")),
+            patch.object(cli, "walk_forward_report", return_value={"status": "TEST"}),
+            patch.object(cli, "adversarial_cost_check", return_value={"status": "TEST"}),
+            patch.object(cli, "prospective_holdout_report", return_value={"status": "WAITING"}),
+            patch.object(cli, "walk_forward_portfolio_report", return_value={"status": "TEST"}),
         ):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["EMPTY"])
         result = report["results"]["EMPTY"]
