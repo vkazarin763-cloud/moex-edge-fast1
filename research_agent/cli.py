@@ -5,6 +5,7 @@ import argparse
 import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from .moex_iss import fetch_candles, fetch_history_records
 from .validation import (walk_forward_report, adversarial_cost_check,
@@ -13,6 +14,21 @@ from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
+
+MOEX_TIMEZONE = ZoneInfo("Europe/Moscow")
+
+
+def cap_to_last_completed_moscow_date(
+    requested_till: str, now: datetime | None = None,
+) -> str:
+    """Never include today's potentially unfinished MOEX daily candle."""
+    requested_date = date.fromisoformat(requested_till)
+    if now is not None and (now.tzinfo is None or now.utcoffset() is None):
+        raise ValueError("now must be timezone-aware")
+    local_now = now.astimezone(MOEX_TIMEZONE) if now is not None else datetime.now(MOEX_TIMEZONE)
+    last_completed_date = local_now.date() - timedelta(days=1)
+    return min(requested_date, last_completed_date).isoformat()
+
 
 MOEX_FIRST_LISTING_44 = [
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
@@ -26,13 +42,21 @@ MOEX_FIRST_LISTING_44 = [
 
 def run_universe(date_from: str, date_till: str, tickers: list[str] | None = None) -> dict:
     selected = tickers or MOEX_FIRST_LISTING_44
+    requested_till = date.fromisoformat(date_till).isoformat()
+    effective_till = cap_to_last_completed_moscow_date(requested_till)
+    requested_from = date.fromisoformat(date_from)
+    if requested_from > date.fromisoformat(effective_till):
+        raise ValueError(
+            "date_from is after the latest completed Moscow calendar date; "
+            "unfinished current-day D1 candles are excluded"
+        )
     minimum_history_start = date.fromisoformat(HOLDOUT_START_DATE) - timedelta(days=3 * 365 + 2)
-    fetch_from = min(date.fromisoformat(date_from), minimum_history_start).isoformat()
+    fetch_from = min(requested_from, minimum_history_start).isoformat()
     results = {}
     development_candles_by_ticker = {}
     for ticker in selected:
         try:
-            candles = fetch_candles(ticker, fetch_from, date_till, interval=24, board="TQBR")
+            candles = fetch_candles(ticker, fetch_from, effective_till, interval=24, board="TQBR")
             development = [
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
@@ -40,10 +64,10 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             history_records = None
             try:
                 history_records = fetch_history_records(
-                    ticker, fetch_from, date_till, board="TQBR"
+                    ticker, fetch_from, effective_till, board="TQBR"
                 )
                 history_crosscheck = audit_tqbr_history(
-                    candles, history_records, fetch_from, date_till
+                    candles, history_records, fetch_from, effective_till
                 )
             except Exception as history_exc:
                 history_crosscheck = {
@@ -57,7 +81,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "first_timestamp": candles[0].timestamp.isoformat(),
                 "last_timestamp": candles[-1].timestamp.isoformat(),
                 "data_quality": candle_quality_report(
-                    candles, fetch_from, date_till,
+                    candles, fetch_from, effective_till,
                     history_records=history_records,
                 ),
                 "tqbr_history_crosscheck": history_crosscheck,
@@ -96,7 +120,14 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         "interval_minutes": 24 * 60,
         "date_from": fetch_from,
         "requested_date_from": date_from,
-        "date_till": date_till,
+        "date_till": effective_till,
+        "requested_date_till": requested_till,
+        "daily_bar_completion_policy": {
+            "timezone": "Europe/Moscow",
+            "maximum_requested_candle_date": effective_till,
+            "current_moscow_date_excluded": True,
+            "reason": "The current daily candle may be unfinished and is excluded from all research stages.",
+        },
         "universe": selected,
         "development_holdout_policy": {
             "holdout_start": HOLDOUT_START_DATE,
