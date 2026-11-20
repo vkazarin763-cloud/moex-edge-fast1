@@ -26,6 +26,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -p "test_research_*.py" -v
           python -m unittest discover -s tests -p "test_moex_iss.py" -v
+          python -m unittest discover -s tests -p "test_moex_session_mapping.py" -v
+          python -m unittest discover -s tests -p "test_moex_trading_day_bars.py" -v
           python -m unittest discover -s tests -p "test_finam_market_data.py" -v
           python -m unittest discover -s tests -p "test_finam_crosscheck.py" -v
           python -m unittest discover -s tests -p "test_finam_h1_crosscheck.py" -v
