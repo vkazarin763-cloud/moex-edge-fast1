@@ -1,5 +1,5 @@
 import unittest
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from urllib.parse import parse_qs, urlparse
 
 from research_agent.core import Candle
@@ -43,7 +43,9 @@ class StockCalendarFetchTests(unittest.TestCase):
 class WeekendSessionAggregationTests(unittest.TestCase):
     def setUp(self):
         self.calendar = {
-            date(2025, 2, 28): StockCalendarRecord(\n                date(2025, 2, 28), 1, None, "N"\n            ),\n            date(2025, 3, 1): StockCalendarRecord(
+            date(2025, 2, 28): StockCalendarRecord(
+                date(2025, 2, 28), 1, None, "N"
+            ),\n            date(2025, 3, 1): StockCalendarRecord(
                 date(2025, 3, 1), 1, date(2025, 3, 3), "W"
             ),
             date(2025, 3, 2): StockCalendarRecord(
