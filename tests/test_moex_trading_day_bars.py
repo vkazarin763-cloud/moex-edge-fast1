@@ -68,6 +68,14 @@ class TradingDayBarTests(unittest.TestCase):
                 HistoryRecord(date(2025, 3, 3), 10)
             ])
 
+    def test_prelaunch_weekend_fragment_requires_same_date_history(self):
+        raw = [Candle(datetime(2024, 4, 27), 100, 101, 99, 100, 10)]
+        history = [HistoryRecord(date(2024, 4, 29), 20, 100, 102, 98, 101, 1000)]
+        result = reconcile_session_candles(raw, history)
+        self.assertFalse(result["complete"])
+        self.assertEqual(result["raw_weekend_candles_unmapped"], 1)
+        self.assertIn("pre-launch", result["unassigned_examples"][0]["reason"])
+
     def test_unmapped_weekend_fragment_is_reported_not_silently_shifted(self):
         raw = [Candle(datetime(2025, 3, 1), 100, 101, 99, 100, 10)]
         result = reconcile_session_candles(raw, [])
