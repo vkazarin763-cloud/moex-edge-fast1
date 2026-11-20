@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from research_agent import cli
 from research_agent.core import Candle
+from research_agent.moex_iss import HistoryRecord
 
 
 def make_candles():
@@ -18,7 +19,7 @@ def make_candles():
             100.5 + offset,
             1000.0,
         )
-        for offset in range(4)
+        for offset in range(3)
     ]
 
 
@@ -45,7 +46,15 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             observed["portfolio_kwargs"] = kwargs
             return {"status": "DEVELOPMENT_WALK_FORWARD_PORTFOLIO"}
 
+        history_records = [
+            HistoryRecord(date(2023, 11, 20), 10),
+            HistoryRecord(date(2026, 11, 18), 10),
+            HistoryRecord(date(2026, 11, 19), 10),
+            HistoryRecord(date(2026, 11, 20), 10),
+        ]
         with (
+            patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
+            patch.object(cli, "fetch_history_records", return_value=history_records),
             patch.object(cli, "fetch_candles", return_value=candles) as fetch,
             patch.object(cli, "candle_quality_report", return_value={"status": "TEST"}),
             patch.object(cli, "walk_forward_report", side_effect=capture_development),
@@ -73,7 +82,17 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         )
 
     def test_empty_fetch_is_reported_as_symbol_error_not_crash(self):
-        with patch.object(cli, "fetch_candles", return_value=[]):
+        history_records = [
+            HistoryRecord(date(2023, 11, 20), 10),
+            HistoryRecord(date(2026, 11, 18), 10),
+            HistoryRecord(date(2026, 11, 19), 10),
+            HistoryRecord(date(2026, 11, 20), 10),
+        ]
+        with (
+            patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
+            patch.object(cli, "fetch_history_records", return_value=history_records),
+            patch.object(cli, "fetch_candles", return_value=[]),
+        ):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["EMPTY"])
         self.assertEqual(report["results"]["EMPTY"]["status"], "DATA_OR_ANALYSIS_ERROR")
         self.assertEqual(report["development_portfolio"]["status"], "NO_DEVELOPMENT_DATA")

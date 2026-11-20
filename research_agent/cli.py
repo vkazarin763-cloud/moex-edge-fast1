@@ -12,6 +12,8 @@ from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
+from .session_mapping import (earliest_session_date, latest_completed_session_date,
+                              normalize_daily_candles)
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
 
@@ -43,31 +45,67 @@ MOEX_FIRST_LISTING_44 = [
 def run_universe(date_from: str, date_till: str, tickers: list[str] | None = None) -> dict:
     selected = tickers or MOEX_FIRST_LISTING_44
     requested_till = date.fromisoformat(date_till).isoformat()
-    effective_till = cap_to_last_completed_moscow_date(requested_till)
+    calendar_date_ceiling = cap_to_last_completed_moscow_date(requested_till)
     requested_from = date.fromisoformat(date_from)
-    if requested_from > date.fromisoformat(effective_till):
-        raise ValueError(
-            "date_from is after the latest completed Moscow calendar date; "
-            "unfinished current-day D1 candles are excluded"
-        )
     minimum_history_start = date.fromisoformat(HOLDOUT_START_DATE) - timedelta(days=3 * 365 + 2)
     fetch_from = min(requested_from, minimum_history_start).isoformat()
+    history_fetch_till = (
+        date.fromisoformat(calendar_date_ceiling) + timedelta(days=7)
+    ).isoformat()
+
+    history_records_by_ticker = {}
+    history_errors = {}
+    for ticker in selected:
+        try:
+            history_records_by_ticker[ticker] = fetch_history_records(
+                ticker, fetch_from, history_fetch_till, board="TQBR"
+            )
+        except Exception as history_exc:
+            history_records_by_ticker[ticker] = None
+            history_errors[ticker] = str(history_exc)
+
+    effective_till = latest_completed_session_date(
+        history_records_by_ticker, calendar_date_ceiling
+    ).isoformat()
+    effective_from = earliest_session_date(
+        history_records_by_ticker, fetch_from, effective_till
+    ).isoformat()
+    if requested_from > date.fromisoformat(effective_till):
+        raise ValueError(
+            "date_from is after the latest completed MOEX session confirmed by "
+            "positive TQBR history; unfinished current-day and weekend-linked "
+            "sessions are excluded"
+        )
+
     results = {}
     development_candles_by_ticker = {}
     for ticker in selected:
         try:
-            candles = fetch_candles(ticker, fetch_from, effective_till, interval=24, board="TQBR")
+            history_records = history_records_by_ticker[ticker]
+            if history_records is None:
+                raise ValueError(
+                    "TQBR history unavailable for session mapping: "
+                    + history_errors.get(ticker, "unknown history error")
+                )
+            raw_candles = fetch_candles(
+                ticker, fetch_from, calendar_date_ceiling, interval=24, board="TQBR"
+            )
+            candles, session_mapping_diagnostics = normalize_daily_candles(
+                raw_candles, history_records, max_session_date=effective_till
+            )
+            if not candles:
+                raise ValueError("No candles remain after completed-session normalization")
             development = [
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
             ]
-            history_records = None
+            bounded_history_records = [
+                record for record in history_records
+                if record.trade_date <= date.fromisoformat(effective_till)
+            ]
             try:
-                history_records = fetch_history_records(
-                    ticker, fetch_from, effective_till, board="TQBR"
-                )
                 history_crosscheck = audit_tqbr_history(
-                    candles, history_records, fetch_from, effective_till
+                    candles, bounded_history_records, fetch_from, effective_till
                 )
             except Exception as history_exc:
                 history_crosscheck = {
@@ -81,9 +119,13 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "first_timestamp": candles[0].timestamp.isoformat(),
                 "last_timestamp": candles[-1].timestamp.isoformat(),
                 "data_quality": candle_quality_report(
-                    candles, fetch_from, effective_till,
-                    history_records=history_records,
+                    candles, effective_from, effective_till,
+                    history_records=bounded_history_records,
+                    session_date_mapping_complete=session_mapping_diagnostics[
+                        "session_date_mapping_complete"
+                    ],
                 ),
+                "session_date_mapping": session_mapping_diagnostics,
                 "tqbr_history_crosscheck": history_crosscheck,
                 "development_period_end_exclusive": HOLDOUT_START_DATE,
                 "walk_forward": walk_forward_report(development),
@@ -115,18 +157,47 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         }
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "source": "MOEX ISS public historical candles and TQBR daily history",
+        "source": "MOEX ISS public historical candles and per-security TQBR daily history",
         "board": "TQBR",
         "interval_minutes": 24 * 60,
-        "date_from": fetch_from,
+        "date_from": effective_from,
         "requested_date_from": date_from,
+        "history_mapping_fetch_from": fetch_from,
+        "history_mapping_fetch_till": history_fetch_till,
         "date_till": effective_till,
         "requested_date_till": requested_till,
         "daily_bar_completion_policy": {
             "timezone": "Europe/Moscow",
-            "maximum_requested_candle_date": effective_till,
+            "maximum_requested_candle_date": calendar_date_ceiling,
+            "maximum_completed_session_date": effective_till,
             "current_moscow_date_excluded": True,
-            "reason": "The current daily candle may be unfinished and is excluded from all research stages.",
+            "weekend_linked_sessions_excluded_until_positive_target_history_exists": True,
+            "reason": (
+                "The current calendar date is excluded. The latest completed session "
+                "is determined from positive TQBR NUMTRADES records. Weekend candles "
+                "are included only when a later positive-trade history date confirms "
+                "their target session."
+            ),
+        },
+        "session_date_policy": {
+            "source": "MOEX ISS public per-security TQBR daily history",
+            "weekend_mapping": (
+                "A weekend candle with positive volume maps to the next later date "
+                "with positive NUMTRADES for that security."
+            ),
+            "transferred_weekend_day": (
+                "A positive same-date NUMTRADES row keeps the weekend date as its "
+                "own trading session."
+            ),
+            "aggregation": (
+                "Chronological first open, maximum high, minimum low, last close, "
+                "summed volume."
+            ),
+            "limitation": (
+                "This is a per-security history inference, not a direct lookup of "
+                "the subscription-only machine-readable exchange calendar. "
+                "Unresolved weekend candles are excluded and reported."
+            ),
         },
         "universe": selected,
         "development_holdout_policy": {
@@ -136,11 +207,11 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "candidate_set_version": CANDIDATE_SET_VERSION,
             "multiple_testing_correction": holdout_correction,
         },
+        "history_fetch_errors": history_errors,
         "results": results,
         "development_portfolio": development_portfolio,
         "safety": "Research only. No broker APIs, order placement, Telegram, or production-state writes.",
     }
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only MOEX EDGE AI Research Agent")

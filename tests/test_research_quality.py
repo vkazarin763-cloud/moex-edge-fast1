@@ -16,6 +16,14 @@ def make_bars(days, volumes=None):
 
 
 class CandleQualityReportTests(unittest.TestCase):
+    def test_records_history_backed_mapping_without_claiming_official_calendar(self):
+        report = candle_quality_report(
+            make_bars([0, 1]), session_date_mapping_complete=True,
+        )
+        self.assertTrue(report["session_date_mapping_complete"])
+        self.assertFalse(report["exchange_calendar_verified"])
+        self.assertIn("not a direct official-calendar lookup", report["calendar_caveat"])
+
     def test_reports_date_gap_without_claiming_missing_sessions(self):
         report = candle_quality_report(make_bars([0, 1, 7]), "2025-01-01", "2025-01-08")
         self.assertEqual(report["calendar_gap_count"], 1)
@@ -35,6 +43,7 @@ class CandleQualityReportTests(unittest.TestCase):
         report = candle_quality_report(
             saturday, warmup_bars=0, preferred_min_bars=0,
             history_records=records,
+            session_date_mapping_complete=True,
         )
         self.assertEqual(report["weekend_bars"], 1)
         self.assertEqual(report["weekend_session_diagnostics"]["verified_trade_bars"], 1)

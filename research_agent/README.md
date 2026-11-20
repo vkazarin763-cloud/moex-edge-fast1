@@ -34,9 +34,12 @@ Each file should contain one instrument and one timeframe, sorted oldest first.
 ## Important limitations
 
 The read-only runner (`python -m research_agent.cli --from YYYY-MM-DD --till YYYY-MM-DD`)
-fetches daily candles from MOEX ISS for the fixed 44-symbol first-listing universe
-and produces a JSON report. `moex_iss.py` paginates responses, validates OHLCV and
-rejects duplicate timestamps without fabricating missing candles. Every analyzed ticker also receives a `data_quality` section with requested/actual date boundaries, zero-volume and weekend bar counts, history sufficiency, and long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
+fetches daily candles and per-security TQBR history from public MOEX ISS for the
+fixed 44-symbol first-listing universe and produces a JSON report. `moex_iss.py`
+paginates responses, validates OHLCV and rejects duplicate timestamps without
+fabricating missing candles. The subscription-only machine-readable stock calendar
+is not called; weekend session dates are inferred from each security's next
+positive-trade history date and unresolved weekend bars are excluded. Every analyzed ticker also receives a `data_quality` section with requested/actual date boundaries, zero-volume and weekend bar counts, history sufficiency, and long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
 evaluates fixed candidates on sequential walk-forward folds with expanding indicator
 history and explicit minimum-sample/stability gates. A pass is labelled
 `DEVELOPMENT_SCREEN_PASS_UNADJUSTED`: it is only a development shortlist, not an
@@ -44,7 +47,7 @@ independent or multiplicity-adjusted result. The separate prospective holdout
 is the only stage that applies HAC inference, block-bootstrap intervals and
 Holm correction.
 
-This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting, explicit portfolio risk sizing and exchange-calendar-aware session aggregation remain limitations. Market-breadth regimes are descriptive only and have not been independently validated or used to select strategies. Regime analysis and independent adversarial validation also remain outstanding. The
+This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting and explicit portfolio risk sizing remain limitations. Market-breadth regimes are descriptive only and have not been independently validated or used to select strategies. Regime analysis and independent adversarial validation also remain outstanding. The
 prospective holdout includes HAC inference, moving-block bootstrap intervals and
 Holm correction, but those safeguards do not replace independent replication or
 portfolio-level testing. Exploratory statistics are not live signals or evidence
