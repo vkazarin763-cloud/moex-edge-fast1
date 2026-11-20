@@ -21,7 +21,9 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
   date and reconciled against daily-history OHLCV; pre-launch weekend dates
   require same-date history confirmation. Unassigned
   fragments or OHLCV mismatches are reported; the history row remains the model
-  input and no raw fragment is silently discarded or double-counted.
+  input and no raw fragment is silently discarded or double-counted. Therefore
+  `max_bars` counts TQBR trading dates rather than separate weekend calendar
+  fragments.
 - A fixed, pre-registered candidate set: Donchian-20 breakout, EMA-20/50 cross,
   RSI-14 trend momentum, MACD-12/26 crossover and Keltner-20/2ATR breakout. Parameters are not fitted on the evaluation data.
 - Signal is calculated on a completed candle; entry is the next available candle open.
