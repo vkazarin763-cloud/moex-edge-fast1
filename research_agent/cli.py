@@ -12,8 +12,10 @@ from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
-from .session_mapping import (earliest_session_date, latest_completed_session_date,
-                              normalize_daily_candles, research_eligible_candles)
+from .session_mapping import (
+    earliest_session_date, latest_completed_session_date,
+    build_trading_day_candles, reconcile_session_candles,
+)
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
 
@@ -89,23 +91,25 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             raw_candles = fetch_candles(
                 ticker, fetch_from, calendar_date_ceiling, interval=24, board="TQBR"
             )
-            candles, session_mapping_diagnostics = normalize_daily_candles(
-                raw_candles, history_records, max_session_date=effective_till
-            )
-            if not candles:
-                raise ValueError("No candles remain after completed-session normalization")
-            research_candles, research_eligibility = research_eligible_candles(
-                candles, history_records
-            )
-            if not research_candles:
-                raise ValueError("No research-eligible candles remain after excluding unverified weekend sessions")
-            development = [
-                candle for candle in research_candles
-                if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
-            ]
             bounded_history_records = [
                 record for record in history_records
                 if record.trade_date <= date.fromisoformat(effective_till)
+            ]
+            raw_candles = [
+                candle for candle in raw_candles
+                if candle.timestamp.date() <= date.fromisoformat(effective_till)
+            ]
+            research_candles, research_eligibility = build_trading_day_candles(
+                bounded_history_records, effective_from, effective_till
+            )
+            session_date_mapping_diagnostics = reconcile_session_candles(
+                raw_candles, bounded_history_records
+            )
+            if not research_candles:
+                raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
+            development = [
+                candle for candle in research_candles
+                if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
             ]
             try:
                 history_crosscheck = audit_tqbr_history(
@@ -119,17 +123,21 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 }
             results[ticker] = {
                 "status": "ANALYZED",
-                "candles": len(candles),
-                "first_timestamp": candles[0].timestamp.isoformat(),
-                "last_timestamp": candles[-1].timestamp.isoformat(),
+                "candles": len(research_candles),
+                "raw_session_candles": len(raw_candles),
+                "first_timestamp": research_candles[0].timestamp.isoformat(),
+                "last_timestamp": research_candles[-1].timestamp.isoformat(),
                 "data_quality": candle_quality_report(
-                    candles, effective_from, effective_till,
+                    research_candles, effective_from, effective_till,
                     history_records=bounded_history_records,
-                    session_date_mapping_complete=session_mapping_diagnostics[
-                        "session_date_mapping_complete"
-                    ],
+                    session_date_mapping_complete=session_date_mapping_diagnostics["complete"],
                 ),
-                "session_date_mapping": session_mapping_diagnostics,
+                "raw_candle_quality": candle_quality_report(
+                    raw_candles, effective_from, effective_till,
+                    history_records=bounded_history_records,
+                    session_date_mapping_complete=session_date_mapping_diagnostics["complete"],
+                ) if raw_candles else None,
+                "session_date_mapping": session_date_mapping_diagnostics,
                 "research_eligibility": research_eligibility,
                 "research_input_bars": len(research_candles),
                 "tqbr_history_crosscheck": history_crosscheck,
