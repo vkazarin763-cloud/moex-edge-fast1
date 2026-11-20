@@ -18,14 +18,16 @@ class StockCalendarFetchTests(unittest.TestCase):
             query = parse_qs(urlparse(url).query)
             self.assertEqual(query["show_all_days"], ["1"])
             self.assertEqual(query["iss.only"], ["off_days"])
+            rows = [
+                ["2025-03-01", 1, "2025-03-03", "W"],
+                ["2025-03-02", 1, "2025-03-03", "W"],
+                ["2025-03-03", 1, None, "N"],
+            ]
+            start = int(query["start"][0])
             return {
                 "off_days": {
                     "columns": ["tradedate", "is_traded", "trade_session_date", "reason"],
-                    "data": [
-                        ["2025-03-01", 1, "2025-03-03", "W"],
-                        ["2025-03-02", 1, "2025-03-03", "W"],
-                        ["2025-03-03", 1, None, "N"],
-                    ],
+                    "data": rows[start:],
                 }
             }
 
