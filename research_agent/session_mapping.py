@@ -244,6 +244,9 @@ def reconcile_session_candles(
         if candle.timestamp.weekday() >= 5
     }
     return {
+        "status": "RECONCILED" if rows and not mismatches and not unassigned else (
+            "NO_RAW_CANDLES" if not rows else "RECONCILIATION_WITH_CAVEATS"
+        ),
         "raw_candles": len(rows),
         "raw_weekend_candles": len(weekend_rows),
         "raw_weekend_candles_mapped": len(mapped_weekend_dates),
@@ -254,7 +257,7 @@ def reconcile_session_candles(
         "matched_trade_dates": matched[:20],
         "mismatch_examples": mismatches[:20],
         "unassigned_examples": unassigned[:20],
-        "complete": not mismatches and not unassigned,
+        "complete": bool(rows) and not mismatches and not unassigned,
         "mapping_rule": (
             "Same-date positive TQBR history keeps a calendar candle on that date; "
             "otherwise a weekend candle maps to the next positive-trade TQBR date "
