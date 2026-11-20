@@ -43,7 +43,7 @@ class StockCalendarFetchTests(unittest.TestCase):
 class WeekendSessionAggregationTests(unittest.TestCase):
     def setUp(self):
         self.calendar = {
-            date(2025, 3, 1): StockCalendarRecord(
+            date(2025, 2, 28): StockCalendarRecord(\n                date(2025, 2, 28), 1, None, "N"\n            ),\n            date(2025, 3, 1): StockCalendarRecord(
                 date(2025, 3, 1), 1, date(2025, 3, 3), "W"
             ),
             date(2025, 3, 2): StockCalendarRecord(
@@ -96,7 +96,11 @@ class WeekendSessionAggregationTests(unittest.TestCase):
     def test_latest_completed_session_skips_weekend_session_mapped_forward(self):
         self.assertEqual(
             latest_completed_session_date(self.calendar, "2025-03-02"),
-            date(2025, 3, 2) if False else date(2025, 3, 2),
+            date(2025, 2, 28),
+        )
+        self.assertEqual(
+            latest_completed_session_date(self.calendar, "2025-03-03"),
+            date(2025, 3, 3),
         )
 
     def test_missing_calendar_row_is_not_silently_accepted(self):
