@@ -105,7 +105,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             ]
             try:
                 history_crosscheck = audit_tqbr_history(
-                    candles, bounded_history_records, effective_from, effective_till
+                    candles, bounded_history_records, fetch_from, effective_till
                 )
             except Exception as history_exc:
                 history_crosscheck = {
