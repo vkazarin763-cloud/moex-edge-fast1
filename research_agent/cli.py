@@ -121,8 +121,8 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "data_quality": candle_quality_report(
                     candles, effective_from, effective_till,
                     history_records=bounded_history_records,
-                    session_date_mapping_verified=session_mapping_diagnostics[
-                        "session_date_mapping_verified"
+                    session_date_mapping_complete=session_mapping_diagnostics[
+                        "session_date_mapping_complete"
                     ],
                 ),
                 "session_date_mapping": session_mapping_diagnostics,
