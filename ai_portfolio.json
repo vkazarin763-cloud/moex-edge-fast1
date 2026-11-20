@@ -1,5 +1,5 @@
 {
-  "cash": 131222.9433439419,
+  "cash": 145398.27564794192,
   "positions": [
     {
       "ticker": "ROSN",
@@ -65,18 +65,6 @@
       "premium": 56.7946685400716,
       "is_option": true,
       "expiry_time": "2026-12-16"
-    },
-    {
-      "ticker": "SBER",
-      "direction": "LONG",
-      "entry_price": 299.04,
-      "entry_time": "2026-11-17 18:00:00",
-      "qty": 49,
-      "activated": false,
-      "strategy": "SMC_Sweep",
-      "sl_price": 290.07,
-      "tp_price": 313.99,
-      "be_price": 305.02
     },
     {
       "ticker": "TATN",
@@ -318,6 +306,23 @@
       "net_ret": -0.032589721264888925,
       "pnl": -328.7908539999987,
       "exit_time": "2026-11-20 09:00:00"
+    },
+    {
+      "ticker": "SBER",
+      "direction": "LONG",
+      "entry_price": 299.04,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 49,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 290.07,
+      "tp_price": 313.99,
+      "be_price": 305.02,
+      "exit_price": 290.07,
+      "exit_reason": "SL",
+      "net_ret": -0.032595987158908594,
+      "pnl": -477.6276960000013,
+      "exit_time": "2026-11-20 12:00:00"
     }
   ]
 }
