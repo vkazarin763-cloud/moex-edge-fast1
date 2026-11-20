@@ -56,7 +56,9 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     effective_till = latest_completed_session_date(
         stock_calendar, calendar_date_ceiling
     ).isoformat()
-    effective_from = earliest_session_date(stock_calendar, fetch_from).isoformat()
+    effective_from = earliest_session_date(
+        stock_calendar, fetch_from, calendar_date_ceiling
+    ).isoformat()
     if requested_from > date.fromisoformat(effective_till):
         raise ValueError(
             "date_from is after the latest completed MOEX trading-session date; "
