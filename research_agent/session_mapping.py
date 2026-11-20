@@ -147,7 +147,7 @@ def build_trading_day_candles(
 def reconcile_session_candles(
     raw_candles: list[Candle],
     history_records: list[HistoryRecord],
-    max_next_trading_day_gap: int = 3,
+    max_next_trading_day_gap: int = 7,
 ) -> dict:
     """Check calendar-date candle fragments against full TQBR trading-day OHLCV.
 
@@ -180,7 +180,7 @@ def reconcile_session_candles(
                     "reason": "same-date TQBR history does not confirm positive trades",
                 })
                 continue
-        elif day.weekday() >= 5:
+        elif day.weekday() >= 5 and day >= date(2025, 3, 1):
             target = next((
                 candidate for candidate in positive_dates
                 if day < candidate
@@ -192,6 +192,12 @@ def reconcile_session_candles(
                     "reason": "no next positive-trade TQBR date within mapping window",
                 })
                 continue
+        elif day.weekday() >= 5:
+            unassigned.append({
+                "calendar_date": day.isoformat(),
+                "reason": "pre-launch weekend date lacks same-date TQBR history confirmation",
+            })
+            continue
         else:
             unassigned.append({
                 "calendar_date": day.isoformat(),
@@ -259,9 +265,11 @@ def reconcile_session_candles(
         "unassigned_examples": unassigned[:20],
         "complete": bool(rows) and not mismatches and not unassigned,
         "mapping_rule": (
-            "Same-date positive TQBR history keeps a calendar candle on that date; "
-            "otherwise a weekend candle maps to the next positive-trade TQBR date "
-            "within three calendar days. Fragments are aggregated and checked "
+            "Same-date positive TQBR history keeps a calendar candle on that date. "
+            "From the official 2025-03-01 weekend-session launch onward, a weekend "
+            "candle without a same-date history row maps to the next positive-trade "
+            "TQBR date within seven calendar days. Pre-launch weekend dates require "
+            "same-date history confirmation. Fragments are aggregated and checked "
             "against the full trading-day history OHLCV."
         ),
     }
