@@ -12,7 +12,7 @@ from .finam_crosscheck import _finam_daily_interval
 from .finam_h1_crosscheck import DEFAULT_TICKERS
 from .finam_market_data import FinamMarketDataClient
 from .moex_iss import fetch_candles
-from .timeframe_reconciliation import reconcile_moex_and_finam
+from .timeframe_reconciliation import reconcile_moex_and_finam, reconcile_cross_source
 
 MOSCOW = ZoneInfo("Europe/Moscow")
 
@@ -85,6 +85,12 @@ def run_crosscheck(tickers, days, *, api_token, source_app_id=None, now=None):
                 finam_hourly, now=current, finam=True
             )
             report = reconcile_moex_and_finam(
+                moex_daily=moex_daily,
+                moex_hourly=moex_hourly,
+                finam_daily=finam_daily,
+                finam_hourly=finam_hourly,
+            )
+            report["cross_source"] = reconcile_cross_source(
                 moex_daily=moex_daily,
                 moex_hourly=moex_hourly,
                 finam_daily=finam_daily,
