@@ -95,6 +95,7 @@ def run_crosscheck(tickers, days, *, api_token, source_app_id=None, now=None):
                 moex_hourly=moex_hourly,
                 finam_daily=finam_daily,
                 finam_hourly=finam_hourly,
+                source_reconciliation=report,
             )
             results[ticker] = {
                 "status": "COMPARED",
