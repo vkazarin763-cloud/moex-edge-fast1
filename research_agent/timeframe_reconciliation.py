@@ -123,12 +123,13 @@ def reconcile_daily_to_hourly(
         if opening_bar is None:
             opening_bar = bars[0]
 
+        aggregation_bars = all_bars if opening_bucket_hour is not None else bars
         aggregate = {
             "open": float(opening_bar.open),
-            "high": max(float(row.high) for row in all_bars),
-            "low": min(float(row.low) for row in all_bars),
+            "high": max(float(row.high) for row in aggregation_bars),
+            "low": min(float(row.low) for row in aggregation_bars),
             "close": float(bars[-1].close),
-            "volume": sum(float(row.volume) for row in all_bars),
+            "volume": sum(float(row.volume) for row in aggregation_bars),
         }
         checks = {}
         for field in (*PRICE_FIELDS, "volume"):
