@@ -54,7 +54,7 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         ]
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
-            patch.object(cli, "fetch_history_records", return_value=history_records),
+            patch.object(cli, "fetch_history_records", return_value=history_records) as history_fetch,
             patch.object(cli, "fetch_candles", return_value=candles) as fetch,
             patch.object(cli, "candle_quality_report", return_value={"status": "TEST"}),
             patch.object(cli, "walk_forward_report", side_effect=capture_development),
@@ -76,6 +76,9 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         self.assertEqual(report["development_portfolio"]["status"], "DEVELOPMENT_WALK_FORWARD_PORTFOLIO")
         self.assertEqual(report["results"]["TEST"]["status"], "ANALYZED")
         fetch.assert_called_once()
+        history_fetch.assert_called_once_with(
+            "TEST", "2023-11-19", "2026-12-04", board="TQBR"
+        )
         self.assertLessEqual(
             date.fromisoformat(fetch.call_args.args[1]),
             cutoff - timedelta(days=3 * 365 + 2),
