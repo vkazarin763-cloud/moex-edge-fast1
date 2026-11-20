@@ -14,7 +14,7 @@ on:
       tickers:
         description: "Comma-separated MOEX tickers"
         required: false
-        default: "SBER,GAZP,LKOH,VTBR,T"
+        default: "AFKS,AFLT,ALRS,BSPB,CBOM,CHMF,CNRU,DOMRF,ENPG,FLOT,GAZP,GMKN,HEAD,IRAO,LKOH,MAGN,MDMG,MOEX,MTSS,NLMK,NVTK,OZON,PHOR,PLZL,POSI,RAGR,RENI,ROSN,RTKM,RUAL,SBER,SBERP,SNGS,SNGSP,SVCB,T,TATN,TATNP,TRNFP,UGLD,VKCO,VTBR,X5,YDEX"
         type: string
 
 permissions:
@@ -27,7 +27,7 @@ concurrency:
 jobs:
   crosscheck:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -72,13 +72,13 @@ jobs:
             exit 1
           fi
           echo "Finam API token is configured."
-      - name: Run read-only daily candle cross-check
+      - name: Run read-only D1 candle cross-check
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
           DATE_FROM: ${{ steps.dates.outputs.date_from }}
           DATE_TILL: ${{ steps.dates.outputs.date_till }}
-          TICKERS: ${{ github.event.inputs.tickers || 'SBER,GAZP,LKOH,VTBR,T' }}
+          TICKERS: ${{ github.event.inputs.tickers || 'AFKS,AFLT,ALRS,BSPB,CBOM,CHMF,CNRU,DOMRF,ENPG,FLOT,GAZP,GMKN,HEAD,IRAO,LKOH,MAGN,MDMG,MOEX,MTSS,NLMK,NVTK,OZON,PHOR,PLZL,POSI,RAGR,RENI,ROSN,RTKM,SBER,SBERP,SNGS,SNGSP,SVCB,T,TATN,TATNP,TRNFP,UGLD,VKCO,VTBR,X5,YDEX' }}
         run: |
           python -m research_agent.finam_crosscheck \
             --from "$DATE_FROM" \
