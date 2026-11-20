@@ -137,9 +137,11 @@ def candle_quality_report(
             "history_rows_with_unknown_trade_count": weekend_unknown_history,
             "dates_without_history_rows": weekend_without_history,
             "verification_source": (
-                "Per-security TQBR history NUMTRADES > 0"
+                "Same-date TQBR history match only; weekend session fragments may "
+                "be included in the next ordinary trading day's history OHLCV and "
+                "are checked by the session reconciliation diagnostic."
                 if history_records is not None
-                else "Unavailable; weekend candles remain unverified"
+                else "Unavailable; see TQBR trading-day history reconciliation"
             ),
         },
         "calendar_gap_candidates": gaps,
@@ -147,10 +149,11 @@ def candle_quality_report(
         "exchange_calendar_verified": False,
         "session_date_mapping_complete": session_date_mapping_complete,
         "calendar_caveat": (
-            "Weekend bars are retained on original dates. Only same-date positive TQBR "
-            "NUMTRADES confirms a weekend session; unverified weekend bars are "
-            "excluded from model inputs, but remain in raw data diagnostics. "
-            "This is not a direct official-calendar lookup."
+            "Raw weekend candles are calendar-session fragments. Research D1 input "
+            "uses per-security TQBR daily-history TRADEDATE OHLCV, which includes "
+            "the additional weekend session in the next ordinary trading day's bar. "
+            "Raw fragments are reconciled against history; this is not a direct "
+            "historical exchange-calendar lookup."
         ),
         "history_status": history_status,
         "warmup_bars_required": warmup_bars,
