@@ -66,7 +66,7 @@ class WeekendHistoryMappingTests(unittest.TestCase):
         )
         self.assertEqual(diagnostics["weekend_candles_mapped"], 2)
         self.assertEqual(diagnostics["unresolved_weekend_candles"], [])
-        self.assertTrue(diagnostics["session_date_mapping_verified"])
+        self.assertTrue(diagnostics["session_date_mapping_complete"])
 
     def test_same_date_positive_history_keeps_transferred_weekend_workday(self):
         history = [
@@ -110,7 +110,7 @@ class WeekendHistoryMappingTests(unittest.TestCase):
         normalized, diagnostics = normalize_daily_candles(raw, [])
         self.assertEqual(normalized, [])
         self.assertEqual(len(diagnostics["unresolved_weekend_candles"]), 2)
-        self.assertFalse(diagnostics["session_date_mapping_verified"])
+        self.assertFalse(diagnostics["session_date_mapping_complete"])
 
     def test_duplicate_history_dates_are_rejected(self):
         duplicate = [
