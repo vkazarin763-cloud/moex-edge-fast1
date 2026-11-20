@@ -154,6 +154,7 @@ def _resolve_session_date(
 def earliest_session_date(
     calendar: dict[date, StockCalendarRecord],
     calendar_date_floor: str | date,
+    calendar_date_ceiling: str | date | None = None,
 ) -> date:
     """Return the first official session represented on/after the requested date."""
     floor = (
@@ -161,12 +162,19 @@ def earliest_session_date(
         if isinstance(calendar_date_floor, str)
         else calendar_date_floor
     )
+    ceiling = None
+    if isinstance(calendar_date_ceiling, str):
+        ceiling = date.fromisoformat(calendar_date_ceiling)
+    elif calendar_date_ceiling is not None:
+        ceiling = calendar_date_ceiling
     candidates = []
     for tradeday, record in calendar.items():
-        if tradeday < floor or record.is_traded != 1:
+        if tradeday < floor or (ceiling is not None and tradeday > ceiling):
+            continue
+        if record.is_traded != 1:
             continue
         session_day = _resolve_session_date(record, calendar)
-        if session_day >= floor:
+        if session_day >= floor and (ceiling is None or session_day <= ceiling):
             candidates.append(session_day)
     if not candidates:
         raise SessionCalendarError(
