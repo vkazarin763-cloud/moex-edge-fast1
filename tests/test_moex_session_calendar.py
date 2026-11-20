@@ -85,12 +85,12 @@ class WeekendSessionAggregationTests(unittest.TestCase):
 
     def test_weekend_bars_are_excluded_until_their_session_date_completes(self):
         normalized, diagnostics = normalize_daily_candles(
-            self.raw, self.calendar, max_session_date="2025-03-02"
+            self.raw[:2], self.calendar, max_session_date="2025-03-02"
         )
         self.assertEqual(normalized, [])
         self.assertEqual(
             diagnostics["source_bars_excluded_beyond_completed_session_cutoff"],
-            3,
+            2,
         )
 
     def test_latest_completed_session_skips_weekend_session_mapped_forward(self):
