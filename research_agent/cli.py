@@ -50,7 +50,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     minimum_history_start = date.fromisoformat(HOLDOUT_START_DATE) - timedelta(days=3 * 365 + 2)
     fetch_from = min(requested_from, minimum_history_start).isoformat()
     history_fetch_till = (
-        date.fromisoformat(calendar_date_ceiling) + timedelta(days=7)
+        date.fromisoformat(calendar_date_ceiling) + timedelta(days=14)
     ).isoformat()
 
     history_records_by_ticker = {}
@@ -164,6 +164,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         "requested_date_from": date_from,
         "history_mapping_fetch_from": fetch_from,
         "history_mapping_fetch_till": history_fetch_till,
+        "history_mapping_lookahead_days": 14,
         "date_till": effective_till,
         "requested_date_till": requested_till,
         "daily_bar_completion_policy": {
