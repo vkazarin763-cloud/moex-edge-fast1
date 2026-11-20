@@ -100,7 +100,9 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             ]
             raw_candles = [
                 candle for candle in raw_candles
-                if candle.timestamp.date() <= date.fromisoformat(effective_till)
+                if date.fromisoformat(effective_from)
+                <= candle.timestamp.date()
+                <= date.fromisoformat(effective_till)
             ]
             research_candles, research_eligibility = build_trading_day_candles(
                 bounded_history_records, effective_from, effective_till
