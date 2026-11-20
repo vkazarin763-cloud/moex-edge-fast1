@@ -12,8 +12,8 @@ from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
-from .session_calendar import (fetch_stock_calendar, latest_completed_session_date,
-                              normalize_daily_candles)
+from .session_calendar import (earliest_session_date, fetch_stock_calendar,
+                              latest_completed_session_date, normalize_daily_candles)
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
 
@@ -56,6 +56,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     effective_till = latest_completed_session_date(
         stock_calendar, calendar_date_ceiling
     ).isoformat()
+    effective_from = earliest_session_date(stock_calendar, fetch_from).isoformat()
     if requested_from > date.fromisoformat(effective_till):
         raise ValueError(
             "date_from is after the latest completed MOEX trading-session date; "
@@ -97,7 +98,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "first_timestamp": candles[0].timestamp.isoformat(),
                 "last_timestamp": candles[-1].timestamp.isoformat(),
                 "data_quality": candle_quality_report(
-                    candles, fetch_from, effective_till,
+                    candles, effective_from, effective_till,
                     history_records=history_records,
                     calendar_verified=True,
                 ),
@@ -136,8 +137,9 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         "source": "MOEX ISS public historical candles and TQBR daily history",
         "board": "TQBR",
         "interval_minutes": 24 * 60,
-        "date_from": fetch_from,
+        "date_from": effective_from,
         "requested_date_from": date_from,
+        "calendar_fetch_from": fetch_from,
         "date_till": effective_till,
         "requested_date_till": requested_till,
         "daily_bar_completion_policy": {
