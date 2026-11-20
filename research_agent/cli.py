@@ -99,6 +99,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "data_quality": candle_quality_report(
                     candles, fetch_from, effective_till,
                     history_records=history_records,
+                    calendar_verified=True,
                 ),
                 "session_calendar_aggregation": session_calendar_diagnostics,
                 "tqbr_history_crosscheck": history_crosscheck,
