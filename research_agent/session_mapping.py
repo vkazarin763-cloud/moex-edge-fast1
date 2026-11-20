@@ -195,6 +195,6 @@ def normalize_daily_candles(
         "weekday_candles_without_history_record": weekday_candles_without_history,
         "sessions_combining_multiple_calendar_dates": combined_sessions,
         "source_bars_excluded_beyond_completed_session_cutoff": excluded_source_bars,
-        "session_date_mapping_verified": not unresolved_weekend,
+        "session_date_mapping_complete": not unresolved_weekend,
     }
     return normalized, diagnostics
