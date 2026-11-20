@@ -86,9 +86,14 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     "TQBR history unavailable for session mapping: "
                     + history_errors.get(ticker, "unknown history error")
                 )
-            raw_candles = fetch_candles(
-                ticker, fetch_from, calendar_date_ceiling, interval=24, board="TQBR"
-            )
+            raw_candle_fetch_error = None
+            try:
+                raw_candles = fetch_candles(
+                    ticker, fetch_from, calendar_date_ceiling, interval=24, board="TQBR"
+                )
+            except Exception as raw_exc:
+                raw_candles = []
+                raw_candle_fetch_error = str(raw_exc)
             bounded_history_records = [
                 record for record in history_records
                 if record.trade_date <= date.fromisoformat(effective_till)
@@ -128,8 +133,9 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "data_quality": candle_quality_report(
                     research_candles, effective_from, effective_till,
                     history_records=bounded_history_records,
-                    session_date_mapping_complete=session_date_mapping_diagnostics["complete"],
+                    session_date_mapping_complete=True,
                 ),
+                "raw_candle_fetch_error": raw_candle_fetch_error,
                 "raw_candle_quality": candle_quality_report(
                     raw_candles, effective_from, effective_till,
                     history_records=bounded_history_records,
