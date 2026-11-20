@@ -15,7 +15,7 @@ def candle_quality_report(
     warmup_bars: int = 200,
     preferred_min_bars: int = 500,
     history_records: list[HistoryRecord] | None = None,
-    session_date_mapping_verified: bool = False,
+    session_date_mapping_complete: bool = False,
 ) -> dict[str, Any]:
     """Return validated-series diagnostics without assuming an exchange calendar."""
     if warmup_bars < 0 or preferred_min_bars < warmup_bars:
@@ -99,7 +99,7 @@ def candle_quality_report(
         gaps or zero_volume or unverified_weekend
         or history_status != "PREFERRED_HISTORY_LENGTH"
         or boundary_missing or outside_requested_range
-        or not session_date_mapping_verified
+        or not session_date_mapping_complete
     )
     if outside_requested_range:
         range_boundary_status = "OUTSIDE_REQUESTED_RANGE"
@@ -145,11 +145,11 @@ def candle_quality_report(
         "calendar_gap_candidates": gaps,
         "calendar_gap_count": len(gaps),
         "exchange_calendar_verified": False,
-        "session_date_mapping_verified": session_date_mapping_verified,
+        "session_date_mapping_complete": session_date_mapping_complete,
         "calendar_caveat": (
             "Weekend session dates were inferred from the next positive-trade "
             "per-security TQBR history date. This is not a direct official-calendar lookup."
-            if session_date_mapping_verified else
+            if session_date_mapping_complete else
             "Weekend session dates could not be fully inferred from per-security "
             "TQBR history; unresolved weekend candles are excluded from research."
         ),
