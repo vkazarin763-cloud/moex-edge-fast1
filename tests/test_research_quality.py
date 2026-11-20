@@ -16,6 +16,13 @@ def make_bars(days, volumes=None):
 
 
 class CandleQualityReportTests(unittest.TestCase):
+    def test_records_official_calendar_verification(self):
+        report = candle_quality_report(
+            make_bars([0, 1]), calendar_verified=True,
+        )
+        self.assertTrue(report["exchange_calendar_verified"])
+        self.assertIn("Official MOEX stock calendar", report["calendar_caveat"])
+
     def test_reports_date_gap_without_claiming_missing_sessions(self):
         report = candle_quality_report(make_bars([0, 1, 7]), "2025-01-01", "2025-01-08")
         self.assertEqual(report["calendar_gap_count"], 1)
