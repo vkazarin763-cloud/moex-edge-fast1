@@ -30,6 +30,18 @@ class ResearchWorkflowSafetyTests(unittest.TestCase):
         self.assertIn("ZoneInfo('Europe/Moscow')", workflow)
         self.assertIn("moscow_today - timedelta(days=1)", workflow)
 
+
+    def test_manual_d1_h1_reconciliation_workflow_is_read_only(self):
+        workflow = (ROOT / ".github" / "workflows" / "research-agent-timeframe-reconciliation.yml").read_text()
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertNotIn("schedule:", workflow)
+        self.assertIn("permissions:" + chr(10) + "  contents: read", workflow)
+        self.assertIn("FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}", workflow)
+        self.assertIn("python -m research_agent.finam_timeframe_crosscheck", workflow)
+        self.assertNotIn("finam_executor.py", workflow)
+        self.assertNotIn("/orders", workflow)
+        self.assertNotIn('echo "$FINAM_API_TOKEN"', workflow)
+
     def test_scheduled_scanner_executor_workflow_is_explicitly_dry_run(self):
         workflow = (ROOT / ".github" / "workflows" / "moex-edge-fast.yml").read_text()
         self.assertIn("FINAM_DRY_RUN: 'true'", workflow)
