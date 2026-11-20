@@ -44,7 +44,7 @@ independent or multiplicity-adjusted result. The separate prospective holdout
 is the only stage that applies HAC inference, block-bootstrap intervals and
 Holm correction.
 
-This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting, explicit portfolio risk sizing and exchange-calendar-aware session aggregation remain limitations. Market-breadth regimes are descriptive only and have not been independently validated or used to select strategies. Regime analysis and independent adversarial validation also remain outstanding. The
+This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting and explicit portfolio risk sizing remain limitations. Market-breadth regimes are descriptive only and have not been independently validated or used to select strategies. Regime analysis and independent adversarial validation also remain outstanding. The
 prospective holdout includes HAC inference, moving-block bootstrap intervals and
 Holm correction, but those safeguards do not replace independent replication or
 portfolio-level testing. Exploratory statistics are not live signals or evidence
