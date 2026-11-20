@@ -151,6 +151,30 @@ def _resolve_session_date(
     return session_day
 
 
+def earliest_session_date(
+    calendar: dict[date, StockCalendarRecord],
+    calendar_date_floor: str | date,
+) -> date:
+    """Return the first official session represented on/after the requested date."""
+    floor = (
+        date.fromisoformat(calendar_date_floor)
+        if isinstance(calendar_date_floor, str)
+        else calendar_date_floor
+    )
+    candidates = []
+    for tradeday, record in calendar.items():
+        if tradeday < floor or record.is_traded != 1:
+            continue
+        session_day = _resolve_session_date(record, calendar)
+        if session_day >= floor:
+            candidates.append(session_day)
+    if not candidates:
+        raise SessionCalendarError(
+            f"No MOEX stock session exists on or after {floor}"
+        )
+    return min(candidates)
+
+
 def latest_completed_session_date(
     calendar: dict[date, StockCalendarRecord],
     calendar_date_ceiling: str | date,
