@@ -134,7 +134,7 @@ def fetch_history_records(
         )
         query = urlencode({
             "from": date_from, "till": date_till, "start": start,
-            "iss.meta": "off",
+            "tradingsession": 3, "iss.meta": "off",
         })
         payload = getter(f"{path}?{query}", timeout=timeout, retries=retries)
         block = payload.get("history")
