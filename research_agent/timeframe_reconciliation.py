@@ -194,6 +194,7 @@ def reconcile_cross_source(
     finam_daily,
     finam_hourly,
     tolerance=0.0,
+    source_reconciliation=None,
 ):
     """Compare MOEX and Finam directly while isolating MOEX's 06:00 bucket.
 
@@ -211,6 +212,16 @@ def reconcile_cross_source(
 
     mdays, fdays = set(md), set(fd)
     common_days = sorted(mdays & fdays)
+    # Exclude a truncated first H1 date only when the independent source audit
+    # confirms incomplete D1-H1 aggregation on that left boundary.
+    source_bad_days = set()
+    if source_reconciliation:
+        for source in ("moex", "finam"):
+            for item in source_reconciliation.get(source, {}).get("comparisons", []):
+                if item.get("status") != "MATCHED":
+                    source_bad_days.add(date.fromisoformat(item["date"]))
+    edge_day = common_days[0] if common_days else None
+    excluded_edge_days = {edge_day} if edge_day in source_bad_days else set()
     daily_rows = []
     raw_mismatch_counts = {field: 0 for field in (*PRICE_FIELDS, "volume")}
     adjusted_mismatch_counts = {
@@ -245,6 +256,26 @@ def reconcile_cross_source(
                 "difference_moex_minus_finam": left - right,
                 "matches": matches,
             }
+
+        if day in excluded_edge_days:
+            daily_rows.append({
+                "date": day.isoformat(),
+                "moex_0600_bucket_present": moex_06 is not None,
+                "moex_0600_bucket": (
+                    {
+                        "open": float(moex_06.open),
+                        "high": float(moex_06.high),
+                        "low": float(moex_06.low),
+                        "close": float(moex_06.close),
+                        "volume": float(moex_06.volume),
+                    } if moex_06 is not None else None
+                ),
+                "raw_comparison": raw,
+                "session_adjusted_checks": {},
+                "status": "EXCLUDED_INCOMPLETE_LEFT_EDGE",
+                "reason": "Independent D1-H1 reconciliation reports incomplete hourly coverage on the first common date.",
+            })
+            continue
 
         checks = {}
         if moex_06 is not None:
@@ -375,16 +406,23 @@ def reconcile_cross_source(
                 "checks": checks,
             })
 
+    edge_moex_only = sorted(item for item in mtimes - ftimes if item.date() in excluded_edge_days)
+    edge_finam_only = sorted(item for item in ftimes - mtimes if item.date() in excluded_edge_days)
+    unexplained_moex_only = sorted(item for item in mtimes - ftimes if item.date() not in excluded_edge_days)
+    unexplained_finam_only = sorted(item for item in ftimes - mtimes if item.date() not in excluded_edge_days)
     daily_ok = (
         len(common_days) == len(mdays) == len(fdays)
-        and all(row["status"] == "SESSION_ADJUSTED_MATCH" for row in daily_rows)
+        and all(row["status"] in {"SESSION_ADJUSTED_MATCH", "EXCLUDED_INCOMPLETE_LEFT_EDGE"} for row in daily_rows)
     )
-    h1_ok = (
-        mtimes == ftimes
-        and not h1_mismatches
+    h1_ok = not unexplained_moex_only and not unexplained_finam_only and not h1_mismatches
+    has_edge_gap = bool(excluded_edge_days or edge_moex_only or edge_finam_only)
+    overall_status = (
+        "CROSS_SOURCE_DIFFERENCE" if not (daily_ok and h1_ok)
+        else "MATCHED_WITH_EDGE_COVERAGE_GAP" if has_edge_gap
+        else "SESSION_ADJUSTED_MATCH"
     )
     return {
-        "status": "SESSION_ADJUSTED_MATCH" if daily_ok and h1_ok else "CROSS_SOURCE_DIFFERENCE",
+        "status": overall_status,
         "daily": {
             "moex_days": len(mdays),
             "finam_days": len(fdays),
@@ -394,18 +432,20 @@ def reconcile_cross_source(
             "raw_mismatch_counts": raw_mismatch_counts,
             "session_adjusted_mismatch_counts": adjusted_mismatch_counts,
             "moex_0600_days": sum(row["moex_0600_bucket_present"] for row in daily_rows),
+            "excluded_incomplete_left_edge_dates": sorted(day.isoformat() for day in excluded_edge_days),
+            "adjusted_comparison_days": sum(row["status"] == "SESSION_ADJUSTED_MATCH" for row in daily_rows),
             "comparisons": daily_rows,
         },
         "hourly_main_session": {
             "moex_bars": len(moex_h1),
             "finam_bars": len(finam_h1),
             "matched_timestamps": len(matched_times),
-            "moex_only_timestamps": sorted(
-                item.isoformat() for item in mtimes - ftimes
-            ),
-            "finam_only_timestamps": sorted(
-                item.isoformat() for item in ftimes - mtimes
-            ),
+            "moex_only_timestamps": sorted(item.isoformat() for item in mtimes - ftimes),
+            "finam_only_timestamps": sorted(item.isoformat() for item in ftimes - mtimes),
+            "edge_excluded_moex_only_timestamps": [item.isoformat() for item in edge_moex_only],
+            "edge_excluded_finam_only_timestamps": [item.isoformat() for item in edge_finam_only],
+            "unexplained_moex_only_timestamps": [item.isoformat() for item in unexplained_moex_only],
+            "unexplained_finam_only_timestamps": [item.isoformat() for item in unexplained_finam_only],
             "mismatch_counts": h1_mismatch_counts,
             "mismatches": h1_mismatches,
             "finam_snapshot_unknown_bars_retained": finam_snapshot_unknown,
