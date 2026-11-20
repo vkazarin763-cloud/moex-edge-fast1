@@ -112,6 +112,21 @@ class WeekendHistoryMappingTests(unittest.TestCase):
         self.assertEqual(len(diagnostics["unresolved_weekend_candles"]), 2)
         self.assertFalse(diagnostics["session_date_mapping_complete"])
 
+    def test_weekend_mapping_handles_extended_new_year_holiday_gap(self):
+        history = [HistoryRecord(date(2025, 1, 14), 25)]
+        raw = [
+            Candle(datetime(2025, 1, 4), 100, 104, 99, 103, 10),
+            Candle(datetime(2025, 1, 5), 103, 108, 102, 107, 20),
+            Candle(datetime(2025, 1, 14), 107, 110, 106, 109, 30),
+        ]
+        normalized, diagnostics = normalize_daily_candles(
+            raw, history, max_session_date="2025-01-14"
+        )
+        self.assertEqual(len(normalized), 1)
+        self.assertEqual(normalized[0].timestamp.date(), date(2025, 1, 14))
+        self.assertEqual(normalized[0].volume, 60)
+        self.assertEqual(diagnostics["weekend_candles_mapped"], 2)
+
     def test_duplicate_history_dates_are_rejected(self):
         duplicate = [
             HistoryRecord(date(2025, 3, 3), 15),
