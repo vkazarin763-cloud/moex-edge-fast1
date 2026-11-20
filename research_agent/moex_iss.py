@@ -26,9 +26,14 @@ class ISSDataError(RuntimeError):
 
 @dataclass(frozen=True)
 class HistoryRecord:
-    """One official TQBR end-of-day history row for a security."""
+    """One official TQBR end-of-day trading-day history row for a security."""
     trade_date: date
     num_trades: int | None
+    open: float | None = None
+    high: float | None = None
+    low: float | None = None
+    close: float | None = None
+    volume: float | None = None
 
 
 def _get_json(url: str, timeout: int = 20, retries: int = 3,
@@ -158,6 +163,24 @@ def fetch_history_records(
                     if not math.isfinite(numeric_count) or numeric_count < 0 or not numeric_count.is_integer():
                         raise ValueError("NUMTRADES must be a non-negative integer or null")
                     num_trades = int(numeric_count)
+
+                def optional_number(name: str, fallback: str | None = None) -> float | None:
+                    column = name if name in idx else fallback
+                    if column is None or column not in idx:
+                        return None
+                    raw_value = row[idx[column]]
+                    if raw_value is None:
+                        return None
+                    value = float(raw_value)
+                    if not math.isfinite(value):
+                        raise ValueError(f"{column} must be finite or null")
+                    return value
+
+                open_price = optional_number("OPEN")
+                high_price = optional_number("HIGH")
+                low_price = optional_number("LOW")
+                close_price = optional_number("CLOSE", "LEGALCLOSEPRICE")
+                volume = optional_number("VOLUME")
             except (IndexError, TypeError, ValueError) as exc:
                 if isinstance(exc, ISSDataError):
                     raise
@@ -165,7 +188,10 @@ def fetch_history_records(
             if trade_date in seen:
                 raise ISSDataError(f"Duplicate TQBR history date returned by ISS: {trade_date}")
             seen.add(trade_date)
-            result.append(HistoryRecord(trade_date, num_trades))
+            result.append(HistoryRecord(
+                trade_date, num_trades, open_price, high_price, low_price,
+                close_price, volume,
+            ))
         if not rows:
             break
         start += len(rows)
