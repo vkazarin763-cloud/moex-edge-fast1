@@ -6,6 +6,7 @@ from research_agent.core import Candle
 from research_agent.session_calendar import (
     SessionCalendarError,
     StockCalendarRecord,
+    earliest_session_date,
     fetch_stock_calendar,
     latest_completed_session_date,
     normalize_daily_candles,
@@ -96,6 +97,12 @@ class WeekendSessionAggregationTests(unittest.TestCase):
         self.assertEqual(
             diagnostics["source_bars_excluded_beyond_completed_session_cutoff"],
             2,
+        )
+
+    def test_earliest_session_date_uses_official_weekend_mapping(self):
+        self.assertEqual(
+            earliest_session_date(self.calendar, "2025-03-01"),
+            date(2025, 3, 3),
         )
 
     def test_latest_completed_session_skips_weekend_session_mapped_forward(self):
