@@ -15,6 +15,7 @@ def candle_quality_report(
     warmup_bars: int = 200,
     preferred_min_bars: int = 500,
     history_records: list[HistoryRecord] | None = None,
+    calendar_verified: bool = False,
 ) -> dict[str, Any]:
     """Return validated-series diagnostics without assuming an exchange calendar."""
     if warmup_bars < 0 or preferred_min_bars < warmup_bars:
@@ -142,8 +143,11 @@ def candle_quality_report(
         },
         "calendar_gap_candidates": gaps,
         "calendar_gap_count": len(gaps),
-        "exchange_calendar_verified": False,
+        "exchange_calendar_verified": calendar_verified,
         "calendar_caveat": (
+            "Official MOEX stock calendar was applied to map additional weekend "
+            "sessions to their assigned trading-session dates."
+            if calendar_verified else
             "Per-security TQBR history can confirm a recorded trade date or a "
             "zero-trade row. Missing history rows do not establish a holiday, "
             "suspension, pre-listing date, or missing market session."
