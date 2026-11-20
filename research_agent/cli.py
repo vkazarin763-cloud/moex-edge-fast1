@@ -73,8 +73,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     if requested_from > date.fromisoformat(effective_till):
         raise ValueError(
             "date_from is after the latest completed MOEX session confirmed by "
-            "positive TQBR history; unfinished current-day and weekend-linked "
-            "sessions are excluded"
+            "positive TQBR history; no completed session exists in the requested range"
         )
 
     results = {}
@@ -172,32 +171,31 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "maximum_requested_candle_date": calendar_date_ceiling,
             "maximum_completed_session_date": effective_till,
             "current_moscow_date_excluded": True,
-            "weekend_linked_sessions_excluded_until_positive_target_history_exists": True,
+            "weekend_candles_kept_on_original_dates": True,
+            "weekend_session_confirmation_requires_same_date_positive_numtrades": True,
             "reason": (
-                "The current calendar date is excluded. The latest completed session "
-                "is determined from positive TQBR NUMTRADES records. Weekend candles "
-                "are included only when a later positive-trade history date confirms "
-                "their target session."
+                "The current Moscow calendar date is excluded. The effective end date is "
+                "the latest positive-trade TQBR history date. Weekend candles at or "
+                "before that cutoff remain on their original dates; same-date positive "
+                "NUMTRADES confirms a weekend date, otherwise its session classification "
+                "is marked unverified."
             ),
         },
         "session_date_policy": {
             "source": "MOEX ISS public per-security TQBR daily history",
             "weekend_mapping": (
-                "A weekend candle with positive volume maps to the next later date "
-                "with positive NUMTRADES for that security."
+                "No forward mapping: each weekend candle retains its original "
+                "calendar date and OHLCV values."
             ),
-            "transferred_weekend_day": (
-                "A positive same-date NUMTRADES row keeps the weekend date as its "
-                "own trading session."
+            "same_date_confirmation": (
+                "Positive same-date TQBR NUMTRADES confirms the date; otherwise "
+                "the weekend candle is retained but marked unverified."
             ),
-            "aggregation": (
-                "Chronological first open, maximum high, minimum low, last close, "
-                "summed volume."
-            ),
+            "aggregation": "None; separate calendar dates are never merged.",
             "limitation": (
-                "This is a per-security history inference, not a direct lookup of "
-                "the subscription-only machine-readable exchange calendar. "
-                "Unresolved weekend candles are excluded and reported."
+                "The subscription-only machine-readable exchange calendar is not "
+                "available to this runner. Same-date TQBR history is a cross-check, "
+                "not a substitute for the official calendar."
             ),
         },
         "universe": selected,
