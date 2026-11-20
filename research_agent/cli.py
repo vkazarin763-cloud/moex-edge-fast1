@@ -192,6 +192,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "current_moscow_date_excluded": True,
             "research_bars_use_tqbr_trade_dates": True,
             "raw_weekend_candles_retained_for_reconciliation": True,
+            "weekend_session_launch_date": "2025-03-01",
             "weekend_sessions_included_in_next_trading_day_history_ohlcv": True,
             "reason": (
                 "The current Moscow calendar date is excluded. The effective end date is "
@@ -205,9 +206,11 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "source": "MOEX ISS public per-security TQBR daily history",
             "research_bar_source": "Per-security TQBR daily history OHLCV, one bar per TRADEDATE",
             "weekend_mapping": (
-                "Raw Saturday/Sunday candle fragments map to the next positive-trade "
-                "TQBR history date; MOEX defines the additional weekend session as "
-                "part of the next ordinary trading day."
+                "From 2025-03-01, raw Saturday/Sunday candle fragments without a "
+                "same-date history row map to the next positive-trade TQBR history "
+                "date; MOEX defines the additional weekend session as part of the "
+                "next ordinary trading day. Earlier weekend dates require same-date "
+                "history confirmation (e.g. a working Saturday)."
             ),
             "aggregation": (
                 "The model uses the official TQBR daily-history OHLCV row, which "
