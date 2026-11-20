@@ -173,8 +173,9 @@ def earliest_session_date(
             continue
         if record.is_traded != 1:
             continue
-        session_day = _resolve_session_date(record, calendar)
+        session_day = session_date_for_calendar_record(record)
         if session_day >= floor and (ceiling is None or session_day <= ceiling):
+            session_day = _resolve_session_date(record, calendar)
             candidates.append(session_day)
     if not candidates:
         raise SessionCalendarError(
@@ -197,9 +198,9 @@ def latest_completed_session_date(
     for tradeday, record in calendar.items():
         if tradeday > ceiling or record.is_traded != 1:
             continue
-        session_day = _resolve_session_date(record, calendar)
+        session_day = session_date_for_calendar_record(record)
         if session_day <= ceiling:
-            completed.append(session_day)
+            completed.append(_resolve_session_date(record, calendar))
     if not completed:
         raise SessionCalendarError(
             f"No completed MOEX stock session exists on or before {ceiling}"
@@ -229,7 +230,9 @@ def normalize_daily_candles(
             raise SessionCalendarError(
                 f"Missing MOEX stock-calendar row for candle date {source_date}"
             )
-        session_day = _resolve_session_date(record, calendar)
+        session_day = session_date_for_calendar_record(record)
+        if ceiling is None or session_day <= ceiling:
+            session_day = _resolve_session_date(record, calendar)
         if record.reason == "W":
             mapped_weekend_dates.append({
                 "calendar_date": source_date.isoformat(),
