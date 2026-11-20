@@ -77,6 +77,50 @@ def earliest_session_date(
     return min(candidates)
 
 
+def research_eligible_candles(
+    candles: list[Candle],
+    history_records: list[HistoryRecord],
+) -> tuple[list[Candle], dict]:
+    """Exclude unverified weekend bars from indicators and simulations.
+
+    Raw bars remain available for diagnostics. Weekday bars are retained as
+    supplied; weekend bars enter research calculations only when same-date
+    TQBR history confirms positive NUMTRADES.
+    """
+    rows = validate_candles(candles)
+    by_date = _records_by_date(history_records)
+    eligible = []
+    excluded = []
+    for candle in rows:
+        day = candle.timestamp.date()
+        if day.weekday() < 5:
+            eligible.append(candle)
+            continue
+        record = by_date.get(day)
+        if record is not None and record.num_trades is not None and record.num_trades > 0:
+            eligible.append(candle)
+        else:
+            excluded.append({
+                "calendar_date": day.isoformat(),
+                "volume": candle.volume,
+                "reason": "weekend session not confirmed by same-date positive TQBR NUMTRADES",
+            })
+    if eligible:
+        eligible = validate_candles(eligible)
+    return eligible, {
+        "raw_bars": len(rows),
+        "research_eligible_bars": len(eligible),
+        "unverified_weekend_bars_excluded_from_models": len(excluded),
+        "excluded_weekend_bars": excluded,
+        "policy": (
+            "Unverified weekend candles remain in raw diagnostics but are excluded "
+            "from indicator calculation, walk-forward, cost stress, portfolio replay, "
+            "and prospective holdout. Same-date positive TQBR NUMTRADES is required "
+            "to include a weekend candle in research calculations."
+        ),
+    }
+
+
 def normalize_daily_candles(
     candles: list[Candle],
     history_records: list[HistoryRecord],
