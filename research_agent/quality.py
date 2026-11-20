@@ -14,6 +14,7 @@ def candle_quality_report(
     requested_till: str | None = None,
     warmup_bars: int = 200,
     preferred_min_bars: int = 500,
+    history_records: list[HistoryRecord] | None = None,
 ) -> dict[str, Any]:
     """Return validated-series diagnostics without assuming an exchange calendar."""
     if warmup_bars < 0 or preferred_min_bars < warmup_bars:
@@ -68,9 +69,33 @@ def candle_quality_report(
         history_status = "PREFERRED_HISTORY_LENGTH"
 
     zero_volume = sum(c.volume == 0 for c in rows)
-    weekend = sum(c.timestamp.weekday() >= 5 for c in rows)
+    weekend_rows = [c for c in rows if c.timestamp.weekday() >= 5]
+    weekend = len(weekend_rows)
+    history_by_date = {}
+    if history_records is not None:
+        for record in history_records:
+            if record.trade_date in history_by_date:
+                raise ValueError(f"Duplicate TQBR history date: {record.trade_date}")
+            history_by_date[record.trade_date] = record.num_trades
+    verified_weekend = sum(
+        history_by_date.get(c.timestamp.date()) is not None
+        and history_by_date[c.timestamp.date()] > 0
+        for c in weekend_rows
+    )
+    weekend_zero_trade = sum(
+        c.timestamp.date() in history_by_date
+        and history_by_date[c.timestamp.date()] == 0
+        for c in weekend_rows
+    )
+    weekend_unknown_history = sum(
+        c.timestamp.date() in history_by_date
+        and history_by_date[c.timestamp.date()] is None
+        for c in weekend_rows
+    )
+    weekend_without_history = weekend - verified_weekend - weekend_zero_trade - weekend_unknown_history
+    unverified_weekend = weekend - verified_weekend
     has_caveats = (
-        gaps or zero_volume or weekend
+        gaps or zero_volume or unverified_weekend
         or history_status != "PREFERRED_HISTORY_LENGTH"
         or boundary_missing or outside_requested_range
     )
@@ -103,6 +128,18 @@ def candle_quality_report(
         },
         "zero_volume_bars": zero_volume,
         "weekend_bars": weekend,
+        "weekend_session_diagnostics": {
+            "verified_trade_bars": verified_weekend,
+            "unverified_bars": unverified_weekend,
+            "candles_on_zero_trade_dates": weekend_zero_trade,
+            "history_rows_with_unknown_trade_count": weekend_unknown_history,
+            "dates_without_history_rows": weekend_without_history,
+            "verification_source": (
+                "Per-security TQBR history NUMTRADES > 0"
+                if history_records is not None
+                else "Unavailable; weekend candles remain unverified"
+            ),
+        },
         "calendar_gap_candidates": gaps,
         "calendar_gap_count": len(gaps),
         "exchange_calendar_verified": False,
