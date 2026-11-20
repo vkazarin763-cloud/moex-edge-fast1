@@ -1,5 +1,5 @@
 {
-  "cash": 115633.67628686439,
+  "cash": 131222.9433439419,
   "positions": [
     {
       "ticker": "ROSN",
@@ -79,30 +79,6 @@
       "be_price": 305.02
     },
     {
-      "ticker": "LKOH",
-      "direction": "LONG",
-      "entry_price": 6045.5,
-      "entry_time": "2026-11-17 18:00:00",
-      "qty": 1,
-      "activated": false,
-      "strategy": "SMC_Sweep",
-      "sl_price": 5864.14,
-      "tp_price": 6347.78,
-      "be_price": 6166.41
-    },
-    {
-      "ticker": "MOEX",
-      "direction": "LONG",
-      "entry_price": 165.39,
-      "entry_time": "2026-11-17 18:00:00",
-      "qty": 61,
-      "activated": false,
-      "strategy": "SMC_Sweep",
-      "sl_price": 160.43,
-      "tp_price": 173.66,
-      "be_price": 168.7
-    },
-    {
       "ticker": "TATN",
       "direction": "PUT",
       "entry_price": 576.2,
@@ -125,6 +101,32 @@
       "strategy": "Donchian20",
       "strike": 649.5120000000001,
       "premium": 11.188499574707919,
+      "is_option": true,
+      "expiry_time": "2026-12-20"
+    },
+    {
+      "ticker": "NVTK",
+      "direction": "PUT",
+      "entry_price": 1035.2,
+      "entry_time": "2026-11-20 09:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "Donchian20",
+      "strike": 1004.144,
+      "premium": 17.297393607732317,
+      "is_option": true,
+      "expiry_time": "2026-12-20"
+    },
+    {
+      "ticker": "GMKN",
+      "direction": "PUT",
+      "entry_price": 111.1,
+      "entry_time": "2026-11-20 09:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "Keltner",
+      "strike": 107.767,
+      "premium": 1.8563953147402188,
       "is_option": true,
       "expiry_time": "2026-12-20"
     }
@@ -282,6 +284,40 @@
       "net_ret": -0.03259822443181835,
       "pnl": -367.18640000000187,
       "exit_time": "2026-11-19 08:00:00"
+    },
+    {
+      "ticker": "LKOH",
+      "direction": "LONG",
+      "entry_price": 6045.5,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 5864.14,
+      "tp_price": 6347.78,
+      "be_price": 6166.41,
+      "exit_price": 5864.14,
+      "exit_reason": "SL",
+      "net_ret": -0.03259917293854928,
+      "pnl": -197.0782999999997,
+      "exit_time": "2026-11-20 09:00:00"
+    },
+    {
+      "ticker": "MOEX",
+      "direction": "LONG",
+      "entry_price": 165.39,
+      "entry_time": "2026-11-17 18:00:00",
+      "qty": 61,
+      "activated": false,
+      "strategy": "SMC_Sweep",
+      "sl_price": 160.43,
+      "tp_price": 173.66,
+      "be_price": 168.7,
+      "exit_price": 160.43,
+      "exit_reason": "SL",
+      "net_ret": -0.032589721264888925,
+      "pnl": -328.7908539999987,
+      "exit_time": "2026-11-20 09:00:00"
     }
   ]
 }
