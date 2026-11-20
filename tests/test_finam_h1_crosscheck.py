@@ -24,6 +24,20 @@ class FinamH1CrosscheckTests(unittest.TestCase):
         self.assertEqual(result["finam_closed_bars"],0)
         self.assertEqual(result["matched_bars"],0)
 
+
+    def test_reports_unmatched_hour_and_date_without_reclassifying_it(self):
+        now=datetime(2026,11,18,9,30,tzinfo=timezone.utc)
+        moex=[Candle(datetime(2026,11,18,6),100,105,99,104,1000),
+              Candle(datetime(2026,11,18,7),100,105,99,104,1000)]
+        finam=[FinamBar(datetime(2026,11,18,4,tzinfo=timezone.utc),100,105,99,104,1000,False)]
+        result=compare_h1_series(moex,finam,now=now)
+        self.assertEqual(result["status"],"DATE_COVERAGE_DIFFERS")
+        self.assertEqual(result["coverage_diagnostics"]["moex_only_by_local_hour"],{"06":1})
+        self.assertEqual(result["coverage_diagnostics"]["moex_only_by_date"],{"2026-11-18":1})
+        self.assertEqual(result["coverage_diagnostics"]["finam_only_by_local_hour"],{})
+        self.assertEqual(result["coverage_diagnostics"]["finam_snapshot_false_bars"],1)
+        self.assertEqual(result["coverage_diagnostics"]["finam_snapshot_unknown_bars"],0)
+
     def test_unknown_snapshot_flag_is_retained(self):
         now=datetime(2026,11,18,13,30,tzinfo=timezone.utc)
         moex=[Candle(datetime(2026,11,18,14),100,105,99,104,1000)]
