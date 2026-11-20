@@ -287,6 +287,7 @@ def normalize_daily_candles(
     Therefore this function never shifts or merges a weekend candle into a
     future date. Unconfirmed weekend dates remain separate and are flagged.
     """
+    by_date = _records_by_date(history_records)
     rows = validate_candles(candles)
     ceiling = None
     if isinstance(max_session_date, str):
@@ -294,7 +295,6 @@ def normalize_daily_candles(
     elif max_session_date is not None:
         ceiling = max_session_date
 
-    by_date = _records_by_date(history_records)
     normalized = []
     weekend_diagnostics = []
     excluded_after_cutoff = 0
