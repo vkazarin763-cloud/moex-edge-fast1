@@ -1,9 +1,9 @@
-"""Conservative handling of MOEX daily candles and weekend-session evidence.
+"""MOEX TQBR trading-day bars and raw calendar-session reconciliation.
 
-Weekend candles remain on their original calendar dates. Public per-security
-TQBR history can confirm a same-date positive-trade session, but absence of a
-history row never causes a candle to be shifted or merged into another date.
-The subscription-only machine-readable MOEX calendar is not available here.
+The research CLI uses one daily OHLCV bar per TQBR TRADEDATE from total-session
+history. MOEX weekend additional sessions are part of the next ordinary trading
+day; their raw Saturday/Sunday candle fragments are reconciled against that
+trading-day history row and are not fed as extra D1 bars.
 """
 from __future__ import annotations
 
@@ -271,50 +271,6 @@ def reconcile_session_candles(
             "TQBR date within seven calendar days. Pre-launch weekend dates require "
             "same-date history confirmation. Fragments are aggregated and checked "
             "against the full trading-day history OHLCV."
-        ),
-    }
-
-
-def research_eligible_candles(
-    candles: list[Candle],
-    history_records: list[HistoryRecord],
-) -> tuple[list[Candle], dict]:
-    """Exclude unverified weekend bars from indicators and simulations.
-
-    Raw bars remain available for diagnostics. Weekday bars are retained as
-    supplied; weekend bars enter research calculations only when same-date
-    TQBR history confirms positive NUMTRADES.
-    """
-    rows = validate_candles(candles)
-    by_date = _records_by_date(history_records)
-    eligible = []
-    excluded = []
-    for candle in rows:
-        day = candle.timestamp.date()
-        if day.weekday() < 5:
-            eligible.append(candle)
-            continue
-        record = by_date.get(day)
-        if record is not None and record.num_trades is not None and record.num_trades > 0:
-            eligible.append(candle)
-        else:
-            excluded.append({
-                "calendar_date": day.isoformat(),
-                "volume": candle.volume,
-                "reason": "weekend session not confirmed by same-date positive TQBR NUMTRADES",
-            })
-    if eligible:
-        eligible = validate_candles(eligible)
-    return eligible, {
-        "raw_bars": len(rows),
-        "research_eligible_bars": len(eligible),
-        "unverified_weekend_bars_excluded_from_models": len(excluded),
-        "excluded_weekend_bars": excluded,
-        "policy": (
-            "Unverified weekend candles remain in raw diagnostics but are excluded "
-            "from indicator calculation, walk-forward, cost stress, portfolio replay, "
-            "and prospective holdout. Same-date positive TQBR NUMTRADES is required "
-            "to include a weekend candle in research calculations."
         ),
     }
 
