@@ -38,7 +38,7 @@ class FinamTimeframeRunnerTests(unittest.TestCase):
                        1, 1, 1, 1, 10, None)
         self.assertEqual(len(_completed_h1([row], now=now, finam=True)), 1)
 
-    def test_completed_h1_filter_rejects_future_or_naive_now_at_runner_boundary(self):
+    def test_completed_h1_filter_excludes_an_hour_that_has_not_elapsed(self):
         now = datetime(2026, 11, 20, 5, 30, tzinfo=timezone.utc)
         row = FinamBar(datetime(2026, 11, 20, 5, tzinfo=timezone.utc),
                        1, 1, 1, 1, 10, False)
