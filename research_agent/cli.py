@@ -51,9 +51,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     requested_from = date.fromisoformat(date_from)
     minimum_history_start = date.fromisoformat(HOLDOUT_START_DATE) - timedelta(days=3 * 365 + 2)
     fetch_from = min(requested_from, minimum_history_start).isoformat()
-    history_fetch_till = (
-        date.fromisoformat(calendar_date_ceiling) + timedelta(days=14)
-    ).isoformat()
+    history_fetch_till = calendar_date_ceiling
 
     history_records_by_ticker = {}
     history_errors = {}
@@ -113,7 +111,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             ]
             try:
                 history_crosscheck = audit_tqbr_history(
-                    candles, bounded_history_records, fetch_from, effective_till
+                    raw_candles, bounded_history_records, fetch_from, effective_till
                 )
             except Exception as history_exc:
                 history_crosscheck = {
@@ -171,14 +169,14 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         }
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "source": "MOEX ISS public historical candles and per-security TQBR daily history",
+        "source": "MOEX ISS per-security TQBR daily history OHLCV; raw daily candles retained for reconciliation",
         "board": "TQBR",
         "interval_minutes": 24 * 60,
         "date_from": effective_from,
         "requested_date_from": date_from,
         "history_mapping_fetch_from": fetch_from,
         "history_mapping_fetch_till": history_fetch_till,
-        "history_mapping_lookahead_days": 14,
+        "history_mapping_lookahead_days": 0,
         "date_till": effective_till,
         "requested_date_till": requested_till,
         "daily_bar_completion_policy": {
@@ -186,31 +184,34 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "maximum_requested_candle_date": calendar_date_ceiling,
             "maximum_completed_session_date": effective_till,
             "current_moscow_date_excluded": True,
-            "weekend_candles_kept_on_original_dates": True,
-            "weekend_session_confirmation_requires_same_date_positive_numtrades": True,
+            "research_bars_use_tqbr_trade_dates": True,
+            "raw_weekend_candles_retained_for_reconciliation": True,
+            "weekend_sessions_included_in_next_trading_day_history_ohlcv": True,
             "reason": (
                 "The current Moscow calendar date is excluded. The effective end date is "
-                "the latest positive-trade TQBR history date. Weekend candles at or "
-                "before that cutoff remain on their original dates; same-date positive "
-                "NUMTRADES confirms a weekend date. Unverified weekend bars are retained "
-                "for diagnostics but excluded from all model inputs."
+                "the latest positive-trade TQBR history date. Research uses one OHLCV "
+                "bar per TQBR TRADEDATE; MOEX additional weekend sessions are included "
+                "in the next ordinary trading day's daily-history OHLCV. Separate "
+                "calendar-date candles are retained only for reconciliation diagnostics."
             ),
         },
         "session_date_policy": {
             "source": "MOEX ISS public per-security TQBR daily history",
+            "research_bar_source": "Per-security TQBR daily history OHLCV, one bar per TRADEDATE",
             "weekend_mapping": (
-                "No forward mapping: each weekend candle retains its original "
-                "calendar date and OHLCV values."
+                "Raw Saturday/Sunday candle fragments map to the next positive-trade "
+                "TQBR history date; MOEX defines the additional weekend session as "
+                "part of the next ordinary trading day."
             ),
-            "same_date_confirmation": (
-                "Positive same-date TQBR NUMTRADES confirms the date; otherwise "
-                "the weekend candle is retained but marked unverified."
+            "aggregation": (
+                "The model uses the official TQBR daily-history OHLCV row, which "
+                "already aggregates weekend and ordinary sessions. Raw candle "
+                "fragments are aggregated only to reconcile against that row."
             ),
-            "aggregation": "None; separate calendar dates are never merged.",
-            "limitation": (
-                "The subscription-only machine-readable exchange calendar is not "
-                "available to this runner. Same-date TQBR history is a cross-check, "
-                "not a substitute for the official calendar."
+            "reconciliation": (
+                "Raw calendar-date candles are grouped by TQBR trading date and "
+                "their aggregate OHLCV is compared with daily history. Mismatches "
+                "and unassigned fragments are reported; history remains the model source."
             ),
         },
         "universe": selected,
