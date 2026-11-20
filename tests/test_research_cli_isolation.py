@@ -100,12 +100,13 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
             patch.object(cli, "fetch_history_records", return_value=history_records),
-            patch.object(cli, "fetch_candles", return_value=[]),
+            patch.object(cli, "fetch_candles", side_effect=RuntimeError("raw candles unavailable")),
         ):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["EMPTY"])
         result = report["results"]["EMPTY"]
         self.assertEqual(result["status"], "ANALYZED")
         self.assertEqual(result["raw_session_candles"], 0)
+        self.assertEqual(result["raw_candle_fetch_error"], "raw candles unavailable")
         self.assertEqual(result["session_date_mapping"]["status"], "NO_RAW_CANDLES")
         self.assertIsNone(result["raw_candle_quality"])
         self.assertTrue(result["data_quality"]["session_date_mapping_complete"])
