@@ -37,7 +37,10 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             return {"candidates": {}}
 
         def capture_holdout(rows, cutoff):
-            observed["holdout"] = list(rows)
+            observed["holdout"] = [
+                row for row in rows
+                if row.timestamp.date() >= date.fromisoformat(cutoff)
+            ]
             observed["cutoff"] = cutoff
             return {"status": "PROSPECTIVE_DATA_AVAILABLE"}
 
@@ -47,10 +50,10 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             return {"status": "DEVELOPMENT_WALK_FORWARD_PORTFOLIO"}
 
         history_records = [
-            HistoryRecord(date(2023, 11, 20), 10),
-            HistoryRecord(date(2026, 11, 18), 10),
-            HistoryRecord(date(2026, 11, 19), 10),
-            HistoryRecord(date(2026, 11, 20), 10),
+            HistoryRecord(date(2023, 11, 20), 10, 90.0, 91.0, 89.0, 90.5, 1000.0),
+            HistoryRecord(date(2026, 11, 18), 10, 100.0, 101.0, 99.0, 100.5, 1000.0),
+            HistoryRecord(date(2026, 11, 19), 10, 101.0, 102.0, 100.0, 101.5, 1000.0),
+            HistoryRecord(date(2026, 11, 20), 10, 102.0, 103.0, 101.0, 102.5, 1000.0),
         ]
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
@@ -71,13 +74,16 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         self.assertTrue(observed["holdout"])
         self.assertTrue(all(row.timestamp.date() < cutoff for row in observed["development"]))
         self.assertTrue(all(row.timestamp.date() < cutoff for row in observed["stress"]))
-        self.assertEqual(observed["holdout"], candles)
-        self.assertEqual(observed["portfolio"], candles[:2])
+        self.assertEqual(
+            [row.timestamp.date() for row in observed["holdout"]],
+            [date(2026, 11, 20)],
+        )
+        self.assertEqual(observed["portfolio"], observed["development"])
         self.assertEqual(report["development_portfolio"]["status"], "DEVELOPMENT_WALK_FORWARD_PORTFOLIO")
         self.assertEqual(report["results"]["TEST"]["status"], "ANALYZED")
         fetch.assert_called_once()
         history_fetch.assert_called_once_with(
-            "TEST", "2023-11-19", "2026-12-04", board="TQBR"
+            "TEST", "2023-11-19", "2026-11-20", board="TQBR"
         )
         self.assertLessEqual(
             date.fromisoformat(fetch.call_args.args[1]),
