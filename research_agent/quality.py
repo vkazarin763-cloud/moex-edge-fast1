@@ -147,11 +147,10 @@ def candle_quality_report(
         "exchange_calendar_verified": False,
         "session_date_mapping_complete": session_date_mapping_complete,
         "calendar_caveat": (
-            "Weekend session dates were inferred from the next positive-trade "
-            "per-security TQBR history date. This is not a direct official-calendar lookup."
-            if session_date_mapping_complete else
-            "Weekend session dates could not be fully inferred from per-security "
-            "TQBR history; unresolved weekend candles are excluded from research."
+            "Weekend bars are retained on original dates. Only same-date positive TQBR "
+            "NUMTRADES confirms a weekend session; unverified weekend bars are "
+            "excluded from model inputs, but remain in raw data diagnostics. "
+            "This is not a direct official-calendar lookup."
         ),
         "history_status": history_status,
         "warmup_bars_required": warmup_bars,
