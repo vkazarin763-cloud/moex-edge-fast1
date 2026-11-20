@@ -20,7 +20,7 @@ def compare_h1_series(moex_rows, finam_rows, now=None):
     current=current.astimezone(timezone.utc)
     moex={}
     for row in moex_rows:
-        if _local_key(row.timestamp).replace(minute=0) + timedelta(hours=1) > current.astimezone(MOSCOW).replace(tzinfo=None): continue
+        moex_start = row.timestamp.replace(tzinfo=MOSCOW) if row.timestamp.tzinfo is None else row.timestamp.astimezone(MOSCOW)\n        if moex_start.astimezone(timezone.utc) + timedelta(hours=1) > current: continue
         key=_local_key(row.timestamp)
         if key in moex: raise ValueError(f"Duplicate MOEX H1 timestamp: {key.isoformat()}")
         moex[key]=row
