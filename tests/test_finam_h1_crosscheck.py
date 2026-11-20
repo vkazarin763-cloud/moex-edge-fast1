@@ -16,9 +16,9 @@ class FinamH1CrosscheckTests(unittest.TestCase):
     def test_excludes_open_and_snapshot_bars(self):
         now=datetime(2026,11,18,13,30,tzinfo=timezone.utc)
         moex=[Candle(datetime(2026,11,18,14),100,105,99,104,1000),
-              Candle(datetime(2026,11,18,15),100,105,99,104,1000)]
+              Candle(datetime(2026,11,18,16),100,105,99,104,1000)]
         finam=[FinamBar(datetime(2026,11,18,11,tzinfo=timezone.utc),100,105,99,104,1000,True),
-               FinamBar(datetime(2026,11,18,12,tzinfo=timezone.utc),100,105,99,104,1000,False)]
+               FinamBar(datetime(2026,11,18,13,tzinfo=timezone.utc),100,105,99,104,1000,False)]
         result=compare_h1_series(moex,finam,now=now)
         self.assertEqual(result["moex_closed_bars"],1)
         self.assertEqual(result["finam_closed_bars"],0)
