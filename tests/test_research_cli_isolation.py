@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from research_agent import cli
 from research_agent.core import Candle
-from research_agent.session_calendar import StockCalendarRecord
+from research_agent.moex_iss import HistoryRecord
 
 
 def make_candles():
@@ -46,24 +46,15 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             observed["portfolio_kwargs"] = kwargs
             return {"status": "DEVELOPMENT_WALK_FORWARD_PORTFOLIO"}
 
-        calendar = {
-            date(2023, 11, 20): StockCalendarRecord(
-                date(2023, 11, 20), 1, None, "N"
-            ),
-            date(2026, 11, 18): StockCalendarRecord(
-                date(2026, 11, 18), 1, None, "N"
-            ),
-            date(2026, 11, 19): StockCalendarRecord(
-                date(2026, 11, 19), 1, None, "N"
-            ),
-            date(2026, 11, 20): StockCalendarRecord(
-                date(2026, 11, 20), 1, None, "N"
-            ),
-        }
+        history_records = [
+            HistoryRecord(date(2023, 11, 20), 10),
+            HistoryRecord(date(2026, 11, 18), 10),
+            HistoryRecord(date(2026, 11, 19), 10),
+            HistoryRecord(date(2026, 11, 20), 10),
+        ]
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
-            patch.object(cli, "fetch_stock_calendar", return_value=calendar),
-            patch.object(cli, "fetch_history_records", return_value=[]),
+            patch.object(cli, "fetch_history_records", return_value=history_records),
             patch.object(cli, "fetch_candles", return_value=candles) as fetch,
             patch.object(cli, "candle_quality_report", return_value={"status": "TEST"}),
             patch.object(cli, "walk_forward_report", side_effect=capture_development),
@@ -91,23 +82,15 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         )
 
     def test_empty_fetch_is_reported_as_symbol_error_not_crash(self):
-        calendar = {
-            date(2023, 11, 20): StockCalendarRecord(
-                date(2023, 11, 20), 1, None, "N"
-            ),
-            date(2026, 11, 18): StockCalendarRecord(
-                date(2026, 11, 18), 1, None, "N"
-            ),
-            date(2026, 11, 19): StockCalendarRecord(
-                date(2026, 11, 19), 1, None, "N"
-            ),
-            date(2026, 11, 20): StockCalendarRecord(
-                date(2026, 11, 20), 1, None, "N"
-            ),
-        }
+        history_records = [
+            HistoryRecord(date(2023, 11, 20), 10),
+            HistoryRecord(date(2026, 11, 18), 10),
+            HistoryRecord(date(2026, 11, 19), 10),
+            HistoryRecord(date(2026, 11, 20), 10),
+        ]
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
-            patch.object(cli, "fetch_stock_calendar", return_value=calendar),
+            patch.object(cli, "fetch_history_records", return_value=history_records),
             patch.object(cli, "fetch_candles", return_value=[]),
         ):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["EMPTY"])
