@@ -12,6 +12,8 @@ from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
+from .session_calendar import (fetch_stock_calendar, latest_completed_session_date,
+                              normalize_daily_candles)
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
 
@@ -43,20 +45,34 @@ MOEX_FIRST_LISTING_44 = [
 def run_universe(date_from: str, date_till: str, tickers: list[str] | None = None) -> dict:
     selected = tickers or MOEX_FIRST_LISTING_44
     requested_till = date.fromisoformat(date_till).isoformat()
-    effective_till = cap_to_last_completed_moscow_date(requested_till)
+    calendar_date_ceiling = cap_to_last_completed_moscow_date(requested_till)
     requested_from = date.fromisoformat(date_from)
-    if requested_from > date.fromisoformat(effective_till):
-        raise ValueError(
-            "date_from is after the latest completed Moscow calendar date; "
-            "unfinished current-day D1 candles are excluded"
-        )
     minimum_history_start = date.fromisoformat(HOLDOUT_START_DATE) - timedelta(days=3 * 365 + 2)
     fetch_from = min(requested_from, minimum_history_start).isoformat()
+    calendar_fetch_till = (
+        date.fromisoformat(calendar_date_ceiling) + timedelta(days=7)
+    ).isoformat()
+    stock_calendar = fetch_stock_calendar(fetch_from, calendar_fetch_till)
+    effective_till = latest_completed_session_date(
+        stock_calendar, calendar_date_ceiling
+    ).isoformat()
+    if requested_from > date.fromisoformat(effective_till):
+        raise ValueError(
+            "date_from is after the latest completed MOEX trading-session date; "
+            "unfinished current-day and weekend-linked sessions are excluded"
+        )
     results = {}
     development_candles_by_ticker = {}
     for ticker in selected:
         try:
-            candles = fetch_candles(ticker, fetch_from, effective_till, interval=24, board="TQBR")
+            raw_candles = fetch_candles(
+                ticker, fetch_from, calendar_date_ceiling, interval=24, board="TQBR"
+            )
+            candles, session_calendar_diagnostics = normalize_daily_candles(
+                raw_candles, stock_calendar, max_session_date=effective_till
+            )
+            if not candles:
+                raise ValueError("No candles remain after completed-session normalization")
             development = [
                 candle for candle in candles
                 if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
@@ -84,6 +100,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     candles, fetch_from, effective_till,
                     history_records=history_records,
                 ),
+                "session_calendar_aggregation": session_calendar_diagnostics,
                 "tqbr_history_crosscheck": history_crosscheck,
                 "development_period_end_exclusive": HOLDOUT_START_DATE,
                 "walk_forward": walk_forward_report(development),
@@ -124,9 +141,22 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         "requested_date_till": requested_till,
         "daily_bar_completion_policy": {
             "timezone": "Europe/Moscow",
-            "maximum_requested_candle_date": effective_till,
+            "maximum_requested_candle_date": calendar_date_ceiling,
+            "maximum_completed_session_date": effective_till,
             "current_moscow_date_excluded": True,
-            "reason": "The current daily candle may be unfinished and is excluded from all research stages.",
+            "weekend_linked_sessions_excluded_until_their_target_session_completes": True,
+            "reason": (
+                "The current daily candle is excluded. Weekend sessions are assigned "
+                "to the official MOEX trade_session_date and included only after that "
+                "target session has completed."
+            ),
+        },
+        "calendar_session_policy": {
+            "source": "MOEX ISS stock calendar",
+            "weekend_reason_code": "W",
+            "mapping_field": "trade_session_date",
+            "aggregation": "Chronological first open, maximum high, minimum low, last close, summed volume",
+            "purpose": "One indicator/backtest bar per official MOEX trading session",
         },
         "universe": selected,
         "development_holdout_policy": {
