@@ -1,5 +1,5 @@
 {
-  "cash": 115644.8647864391,
+  "cash": 115633.67628686439,
   "positions": [
     {
       "ticker": "ROSN",
@@ -114,6 +114,19 @@
       "premium": 9.627857608940616,
       "is_option": true,
       "expiry_time": "2026-12-19"
+    },
+    {
+      "ticker": "CHMF",
+      "direction": "PUT",
+      "entry_price": 669.6,
+      "entry_time": "2026-11-20 06:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "Donchian20",
+      "strike": 649.5120000000001,
+      "premium": 11.188499574707919,
+      "is_option": true,
+      "expiry_time": "2026-12-20"
     }
   ],
   "closed_trades": [
