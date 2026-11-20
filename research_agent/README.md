@@ -16,8 +16,10 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
   history OHLCV (`TRADEDATE`, total trading session), not by treating each raw
   Saturday/Sunday candle as an extra trading day. The daily-history row already
   includes the weekend session(s) and the following ordinary session. Raw calendar-
-  date candles are retained for diagnostics, grouped to the next positive-trade
-  TQBR date, and reconciled against the official daily-history OHLCV. Unassigned
+  date candles are retained for diagnostics. From the 2025-03-01 weekend-session
+  launch onward, weekend fragments are grouped to the next positive-trade TQBR
+  date and reconciled against daily-history OHLCV; pre-launch weekend dates
+  require same-date history confirmation. Unassigned
   fragments or OHLCV mismatches are reported; the history row remains the model
   input and no raw fragment is silently discarded or double-counted.
 - A fixed, pre-registered candidate set: Donchian-20 breakout, EMA-20/50 cross,
@@ -43,9 +45,10 @@ fixed 44-symbol first-listing universe and produces a JSON report. `moex_iss.py`
 paginates responses, validates OHLCV and rejects duplicate timestamps without
 fabricating missing candles. The daily research series is built from TQBR
 total-session history OHLCV, while raw calendar-date candles are retained as a
-separate reconciliation source. Weekend fragments are assigned to the next
-positive-trade TQBR date and aggregated for comparison with that date's history
-row; the model uses the history row itself. This follows MOEX's description of
+separate reconciliation source. From 2025-03-01 onward, weekend fragments are
+assigned to the next positive-trade TQBR date and aggregated for comparison with
+that date's history row; pre-launch weekend dates require same-date history
+confirmation. The model uses the history row itself. This follows MOEX's description of
 the additional weekend session as part of the next ordinary trading day (see
 [MOEX weekend-session rules](https://www.moex.com/a8920) and
 [the securities/modes table](https://www.moex.com/ru/SecuritiesListing.aspx)).
