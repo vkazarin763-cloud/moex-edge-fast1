@@ -33,13 +33,35 @@ class FinamH1CrosscheckTests(unittest.TestCase):
         finam = [FinamBar(datetime(2026, 11, 18, 3, tzinfo=timezone.utc), 100, 105, 99, 104, 1000, False),
                  FinamBar(datetime(2026, 11, 18, 4, tzinfo=timezone.utc), 100, 105, 99, 104, 1000, False)]
         result = compare_h1_series(moex, finam, now=now)
-        self.assertEqual(result["status"], "DATE_COVERAGE_MATCHES")
+        self.assertEqual(result["status"], "MATCHED_WITH_0600_BUCKET_SEPARATED")
+        self.assertEqual(result["main_session_status"], "DATE_COVERAGE_MATCHES")
+        self.assertEqual(result["session_scope_diagnostics"]["status"], "BOTH_SOURCES_HAVE_0600_BUCKET")
         self.assertEqual(result["moex_closed_bars"], 1)
         self.assertEqual(result["finam_closed_bars"], 1)
         self.assertEqual(result["matched_bars"], 1)
         self.assertEqual(result["coverage_diagnostics"]["excluded_0600_moex_bars"], 1)
         self.assertEqual(result["coverage_diagnostics"]["excluded_0600_finam_bars"], 1)
         self.assertEqual(result["comparisons"][0]["timestamp_moscow"], "2026-11-18T07:00:00")
+
+    def test_reports_moex_0600_bucket_separately_when_finam_has_none(self):
+        now = datetime(2026, 11, 18, 9, 30, tzinfo=timezone.utc)
+        moex = [
+            Candle(datetime(2026, 11, 18, 6), 99, 101, 98, 100, 250),
+            Candle(datetime(2026, 11, 18, 7), 100, 105, 99, 104, 1000),
+        ]
+        finam = [
+            FinamBar(datetime(2026, 11, 18, 4, tzinfo=timezone.utc),
+                     100, 105, 99, 104, 1000, False),
+        ]
+        result = compare_h1_series(moex, finam, now=now)
+        self.assertEqual(result["status"], "MATCHED_WITH_0600_BUCKET_SEPARATED")
+        self.assertEqual(result["main_session_status"], "DATE_COVERAGE_MATCHES")
+        diagnostics = result["session_scope_diagnostics"]
+        self.assertEqual(diagnostics["status"], "MOEX_0600_ONLY")
+        self.assertEqual(len(diagnostics["moex_0600_bars"]), 1)
+        self.assertEqual(diagnostics["moex_0600_bars"][0]["open"], 99.0)
+        self.assertEqual(diagnostics["moex_0600_bars"][0]["volume"], 250.0)
+        self.assertEqual(diagnostics["finam_0600_bars"], [])
 
     def test_unknown_snapshot_flag_is_retained(self):
         now = datetime(2026, 11, 18, 13, 30, tzinfo=timezone.utc)
