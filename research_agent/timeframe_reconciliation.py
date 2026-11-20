@@ -186,6 +186,237 @@ def reconcile_daily_to_hourly(
     }
 
 
+
+def reconcile_cross_source(
+    *,
+    moex_daily,
+    moex_hourly,
+    finam_daily,
+    finam_hourly,
+    tolerance=0.0,
+):
+    """Compare MOEX and Finam directly while isolating MOEX's 06:00 bucket.
+
+    The 06:00 MOEX bar is reported separately, never merged into or discarded
+    from either source. Main-session H1 bars are matched by Moscow-local time.
+    Daily checks distinguish raw feed differences from the expected session
+    boundary adjustments.
+    """
+    if tolerance < 0:
+        raise ValueError("tolerance must be non-negative")
+    md = _index_daily(moex_daily, finam=False)
+    fd = _index_daily(finam_daily, finam=True)
+    mh, _, _ = _index_hourly(moex_hourly, finam=False)
+    fh, _, finam_snapshot_unknown = _index_hourly(finam_hourly, finam=True)
+
+    mdays, fdays = set(md), set(fd)
+    common_days = sorted(mdays & fdays)
+    daily_rows = []
+    raw_mismatch_counts = {field: 0 for field in (*PRICE_FIELDS, "volume")}
+    adjusted_mismatch_counts = {
+        "open": 0, "high": 0, "low": 0, "close": 0, "volume": 0
+    }
+
+    for day in common_days:
+        moex_bar, finam_bar = md[day], fd[day]
+        moex_bars = mh.get(day, [])
+        finam_bars = fh.get(day, [])
+        moex_06 = next(
+            (row for row in moex_bars if _hourly_date_and_hour(row)[1] == 6),
+            None,
+        )
+        moex_main = [
+            row for row in moex_bars if _hourly_date_and_hour(row)[1] != 6
+        ]
+        finam_main = [
+            row for row in finam_bars if _hourly_date_and_hour(row)[1] != 6
+        ]
+
+        raw = {}
+        for field in (*PRICE_FIELDS, "volume"):
+            left = float(getattr(moex_bar, field))
+            right = float(getattr(finam_bar, field))
+            matches = _same(left, right, tolerance)
+            if not matches:
+                raw_mismatch_counts[field] += 1
+            raw[field] = {
+                "moex": left,
+                "finam": right,
+                "difference_moex_minus_finam": left - right,
+                "matches": matches,
+            }
+
+        checks = {}
+        if moex_06 is not None:
+            moex_open_expected = float(moex_06.open)
+            finam_open_expected = (
+                float(finam_main[0].open) if finam_main else None
+            )
+            checks["open"] = {
+                "moex_expected": moex_open_expected,
+                "finam_expected": finam_open_expected,
+                "matches": (
+                    _same(moex_bar.open, moex_open_expected, tolerance)
+                    and finam_open_expected is not None
+                    and _same(finam_bar.open, finam_open_expected, tolerance)
+                ),
+                "explanation": "MOEX D1 opens at its 06:00 bucket; Finam D1 opens at its first main-session H1 bar.",
+            }
+            expected_high = max(
+                float(finam_bar.high), float(moex_06.high)
+            )
+            expected_low = min(
+                float(finam_bar.low), float(moex_06.low)
+            )
+        else:
+            first_moex = float(moex_main[0].open) if moex_main else None
+            first_finam = float(finam_main[0].open) if finam_main else None
+            checks["open"] = {
+                "moex_expected": float(finam_bar.open),
+                "finam_expected": float(moex_bar.open),
+                "matches": (
+                    _same(moex_bar.open, finam_bar.open, tolerance)
+                    and (first_moex is None or _same(moex_bar.open, first_moex, tolerance))
+                    and (first_finam is None or _same(finam_bar.open, first_finam, tolerance))
+                ),
+                "explanation": "No MOEX 06:00 bucket; daily opens should agree.",
+            }
+            expected_high = float(finam_bar.high)
+            expected_low = float(finam_bar.low)
+
+        checks["high"] = {
+            "moex_expected": expected_high,
+            "finam_expected": float(finam_bar.high),
+            "matches": _same(moex_bar.high, expected_high, tolerance),
+            "explanation": "The MOEX 06:00 bucket may extend the daily high.",
+        }
+        checks["low"] = {
+            "moex_expected": expected_low,
+            "finam_expected": float(finam_bar.low),
+            "matches": _same(moex_bar.low, expected_low, tolerance),
+            "explanation": "The MOEX 06:00 bucket may extend the daily low.",
+        }
+        checks["close"] = {
+            "moex_expected": float(finam_bar.close),
+            "finam_expected": float(moex_bar.close),
+            "matches": _same(moex_bar.close, finam_bar.close, tolerance),
+            "explanation": "Daily closes should be identical.",
+        }
+        expected_volume = float(finam_bar.volume) + (
+            float(moex_06.volume) if moex_06 is not None else 0.0
+        )
+        checks["volume"] = {
+            "moex_expected": expected_volume,
+            "finam_expected": float(finam_bar.volume),
+            "matches": _same(moex_bar.volume, expected_volume, tolerance),
+            "moex_0600_volume": float(moex_06.volume) if moex_06 is not None else 0.0,
+            "explanation": "MOEX D1 volume includes the 06:00 bucket; Finam D1 does not.",
+        }
+        for field, check in checks.items():
+            if not check["matches"]:
+                adjusted_mismatch_counts[field] += 1
+
+        daily_rows.append({
+            "date": day.isoformat(),
+            "moex_0600_bucket_present": moex_06 is not None,
+            "moex_0600_bucket": (
+                {
+                    "open": float(moex_06.open),
+                    "high": float(moex_06.high),
+                    "low": float(moex_06.low),
+                    "close": float(moex_06.close),
+                    "volume": float(moex_06.volume),
+                } if moex_06 is not None else None
+            ),
+            "raw_comparison": raw,
+            "session_adjusted_checks": checks,
+            "status": (
+                "SESSION_ADJUSTED_MATCH"
+                if all(item["matches"] for item in checks.values())
+                else "UNEXPLAINED_DIFFERENCE"
+            ),
+        })
+
+    # Compare all completed main-session H1 bars by Moscow-local timestamp.
+    def main_index(rows_by_day):
+        indexed = {}
+        for rows in rows_by_day.values():
+            for row in rows:
+                local = _local_datetime(row.timestamp)
+                if local.hour == 6:
+                    continue
+                if local in indexed:
+                    raise ValueError(f"Duplicate main-session H1 timestamp: {local.isoformat()}")
+                indexed[local] = row
+        return indexed
+
+    moex_h1 = main_index(mh)
+    finam_h1 = main_index(fh)
+    mtimes, ftimes = set(moex_h1), set(finam_h1)
+    matched_times = sorted(mtimes & ftimes)
+    h1_mismatch_counts = {field: 0 for field in (*PRICE_FIELDS, "volume")}
+    h1_mismatches = []
+    for timestamp in matched_times:
+        left, right = moex_h1[timestamp], finam_h1[timestamp]
+        checks = {}
+        for field in (*PRICE_FIELDS, "volume"):
+            a, b = float(getattr(left, field)), float(getattr(right, field))
+            matches = _same(a, b, tolerance)
+            if not matches:
+                h1_mismatch_counts[field] += 1
+            checks[field] = {
+                "moex": a, "finam": b,
+                "difference_moex_minus_finam": a - b,
+                "matches": matches,
+            }
+        if any(not item["matches"] for item in checks.values()):
+            h1_mismatches.append({
+                "timestamp_moscow": timestamp.isoformat(),
+                "checks": checks,
+            })
+
+    daily_ok = (
+        len(common_days) == len(mdays) == len(fdays)
+        and all(row["status"] == "SESSION_ADJUSTED_MATCH" for row in daily_rows)
+    )
+    h1_ok = (
+        mtimes == ftimes
+        and not h1_mismatches
+    )
+    return {
+        "status": "SESSION_ADJUSTED_MATCH" if daily_ok and h1_ok else "CROSS_SOURCE_DIFFERENCE",
+        "daily": {
+            "moex_days": len(mdays),
+            "finam_days": len(fdays),
+            "matched_days": len(common_days),
+            "moex_only_dates": sorted(day.isoformat() for day in mdays - fdays),
+            "finam_only_dates": sorted(day.isoformat() for day in fdays - mdays),
+            "raw_mismatch_counts": raw_mismatch_counts,
+            "session_adjusted_mismatch_counts": adjusted_mismatch_counts,
+            "moex_0600_days": sum(row["moex_0600_bucket_present"] for row in daily_rows),
+            "comparisons": daily_rows,
+        },
+        "hourly_main_session": {
+            "moex_bars": len(moex_h1),
+            "finam_bars": len(finam_h1),
+            "matched_timestamps": len(matched_times),
+            "moex_only_timestamps": sorted(
+                item.isoformat() for item in mtimes - ftimes
+            ),
+            "finam_only_timestamps": sorted(
+                item.isoformat() for item in ftimes - mtimes
+            ),
+            "mismatch_counts": h1_mismatch_counts,
+            "mismatches": h1_mismatches,
+            "finam_snapshot_unknown_bars_retained": finam_snapshot_unknown,
+        },
+        "method": (
+            "Main-session H1 is compared by Moscow-local timestamp after separating "
+            "the 06:00 bucket. D1 raw differences are retained; adjusted checks test "
+            "the explicit 06:00 open/high/low/volume boundary without rewriting data."
+        ),
+    }
+
 def reconcile_moex_and_finam(
     *,
     moex_daily,
