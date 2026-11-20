@@ -45,7 +45,8 @@ class WeekendSessionAggregationTests(unittest.TestCase):
         self.calendar = {
             date(2025, 2, 28): StockCalendarRecord(
                 date(2025, 2, 28), 1, None, "N"
-            ),\n            date(2025, 3, 1): StockCalendarRecord(
+            ),
+            date(2025, 3, 1): StockCalendarRecord(
                 date(2025, 3, 1), 1, date(2025, 3, 3), "W"
             ),
             date(2025, 3, 2): StockCalendarRecord(
