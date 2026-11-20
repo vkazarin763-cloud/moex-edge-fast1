@@ -6,6 +6,7 @@ from research_agent.finam_market_data import FinamBar
 from research_agent.timeframe_reconciliation import (
     reconcile_daily_to_hourly,
     reconcile_moex_and_finam,
+    reconcile_cross_source,
 )
 
 
@@ -115,6 +116,60 @@ class TimeframeReconciliationTests(unittest.TestCase):
         self.assertEqual(result["moex"]["status"], "RECONCILED")
         self.assertEqual(result["finam"]["status"], "RECONCILED")
         self.assertIn("not modified or merged", result["safety"])
+
+
+    def test_cross_source_reconciliation_separates_0600_bucket(self):
+        moex_daily = [Candle(datetime(2026, 11, 18), 99, 105, 98, 104, 1250)]
+        moex_hourly = [
+            Candle(datetime(2026, 11, 18, 6), 99, 99, 99, 99, 250),
+            Candle(datetime(2026, 11, 18, 7), 100, 105, 98, 104, 1000),
+        ]
+        finam_daily = [FinamBar(
+            datetime(2026, 11, 18, 4, tzinfo=timezone.utc),
+            100, 105, 98, 104, 1000, False,
+        )]
+        finam_hourly = [FinamBar(
+            datetime(2026, 11, 18, 4, tzinfo=timezone.utc),
+            100, 105, 98, 104, 1000, False,
+        )]
+        result = reconcile_cross_source(
+            moex_daily=moex_daily, moex_hourly=moex_hourly,
+            finam_daily=finam_daily, finam_hourly=finam_hourly,
+        )
+        self.assertEqual(result["status"], "SESSION_ADJUSTED_MATCH")
+        self.assertEqual(result["daily"]["raw_mismatch_counts"]["open"], 1)
+        self.assertEqual(result["daily"]["raw_mismatch_counts"]["volume"], 1)
+        self.assertEqual(
+            result["daily"]["session_adjusted_mismatch_counts"],
+            {"open": 0, "high": 0, "low": 0, "close": 0, "volume": 0},
+        )
+        self.assertEqual(result["hourly_main_session"]["matched_timestamps"], 1)
+        self.assertEqual(
+            sum(result["hourly_main_session"]["mismatch_counts"].values()), 0
+        )
+
+    def test_cross_source_reconciliation_flags_unexplained_daily_difference(self):
+        moex_daily = [Candle(datetime(2026, 11, 18), 99, 106, 98, 104, 1250)]
+        moex_hourly = [
+            Candle(datetime(2026, 11, 18, 6), 99, 99, 99, 99, 250),
+            Candle(datetime(2026, 11, 18, 7), 100, 105, 98, 104, 1000),
+        ]
+        finam_daily = [FinamBar(
+            datetime(2026, 11, 18, 4, tzinfo=timezone.utc),
+            100, 105, 98, 104, 1000, False,
+        )]
+        finam_hourly = [FinamBar(
+            datetime(2026, 11, 18, 4, tzinfo=timezone.utc),
+            100, 105, 98, 104, 1000, False,
+        )]
+        result = reconcile_cross_source(
+            moex_daily=moex_daily, moex_hourly=moex_hourly,
+            finam_daily=finam_daily, finam_hourly=finam_hourly,
+        )
+        self.assertEqual(result["status"], "CROSS_SOURCE_DIFFERENCE")
+        self.assertEqual(
+            result["daily"]["session_adjusted_mismatch_counts"]["high"], 1
+        )
 
 
 if __name__ == "__main__":
