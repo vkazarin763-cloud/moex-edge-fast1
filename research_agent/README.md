@@ -102,10 +102,11 @@ history window is enforced locally (M1 7 days; M5-M30 and H1-H8 30 days; D1
 
 Credentials must be supplied by the operator at runtime and must never be
 committed to the repository, printed in logs, or added to the scheduled
-workflow. The adapter is currently a test-covered integration component only:
-no live Finam credentialed request or MOEX-vs-Finam market-data comparison has
-yet been run. Finam data does not replace MOEX ISS and is not mixed into the
-frozen strategy/holdout dataset.
+workflow. The adapter has been exercised through read-only D1 and H1 MOEX-vs-Finam
+cross-checks. A session-boundary audit found that MOEX D1 can include a 06:00
+Moscow H1 opening-auction bucket that Finam D1 does not include; the feeds remain
+separate and neither is declared universally authoritative. Finam data does not
+replace MOEX ISS and is not mixed into the frozen strategy/holdout dataset.
 
 ### Running the optional D1 cross-check
 
@@ -143,3 +144,21 @@ calendar day in the Moscow timezone, avoiding an unfinished current-day candle.
 This workflow is manual-only, has `contents: read` permission, does not run on a
 schedule, and uploads the JSON comparison as an artifact.
 The scheduled MOEX research workflow is not given these credentials.
+
+
+### Running the combined D1-H1 session reconciliation
+
+The manual-only workflow **MOEX EDGE D1-H1 Session Reconciliation (Manual, Read Only)**
+fetches daily and hourly bars from both sources over the same rolling 1–30 calendar-day
+window. It removes the current unfinished D1 candle and unfinished H1 bars, then
+reports each source's D1-to-H1 open/high/low/close/volume reconciliation independently.
+MOEX's 06:00 bucket is retained for its daily open and volume checks; Finam's observed
+main-session aggregation starts after the 06:00 bucket. Missing bars and residual
+high/low differences are reported, never filled or silently normalized.
+
+Run it from Actions → **MOEX EDGE D1-H1 Session Reconciliation (Manual, Read Only)**
+→ Run workflow. It requires the existing repository Actions secret
+`FINAM_API_TOKEN`; the optional `FINAM_SOURCE_APP_ID` may also be configured.
+The workflow is manual-only, read-only, uploads a JSON artifact, and does not access
+accounts or order endpoints. The resulting diagnostics are research-quality
+data-integrity checks, not a strategy-performance result or production approval.
