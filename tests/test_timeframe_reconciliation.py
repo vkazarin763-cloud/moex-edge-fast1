@@ -172,5 +172,61 @@ class TimeframeReconciliationTests(unittest.TestCase):
         )
 
 
+    def test_cross_source_excludes_only_incomplete_left_edge_date(self):
+        moex_daily = [
+            Candle(datetime(2026, 11, 18), 99, 105, 98, 104, 1250),
+            Candle(datetime(2026, 11, 19), 100, 106, 99, 105, 1000),
+        ]
+        moex_hourly = [
+            Candle(datetime(2026, 11, 18, 6), 99, 99, 99, 99, 250),
+            Candle(datetime(2026, 11, 18, 7), 100, 105, 98, 104, 1000),
+            Candle(datetime(2026, 11, 19, 6), 100, 100, 100, 100, 0),
+            Candle(datetime(2026, 11, 19, 7), 100, 106, 99, 105, 1000),
+        ]
+        finam_daily = [
+            FinamBar(datetime(2026, 11, 18, 4, tzinfo=timezone.utc),
+                     100, 105, 98, 104, 1000, False),
+            FinamBar(datetime(2026, 11, 19, 4, tzinfo=timezone.utc),
+                     100, 106, 99, 105, 1000, False),
+        ]
+        finam_hourly = [
+            FinamBar(datetime(2026, 11, 18, 5, tzinfo=timezone.utc),
+                     100, 105, 98, 104, 1000, False),
+            FinamBar(datetime(2026, 11, 19, 4, tzinfo=timezone.utc),
+                     100, 106, 99, 105, 1000, False),
+        ]
+        source_reconciliation = {
+            "moex": {"comparisons": [
+                {"date": "2026-11-18", "status": "MATCHED"},
+                {"date": "2026-11-19", "status": "MATCHED"},
+            ]},
+            "finam": {"comparisons": [
+                {"date": "2026-11-18", "status": "AGGREGATION_DIFFERENCE"},
+                {"date": "2026-11-19", "status": "MATCHED"},
+            ]},
+        }
+        result = reconcile_cross_source(
+            moex_daily=moex_daily, moex_hourly=moex_hourly,
+            finam_daily=finam_daily, finam_hourly=finam_hourly,
+            source_reconciliation=source_reconciliation,
+        )
+        self.assertEqual(result["status"], "MATCHED_WITH_EDGE_COVERAGE_GAP")
+        self.assertEqual(
+            result["daily"]["excluded_incomplete_left_edge_dates"],
+            ["2026-11-18"],
+        )
+        self.assertEqual(result["daily"]["adjusted_comparison_days"], 1)
+        self.assertEqual(
+            result["daily"]["session_adjusted_mismatch_counts"],
+            {"open": 0, "high": 0, "low": 0, "close": 0, "volume": 0},
+        )
+        self.assertEqual(
+            result["hourly_main_session"]["unexplained_moex_only_timestamps"], []
+        )
+        self.assertEqual(
+            result["hourly_main_session"]["unexplained_finam_only_timestamps"], []
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
