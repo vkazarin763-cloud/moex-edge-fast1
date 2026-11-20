@@ -23,6 +23,8 @@ def cap_to_last_completed_moscow_date(
 ) -> str:
     """Never include today's potentially unfinished MOEX daily candle."""
     requested_date = date.fromisoformat(requested_till)
+    if now is not None and (now.tzinfo is None or now.utcoffset() is None):
+        raise ValueError("now must be timezone-aware")
     local_now = now.astimezone(MOEX_TIMEZONE) if now is not None else datetime.now(MOEX_TIMEZONE)
     last_completed_date = local_now.date() - timedelta(days=1)
     return min(requested_date, last_completed_date).isoformat()
@@ -122,7 +124,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         "requested_date_till": requested_till,
         "daily_bar_completion_policy": {
             "timezone": "Europe/Moscow",
-            "latest_included_calendar_date": effective_till,
+            "maximum_requested_candle_date": effective_till,
             "current_moscow_date_excluded": True,
             "reason": "The current daily candle may be unfinished and is excluded from all research stages.",
         },
