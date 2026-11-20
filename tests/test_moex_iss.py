@@ -76,12 +76,34 @@ class MOEXISSTests(unittest.TestCase):
             params = parse_qs(urlparse(url).query)
             calls.append(params["start"][0])
             self.assertIn("/history/engines/stock/markets/shares/boards/TQBR/securities/AMEZ.json", url)
+            self.assertEqual(params["tradingsession"], ["3"])
             return pages.pop(0)
 
         records = fetch_history_records("amez", "2025-01-01", "2025-01-31", getter=getter)
         self.assertEqual([(r.trade_date.isoformat(), r.num_trades) for r in records],
                          [("2025-01-02", 0), ("2025-01-03", 17)])
         self.assertEqual(calls, ["0", "2"])
+
+    def test_history_parses_full_trading_day_ohlcv(self):
+        columns = [
+            "BOARDID", "TRADEDATE", "SECID", "NUMTRADES",
+            "OPEN", "HIGH", "LOW", "CLOSE", "VOLUME",
+        ]
+        page = history_response([[
+            "TQBR", "2025-03-03", "SBER", 160752,
+            309.84, 310.94, 300.20, 305.50, 69490830,
+        ]], columns)
+        pages = [page, history_response([])]
+        records = fetch_history_records(
+            "SBER", "2025-03-01", "2025-03-04",
+            getter=lambda *a, **k: pages.pop(0),
+        )
+        self.assertEqual(len(records), 1)
+        record = records[0]
+        self.assertEqual(
+            (record.open, record.high, record.low, record.close, record.volume),
+            (309.84, 310.94, 300.20, 305.50, 69490830),
+        )
 
     def test_history_missing_columns_rejected(self):
         with self.assertRaises(ISSDataError):

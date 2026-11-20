@@ -11,14 +11,19 @@ It has no broker client, order endpoint, Telegram sender, or production write pa
 - Timestamp policy: a dataset must use either all-naive exchange-local timestamps
   (the format returned by MOEX ISS) or all timezone-aware timestamps. Mixed
   aware/naive timestamps are rejected rather than silently compared.
-- MOEX additional weekend sessions can produce valid Saturday/Sunday daily candles.
-  These remain on their original calendar dates in raw diagnostics. A weekend
-  bar is included in indicators, backtests, portfolio replay, and prospective
-  holdout only when same-date positive TQBR `NUMTRADES` confirms that date; otherwise
-  it is excluded from model inputs and reported separately. No forward mapping or
-  aggregation is performed. Therefore `max_bars` counts research-eligible bars,
-  not necessarily Monday-Friday calendar days. Calendar-aware session verification
-  remains a methodology item for review.
+- MOEX additional weekend sessions are part of the next ordinary trading day.
+  The research agent therefore builds D1 model bars from per-security TQBR daily
+  history OHLCV (`TRADEDATE`, total trading session), not by treating each raw
+  Saturday/Sunday candle as an extra trading day. The daily-history row already
+  includes the weekend session(s) and the following ordinary session. Raw calendar-
+  date candles are retained for diagnostics. From the 2025-03-01 weekend-session
+  launch onward, weekend fragments are grouped to the next positive-trade TQBR
+  date and reconciled against daily-history OHLCV; pre-launch weekend dates
+  require same-date history confirmation. Unassigned
+  fragments or OHLCV mismatches are reported; the history row remains the model
+  input and no raw fragment is silently discarded or double-counted. Therefore
+  `max_bars` counts TQBR trading dates rather than separate weekend calendar
+  fragments.
 - A fixed, pre-registered candidate set: Donchian-20 breakout, EMA-20/50 cross,
   RSI-14 trend momentum, MACD-12/26 crossover and Keltner-20/2ATR breakout. Parameters are not fitted on the evaluation data.
 - Signal is calculated on a completed candle; entry is the next available candle open.
@@ -40,9 +45,18 @@ The read-only runner (`python -m research_agent.cli --from YYYY-MM-DD --till YYY
 fetches daily candles and per-security TQBR history from public MOEX ISS for the
 fixed 44-symbol first-listing universe and produces a JSON report. `moex_iss.py`
 paginates responses, validates OHLCV and rejects duplicate timestamps without
-fabricating missing candles. The subscription-only machine-readable stock calendar
-is not called; weekend bars remain on their original dates and are flagged when
-same-date positive-trade TQBR history cannot confirm them. Every analyzed ticker also receives a `data_quality` section with requested/actual date boundaries, zero-volume and weekend bar counts, history sufficiency, and long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
+fabricating missing candles. The daily research series is built from TQBR
+total-session history OHLCV, while raw calendar-date candles are retained as a
+separate reconciliation source. From 2025-03-01 onward, weekend fragments are
+assigned to the next positive-trade TQBR date and aggregated for comparison with
+that date's history row; pre-launch weekend dates require same-date history
+confirmation. The model uses the history row itself. This follows MOEX's description of
+the additional weekend session as part of the next ordinary trading day (see
+[MOEX weekend-session rules](https://www.moex.com/a8920) and
+[the securities/modes table](https://www.moex.com/ru/SecuritiesListing.aspx)).
+Every analyzed ticker also receives a `data_quality` section with requested/actual
+date boundaries, zero-volume and weekend bar counts, history sufficiency, and
+long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
 evaluates fixed candidates on sequential walk-forward folds with expanding indicator
 history and explicit minimum-sample/stability gates. A pass is labelled
 `DEVELOPMENT_SCREEN_PASS_UNADJUSTED`: it is only a development shortlist, not an

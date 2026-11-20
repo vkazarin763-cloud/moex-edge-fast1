@@ -37,7 +37,10 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             return {"candidates": {}}
 
         def capture_holdout(rows, cutoff):
-            observed["holdout"] = list(rows)
+            observed["holdout"] = [
+                row for row in rows
+                if row.timestamp.date() >= date.fromisoformat(cutoff)
+            ]
             observed["cutoff"] = cutoff
             return {"status": "PROSPECTIVE_DATA_AVAILABLE"}
 
@@ -47,10 +50,10 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             return {"status": "DEVELOPMENT_WALK_FORWARD_PORTFOLIO"}
 
         history_records = [
-            HistoryRecord(date(2023, 11, 20), 10),
-            HistoryRecord(date(2026, 11, 18), 10),
-            HistoryRecord(date(2026, 11, 19), 10),
-            HistoryRecord(date(2026, 11, 20), 10),
+            HistoryRecord(date(2023, 11, 20), 10, 90.0, 91.0, 89.0, 90.5, 1000.0),
+            HistoryRecord(date(2026, 11, 18), 10, 100.0, 101.0, 99.0, 100.5, 1000.0),
+            HistoryRecord(date(2026, 11, 19), 10, 101.0, 102.0, 100.0, 101.5, 1000.0),
+            HistoryRecord(date(2026, 11, 20), 10, 102.0, 103.0, 101.0, 102.5, 1000.0),
         ]
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
@@ -71,34 +74,46 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         self.assertTrue(observed["holdout"])
         self.assertTrue(all(row.timestamp.date() < cutoff for row in observed["development"]))
         self.assertTrue(all(row.timestamp.date() < cutoff for row in observed["stress"]))
-        self.assertEqual(observed["holdout"], candles)
-        self.assertEqual(observed["portfolio"], candles[:2])
+        self.assertEqual(
+            [row.timestamp.date() for row in observed["holdout"]],
+            [date(2026, 11, 20)],
+        )
+        self.assertEqual(observed["portfolio"], observed["development"])
         self.assertEqual(report["development_portfolio"]["status"], "DEVELOPMENT_WALK_FORWARD_PORTFOLIO")
         self.assertEqual(report["results"]["TEST"]["status"], "ANALYZED")
         fetch.assert_called_once()
         history_fetch.assert_called_once_with(
-            "TEST", "2023-11-19", "2026-12-04", board="TQBR"
+            "TEST", "2023-11-19", "2026-11-20", board="TQBR"
         )
         self.assertLessEqual(
             date.fromisoformat(fetch.call_args.args[1]),
             cutoff - timedelta(days=3 * 365 + 2),
         )
 
-    def test_empty_fetch_is_reported_as_symbol_error_not_crash(self):
+    def test_raw_candle_fetch_failure_does_not_block_history_research(self):
         history_records = [
-            HistoryRecord(date(2023, 11, 20), 10),
-            HistoryRecord(date(2026, 11, 18), 10),
-            HistoryRecord(date(2026, 11, 19), 10),
-            HistoryRecord(date(2026, 11, 20), 10),
+            HistoryRecord(date(2023, 11, 20), 10, 90.0, 91.0, 89.0, 90.5, 1000.0),
+            HistoryRecord(date(2026, 11, 18), 10, 100.0, 101.0, 99.0, 100.5, 1000.0),
+            HistoryRecord(date(2026, 11, 19), 10, 101.0, 102.0, 100.0, 101.5, 1000.0),
+            HistoryRecord(date(2026, 11, 20), 10, 102.0, 103.0, 101.0, 102.5, 1000.0),
         ]
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
             patch.object(cli, "fetch_history_records", return_value=history_records),
-            patch.object(cli, "fetch_candles", return_value=[]),
+            patch.object(cli, "fetch_candles", side_effect=RuntimeError("raw candles unavailable")),
+            patch.object(cli, "walk_forward_report", return_value={"status": "TEST"}),
+            patch.object(cli, "adversarial_cost_check", return_value={"status": "TEST"}),
+            patch.object(cli, "prospective_holdout_report", return_value={"status": "WAITING"}),
+            patch.object(cli, "walk_forward_portfolio_report", return_value={"status": "TEST"}),
         ):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["EMPTY"])
-        self.assertEqual(report["results"]["EMPTY"]["status"], "DATA_OR_ANALYSIS_ERROR")
-        self.assertEqual(report["development_portfolio"]["status"], "NO_DEVELOPMENT_DATA")
+        result = report["results"]["EMPTY"]
+        self.assertEqual(result["status"], "ANALYZED")
+        self.assertEqual(result["raw_session_candles"], 0)
+        self.assertEqual(result["raw_candle_fetch_error"], "raw candles unavailable")
+        self.assertEqual(result["session_date_mapping"]["status"], "NO_RAW_CANDLES")
+        self.assertIsNone(result["raw_candle_quality"])
+        self.assertTrue(result["data_quality"]["session_date_mapping_complete"])
 
 
 if __name__ == "__main__":

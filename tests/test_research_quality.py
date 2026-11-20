@@ -22,7 +22,7 @@ class CandleQualityReportTests(unittest.TestCase):
         )
         self.assertTrue(report["session_date_mapping_complete"])
         self.assertFalse(report["exchange_calendar_verified"])
-        self.assertIn("not a direct official-calendar lookup", report["calendar_caveat"])
+        self.assertIn("not a direct historical exchange-calendar lookup", report["calendar_caveat"])
 
     def test_reports_date_gap_without_claiming_missing_sessions(self):
         report = candle_quality_report(make_bars([0, 1, 7]), "2025-01-01", "2025-01-08")

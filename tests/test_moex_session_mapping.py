@@ -8,7 +8,6 @@ from research_agent.session_mapping import (
     earliest_session_date,
     latest_completed_session_date,
     normalize_daily_candles,
-    research_eligible_candles,
 )
 
 
@@ -110,36 +109,6 @@ class WeekendHistoryMappingTests(unittest.TestCase):
         ]
         with self.assertRaises(SessionMappingError):
             normalize_daily_candles([], duplicate)
-
-
-class ResearchEligibilityTests(unittest.TestCase):
-    def test_unverified_weekend_bars_excluded_but_confirmed_weekend_kept(self):
-        raw = [
-            Candle(datetime(2025, 3, 1), 100, 105, 99, 103, 10),
-            Candle(datetime(2025, 3, 2), 103, 108, 102, 107, 20),
-            Candle(datetime(2025, 3, 3), 107, 110, 106, 109, 30),
-        ]
-        eligible, diagnostics = research_eligible_candles(raw, [
-            HistoryRecord(date(2025, 3, 1), 4),
-            HistoryRecord(date(2025, 3, 3), 15),
-        ])
-        self.assertEqual(
-            [item.timestamp.date() for item in eligible],
-            [date(2025, 3, 1), date(2025, 3, 3)],
-        )
-        self.assertEqual(diagnostics["raw_bars"], 3)
-        self.assertEqual(diagnostics["research_eligible_bars"], 2)
-        self.assertEqual(diagnostics["unverified_weekend_bars_excluded_from_models"], 1)
-
-    def test_weekday_bars_are_not_removed_by_weekend_policy(self):
-        raw = [
-            Candle(datetime(2025, 3, 3), 100, 105, 99, 103, 10),
-            Candle(datetime(2025, 3, 4), 103, 108, 102, 107, 20),
-        ]
-        eligible, diagnostics = research_eligible_candles(raw, [])
-        self.assertEqual(eligible, raw)
-        self.assertEqual(diagnostics["unverified_weekend_bars_excluded_from_models"], 0)
-
 
 
 if __name__ == "__main__":

@@ -1,14 +1,15 @@
-"""Conservative handling of MOEX daily candles and weekend-session evidence.
+"""MOEX TQBR trading-day bars and raw calendar-session reconciliation.
 
-Weekend candles remain on their original calendar dates. Public per-security
-TQBR history can confirm a same-date positive-trade session, but absence of a
-history row never causes a candle to be shifted or merged into another date.
-The subscription-only machine-readable MOEX calendar is not available here.
+The research CLI uses one daily OHLCV bar per TQBR TRADEDATE from total-session
+history. MOEX weekend additional sessions are part of the next ordinary trading
+day; their raw Saturday/Sunday candle fragments are reconciled against that
+trading-day history row and are not fed as extra D1 bars.
 """
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime, time
+import math
+from datetime import date, datetime, time, timedelta
 
 from .core import Candle, validate_candles
 from .moex_iss import HistoryRecord
@@ -77,46 +78,199 @@ def earliest_session_date(
     return min(candidates)
 
 
-def research_eligible_candles(
-    candles: list[Candle],
-    history_records: list[HistoryRecord],
-) -> tuple[list[Candle], dict]:
-    """Exclude unverified weekend bars from indicators and simulations.
 
-    Raw bars remain available for diagnostics. Weekday bars are retained as
-    supplied; weekend bars enter research calculations only when same-date
-    TQBR history confirms positive NUMTRADES.
+def build_trading_day_candles(
+    history_records: list[HistoryRecord],
+    date_from: str | date | None = None,
+    date_till: str | date | None = None,
+) -> tuple[list[Candle], dict]:
+    """Build one D1 bar per official TQBR trading date from daily history.
+
+    TQBR daily history contains the full trading-day OHLCV. MOEX weekend
+    additional sessions are part of the next ordinary trading day, so their
+    Saturday/Sunday candle fragments are already included in that next date's
+    history OHLCV. These fragments must not be treated as extra D1 bars.
     """
-    rows = validate_candles(candles)
+    start = date.fromisoformat(date_from) if isinstance(date_from, str) else date_from
+    end = date.fromisoformat(date_till) if isinstance(date_till, str) else date_till
     by_date = _records_by_date(history_records)
-    eligible = []
-    excluded = []
+    if start is not None and end is not None and start > end:
+        raise SessionMappingError("date_from must be on or before date_till")
+
+    candles = []
+    zero_trade_rows = 0
+    unknown_trade_rows = 0
+    missing_ohlcv_rows = []
+    for record in sorted(by_date.values(), key=lambda item: item.trade_date):
+        if start is not None and record.trade_date < start:
+            continue
+        if end is not None and record.trade_date > end:
+            continue
+        if record.num_trades is None:
+            unknown_trade_rows += 1
+            continue
+        if record.num_trades == 0:
+            zero_trade_rows += 1
+            continue
+        values = (record.open, record.high, record.low, record.close, record.volume)
+        if any(value is None for value in values):
+            missing_ohlcv_rows.append(record.trade_date.isoformat())
+            continue
+        candles.append(Candle(
+            datetime.combine(record.trade_date, time.min),
+            float(record.open), float(record.high), float(record.low),
+            float(record.close), float(record.volume),
+        ))
+    if missing_ohlcv_rows:
+        raise SessionMappingError(
+            "Positive-trade TQBR history rows lack complete OHLCV: "
+            + ", ".join(missing_ohlcv_rows[:10])
+        )
+    if not candles:
+        raise SessionMappingError("No positive-trade TQBR OHLCV rows remain in the requested range")
+    candles = validate_candles(candles)
+    return candles, {
+        "source": "MOEX ISS per-security TQBR daily history",
+        "bar_semantics": (
+            "One OHLCV bar per TQBR trading date. Saturday/Sunday additional "
+            "sessions are included in the next ordinary trading day's history row."
+        ),
+        "research_input_bars": len(candles),
+        "zero_trade_history_rows_excluded": zero_trade_rows,
+        "unknown_trade_count_rows_excluded": unknown_trade_rows,
+        "positive_trade_rows_missing_ohlcv": 0,
+        "first_trade_date": candles[0].timestamp.date().isoformat(),
+        "last_trade_date": candles[-1].timestamp.date().isoformat(),
+    }
+
+
+def reconcile_session_candles(
+    raw_candles: list[Candle],
+    history_records: list[HistoryRecord],
+    max_next_trading_day_gap: int = 7,
+) -> dict:
+    """Check calendar-date candle fragments against full TQBR trading-day OHLCV.
+
+    A weekend candle without a same-date history row is assigned to the next
+    positive-trade TQBR history date within the bounded calendar gap. All
+    fragments assigned to a trade date (weekend plus that date's weekday
+    candle) are aggregated and compared with the official history OHLCV.
+    History remains the model-input source even when this diagnostic finds a
+    mismatch; mismatches are surfaced rather than silently repaired.
+    """
+    if max_next_trading_day_gap < 1:
+        raise ValueError("max_next_trading_day_gap must be >= 1")
+    rows = validate_candles(raw_candles) if raw_candles else []
+    by_date = _records_by_date(history_records)
+    positive_dates = sorted(
+        record.trade_date for record in history_records
+        if record.num_trades is not None and record.num_trades > 0
+    )
+    grouped = defaultdict(list)
+    unassigned = []
     for candle in rows:
         day = candle.timestamp.date()
-        if day.weekday() < 5:
-            eligible.append(candle)
-            continue
-        record = by_date.get(day)
-        if record is not None and record.num_trades is not None and record.num_trades > 0:
-            eligible.append(candle)
-        else:
-            excluded.append({
+        same_date = by_date.get(day)
+        if same_date is not None:
+            if same_date.num_trades is not None and same_date.num_trades > 0:
+                target = day
+            else:
+                unassigned.append({
+                    "calendar_date": day.isoformat(),
+                    "reason": "same-date TQBR history does not confirm positive trades",
+                })
+                continue
+        elif day.weekday() >= 5 and day >= date(2025, 3, 1):
+            target = next((
+                candidate for candidate in positive_dates
+                if day < candidate
+                and (candidate - day).days <= max_next_trading_day_gap
+            ), None)
+            if target is None:
+                unassigned.append({
+                    "calendar_date": day.isoformat(),
+                    "reason": "no next positive-trade TQBR date within mapping window",
+                })
+                continue
+        elif day.weekday() >= 5:
+            unassigned.append({
                 "calendar_date": day.isoformat(),
-                "volume": candle.volume,
-                "reason": "weekend session not confirmed by same-date positive TQBR NUMTRADES",
+                "reason": "pre-launch weekend date lacks same-date TQBR history confirmation",
             })
-    if eligible:
-        eligible = validate_candles(eligible)
-    return eligible, {
-        "raw_bars": len(rows),
-        "research_eligible_bars": len(eligible),
-        "unverified_weekend_bars_excluded_from_models": len(excluded),
-        "excluded_weekend_bars": excluded,
-        "policy": (
-            "Unverified weekend candles remain in raw diagnostics but are excluded "
-            "from indicator calculation, walk-forward, cost stress, portfolio replay, "
-            "and prospective holdout. Same-date positive TQBR NUMTRADES is required "
-            "to include a weekend candle in research calculations."
+            continue
+        else:
+            unassigned.append({
+                "calendar_date": day.isoformat(),
+                "reason": "weekday candle has no same-date TQBR history row",
+            })
+            continue
+        grouped[target].append(candle)
+
+    matched = []
+    mismatches = []
+    for target, fragments in sorted(grouped.items()):
+        record = by_date[target]
+        expected = (record.open, record.high, record.low, record.close, record.volume)
+        if any(value is None for value in expected):
+            mismatches.append({
+                "trade_date": target.isoformat(),
+                "reason": "TQBR history row lacks complete OHLCV",
+                "fragment_count": len(fragments),
+            })
+            continue
+        fragments.sort(key=lambda item: item.timestamp)
+        actual = (
+            fragments[0].open,
+            max(item.high for item in fragments),
+            min(item.low for item in fragments),
+            fragments[-1].close,
+            sum(item.volume for item in fragments),
+        )
+        fields = ("open", "high", "low", "close", "volume")
+        differences = {}
+        for name, got, want in zip(fields, actual, expected):
+            tolerance = max(1e-8, abs(float(want)) * 1e-8)
+            if not math.isclose(float(got), float(want), rel_tol=0.0, abs_tol=tolerance):
+                differences[name] = {"aggregated": got, "history": want}
+        if differences:
+            mismatches.append({
+                "trade_date": target.isoformat(),
+                "reason": "aggregated calendar candles differ from TQBR daily history",
+                "fragment_count": len(fragments),
+                "differences": differences,
+            })
+        else:
+            matched.append(target.isoformat())
+
+    weekend_rows = [item for item in rows if item.timestamp.weekday() >= 5]
+    mapped_weekend_dates = {
+        candle.timestamp.date().isoformat()
+        for target, fragments in grouped.items()
+        for candle in fragments
+        if candle.timestamp.weekday() >= 5
+    }
+    return {
+        "status": "RECONCILED" if rows and not mismatches and not unassigned else (
+            "NO_RAW_CANDLES" if not rows else "RECONCILIATION_WITH_CAVEATS"
+        ),
+        "raw_candles": len(rows),
+        "raw_weekend_candles": len(weekend_rows),
+        "raw_weekend_candles_mapped": len(mapped_weekend_dates),
+        "raw_weekend_candles_unmapped": len(weekend_rows) - len(mapped_weekend_dates),
+        "trading_days_reconciled": len(matched),
+        "trading_days_mismatched": len(mismatches),
+        "unassigned_raw_candles": len(unassigned),
+        "matched_trade_dates": matched[:20],
+        "mismatch_examples": mismatches[:20],
+        "unassigned_examples": unassigned[:20],
+        "complete": bool(rows) and not mismatches and not unassigned,
+        "mapping_rule": (
+            "Same-date positive TQBR history keeps a calendar candle on that date. "
+            "From the official 2025-03-01 weekend-session launch onward, a weekend "
+            "candle without a same-date history row maps to the next positive-trade "
+            "TQBR date within seven calendar days. Pre-launch weekend dates require "
+            "same-date history confirmation. Fragments are aggregated and checked "
+            "against the full trading-day history OHLCV."
         ),
     }
 
@@ -126,13 +280,13 @@ def normalize_daily_candles(
     history_records: list[HistoryRecord],
     max_session_date: str | date | None = None,
 ) -> tuple[list[Candle], dict]:
-    """Preserve each MOEX candle date unless TQBR confirms that same date.
+    """Legacy raw-calendar diagnostic; not used to construct research D1 bars.
 
-    TQBR history often has no row for weekend sessions. Absence of a history row
-    is not evidence that the weekend candle belongs to the following weekday.
-    Therefore this function never shifts or merges a weekend candle into a
-    future date. Unconfirmed weekend dates remain separate and are flagged.
+    This helper preserves raw candle dates and flags dates without same-date
+    history rows. The research CLI instead uses build_trading_day_candles() to
+    build one official D1 bar per TQBR TRADEDATE.
     """
+    by_date = _records_by_date(history_records)
     rows = validate_candles(candles)
     ceiling = None
     if isinstance(max_session_date, str):
@@ -140,7 +294,6 @@ def normalize_daily_candles(
     elif max_session_date is not None:
         ceiling = max_session_date
 
-    by_date = _records_by_date(history_records)
     normalized = []
     weekend_diagnostics = []
     excluded_after_cutoff = 0
