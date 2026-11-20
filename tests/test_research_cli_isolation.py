@@ -90,12 +90,12 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             cutoff - timedelta(days=3 * 365 + 2),
         )
 
-    def test_empty_fetch_is_reported_as_symbol_error_not_crash(self):
+    def test_raw_candle_fetch_failure_does_not_block_history_research(self):
         history_records = [
-            HistoryRecord(date(2023, 11, 20), 10),
-            HistoryRecord(date(2026, 11, 18), 10),
-            HistoryRecord(date(2026, 11, 19), 10),
-            HistoryRecord(date(2026, 11, 20), 10),
+            HistoryRecord(date(2023, 11, 20), 10, 90.0, 91.0, 89.0, 90.5, 1000.0),
+            HistoryRecord(date(2026, 11, 18), 10, 100.0, 101.0, 99.0, 100.5, 1000.0),
+            HistoryRecord(date(2026, 11, 19), 10, 101.0, 102.0, 100.0, 101.5, 1000.0),
+            HistoryRecord(date(2026, 11, 20), 10, 102.0, 103.0, 101.0, 102.5, 1000.0),
         ]
         with (
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
@@ -103,8 +103,12 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             patch.object(cli, "fetch_candles", return_value=[]),
         ):
             report = cli.run_universe("2026-11-18", "2026-11-21", ["EMPTY"])
-        self.assertEqual(report["results"]["EMPTY"]["status"], "DATA_OR_ANALYSIS_ERROR")
-        self.assertEqual(report["development_portfolio"]["status"], "NO_DEVELOPMENT_DATA")
+        result = report["results"]["EMPTY"]
+        self.assertEqual(result["status"], "ANALYZED")
+        self.assertEqual(result["raw_session_candles"], 0)
+        self.assertEqual(result["session_date_mapping"]["status"], "NO_RAW_CANDLES")
+        self.assertIsNone(result["raw_candle_quality"])
+        self.assertTrue(result["data_quality"]["session_date_mapping_complete"])
 
 
 if __name__ == "__main__":
