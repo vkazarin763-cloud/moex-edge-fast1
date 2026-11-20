@@ -280,12 +280,11 @@ def normalize_daily_candles(
     history_records: list[HistoryRecord],
     max_session_date: str | date | None = None,
 ) -> tuple[list[Candle], dict]:
-    """Preserve each MOEX candle date unless TQBR confirms that same date.
+    """Legacy raw-calendar diagnostic; not used to construct research D1 bars.
 
-    TQBR history often has no row for weekend sessions. Absence of a history row
-    is not evidence that the weekend candle belongs to the following weekday.
-    Therefore this function never shifts or merges a weekend candle into a
-    future date. Unconfirmed weekend dates remain separate and are flagged.
+    This helper preserves raw candle dates and flags dates without same-date
+    history rows. The research CLI instead uses build_trading_day_candles() to
+    build one official D1 bar per TQBR TRADEDATE.
     """
     by_date = _records_by_date(history_records)
     rows = validate_candles(candles)
