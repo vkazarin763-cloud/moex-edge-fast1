@@ -33,6 +33,8 @@ def compare_h1_series(moex_rows, finam_rows, now=None):
         if key in finam: raise ValueError(f"Duplicate Finam H1 timestamp: {key.isoformat()}")
         finam[key]=row
     overlap=sorted(set(moex)&set(finam))
+    moex_only=sorted(set(moex)-set(finam))
+    finam_only=sorted(set(finam)-set(moex))
     comparisons=[]
     for key in overlap:
         a,b=moex[key],finam[key]
@@ -46,12 +48,25 @@ def compare_h1_series(moex_rows, finam_rows, now=None):
             "volume":{"moex":av,"finam":bv,"absolute_difference":bv-av,
             "difference_pct_of_moex":(bv-av)/av*100 if av else None},
             "finam_is_data_snapshot":b.is_data_snapshot})
+    def _counts(values, formatter):
+        counts={}
+        for value in values:
+            label=formatter(value)
+            counts[label]=counts.get(label,0)+1
+        return dict(sorted(counts.items()))
     return {"status":"NO_OVERLAP" if not overlap else ("DATE_COVERAGE_MATCHES" if set(moex)==set(finam) else "DATE_COVERAGE_DIFFERS"),
         "moex_closed_bars":len(moex),"finam_closed_bars":len(finam),"matched_bars":len(overlap),
-        "moex_only_timestamps":[x.isoformat() for x in sorted(set(moex)-set(finam))],
-        "finam_only_timestamps":[x.isoformat() for x in sorted(set(finam)-set(moex))],
+        "moex_only_timestamps":[x.isoformat() for x in moex_only],
+        "finam_only_timestamps":[x.isoformat() for x in finam_only],
+        "coverage_diagnostics":{
+            "moex_only_by_local_hour":_counts(moex_only,lambda x:f"{x.hour:02d}"),
+            "finam_only_by_local_hour":_counts(finam_only,lambda x:f"{x.hour:02d}"),
+            "moex_only_by_date":_counts(moex_only,lambda x:x.date().isoformat()),
+            "finam_only_by_date":_counts(finam_only,lambda x:x.date().isoformat()),
+            "finam_snapshot_unknown_bars":sum(row.is_data_snapshot is None for row in finam.values()),
+            "finam_snapshot_false_bars":sum(row.is_data_snapshot is False for row in finam.values())},
         "comparisons":comparisons,
-        "note":"Only completed bars are compared; snapshot=true and still-open hourly bars are excluded. Unknown snapshot metadata is retained and flagged."}
+        "note":"Only completed bars are compared; snapshot=true and still-open hourly bars are excluded. Unknown snapshot metadata is retained and flagged. Coverage diagnostics group unmatched completed bars by Moscow-local hour and date; they do not infer session eligibility."}
 
 def run(tickers, days, api_token, source_app_id=None):
     if not 1<=days<=30: raise ValueError("H1 history is limited to 1..30 days")
