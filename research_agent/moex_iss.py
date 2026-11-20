@@ -165,10 +165,11 @@ def fetch_history_records(
                     num_trades = int(numeric_count)
 
                 def optional_number(name: str, fallback: str | None = None) -> float | None:
-                    column = name if name in idx else fallback
-                    if column is None or column not in idx:
-                        return None
-                    raw_value = row[idx[column]]
+                    raw_value = row[idx[name]] if name in idx else None
+                    column = name
+                    if raw_value is None and fallback is not None and fallback in idx:
+                        raw_value = row[idx[fallback]]
+                        column = fallback
                     if raw_value is None:
                         return None
                     value = float(raw_value)
