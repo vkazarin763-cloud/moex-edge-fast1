@@ -162,7 +162,11 @@
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
 
 
-## 2026-11-21 — MTF data validation and D1/H1 scanner prototype
-- MTF dataset artifact 44861047844 passed independent validation: 787,929 completed bars, 44/44 symbols on 13 frames, zero structural/no-lookahead issues.
-- Full data report and cross-AI handoff were added in PR #72.
-- PR #73 adds a read-only D1/H1 scanner prototype, an H1-after-D1-close no-lookahead test, and an artifact-driven GitHub Actions workflow. Await both CI checks on final PR head.
+## 2026-11-21 — MTF data artifact and AI handoff
+- Verified successful multi-timeframe workflow run 44861047844 (artifact 14690518588) on main commit a65eeaf3800be1b56deaaa36258a5369fce33cf2.
+- Artifact contains 787,929 completed bars across 13 frames and 44/44 symbols; validator PASS with zero issues. Independent OHLCV, chronology, duplicate, snapshot and as-of checks also passed.
+- Full provenance, frame counts, exclusions, checksum, frozen methodology, safety boundaries and next steps recorded in HANDOFF_FOR_NEXT_AI.md and docs/MULTITIMEFRAME_DATASET_2026-11-21.md.
+
+
+## 2026-11-21 — D1/H1 scanner prototype
+- PR #73 adds a read-only D1/H1 latest-signal scanner, a no-lookahead test and an artifact-driven Actions workflow. H1 alignment is informational only; await both CI checks on final PR head.
