@@ -83,6 +83,53 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["raw_weekend_candles_unmapped"], 1)
         self.assertEqual(result["unassigned_raw_candles"], 1)
 
+    def test_known_split_price_basis_ratios_are_flagged_without_adjustment(self):
+        events = [
+            ("GMKN", date(2024, 4, 3), 100.0),
+            ("TRNFP", date(2024, 2, 20), 100.0),
+            ("VTBR", date(2024, 7, 12), 1.0 / 5000.0),
+            ("PLZL", date(2025, 3, 26), 10.0),
+            ("T", date(2026, 4, 16), 10.0),
+        ]
+        for ticker, trade_date, factor in events:
+            with self.subTest(ticker=ticker):
+                raw = [Candle(
+                    datetime.combine(trade_date, datetime.min.time()),
+                    100, 110, 90, 105, 1000,
+                )]
+                history = [HistoryRecord(
+                    trade_date, 20,
+                    100 * factor, 110 * factor, 90 * factor, 105 * factor, 1000,
+                )]
+                result = reconcile_session_candles(raw, history, ticker=ticker)
+                self.assertEqual(result["price_scale_mismatch_dates"], 1)
+                self.assertEqual(result["known_price_basis_match_count"], 1)
+                self.assertEqual(result["unexplained_price_scale_mismatch_count"], 0)
+                self.assertEqual(
+                    result["price_scale_mismatch_examples"][0]["classification"],
+                    "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS",
+                )
+                self.assertEqual(
+                    result["price_scale_mismatch_examples"][0]["history_to_raw_volume_factor"],
+                    1.0,
+                )
+                # The audit is diagnostic only: source OHLC values are not rewritten.
+                self.assertEqual(raw[0].close, 105)
+                self.assertEqual(history[0].close, 105 * factor)
+
+    def test_unreferenced_price_scale_ratio_remains_unexplained(self):
+        trade_date = date(2025, 1, 2)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
+        history = [HistoryRecord(trade_date, 20, 1000, 1100, 900, 1050, 1000)]
+        result = reconcile_session_candles(raw, history, ticker="UNKNOWN")
+        self.assertEqual(result["price_scale_mismatch_dates"], 1)
+        self.assertEqual(result["known_price_basis_match_count"], 0)
+        self.assertEqual(result["unexplained_price_scale_mismatch_count"], 1)
+        self.assertEqual(
+            result["price_scale_mismatch_examples"][0]["classification"],
+            "NO_KNOWN_CORPORATE_ACTION_REFERENCE",
+        )
+
     def test_official_2026_weekday_additional_sessions_map_to_next_trade_date(self):
         sessions = [
             (date(2026, 2, 23), date(2026, 2, 24)),

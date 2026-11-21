@@ -110,7 +110,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 bounded_history_records, effective_from, effective_till
             )
             session_date_mapping_diagnostics = reconcile_session_candles(
-                raw_candles, bounded_history_records
+                raw_candles, bounded_history_records, ticker=ticker
             )
             if not research_candles:
                 raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
@@ -230,6 +230,16 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "in the next ordinary trading day's daily-history OHLCV. Separate "
                 "calendar-date candles are retained only for reconciliation diagnostics."
             ),
+        },
+        "corporate_action_price_basis_policy": {
+            "status": "DIAGNOSTIC_ONLY_NO_AUTOMATIC_ADJUSTMENT",
+            "description": (
+                "Raw daily candle OHLC is compared with official TQBR history OHLC. "
+                "A constant ratio across all four price fields is reported and, where "
+                "possible, matched to a sourced corporate-action event. No OHLCV value "
+                "is adjusted by this diagnostic."
+            ),
+            "known_events_reference": "research_agent/corporate_actions.py",
         },
         "session_date_policy": {
             "source": "MOEX ISS public per-security TQBR daily history",
