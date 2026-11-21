@@ -50,7 +50,13 @@ MOEX_FIRST_LISTING_44 = [
 ]
 
 
-def run_universe(date_from: str, date_till: str, tickers: list[str] | None = None) -> dict:
+def run_universe(
+    date_from: str,
+    date_till: str,
+    tickers: list[str] | None = None,
+    *,
+    run_experiment_lab_enabled: bool = False,
+) -> dict:
     selected = tickers or MOEX_FIRST_LISTING_44
     requested_till = date.fromisoformat(date_till).isoformat()
     calendar_date_ceiling = cap_to_last_completed_moscow_date(requested_till)
@@ -261,22 +267,32 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             development_candles_by_ticker[ticker] = development
         except Exception as exc:
             results[ticker] = {"status": "DATA_OR_ANALYSIS_ERROR", "error": str(exc)}
-    try:
-        experiment_lab = run_experiment_lab(
-            development_candles_by_ticker,
-            holdout_start=HOLDOUT_START_DATE,
-            folds=4,
-            warmup_bars=200,
-            min_total_trades=30,
-            min_trades_per_fold=5,
-        )
-    except Exception as lab_exc:
-        experiment_lab = {
-            "lab_version": "exit-policy-experiments-v1",
-            "status": "EXPERIMENT_LAB_ERROR",
-            "error": str(lab_exc),
-            "safety": "Research only; no broker APIs or order placement.",
-        }
+    experiment_lab = {
+        "lab_version": "exit-policy-experiments-v1",
+        "status": "SKIPPED_NOT_REQUESTED",
+        "reason": (
+            "Exit-policy experiments are optional and are not part of the "
+            "default strategy-selection run. Use --run-experiment-lab to run them."
+        ),
+        "safety": "Research only; no broker APIs or order placement.",
+    }
+    if run_experiment_lab_enabled:
+        try:
+            experiment_lab = run_experiment_lab(
+                development_candles_by_ticker,
+                holdout_start=HOLDOUT_START_DATE,
+                folds=4,
+                warmup_bars=200,
+                min_total_trades=30,
+                min_trades_per_fold=5,
+            )
+        except Exception as lab_exc:
+            experiment_lab = {
+                "lab_version": "exit-policy-experiments-v1",
+                "status": "EXPERIMENT_LAB_ERROR",
+                "error": str(lab_exc),
+                "safety": "Research only; no broker APIs or order placement.",
+            }
 
     holdout_correction = apply_holm_correction(
         results, family_size=len(selected) * 5
@@ -415,9 +431,14 @@ def main() -> int:
                         help="Comma-separated tickers; defaults to the 44-symbol universe")
     parser.add_argument("--output", default="research_report.json")
     parser.add_argument("--registry-output", default=None)
+    parser.add_argument(
+        "--run-experiment-lab",
+        action="store_true",
+        help="Run optional exit-policy experiments (adds substantial research time)",
+    )
     args = parser.parse_args()
     tickers = [item.strip().upper() for item in args.tickers.split(",") if item.strip()]
-    report = run_universe(args.date_from, args.date_till, tickers)
+    report = run_universe(args.date_from, args.date_till, tickers, run_experiment_lab_enabled=args.run_experiment_lab)
     Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     registry_path = Path(args.registry_output) if args.registry_output else Path(args.output).with_name("strategy_registry.json")
     registry = build_strategy_registry(report)
