@@ -1,6 +1,11 @@
 name: MOEX EDGE Autonomous Research (Read Only)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "research_agent/session_mapping.py"
+      - ".github/workflows/research-agent-run.yml"
   workflow_dispatch:
     inputs:
       date_from:
