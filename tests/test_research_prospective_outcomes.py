@@ -41,7 +41,7 @@ class ProspectiveOutcomeTests(unittest.TestCase):
         row, report = self._fixtures()
         with tempfile.TemporaryDirectory() as temp:
             signals, outcomes = Path(temp) / "signals.jsonl", Path(temp) / "outcomes.jsonl"
-            signals.write_text(json.dumps(row) + "\\n", encoding="utf-8")
+            signals.write_text(json.dumps(row) + "\n", encoding="utf-8")
             first = update_prospective_outcomes(signals, report, outcomes, holdout_start=date(2026, 11, 20))
             second = update_prospective_outcomes(signals, report, outcomes, holdout_start=date(2026, 11, 20))
             self.assertEqual(first["newly_closed"], 1)
@@ -56,7 +56,7 @@ class ProspectiveOutcomeTests(unittest.TestCase):
         row, report = self._fixtures(target_hit=False)
         with tempfile.TemporaryDirectory() as temp:
             signals, outcomes = Path(temp) / "signals.jsonl", Path(temp) / "outcomes.jsonl"
-            signals.write_text(json.dumps(row) + "\\n", encoding="utf-8")
+            signals.write_text(json.dumps(row) + "\n", encoding="utf-8")
             result = update_prospective_outcomes(signals, report, outcomes, holdout_start=date(2026, 11, 20))
             self.assertEqual(result["newly_closed"], 0)
             self.assertEqual(result["pending_open"], 1)
@@ -67,7 +67,7 @@ class ProspectiveOutcomeTests(unittest.TestCase):
         report["results"]["AAA"]["D1"]["candles"] = report["results"]["AAA"]["D1"]["candles"][1:]
         with tempfile.TemporaryDirectory() as temp:
             signals, outcomes = Path(temp) / "signals.jsonl", Path(temp) / "outcomes.jsonl"
-            signals.write_text(json.dumps(row) + "\\n", encoding="utf-8")
+            signals.write_text(json.dumps(row) + "\n", encoding="utf-8")
             with self.assertRaises(OutcomeLedgerError):
                 update_prospective_outcomes(signals, report, outcomes, holdout_start=date(2026, 11, 20))
             self.assertFalse(outcomes.exists())
