@@ -351,13 +351,41 @@ def walk_forward_portfolio_report(
             ),
         })
 
+    # Directional diagnostics use the exact same frozen candidate stream,
+    # fold boundaries, execution assumptions, and portfolio simulator.
+    # They are descriptive partitions, not independently tuned strategies.
+    direction_names = {1: "LONG", -1: "SHORT"}
+    by_direction = {}
+    for direction, direction_name in direction_names.items():
+        selected = [
+            item for item in all_candidates
+            if item.trade.direction == direction
+        ]
+        by_direction[direction_name] = {
+            "candidate_trades": len(selected),
+            **compare_position_limits(selected, position_limits),
+        }
+
     by_strategy = {}
     for strategy in REGISTERED_CANDIDATES:
         selected = [
             item for item in all_candidates
             if item.trade.strategy == strategy
         ]
-        by_strategy[strategy] = compare_position_limits(selected, position_limits)
+        strategy_directions = {}
+        for direction, direction_name in direction_names.items():
+            direction_selected = [
+                item for item in selected
+                if item.trade.direction == direction
+            ]
+            strategy_directions[direction_name] = {
+                "candidate_trades": len(direction_selected),
+                **compare_position_limits(direction_selected, position_limits),
+            }
+        by_strategy[strategy] = {
+            **compare_position_limits(selected, position_limits),
+            "by_direction": strategy_directions,
+        }
 
     return {
         "status": "DEVELOPMENT_WALK_FORWARD_PORTFOLIO",
@@ -366,6 +394,7 @@ def walk_forward_portfolio_report(
         "warmup_bars": warmup_bars,
         "folds": fold_reports,
         "combined": compare_position_limits(all_candidates, position_limits),
+        "by_direction": by_direction,
         "by_strategy": by_strategy,
         "candidate_trades": len(all_candidates),
         "continuous_development_replay": {

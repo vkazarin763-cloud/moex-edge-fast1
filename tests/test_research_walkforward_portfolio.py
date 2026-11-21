@@ -65,6 +65,16 @@ class WalkForwardPortfolioTests(unittest.TestCase):
         self.assertEqual(report["folds"][0]["closed_trades"], 1)
         self.assertEqual(report["folds"][1]["closed_trades"], 1)
         self.assertEqual(report["combined"]["comparisons"]["1"]["closed_trades_accepted"], 2)
+        self.assertEqual(report["by_direction"]["LONG"]["candidate_trades"], 2)
+        self.assertEqual(report["by_direction"]["SHORT"]["candidate_trades"], 0)
+        self.assertEqual(
+            report["by_strategy"]["Donchian20"]["by_direction"]["LONG"]["comparisons"]["1"]["closed_trades_accepted"],
+            2,
+        )
+        self.assertEqual(
+            report["by_strategy"]["Donchian20"]["by_direction"]["SHORT"]["comparisons"]["1"]["closed_trades_accepted"],
+            0,
+        )
         self.assertEqual(
             report["continuous_development_replay"]["combined"]["comparisons"]["1"]["closed_trades_accepted"],
             1,
