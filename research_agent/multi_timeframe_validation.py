@@ -18,7 +18,7 @@ FINAM_MINUTES = {
 def _parse_utc(value: str, source: str) -> datetime:
     stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if stamp.tzinfo is None or stamp.utcoffset() is None:
-        if source != "MOEX ISS":
+        if not source.startswith("MOEX ISS"):
             raise ValueError("timezone-naive timestamp from non-MOEX source")
         stamp = stamp.replace(tzinfo=MOSCOW)
     return stamp.astimezone(timezone.utc)
@@ -31,6 +31,9 @@ def candle_end_utc(timestamp: str, source: str, frame: str) -> datetime:
     if frame == "M10":
         return start + timedelta(minutes=10)
     local = start.astimezone(MOSCOW)
+    if frame == "D1":
+        return (local.replace(hour=0, minute=0, second=0, microsecond=0)
+                + timedelta(days=1)).astimezone(timezone.utc)
     if frame == "W1":
         end_local = local + timedelta(days=7)
     elif frame == "MN":
