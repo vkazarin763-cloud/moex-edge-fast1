@@ -1,4 +1,5 @@
 import unittest
+from datetime import date, timedelta
 
 from research_agent.v2.strategies import (
     DataContractError,
@@ -9,10 +10,11 @@ from research_agent.v2.strategies import (
 
 def make_bars(count=253, rising=True):
     bars = []
+    first_day = date(2025, 1, 1)
     for i in range(count):
         close = 100.0 + i if rising else 400.0 - i
         bars.append({
-            "timestamp": f"2025-01-{i + 1:04d}",
+            "timestamp": (first_day + timedelta(days=i)).isoformat(),
             "close": close,
             "high": close + 2.0,
         })
@@ -85,6 +87,12 @@ class V2SingleSecurityStrategyTests(unittest.TestCase):
     def test_invalid_ohlc_is_rejected(self):
         bars = make_bars()
         bars[20]["high"] = bars[20]["close"] - 1
+        with self.assertRaises(DataContractError):
+            high_52_week_proximity(bars, price_basis_status="verified_same_share")
+
+    def test_invalid_timestamp_is_rejected(self):
+        bars = make_bars()
+        bars[10]["timestamp"] = "not-a-date"
         with self.assertRaises(DataContractError):
             high_52_week_proximity(bars, price_basis_status="verified_same_share")
 
