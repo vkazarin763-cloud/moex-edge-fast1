@@ -131,6 +131,11 @@ def run_experiment_lab(
         "hypothesis_family": "fixed-entry-formulas x exit-policy-variants",
         "hypothesis_ids": ids,
         "hypothesis_count": len(hypotheses),
+        "entry_strategy_ids": [
+            "Donchian20", "EMA20x50", "RSI14Trend50",
+            "MACD12x26", "Keltner20x2ATR",
+        ],
+        "entry_strategy_count": 5,
         "ticker_count": len(tickers),
         "multiple_testing_family_size": len(tickers) * len(hypotheses) * 5,
         "trials_total": len(trials),

@@ -74,6 +74,120 @@ def _audit_cost_claims(ticker: str, result: dict[str, Any],
     return checked
 
 
+
+def _audit_experiment_lab(
+    lab: Any, results: dict[str, Any], holdout_start: date | None,
+    errors: list[str], warnings: list[str],
+) -> tuple[int, int]:
+    """Audit experiment-lab completeness and metadata without trusting its labels."""
+    if lab is None:
+        # Preserve compatibility with pre-lab reports; current CLI reports always
+        # include this section, so new reports still receive the full audit.
+        return 0, 0
+    if not isinstance(lab, dict):
+        errors.append("experiment_lab must be an object")
+        return 0, 0
+    status = lab.get("status")
+    if status == "EXPERIMENT_LAB_ERROR":
+        warnings.append("experiment lab did not complete: " + str(lab.get("error", "unknown error")))
+        return 0, 0
+    if status not in (None, "EXPERIMENT_LAB_COMPLETE"):
+        errors.append("experiment_lab has an unrecognized status")
+    if lab.get("generated_scope") != "development_history_only":
+        errors.append("experiment_lab must declare development_history_only scope")
+    if holdout_start:
+        lab_cutoff = lab.get("holdout_start")
+        if lab_cutoff != holdout_start.isoformat():
+            errors.append("experiment_lab holdout cutoff does not match report policy")
+
+    ids = lab.get("hypothesis_ids")
+    if not isinstance(ids, list) or not ids or any(not isinstance(x, str) or not x for x in ids):
+        errors.append("experiment_lab hypothesis_ids must be a non-empty string list")
+        ids = []
+    if len(set(ids)) != len(ids):
+        errors.append("experiment_lab hypothesis_ids must be unique")
+    hypothesis_count = lab.get("hypothesis_count")
+    if hypothesis_count != len(ids):
+        errors.append("experiment_lab hypothesis_count does not match hypothesis_ids")
+
+    entry_ids = lab.get("entry_strategy_ids")
+    if not isinstance(entry_ids, list) or not entry_ids or any(not isinstance(x, str) or not x for x in entry_ids):
+        errors.append("experiment_lab entry_strategy_ids must be a non-empty string list")
+        entry_ids = []
+    if len(set(entry_ids)) != len(entry_ids):
+        errors.append("experiment_lab entry_strategy_ids must be unique")
+    if lab.get("entry_strategy_count") != len(entry_ids):
+        errors.append("experiment_lab entry_strategy_count does not match entry_strategy_ids")
+
+    ticker_count = lab.get("ticker_count")
+    if not isinstance(ticker_count, int) or isinstance(ticker_count, bool) or ticker_count < 0:
+        errors.append("experiment_lab ticker_count must be a non-negative integer")
+        ticker_count = 0
+    expected_trials = ticker_count * len(ids)
+    expected_family = expected_trials * len(entry_ids)
+    if lab.get("trials_total") != expected_trials:
+        errors.append("experiment_lab trials_total does not match ticker x hypothesis family")
+    if lab.get("multiple_testing_family_size") != expected_family:
+        errors.append("experiment_lab multiple_testing_family_size is inconsistent")
+
+    trials = lab.get("trials")
+    if not isinstance(trials, list):
+        errors.append("experiment_lab trials must be a list")
+        trials = []
+    if len(trials) != lab.get("trials_total"):
+        errors.append("experiment_lab trial list length does not match trials_total")
+
+    seen: set[tuple[str, str]] = set()
+    completed = 0
+    for index, trial in enumerate(trials):
+        if not isinstance(trial, dict):
+            errors.append(f"experiment_lab trial {index} must be an object")
+            continue
+        ticker = trial.get("ticker")
+        hypothesis_id = trial.get("hypothesis_id")
+        if not isinstance(ticker, str) or ticker not in results:
+            errors.append(f"experiment_lab trial {index} references an unknown ticker")
+        if hypothesis_id not in ids:
+            errors.append(f"experiment_lab trial {index} references an unknown hypothesis")
+        if isinstance(ticker, str) and isinstance(hypothesis_id, str):
+            pair = (ticker, hypothesis_id)
+            if pair in seen:
+                errors.append(f"experiment_lab duplicate trial: {ticker}/{hypothesis_id}")
+            seen.add(pair)
+        bars = trial.get("development_bars")
+        excluded = trial.get("excluded_holdout_bars")
+        if not isinstance(bars, int) or isinstance(bars, bool) or bars < 0:
+            errors.append(f"experiment_lab trial {index} has invalid development_bars")
+        if excluded != 0:
+            errors.append(f"experiment_lab trial {index} contains or reports holdout bars")
+        fingerprint = trial.get("development_data_sha256")
+        if bars and (not isinstance(fingerprint, str) or len(fingerprint) != 64
+                     or any(ch not in "0123456789abcdef" for ch in fingerprint)):
+            errors.append(f"experiment_lab trial {index} has invalid development data SHA256")
+        config = trial.get("execution_config")
+        if not isinstance(config, dict):
+            errors.append(f"experiment_lab trial {index} is missing execution_config")
+        else:
+            for key in ("fee_per_side", "slippage_per_side"):
+                value = config.get(key)
+                if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
+                    errors.append(f"experiment_lab trial {index} has invalid {key}")
+        trial_status = trial.get("status")
+        if trial_status == "EXPERIMENTAL_SCREEN_COMPLETE":
+            completed += 1
+            if not isinstance(trial.get("walk_forward"), dict):
+                errors.append(f"experiment_lab trial {index} lacks walk_forward results")
+            if not isinstance(trial.get("adversarial_cost_check"), dict):
+                errors.append(f"experiment_lab trial {index} lacks cost-stress results")
+        elif trial_status != "INSUFFICIENT_OR_INVALID_DEVELOPMENT_DATA":
+            errors.append(f"experiment_lab trial {index} has unknown status")
+
+    if lab.get("trials_completed") != completed:
+        errors.append("experiment_lab trials_completed count is inconsistent")
+    if lab.get("trials_incomplete") != len(trials) - completed:
+        errors.append("experiment_lab trials_incomplete count is inconsistent")
+    return len(trials), completed
+
 def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
     """Return an auditable PASS/FAIL/INCOMPLETE structural validation report."""
     errors: list[str] = []
@@ -108,6 +222,8 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
 
     checked_folds = 0
     checked_cost_candidates = 0
+    checked_lab_trials = 0
+    completed_lab_trials = 0
     analyzed = 0
     for ticker, result in results.items():
         if not isinstance(result, dict):
@@ -159,9 +275,12 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
             ticker, result, errors, warnings
         )
 
+    checked_lab_trials, completed_lab_trials = _audit_experiment_lab(
+        report.get("experiment_lab"), results, holdout_start, errors, warnings
+    )
     if analyzed == 0:
         warnings.append("no ticker has a completed research analysis")
-    checks = checked_folds + checked_cost_candidates + analyzed
+    checks = checked_folds + checked_cost_candidates + analyzed + checked_lab_trials
     if errors:
         status = "INDEPENDENT_VALIDATION_FAIL"
     elif analyzed == 0 or warnings:
@@ -175,11 +294,14 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         "tickers_analyzed": analyzed,
         "walk_forward_folds_checked": checked_folds,
         "cost_candidates_checked": checked_cost_candidates,
+        "experiment_lab_trials_checked": checked_lab_trials,
+        "experiment_lab_trials_completed": completed_lab_trials,
         "errors": errors,
         "warnings": warnings,
         "scope": (
-            "Independent structural audit of report chronology and cost-claim "
-            "consistency. It does not rerun the simulator, establish statistical "
-            "significance, prove profitability, or approve production use."
+            "Independent structural audit of report chronology, cost-claim consistency, "
+            "and experiment-lab metadata/completeness. It does not rerun the "
+            "simulator, establish statistical significance, prove profitability, "
+            "or approve production use."
         ),
     }
