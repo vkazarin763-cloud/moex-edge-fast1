@@ -9,7 +9,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .finam_market_data import FinamAPIError, FinamMarketDataClient, create_access_token
-from .moex_iss import fetch_candles
+from .moex_iss import fetch_candles, fetch_history_records
 
 MOSCOW = ZoneInfo("Europe/Moscow")
 # Finam's documented lookback limits are enforced by FinamMarketDataClient.
@@ -112,7 +112,7 @@ def _serialize(rows, *, snapshot_field=False):
 
 def collect_multi_timeframe(
     tickers, *, api_token, source_app_id=None, now=None,
-    moex_fetcher=fetch_candles, finam_client=None,
+    moex_fetcher=fetch_candles, moex_history_fetcher=fetch_history_records, finam_client=None,
 ):
     """Collect each interval independently; never resample or merge providers."""
     current = now or datetime.now(timezone.utc)
@@ -186,14 +186,62 @@ def collect_multi_timeframe(
                     "source": "MOEX ISS", "status": "ERROR",
                     "error": str(exc),
                 }
+        # D1 comes from the official per-security TQBR daily history endpoint,
+        # not from resampling intraday candles or MOEX candle interval=24.
+        d1_lookback = 365 * 5
+        d1_start = (local_today - timedelta(days=d1_lookback)).isoformat()
+        try:
+            history_rows = moex_history_fetcher(
+                ticker, d1_start, local_today.isoformat(), board="TQBR"
+            )
+            d1_candles = []
+            excluded_zero_trade = 0
+            excluded_incomplete = 0
+            for row in history_rows:
+                if row.num_trades == 0:
+                    excluded_zero_trade += 1
+                    continue
+                values = (row.open, row.high, row.low, row.close, row.volume)
+                if row.num_trades is None or any(value is None for value in values):
+                    excluded_incomplete += 1
+                    continue
+                open_, high, low, close, volume = (float(value) for value in values)
+                if (not all(__import__("math").isfinite(value) for value in (open_, high, low, close, volume))
+                        or high < max(open_, close, low) or low > min(open_, close, high)
+                        or volume < 0):
+                    excluded_incomplete += 1
+                    continue
+                if row.trade_date >= local_today:
+                    excluded_incomplete += 1
+                    continue
+                d1_candles.append({
+                    "timestamp": f"{row.trade_date.isoformat()}T00:00:00",
+                    "open": open_, "high": high, "low": low,
+                    "close": close, "volume": volume,
+                })
+            symbol_result["D1"] = {
+                "source": "MOEX ISS TQBR history",
+                "status": "OK" if d1_candles else "NO_COMPLETED_BARS",
+                "lookback_calendar_days": d1_lookback,
+                "raw_bars": len(history_rows),
+                "completed_bars": len(d1_candles),
+                "zero_trade_rows_excluded": excluded_zero_trade,
+                "incomplete_or_invalid_rows_excluded": excluded_incomplete,
+                "candles": d1_candles,
+            }
+        except Exception as exc:
+            symbol_result["D1"] = {
+                "source": "MOEX ISS TQBR history", "status": "ERROR",
+                "error": str(exc),
+            }
         results[ticker] = symbol_result
 
     summary = {}
-    for frame in (*FINAM_FRAMES.keys(), *MOEX_FRAMES.keys()):
+    for frame in (*FINAM_FRAMES.keys(), *MOEX_FRAMES.keys(), "D1"):
         items = [value[frame] for value in results.values()]
         summary[frame] = {
             "source": items[0]["source"] if items else (
-                "Finam" if frame in FINAM_FRAMES else "MOEX ISS"
+                "Finam" if frame in FINAM_FRAMES else ("MOEX ISS TQBR history" if frame == "D1" else "MOEX ISS")
             ),
             "symbols": len(items),
             "ok": sum(item["status"] == "OK" for item in items),
@@ -208,8 +256,8 @@ def collect_multi_timeframe(
         "timeframes": summary,
         "results": results,
         "methodology": {
-            "source_policy": "Finam and MOEX ISS candles are kept as separate feeds.",
-            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. All Finam intraday bars are also required to have reached timestamp plus interval duration. MOEX M10 bars are included only after their 10-minute interval has ended; W1/MN/QR bars are included only after the corresponding calendar period has ended.",
+            "source_policy": "Finam intraday and native MOEX ISS candle feeds remain separate. D1 is sourced independently from official per-security TQBR history records, not resampled from intraday candles.",
+            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. All Finam intraday bars are also required to have reached timestamp plus interval duration. MOEX M10 bars are included only after their 10-minute interval has ended; W1/MN/QR bars are included only after the corresponding calendar period has ended. D1 includes only prior-date TQBR history rows with positive trade count and complete valid OHLCV; zero-trade, incomplete, invalid, and current-date rows are excluded and counted.",
             "aggregation_policy": "No resampling, filling, interpolation, provider merging, or strategy use.",
             "research_isolation": "This artifact does not modify the frozen D1 research dataset, candidate cohort, holdout, or trading configuration.",
         },
