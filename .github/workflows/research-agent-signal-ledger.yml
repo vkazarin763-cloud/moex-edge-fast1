@@ -70,11 +70,11 @@ jobs:
           ]
           if len(names) != 1:
               raise SystemExit(f"Expected exactly one scanner artifact, found {len(names)}")
-          match = re.fullmatch(r"moex-edge-mtf-signals-(\\d+)", names[0])
+          match = re.fullmatch(r"moex-edge-mtf-signals-(\d+)", names[0])
           if not match:
               raise SystemExit(f"Unexpected scanner artifact name: {names[0]}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write(f"collector_run_id={match.group(1)}\\n")
+              out.write(f"collector_run_id={match.group(1)}\n")
           PY
       - name: Download exact source candle artifact
         uses: actions/download-artifact@v4
@@ -94,6 +94,11 @@ jobs:
             git show "origin/$LEDGER_BRANCH:signal-ledger/events.jsonl" > signal-ledger/events.jsonl
           else
             : > signal-ledger/events.jsonl
+          fi
+          if git cat-file -e "origin/$LEDGER_BRANCH:signal-ledger/prospective-outcomes.jsonl" 2>/dev/null; then
+            git show "origin/$LEDGER_BRANCH:signal-ledger/prospective-outcomes.jsonl" > signal-ledger/prospective-outcomes.jsonl
+          else
+            : > signal-ledger/prospective-outcomes.jsonl
           fi
       - name: Append only new immutable signal events
         run: |
