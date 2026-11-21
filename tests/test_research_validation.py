@@ -19,6 +19,10 @@ class WalkForwardTests(unittest.TestCase):
             config=BacktestConfig(0, 0, None, None, 2),
         )
         self.assertEqual(len(report["folds"]), 3)
+        self.assertEqual(report["execution_config"], {
+            "fee_per_side": 0, "slippage_per_side": 0,
+            "stop_pct": None, "target_pct": None, "max_bars": 2,
+        })
         starts = [f["start"] for f in report["folds"]]
         self.assertEqual(starts, sorted(starts))
         for candidate in report["candidates"].values():
@@ -33,6 +37,14 @@ class WalkForwardTests(unittest.TestCase):
         report = adversarial_cost_check(rows, folds=2, warmup_bars=55,
                                         min_total_trades=1, min_trades_per_fold=0)
         self.assertEqual(report["stress"], "2x entry/exit fees and slippage")
+        self.assertEqual(report["baseline_execution_config"], {
+            "fee_per_side": 0.001, "slippage_per_side": 0.0005,
+            "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+        })
+        self.assertEqual(report["double_cost_execution_config"], {
+            "fee_per_side": 0.002, "slippage_per_side": 0.001,
+            "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+        })
         self.assertIn("does not replace", report["warning"])
 
     def test_invalid_fold_count_rejected(self):
