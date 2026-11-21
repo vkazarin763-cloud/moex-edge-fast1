@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from research_agent.multi_timeframe import (
     FINAM_FRAMES, MOEX_FRAMES, RefreshingFinamClient,
-    _moex_bar_is_complete, collect_multi_timeframe,
+    _finam_bar_is_complete, _moex_bar_is_complete, collect_multi_timeframe,
 )
 from research_agent.finam_market_data import FinamAPIError
 from unittest.mock import patch
@@ -23,7 +23,7 @@ class FakeFinam:
 
 class MultiTimeframeTests(unittest.TestCase):
     def test_supported_frames_are_explicit_and_disjoint(self):
-        self.assertEqual(set(FINAM_FRAMES), {"M1", "M5", "M15", "M30", "H2", "H4", "H8"})
+        self.assertEqual(set(FINAM_FRAMES), {"M1", "M5", "M15", "M30", "H1", "H2", "H4", "H8"})
         self.assertEqual(set(MOEX_FRAMES), {"M10", "W1", "MN", "QR"})
         self.assertFalse(set(FINAM_FRAMES) & set(MOEX_FRAMES))
 
@@ -67,6 +67,21 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(result["timeframes"]["M1"]["errors"], 1)
         self.assertEqual(result["timeframes"]["QR"]["errors"], 1)
 
+
+    def test_finam_h1_is_supported_and_unfinished_intervals_are_excluded(self):
+        now = datetime(2026, 11, 20, 13, 0, tzinfo=timezone.utc)
+        self.assertTrue(_finam_bar_is_complete(
+            datetime(2026, 11, 20, 12, 0, tzinfo=timezone.utc), "H1", now
+        ))
+        self.assertFalse(_finam_bar_is_complete(
+            datetime(2026, 11, 20, 12, 30, tzinfo=timezone.utc), "H1", now
+        ))
+        self.assertFalse(_finam_bar_is_complete(
+            datetime(2026, 11, 20, 12, 59, tzinfo=timezone.utc), "M1", now
+        ))
+        self.assertFalse(_finam_bar_is_complete(
+            datetime(2026, 11, 20, 12, 0), "H1", now
+        ))
 
     def test_moex_incomplete_intraday_and_calendar_bars_are_excluded(self):
         now = datetime(2026, 11, 20, 22, 19)
