@@ -1,0 +1,72 @@
+name: MOEX EDGE MTF Signals (Read Only)
+
+on:
+  workflow_run:
+    workflows:
+      - "MOEX EDGE Multi-Timeframe Candles (Manual, Read Only)"
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Successful multi-timeframe candle workflow run ID"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: moex-edge-mtf-signal-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Resolve source workflow run
+        id: source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+          INPUT_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            RUN_ID="$INPUT_RUN_ID"
+          else
+            RUN_ID="$WORKFLOW_RUN_ID"
+          fi
+          case "$RUN_ID" in
+            ''|*[!0-9]*) echo "Invalid source run ID"; exit 1 ;;
+          esac
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+      - name: Download validated MTF candle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-multi-timeframe-candles
+          path: mtf-data
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.run_id }}
+      - name: Run read-only D1/H1 signal scanner
+        run: |
+          python -m research_agent.mtf_scanner \
+            --candles mtf-data/moex_edge_multi_timeframe_candles.json \
+            --validation mtf-data/moex_edge_multi_timeframe_validation.json \
+            --output moex_edge_mtf_signals.json
+      - name: Upload signal report
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-mtf-signals-${{ steps.source.outputs.run_id }}
+          path: moex_edge_mtf_signals.json
+          if-no-files-found: error
+          retention-days: 30
