@@ -2,6 +2,7 @@ import unittest
 from datetime import date, datetime
 
 from research_agent.core import Candle
+from research_agent.corporate_actions import KNOWN_SHARE_BASIS_EVENTS
 from research_agent.moex_iss import HistoryRecord
 from research_agent.session_mapping import (
     SessionMappingError,
@@ -82,6 +83,25 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertFalse(result["complete"])
         self.assertEqual(result["raw_weekend_candles_unmapped"], 1)
         self.assertEqual(result["unassigned_raw_candles"], 1)
+
+    def test_known_share_basis_registry_has_sourced_effective_events(self):
+        expected = {
+            "GMKN": ("2024-04-04", 100.0),
+            "TRNFP": ("2024-02-21", 100.0),
+            "VTBR": ("2024-07-15", 1.0 / 5000.0),
+            "PLZL": ("2025-03-27", 10.0),
+            "T": ("2026-04-17", 10.0),
+        }
+        self.assertEqual(set(KNOWN_SHARE_BASIS_EVENTS), set(expected))
+        for ticker, (effective_date, factor) in expected.items():
+            with self.subTest(ticker=ticker):
+                event = KNOWN_SHARE_BASIS_EVENTS[ticker]
+                self.assertEqual(event["effective_date"], effective_date)
+                self.assertEqual(
+                    event["history_to_current_price_factor_before_event"], factor
+                )
+                self.assertTrue(event["source"].startswith("https://"))
+                self.assertTrue(event["event"])
 
     def test_known_split_price_basis_ratios_are_flagged_without_adjustment(self):
         events = [
