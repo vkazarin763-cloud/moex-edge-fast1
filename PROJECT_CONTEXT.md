@@ -214,4 +214,8 @@
 - Added isolated `research_agent/mtf_scanner.py`: latest closed native TQBR D1 signals from the five frozen strategies, with informational H1 EMA20/EMA50 alignment. H1 confirmation does not filter signals.
 - H1 as-of join is bounded by D1 bar end; dedicated test excludes H1 bars after D1 close.
 - Workflow `research-agent-mtf-signals.yml` can manually process artifact run 44861047844 or automatically follow future successful MTF collection.
-- PR #74 awaits CI review; scanner not yet merged or run against artifact. Do not use holdout to tune.
+- PR #74 merged as `d004f0fd7600749dd7613bd549f7d62b97aadb58`; both Research Agent Safety Tests and Finam Executor Safety Tests passed on exact PR head. Scanner is on main but has not yet been run against the real artifact. Do not use holdout to tune.
+
+## 2026-11-21 — scanner merged
+- PR #74 merged; both required CI checks passed. To produce first real signal artifact, manually dispatch `MOEX EDGE MTF Signals (Read Only)` with source_run_id 44861047844. Future successful candle-collection runs trigger scanner automatically.
+- No actual signal list has been generated yet; do not report signals until scanner workflow succeeds and artifact is inspected.
