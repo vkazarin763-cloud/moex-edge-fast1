@@ -165,7 +165,6 @@ def update_prospective_outcomes(signal_ledger_path: str | Path, candle_report: d
                 "entry_price": trade.entry_price, "exit_price": trade.exit_price,
                 "net_return": trade.net_return, "status": "CLOSED",
                 "exit_reason": trade.exit_reason,
-                "source_candle_snapshot_utc": candle_report.get("generated_at_utc"),
                 "execution_config": {
                     "fee_per_side": config.fee_per_side,
                     "slippage_per_side": config.slippage_per_side,
