@@ -51,7 +51,7 @@ class MTFScannerTests(unittest.TestCase):
         d1[-1].update({"open": 200, "high": 205, "low": 199, "close": 204})
 
         h1 = []
-        start = datetime(2026, 3, 1, 16, 0, tzinfo=timezone.utc)
+        start = datetime(2026, 2, 27, 18, 0, tzinfo=timezone.utc)
         for i in range(51):
             close = 100 + i
             stamp = start + timedelta(hours=i)
