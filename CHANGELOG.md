@@ -160,3 +160,9 @@
 - Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
 - No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
+
+
+## 2026-11-21 — MTF data validation and D1/H1 scanner prototype
+- MTF dataset artifact 44861047844 passed independent validation: 787,929 completed bars, 44/44 symbols on 13 frames, zero structural/no-lookahead issues.
+- Full data report and cross-AI handoff were added in PR #72.
+- PR #73 adds a read-only D1/H1 scanner prototype, an H1-after-D1-close no-lookahead test, and an artifact-driven GitHub Actions workflow. Await both CI checks on final PR head.
