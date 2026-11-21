@@ -31,10 +31,16 @@ The default configuration is imported directly from `research_agent.core`; the e
 - Trades are non-overlapping within each symbol/strategy stream. Different strategies and different symbols are simulated independently and may overlap.
 - Open terminal trades are counted but excluded from closed-trade performance statistics.
 - Results are grouped by direction, strategy, strategy/direction, exit reason and symbol.
+- `trade_records` contains one auditable row per simulated trade, including open terminal records. Each row is explicitly tagged `data_origin: HISTORICAL`; only rows with `status: CLOSED` and a non-null `net_return` belong in closed-trade statistics.
+- Historical trade IDs are deterministic and namespaced separately from prospective signal/outcome records.
 
 The aggregate sum of trade returns is explicitly **not** a portfolio return. This report has no portfolio capital, position sizing, allocation, leverage or short-sale collateral model. It is not a live signal, a profitability claim, a prospective holdout result or production approval.
 
 Historical H1 confirmation is not reconstructed because the collector's H1 lookback is only 30 calendar days. This report does not write to the append-only prospective signal ledger.
+
+## Individual trade records
+
+The execution JSON includes the full `trade_records` array in addition to aggregate summaries. Each row preserves symbol, strategy, direction, signal/entry/exit timestamps, fill prices, net return, status and exit reason. These are simulated historical records, not broker fills or live executions. Open terminal rows are retained for audit but must not be counted as closed trades.
 
 ## Workflow
 
