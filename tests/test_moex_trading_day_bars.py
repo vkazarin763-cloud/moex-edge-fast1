@@ -211,7 +211,7 @@ class TradingDayBarTests(unittest.TestCase):
 
     def test_reconciliation_reports_full_reason_and_field_counts_beyond_examples(self):
         raw = [
-            Candle(datetime(2025, 3, 1), 100, 101, 99, 100, 10),
+            Candle(datetime(2025, 2, 22), 100, 101, 99, 100, 10),
             Candle(datetime(2025, 3, 3), 100, 102, 98, 101, 20),
             Candle(datetime(2025, 3, 4), 101, 103, 100, 102, 30),
         ]
@@ -224,7 +224,7 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["mapped_raw_candles"], 2)
         self.assertEqual(result["unassigned_raw_candles"], 1)
         self.assertEqual(result["unassigned_reason_counts"], {
-            "WEEKEND_NO_NEXT_POSITIVE_DATE": 1,
+            "PRELAUNCH_WEEKEND_UNCONFIRMED": 1,
         })
         self.assertEqual(result["mismatch_reason_counts"], {
             "AGGREGATED_OHLCV_DIFFERS": 1,
