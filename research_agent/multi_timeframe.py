@@ -25,6 +25,28 @@ FINAM_FRAMES = {
 }
 # Native MOEX ISS candle intervals: 10m, weekly, monthly, quarterly.
 MOEX_FRAMES = {"M10": 10, "W1": 7, "MN": 31, "QR": 4}
+ALL_FRAMES = (*FINAM_FRAMES.keys(), *MOEX_FRAMES.keys(), "D1")
+
+
+def _normalize_frames(frames):
+    """Select supported feeds while preserving the stable default order."""
+    if frames is None:
+        return ALL_FRAMES
+    if isinstance(frames, str):
+        frames = frames.split(",")
+    selected = {
+        str(frame).strip().upper()
+        for frame in frames
+        if str(frame).strip()
+    }
+    if not selected:
+        raise ValueError("At least one timeframe must be selected")
+    unknown = sorted(selected - set(ALL_FRAMES))
+    if unknown:
+        raise ValueError(f"Unsupported timeframes: {', '.join(unknown)}")
+    if "D1" not in selected:
+        raise ValueError("D1 is required for the latest-signal scanner")
+    return tuple(frame for frame in ALL_FRAMES if frame in selected)
 DEFAULT_TICKERS = [
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
     "ENPG", "FLOT", "GAZP", "GMKN", "HEAD", "IRAO", "LKOH", "MAGN",
@@ -113,8 +135,10 @@ def _serialize(rows, *, snapshot_field=False):
 def collect_multi_timeframe(
     tickers, *, api_token, source_app_id=None, now=None,
     moex_fetcher=fetch_candles, moex_history_fetcher=fetch_history_records, finam_client=None,
+    frames=None,
 ):
     """Collect each interval independently; never resample or merge providers."""
+    requested_frames = _normalize_frames(frames)
     current = now or datetime.now(timezone.utc)
     if current.tzinfo is None or current.utcoffset() is None:
         raise ValueError("now must be timezone-aware")
@@ -132,6 +156,8 @@ def collect_multi_timeframe(
         # Finam intraday bars: preserve snapshot metadata and exclude only
         # explicitly marked snapshots from the completed-bar collection.
         for frame, (api_frame, lookback) in FINAM_FRAMES.items():
+            if frame not in requested_frames:
+                continue
             start = current - timedelta(days=lookback)
             try:
                 raw = client.fetch_bars(f"{ticker}@MISX", api_frame, start, current)
@@ -162,6 +188,8 @@ def collect_multi_timeframe(
         # MOEX ISS native intervals. Intraday M10 uses a recent window;
         # W1/MN/QR retain a longer context for trend analysis.
         for frame, interval in MOEX_FRAMES.items():
+            if frame not in requested_frames:
+                continue
             lookback = 30 if frame == "M10" else 365 * 5
             start_date = (local_today - timedelta(days=lookback)).isoformat()
             end_date = local_today.isoformat()
@@ -237,7 +265,7 @@ def collect_multi_timeframe(
         results[ticker] = symbol_result
 
     summary = {}
-    for frame in (*FINAM_FRAMES.keys(), *MOEX_FRAMES.keys(), "D1"):
+    for frame in requested_frames:
         items = [value[frame] for value in results.values()]
         summary[frame] = {
             "source": items[0]["source"] if items else (
@@ -253,6 +281,7 @@ def collect_multi_timeframe(
         "generated_at_utc": current.isoformat(),
         "timezone": "Europe/Moscow",
         "universe": list(results),
+        "requested_frames": list(requested_frames),
         "timeframes": summary,
         "results": results,
         "methodology": {
@@ -269,14 +298,17 @@ def main():
     parser = argparse.ArgumentParser(description="Read-only multi-timeframe MOEX/Finam candle collection")
     parser.add_argument("--tickers", default=",".join(DEFAULT_TICKERS))
     parser.add_argument("--output", default="moex_edge_multi_timeframe_candles.json")
+    parser.add_argument("--frames", default=None,
+                        help="Comma-separated timeframes; defaults to all supported frames. D1 is required.")
     args = parser.parse_args()
     token = os.environ.get("FINAM_API_TOKEN", "").strip()
     if not token:
         parser.error("FINAM_API_TOKEN must be supplied through the environment")
     source_app_id = os.environ.get("FINAM_SOURCE_APP_ID", "").strip() or None
     tickers = [item.strip().upper() for item in args.tickers.split(",") if item.strip()]
+    frames = [item.strip().upper() for item in args.frames.split(",") if item.strip()] if args.frames else None
     report = collect_multi_timeframe(
-        tickers, api_token=token, source_app_id=source_app_id
+        tickers, api_token=token, source_app_id=source_app_id, frames=frames
     )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, separators=(",", ":")),
