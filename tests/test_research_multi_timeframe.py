@@ -77,6 +77,7 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(result["results"]["SBER"]["MN"]["status"], "ERROR")
         self.assertEqual(result["timeframes"]["M1"]["errors"], 1)
         self.assertEqual(result["timeframes"]["QR"]["errors"], 1)
+        self.assertEqual(result["results"]["SBER"]["D1"]["status"], "ERROR")
 
 
     def test_finam_h1_is_supported_and_unfinished_intervals_are_excluded(self):
@@ -136,7 +137,7 @@ class MultiTimeframeTests(unittest.TestCase):
         result = collect_multi_timeframe(
             ["SBER"], api_token="not-used",
             now=datetime(2026, 11, 20, 19, 19, tzinfo=timezone.utc),
-            moex_fetcher=moex_fetcher, finam_client=FakeFinam(),
+            moex_fetcher=moex_fetcher, moex_history_fetcher=fake_history_fetcher, finam_client=FakeFinam(),
         )
         sber = result["results"]["SBER"]
         self.assertEqual(sber["M10"]["raw_bars"], 2)
