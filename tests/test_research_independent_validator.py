@@ -102,6 +102,7 @@ class IndependentValidatorTests(unittest.TestCase):
         report = _report()
         audit = report["results"]["SBER"]["session_date_mapping"]
         audit["history_dates_with_raw_fragments"] = 1
+        audit["trading_days_reconciled"] = 1
         audit["history_trade_dates_without_raw_fragments"] = 1
         audit["raw_history_date_coverage_ratio"] = 0.5
         audit["raw_history_coverage_status"] = "PARTIAL_DATE_COVERAGE"
