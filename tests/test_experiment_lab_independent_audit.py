@@ -26,6 +26,7 @@ def _report():
                 "MACD12x26", "Keltner20x2ATR",
             ],
             "entry_strategy_count": 5,
+            "ticker_ids": ["SBER"],
             "ticker_count": 1,
             "trials_total": 1,
             "trials_completed": 0,
@@ -69,6 +70,19 @@ class ExperimentLabIndependentAuditTests(unittest.TestCase):
         self.assertEqual(research_exit_code(
             {"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}}, 44
         ), 0)
+
+    def test_missing_ticker_hypothesis_combination_is_rejected(self):
+        report = _report()
+        report["results"]["GAZP"] = {"status": "DATA_OR_ANALYSIS_ERROR"}
+        lab = report["experiment_lab"]
+        lab["ticker_ids"] = ["SBER", "GAZP"]
+        lab["ticker_count"] = 2
+        lab["trials_total"] = 2
+        lab["trials_incomplete"] = 2
+        lab["multiple_testing_family_size"] = 10
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("missing ticker/hypothesis trial combinations" in error for error in result["errors"]))
 
     def test_holdout_bar_in_experiment_trial_is_rejected(self):
         report = _report()
