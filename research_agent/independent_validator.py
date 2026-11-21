@@ -88,6 +88,9 @@ def _audit_experiment_lab(
         errors.append("experiment_lab must be an object")
         return 0, 0
     status = lab.get("status")
+    if status == "SKIPPED_NOT_REQUESTED":
+        warnings.append("experiment lab was intentionally skipped; optional exit-policy trials were not requested")
+        return 0, 0
     if status == "EXPERIMENT_LAB_ERROR":
         warnings.append("experiment lab did not complete: " + str(lab.get("error", "unknown error")))
         return 0, 0
@@ -505,7 +508,10 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
     checks = checked_folds + checked_cost_candidates + analyzed + checked_lab_trials + checked_raw_provenance
     if errors:
         status = "INDEPENDENT_VALIDATION_FAIL"
-    elif analyzed == 0 or warnings:
+    elif analyzed == 0 or any(
+        not warning.startswith("experiment lab was intentionally skipped;")
+        for warning in warnings
+    ):
         status = "INDEPENDENT_VALIDATION_INCOMPLETE"
     else:
         status = "INDEPENDENT_VALIDATION_PASS"
