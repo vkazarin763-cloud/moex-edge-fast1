@@ -33,6 +33,17 @@ class SignalLedgerTests(unittest.TestCase):
             self.assertEqual(second, {"added": 0, "duplicates": 1, "total_events": 1})
             self.assertEqual(len(path.read_text(encoding="utf-8").splitlines()), 1)
 
+    def test_sub_tick_float_noise_is_idempotent_and_preserves_first_observation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "signals.jsonl"
+            append_signal_report(report(), path)
+            changed = report()
+            changed["signals"][0]["h1"]["h1_close"] = 249.000000003
+            result = append_signal_report(changed, path)
+            self.assertEqual(result, {"added": 0, "duplicates": 1, "total_events": 1})
+            stored = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(stored["signal"]["h1"]["h1_close"], 249.0)
+
     def test_changed_signal_payload_for_same_identity_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "signals.jsonl"
