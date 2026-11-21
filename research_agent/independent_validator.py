@@ -123,6 +123,17 @@ def _audit_experiment_lab(
     if not isinstance(ticker_count, int) or isinstance(ticker_count, bool) or ticker_count < 0:
         errors.append("experiment_lab ticker_count must be a non-negative integer")
         ticker_count = 0
+    ticker_ids = lab.get("ticker_ids")
+    if not isinstance(ticker_ids, list) or any(not isinstance(x, str) or not x for x in ticker_ids):
+        errors.append("experiment_lab ticker_ids must be a string list")
+        ticker_ids = []
+    if len(set(ticker_ids)) != len(ticker_ids):
+        errors.append("experiment_lab ticker_ids must be unique")
+    if len(ticker_ids) != ticker_count:
+        errors.append("experiment_lab ticker_count does not match ticker_ids")
+    for ticker_id in ticker_ids:
+        if ticker_id not in results:
+            errors.append(f"experiment_lab references unknown ticker_id: {ticker_id}")
     expected_trials = ticker_count * len(ids)
     expected_family = expected_trials * len(entry_ids)
     if lab.get("trials_total") != expected_trials:
@@ -145,8 +156,8 @@ def _audit_experiment_lab(
             continue
         ticker = trial.get("ticker")
         hypothesis_id = trial.get("hypothesis_id")
-        if not isinstance(ticker, str) or ticker not in results:
-            errors.append(f"experiment_lab trial {index} references an unknown ticker")
+        if not isinstance(ticker, str) or ticker not in results or ticker not in ticker_ids:
+            errors.append(f"experiment_lab trial {index} references an unknown or undeclared ticker")
         if hypothesis_id not in ids:
             errors.append(f"experiment_lab trial {index} references an unknown hypothesis")
         if isinstance(ticker, str) and isinstance(hypothesis_id, str):
@@ -181,6 +192,17 @@ def _audit_experiment_lab(
                 errors.append(f"experiment_lab trial {index} lacks cost-stress results")
         elif trial_status != "INSUFFICIENT_OR_INVALID_DEVELOPMENT_DATA":
             errors.append(f"experiment_lab trial {index} has unknown status")
+
+    expected_pairs = {(ticker_id, hypothesis_id) for ticker_id in ticker_ids for hypothesis_id in ids}
+    missing_pairs = expected_pairs - seen
+    unexpected_pairs = seen - expected_pairs
+    if missing_pairs:
+        errors.append(
+            "experiment_lab is missing ticker/hypothesis trial combinations: "
+            + ", ".join(f"{ticker}/{hypothesis}" for ticker, hypothesis in sorted(missing_pairs))
+        )
+    if unexpected_pairs:
+        errors.append("experiment_lab contains trial combinations outside the declared Cartesian family")
 
     if lab.get("trials_completed") != completed:
         errors.append("experiment_lab trials_completed count is inconsistent")
