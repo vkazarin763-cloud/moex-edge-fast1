@@ -218,7 +218,10 @@ def collect_multi_timeframe(
                 }
         # D1 comes from the official per-security TQBR daily history endpoint,
         # not from resampling intraday candles or MOEX candle interval=24.
-        d1_lookback = 365 * 5
+        # The latest-signal scanner needs a modest D1 warm-up, not the full
+        # five-year frozen-research history. Keep this collector lightweight;
+        # the frozen research dataset and its five-year history are untouched.
+        d1_lookback = 365
         d1_start = (local_today - timedelta(days=d1_lookback)).isoformat()
         try:
             history_rows = moex_history_fetcher(
