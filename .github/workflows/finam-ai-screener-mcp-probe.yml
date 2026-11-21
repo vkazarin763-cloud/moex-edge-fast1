@@ -1,0 +1,30 @@
+name: Finam AI Screener MCP Probe (Read Only)
+
+on:
+  push:
+    branches:
+      - experiment/finam-ai-screener-mcp-probe
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: finam-ai-screener-mcp-probe
+  cancel-in-progress: false
+
+jobs:
+  oauth-capability-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout isolated experiment
+        uses: actions/checkout@v4
+
+      - name: Run read-only MCP and OAuth discovery
+        env:
+          FINAM_MCP_ID: \${{ secrets.FINAM_MCP_ID }}
+          FINAM_MCP_TOKEN: \${{ secrets.FINAM_MCP_TOKEN }}
+        run: python scripts/finam_ai_screener_mcp_probe.py

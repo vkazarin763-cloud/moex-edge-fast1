@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "finam": {
+      "type": "http",
+      "url": "https://ai.finam.ru/mcp"
+    }
+  }
+}
