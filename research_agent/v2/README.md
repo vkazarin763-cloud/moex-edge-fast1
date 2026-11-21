@@ -33,8 +33,11 @@ increasing unique ISO-8601 timestamps and finite positive close/high values
 with high >= close.
 
 Cross-sectional membership is supplied by the caller as a point-in-time
-universe. The module does not reconstruct historical listings from today's
-constituents. The 52-week-high and relative-strength functions do not invent
+universe. Price-basis verification is supplied separately for each ticker;
+unverified constituents are excluded and the minimum verified-universe gate
+must still be met. Relative strength requires separate verification for both
+the security and IMOEX. The module does not reconstruct historical listings
+from today's constituents. See `PRICE_BASIS_GATES.md` for the evidence contract. The 52-week-high and relative-strength functions do not invent
 trading thresholds. These modules do not rebalance, simulate execution, apply
 fees/slippage, or establish profitability.
 
