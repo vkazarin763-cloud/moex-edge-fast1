@@ -271,17 +271,16 @@ def main() -> int:
     parser.add_argument("--candles", required=True, help="Validated multi-timeframe candle JSON artifact")
     parser.add_argument("--output", default="moex_edge_historical_simulation.json")
     parser.add_argument("--cutoff-exclusive", default=DEFAULT_CUTOFF_EXCLUSIVE)
-    parser.add_argument("--exclude-symbols", default="T", help="Comma-separated symbols to exclude")
+    parser.add_argument("--exclude-symbols", default="", help="Additional comma-separated symbols to exclude; known in-window corporate actions are always excluded")
     parser.add_argument("--source-run-id", type=int, default=None)
     args = parser.parse_args()
 
     report = json.loads(Path(args.candles).read_text(encoding="utf-8"))
-    excluded = {
-        symbol.strip().upper(): DEFAULT_EXCLUDED_SYMBOLS.get(
-            symbol.strip().upper(), "Excluded by explicit command-line configuration"
-        )
-        for symbol in args.exclude_symbols.split(",") if symbol.strip()
-    }
+    excluded = dict(DEFAULT_EXCLUDED_SYMBOLS)
+    for symbol in args.exclude_symbols.split(","):
+        symbol = symbol.strip().upper()
+        if symbol:
+            excluded.setdefault(symbol, "Excluded by explicit command-line configuration")
     result = build_historical_simulation(
         report,
         cutoff_exclusive=args.cutoff_exclusive,
