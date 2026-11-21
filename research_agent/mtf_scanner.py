@@ -76,6 +76,27 @@ def _d1_signals_at_last_bar(rows: list[Candle]) -> list[dict]:
     prev_lower = ema20[i - 1] - 2.0 * atr14[i - 1] if atr14[i - 1] is not None else None
     close, previous_close = rows[i].close, rows[i - 1].close
     signals = []
+    # Expose the exact closed-D1 values used by the frozen formulas. These are
+    # diagnostics only; they do not alter the registered entry conditions.
+    signal_parameters = {
+        "close": close,
+        "previous_close": previous_close,
+        "donchian20_prior_high": prior_high,
+        "donchian20_prior_low": prior_low,
+        "ema20": ema20[i],
+        "ema20_previous": ema20[i - 1],
+        "ema50": ema50[i],
+        "ema50_previous": ema50[i - 1],
+        "rsi14": rsi14[i],
+        "rsi14_previous": rsi14[i - 1],
+        "macd12_26": macd[i],
+        "macd_signal9": macd_signal[i],
+        "macd12_26_previous": macd[i - 1],
+        "macd_signal9_previous": macd_signal[i - 1],
+        "atr14": atr14[i],
+        "keltner20_upper_2atr": upper,
+        "keltner20_lower_2atr": lower,
+    }
 
     def add(strategy: str, direction: int):
         signals.append({
@@ -83,6 +104,7 @@ def _d1_signals_at_last_bar(rows: list[Candle]) -> list[dict]:
             "direction": "LONG" if direction > 0 else "SHORT",
             "direction_code": direction,
             "signal_index": i,
+            "parameters": signal_parameters,
         })
 
     if close > prior_high:
