@@ -209,6 +209,31 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["raw_history_date_coverage_ratio"], 0.5)
         self.assertEqual(result["raw_history_coverage_status"], "PARTIAL_DATE_COVERAGE")
 
+    def test_reconciliation_reports_full_reason_and_field_counts_beyond_examples(self):
+        raw = [
+            Candle(datetime(2025, 2, 22), 100, 101, 99, 100, 10),
+            Candle(datetime(2025, 3, 3), 100, 102, 98, 101, 20),
+            Candle(datetime(2025, 3, 4), 101, 103, 100, 102, 30),
+        ]
+        history = [
+            HistoryRecord(date(2025, 3, 3), 20, 100, 102, 98, 101, 20),
+            HistoryRecord(date(2025, 3, 4), 20, 101, 104, 100, 102, 30),
+        ]
+        result = reconcile_session_candles(raw, history)
+        self.assertEqual(result["raw_candles"], 3)
+        self.assertEqual(result["mapped_raw_candles"], 2)
+        self.assertEqual(result["unassigned_raw_candles"], 1)
+        self.assertEqual(result["unassigned_reason_counts"], {
+            "PRELAUNCH_WEEKEND_UNCONFIRMED": 1,
+        })
+        self.assertEqual(result["mismatch_reason_counts"], {
+            "AGGREGATED_OHLCV_DIFFERS": 1,
+        })
+        self.assertEqual(result["mismatch_field_counts"]["high"], 1)
+        self.assertEqual(result["mismatch_field_counts"]["open"], 0)
+        self.assertEqual(sum(result["unassigned_reason_counts"].values()), 1)
+        self.assertEqual(sum(result["mismatch_reason_counts"].values()), 1)
+
     def test_no_raw_candles_reports_zero_raw_history_coverage(self):
         history = [
             HistoryRecord(date(2025, 3, 3), 10, 100, 102, 99, 101, 1000),
