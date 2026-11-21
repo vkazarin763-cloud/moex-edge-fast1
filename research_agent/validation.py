@@ -154,6 +154,95 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
     }
 
 
+
+def cross_sectional_direction_summary(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Summarize per-ticker directional walk-forward diagnostics across a universe.
+
+    This is a descriptive cross-sectional aggregation, not a portfolio simulation:
+    ticker returns are never added together and no shared position cap is applied.
+    """
+    summary: dict[str, Any] = {
+        "scope": (
+            "Cross-sectional summary of per-ticker walk-forward diagnostics. "
+            "Not a portfolio return; ticker returns are not compounded or added, "
+            "and no shared-capacity constraint is applied."
+        ),
+        "by_direction": {},
+    }
+    for direction in ("LONG", "SHORT"):
+        summary["by_direction"][direction] = {}
+        for strategy in (
+            "Donchian20", "EMA20x50", "Keltner20x2ATR",
+            "MACD12x26", "RSI14Trend50",
+        ):
+            ticker_averages = []
+            total_trades = 0
+            weighted_return_sum = 0.0
+            positive_tickers = 0
+            adequately_sampled_tickers = 0
+            positive_ticker_folds = 0
+            ticker_folds_with_trades = 0
+            for ticker_result in results.values():
+                if not isinstance(ticker_result, dict) or ticker_result.get("status") != "ANALYZED":
+                    continue
+                walk = ticker_result.get("walk_forward") or {}
+                candidate = (walk.get("by_direction") or {}).get(direction, {}).get(strategy)
+                if not isinstance(candidate, dict):
+                    continue
+                trades = int(candidate.get("closed_trades") or 0)
+                average = candidate.get("average_net_return")
+                if trades > 0 and average is not None:
+                    ticker_averages.append(float(average))
+                    total_trades += trades
+                    weighted_return_sum += float(average) * trades
+                    positive_tickers += int(float(average) > 0)
+                    adequately_sampled_tickers += int(
+                        trades >= 30
+                        and candidate.get("adequately_sampled_folds") == candidate.get("folds")
+                    )
+                for fold in walk.get("folds", []):
+                    fold_stats = (
+                        (fold.get("by_direction") or {})
+                        .get(direction, {})
+                        .get(strategy, {})
+                    )
+                    fold_trades = int(fold_stats.get("closed_trades") or 0)
+                    fold_average = fold_stats.get("average_net_return")
+                    if fold_trades > 0 and fold_average is not None:
+                        ticker_folds_with_trades += 1
+                        positive_ticker_folds += int(float(fold_average) > 0)
+            ticker_count = len(ticker_averages)
+            summary["by_direction"][direction][strategy] = {
+                "tickers_with_closed_trades": ticker_count,
+                "total_closed_trades": total_trades,
+                "trade_weighted_average_net_return": (
+                    weighted_return_sum / total_trades if total_trades else None
+                ),
+                "equal_weight_mean_ticker_average_net_return": (
+                    sum(ticker_averages) / ticker_count if ticker_count else None
+                ),
+                "median_ticker_average_net_return": (
+                    sorted(ticker_averages)[ticker_count // 2]
+                    if ticker_count % 2 == 1 else (
+                        (sorted(ticker_averages)[ticker_count // 2 - 1]
+                         + sorted(ticker_averages)[ticker_count // 2]) / 2
+                        if ticker_count else None
+                    )
+                ),
+                "positive_tickers": positive_tickers,
+                "positive_ticker_share": (
+                    positive_tickers / ticker_count if ticker_count else None
+                ),
+                "tickers_with_30plus_trades_and_all_folds_adequate": adequately_sampled_tickers,
+                "positive_ticker_folds": positive_ticker_folds,
+                "ticker_folds_with_trades": ticker_folds_with_trades,
+                "positive_ticker_fold_share": (
+                    positive_ticker_folds / ticker_folds_with_trades
+                    if ticker_folds_with_trades else None
+                ),
+            }
+    return summary
+
 def adversarial_cost_check(candles: list[Candle], folds: int = 4,
                            warmup_bars: int = 200,
                            min_total_trades: int = 30,

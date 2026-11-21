@@ -10,7 +10,8 @@ from zoneinfo import ZoneInfo
 from .moex_iss import fetch_candles, fetch_history_records
 from .corporate_actions import apply_post_event_price_basis
 from .validation import (walk_forward_report, adversarial_cost_check,
-                         prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
+                         prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION,
+                         cross_sectional_direction_summary)
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
 from .independent_validator import validate_research_report
@@ -382,6 +383,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             }
         },
         "results": results,
+        "cross_sectional_direction_summary": cross_sectional_direction_summary(results),
         "experiment_lab": experiment_lab,
         "development_portfolio": development_portfolio,
         "safety": "Research only. No broker APIs, order placement, Telegram, or production-state writes.",

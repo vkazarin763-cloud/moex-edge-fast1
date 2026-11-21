@@ -123,5 +123,55 @@ class WalkForwardTests(unittest.TestCase):
             walk_forward_report(rows, folds=1, warmup_bars=55)
 
 
+class CrossSectionalDirectionSummaryTests(unittest.TestCase):
+    def test_summary_is_descriptive_and_does_not_add_ticker_returns(self):
+        from research_agent.validation import cross_sectional_direction_summary
+
+        results = {
+            "AAA": {
+                "status": "ANALYZED",
+                "walk_forward": {
+                    "by_direction": {"SHORT": {"EMA20x50": {
+                        "closed_trades": 10, "average_net_return": 0.02,
+                        "adequately_sampled_folds": 4, "folds": 4,
+                    }}},
+                    "folds": [
+                        {"by_direction": {"SHORT": {"EMA20x50": {
+                            "closed_trades": 3, "average_net_return": 0.01,
+                        }}}},
+                        {"by_direction": {"SHORT": {"EMA20x50": {
+                            "closed_trades": 2, "average_net_return": -0.01,
+                        }}}},
+                    ],
+                },
+            },
+            "BBB": {
+                "status": "ANALYZED",
+                "walk_forward": {
+                    "by_direction": {"SHORT": {"EMA20x50": {
+                        "closed_trades": 30, "average_net_return": -0.01,
+                        "adequately_sampled_folds": 4, "folds": 4,
+                    }}},
+                    "folds": [],
+                },
+            },
+            "CCC": {
+                "status": "ERROR",
+                "walk_forward": {},
+            },
+        }
+        summary = cross_sectional_direction_summary(results)
+        item = summary["by_direction"]["SHORT"]["EMA20x50"]
+        self.assertEqual(item["tickers_with_closed_trades"], 2)
+        self.assertEqual(item["total_closed_trades"], 40)
+        self.assertAlmostEqual(item["trade_weighted_average_net_return"], -0.0025)
+        self.assertAlmostEqual(item["equal_weight_mean_ticker_average_net_return"], 0.005)
+        self.assertEqual(item["positive_tickers"], 1)
+        self.assertEqual(item["tickers_with_30plus_trades_and_all_folds_adequate"], 1)
+        self.assertEqual(item["positive_ticker_folds"], 1)
+        self.assertEqual(item["ticker_folds_with_trades"], 2)
+        self.assertIn("Not a portfolio return", summary["scope"])
+
+
 if __name__ == "__main__":
     unittest.main()
