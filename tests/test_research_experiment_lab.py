@@ -3,9 +3,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from research_agent.core import Candle, BacktestConfig
-from research_agent.experiment_lab import (
-    ExitHypothesis, run_experiment_lab,
-)
+from research_agent.experiment_lab import ExitHypothesis, run_experiment_lab
 
 
 def _candles(count=180):
@@ -24,7 +22,6 @@ class ExperimentLabTests(unittest.TestCase):
     def test_holdout_bars_are_excluded_and_counted(self):
         rows = _candles(180)
         rows.extend(_candles(2))
-        # Replace the appended timestamps with dates in the prospective period.
         rows[-2] = Candle(datetime(2026, 11, 20), 130, 131, 129, 130, 1000)
         rows[-1] = Candle(datetime(2026, 11, 21), 131, 132, 130, 131, 1000)
         hypothesis = ExitHypothesis(
@@ -38,6 +35,10 @@ class ExperimentLabTests(unittest.TestCase):
         self.assertEqual(trial["excluded_holdout_bars"], 2)
         self.assertEqual(trial["development_bars"], 180)
         self.assertEqual(report["multiple_testing_family_size"], 5)
+        self.assertEqual(
+            trial["execution_replay_audit"]["status"], "REFERENCE_REPLAY_MATCH"
+        )
+        self.assertEqual(trial["execution_replay_audit"]["mismatch_count"], 0)
 
     def test_every_registered_hypothesis_is_retained(self):
         report = run_experiment_lab(
