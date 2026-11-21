@@ -97,7 +97,8 @@ class TradingDayBarTests(unittest.TestCase):
                     Candle(datetime.combine(trade_date, datetime.min.time()), 100, 102, 98, 101, 20),
                 ]
                 history = [
-                    HistoryRecord(trade_date, 30, 100, 102, 98, 101, 30)
+                    HistoryRecord(session_date, 0, None, None, None, None, 0),
+                    HistoryRecord(trade_date, 30, 100, 102, 98, 101, 30),
                 ]
                 result = reconcile_session_candles(raw, history)
                 self.assertTrue(result["complete"])
