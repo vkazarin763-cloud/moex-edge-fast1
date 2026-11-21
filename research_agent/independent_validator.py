@@ -283,6 +283,7 @@ def _audit_raw_session_provenance(
         "trading_days_mismatched",
         "unassigned_raw_candles",
         "raw_candles",
+        "mapped_raw_candles",
         "raw_weekend_candles",
         "raw_weekend_candles_mapped",
         "raw_weekend_candles_unmapped",
@@ -327,6 +328,29 @@ def _audit_raw_session_provenance(
 
     if counts["unassigned_raw_candles"] > counts["raw_candles"]:
         errors.append(f"{ticker}: unassigned raw candle count exceeds total raw candles")
+    if counts["mapped_raw_candles"] + counts["unassigned_raw_candles"] != counts["raw_candles"]:
+        errors.append(f"{ticker}: mapped and unassigned raw candle counts do not sum to total raw candles")
+
+    for field, expected_keys in (
+        ("unassigned_reason_counts", None),
+        ("mismatch_reason_counts", None),
+        ("mismatch_field_counts", {"open", "high", "low", "close", "volume"}),
+    ):
+        values = audit.get(field)
+        if not isinstance(values, dict) or any(
+            not isinstance(key, str) or not isinstance(value, int)
+            or isinstance(value, bool) or value < 0
+            for key, value in values.items()
+        ):
+            errors.append(f"{ticker}: {field} must be a string-to-nonnegative-integer map")
+            continue
+        if expected_keys is not None and set(values) != expected_keys:
+            errors.append(f"{ticker}: {field} must contain exactly {sorted(expected_keys)}")
+        if field == "unassigned_reason_counts" and sum(values.values()) != counts["unassigned_raw_candles"]:
+            errors.append(f"{ticker}: unassigned reason counts do not sum to unassigned raw candles")
+        if field == "mismatch_reason_counts" and sum(values.values()) != counts["trading_days_mismatched"]:
+            errors.append(f"{ticker}: mismatch reason counts do not sum to mismatched trading days")
+
     if counts["trading_days_reconciled"] + counts["trading_days_mismatched"] != counts["history_dates_with_raw_fragments"]:
         errors.append(f"{ticker}: reconciled and mismatched trading-day counts do not cover raw/history matched dates")
 
