@@ -8,6 +8,17 @@ from typing import Any
 from .core import BacktestConfig, Candle, backtest, generate_signals, summarize, validate_candles
 
 
+def _execution_config(config: BacktestConfig) -> dict[str, Any]:
+    """Serialize the exact simulator assumptions used by a research report."""
+    return {
+        "fee_per_side": config.fee_per_side,
+        "slippage_per_side": config.slippage_per_side,
+        "stop_pct": config.stop_pct,
+        "target_pct": config.target_pct,
+        "max_bars": config.max_bars,
+    }
+
+
 def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int = 200,
                         min_total_trades: int = 30, min_trades_per_fold: int = 5,
                         config: BacktestConfig = BacktestConfig()) -> dict[str, Any]:
@@ -85,6 +96,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
     return {
         "method": "expanding-history indicators; sequential non-overlapping test folds; fixed candidates",
         "candles": len(rows),
+        "execution_config": _execution_config(config),
         "warmup_bars": warmup_bars,
         "folds": fold_reports,
         "candidates": candidates,
@@ -131,6 +143,8 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
         }
     return {
         "stress": "2x entry/exit fees and slippage",
+        "baseline_execution_config": _execution_config(config),
+        "double_cost_execution_config": _execution_config(stressed_config),
         "candidates": results,
         "warning": "Cost sensitivity only; it does not replace a separate holdout dataset or independent review.",
     }
