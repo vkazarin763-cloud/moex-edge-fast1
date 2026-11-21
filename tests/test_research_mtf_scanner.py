@@ -103,6 +103,16 @@ class MTFScannerTests(unittest.TestCase):
         }
         result = scan_multi_timeframe_report(candles_report, validation)
         self.assertTrue(result["signals"])
+        self.assertIn("parameters", result["signals"][0])
+        self.assertGreater(
+            result["signals"][0]["parameters"]["close"],
+            result["signals"][0]["parameters"]["donchian20_prior_high"],
+        )
+        self.assertIn("ema20", result["signals"][0]["parameters"])
+        self.assertIn("rsi14", result["signals"][0]["parameters"])
+        self.assertIn("macd12_26", result["signals"][0]["parameters"])
+        self.assertIn("atr14", result["signals"][0]["parameters"])
+        self.assertIn("keltner20_upper_2atr", result["signals"][0]["parameters"])
         self.assertEqual(result["signals"][0]["h1"]["h1_timestamp"], "2026-03-01T20:00:00+00:00")
         self.assertEqual(result["signals"][0]["h1"]["h1_age_minutes_at_d1_close"], 0)
 
