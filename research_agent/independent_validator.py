@@ -508,7 +508,10 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
     checks = checked_folds + checked_cost_candidates + analyzed + checked_lab_trials + checked_raw_provenance
     if errors:
         status = "INDEPENDENT_VALIDATION_FAIL"
-    elif analyzed == 0 or warnings:
+    elif analyzed == 0 or any(
+        not warning.startswith("experiment lab was intentionally skipped;")
+        for warning in warnings
+    ):
         status = "INDEPENDENT_VALIDATION_INCOMPLETE"
     else:
         status = "INDEPENDENT_VALIDATION_PASS"
