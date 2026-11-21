@@ -18,6 +18,7 @@ from .experiment_lab import run_experiment_lab
 from .session_mapping import (
     earliest_session_date, latest_completed_session_date,
     build_trading_day_candles, reconcile_session_candles,
+    combine_morning_main_history_records,
 )
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
@@ -63,6 +64,8 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     # the current T security's own TQBR history.
     legacy_reconciliation_history_by_ticker = {}
     legacy_history_errors = {}
+    legacy_reconciliation_comparison_by_ticker = {}
+    legacy_comparison_errors = {}
     for ticker in selected:
         try:
             history_records_by_ticker[ticker] = fetch_history_records(
@@ -78,9 +81,19 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     legacy_reconciliation_history_by_ticker[ticker] = fetch_history_records(
                         "TCSG", fetch_from, legacy_till, board="TQBR"
                     )
+                    legacy_morning = fetch_history_records(
+                        "TCSG", fetch_from, legacy_till, board="TQBR", trading_session=0
+                    )
+                    legacy_main = fetch_history_records(
+                        "TCSG", fetch_from, legacy_till, board="TQBR", trading_session=1
+                    )
+                    legacy_reconciliation_comparison_by_ticker[ticker] = (
+                        combine_morning_main_history_records(legacy_morning, legacy_main)
+                    )
                 except Exception as alias_exc:
                     legacy_reconciliation_history_by_ticker[ticker] = []
                     legacy_history_errors[ticker] = str(alias_exc)
+                    legacy_comparison_errors[ticker] = str(alias_exc)
 
     effective_till = latest_completed_session_date(
         history_records_by_ticker, calendar_date_ceiling
@@ -116,6 +129,20 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 record for record in history_records
                 if record.trade_date <= date.fromisoformat(effective_till)
             ]
+            comparison_history_error = None
+            try:
+                morning_history = fetch_history_records(
+                    ticker, fetch_from, history_fetch_till, board="TQBR", trading_session=0
+                )
+                main_history = fetch_history_records(
+                    ticker, fetch_from, history_fetch_till, board="TQBR", trading_session=1
+                )
+                comparison_history_records = combine_morning_main_history_records(
+                    morning_history, main_history
+                )
+            except Exception as comparison_exc:
+                comparison_history_records = None
+                comparison_history_error = str(comparison_exc)
             reconciliation_history_records = list(bounded_history_records)
             legacy_alias = None
             if ticker == "T" and ticker in legacy_reconciliation_history_by_ticker:
@@ -131,6 +158,18 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     <= record.trade_date
                     <= min(date.fromisoformat(effective_till), date(2024, 11, 27))
                 )
+                legacy_comparison = legacy_reconciliation_comparison_by_ticker.get(ticker, [])
+                comparison_history_records = (
+                    list(comparison_history_records or [])
+                    + [
+                        record for record in legacy_comparison
+                        if date.fromisoformat(effective_from)
+                        <= record.trade_date
+                        <= min(date.fromisoformat(effective_till), date(2024, 11, 27))
+                    ]
+                ) if comparison_history_records is not None else None
+                if ticker in legacy_comparison_errors:
+                    comparison_history_error = legacy_comparison_errors[ticker]
             reconciliation_dates = [record.trade_date for record in reconciliation_history_records]
             if len(reconciliation_dates) != len(set(reconciliation_dates)):
                 raise ValueError(
@@ -147,7 +186,8 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 bounded_history_records, effective_from, effective_till
             )
             session_date_mapping_diagnostics = reconcile_session_candles(
-                raw_candles, reconciliation_history_records, ticker=ticker
+                raw_candles, reconciliation_history_records, ticker=ticker,
+                comparison_history_records=comparison_history_records,
             )
             if not research_candles:
                 raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
@@ -183,6 +223,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     "raw_session_candles": len(raw_candles),
                     "raw_reconciliation_history_alias": legacy_alias,
                     "raw_reconciliation_history_alias_error": legacy_history_errors.get(ticker),
+                    "raw_comparison_history_error": comparison_history_error,
                     "session_date_mapping": session_date_mapping_diagnostics,
                     "tqbr_history_crosscheck": history_crosscheck,
                 }
@@ -206,6 +247,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 ) if raw_candles else None,
                 "raw_reconciliation_history_alias": legacy_alias,
                 "raw_reconciliation_history_alias_error": legacy_history_errors.get(ticker),
+                "raw_comparison_history_error": comparison_history_error,
                 "session_date_mapping": session_date_mapping_diagnostics,
                 "research_eligibility": research_eligibility,
                 "research_input_bars": len(research_candles),
