@@ -219,3 +219,8 @@
 ## 2026-11-21 — scanner merged
 - PR #74 merged; both required CI checks passed. To produce first real signal artifact, manually dispatch `MOEX EDGE MTF Signals (Read Only)` with source_run_id 44861047844. Future successful candle-collection runs trigger scanner automatically.
 - No actual signal list has been generated yet; do not report signals until scanner workflow succeeds and artifact is inspected.
+
+
+## 2026-11-21 — Finam mode observation
+- Finam Executor Safety Tests run 44864354084 reported derived `FINAM_DRY_RUN=live` (repository variable resolves to false at that time). No order was sent by this check or by the research session.
+- Scheduled `moex-edge-fast.yml` and `finam-executor.yml` currently hardcode DRY_RUN=true and live flag=false. Manual workflows `finam-one-shot-test.yml` and `finam-direct-t-sltp-test.yml` can submit a live order only with explicit confirmation inputs. Do not dispatch them during research; do not change variables/secrets.
