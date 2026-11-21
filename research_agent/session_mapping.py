@@ -291,34 +291,40 @@ def reconcile_session_candles(
     price_scale_mismatches = []
     comparison_dates_used = 0
     total_session_fallback_dates = 0
+    mapped_weekend_fragments_excluded_from_comparison = 0
     for target, fragments in sorted(grouped.items()):
         record = by_date[target]
-        has_weekend_fragments = any(item.timestamp.weekday() >= 5 for item in fragments)
-        if comparison_history_records is not None and not has_weekend_fragments:
-            if target in comparison_by_date:
-                record = comparison_by_date[target]
-                comparison_dates_used += 1
-            else:
-                total_session_fallback_dates += 1
+        weekday_fragments = [
+            item for item in fragments if item.timestamp.weekday() < 5
+        ]
+        fragments_to_compare = fragments
+        if comparison_history_records is not None and target in comparison_by_date and weekday_fragments:
+            # The weekday interval=24 candle represents morning + main sessions.
+            # Weekend additional-session candles are mapped to this trade date,
+            # but must not be folded into the weekday-candle comparison.
+            record = comparison_by_date[target]
+            fragments_to_compare = weekday_fragments
+            comparison_dates_used += 1
+            mapped_weekend_fragments_excluded_from_comparison += (
+                len(fragments) - len(weekday_fragments)
+            )
         elif comparison_history_records is not None:
-            # Weekend additional-session fragments are already represented in
-            # total-session history; retain that basis for these mapped dates.
             total_session_fallback_dates += 1
         expected = (record.open, record.high, record.low, record.close, record.volume)
         if any(value is None for value in expected):
             mismatches.append({
                 "trade_date": target.isoformat(),
                 "reason": "TQBR history row lacks complete OHLCV",
-                "fragment_count": len(fragments),
+                "fragment_count": len(fragments_to_compare),
             })
             continue
-        fragments.sort(key=lambda item: item.timestamp)
+        fragments_to_compare.sort(key=lambda item: item.timestamp)
         actual = (
-            fragments[0].open,
-            max(item.high for item in fragments),
-            min(item.low for item in fragments),
-            fragments[-1].close,
-            sum(item.volume for item in fragments),
+            fragments_to_compare[0].open,
+            max(item.high for item in fragments_to_compare),
+            min(item.low for item in fragments_to_compare),
+            fragments_to_compare[-1].close,
+            sum(item.volume for item in fragments_to_compare),
         )
         fields = ("open", "high", "low", "close", "volume")
         differences = {}
@@ -462,11 +468,12 @@ def reconcile_session_candles(
         ),
         "raw_candles": len(rows),
         "comparison_basis": (
-            "MORNING_PLUS_MAIN_FOR_WEEKDAYS_TOTAL_SESSION_FOR_MAPPED_WEEKENDS"
+            "MORNING_PLUS_MAIN_WEEKDAY_CANDLES_WEEKEND_FRAGMENTS_MAPPED_SEPARATELY"
             if comparison_history_records is not None else "TOTAL_SESSION_HISTORY"
         ),
         "morning_plus_main_comparison_dates": comparison_dates_used,
         "total_session_fallback_dates": total_session_fallback_dates,
+        "mapped_weekend_fragments_excluded_from_comparison": mapped_weekend_fragments_excluded_from_comparison,
         "mapped_raw_candles": mapped_raw_candles,
         "unassigned_reason_counts": unassigned_reason_counts,
         "mismatch_reason_counts": mismatch_reason_counts,
