@@ -18,6 +18,7 @@ from .experiment_lab import run_experiment_lab
 from .session_mapping import (
     earliest_session_date, latest_completed_session_date,
     build_trading_day_candles, reconcile_session_candles,
+    combine_morning_main_history_records,
 )
 
 HOLDOUT_START_DATE = "2026-11-20"  # Frozen before any prospective observations.
@@ -116,6 +117,8 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 record for record in history_records
                 if record.trade_date <= date.fromisoformat(effective_till)
             ]
+            comparison_history_error = None
+            comparison_history_records = None
             reconciliation_history_records = list(bounded_history_records)
             legacy_alias = None
             if ticker == "T" and ticker in legacy_reconciliation_history_by_ticker:
@@ -146,8 +149,41 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             research_candles, research_eligibility = build_trading_day_candles(
                 bounded_history_records, effective_from, effective_till
             )
-            session_date_mapping_diagnostics = reconcile_session_candles(
+            initial_session_diagnostics = reconcile_session_candles(
                 raw_candles, reconciliation_history_records, ticker=ticker
+            )
+            comparison_errors = []
+            comparison_records = []
+            for mismatch_day in initial_session_diagnostics["session_scope_probe_dates"]:
+                session_ticker = (
+                    "TCSG" if ticker == "T" and mismatch_day <= "2024-11-27"
+                    else ticker
+                )
+                try:
+                    morning_history = fetch_history_records(
+                        session_ticker, mismatch_day, mismatch_day,
+                        board="TQBR", trading_session=0,
+                    )
+                    main_history = fetch_history_records(
+                        session_ticker, mismatch_day, mismatch_day,
+                        board="TQBR", trading_session=1,
+                    )
+                    comparison_records.extend(
+                        combine_morning_main_history_records(
+                            morning_history, main_history
+                        )
+                    )
+                except Exception as comparison_exc:
+                    comparison_errors.append(f"{mismatch_day}: {comparison_exc}")
+            comparison_history_records = comparison_records or None
+            comparison_history_error = "; ".join(comparison_errors) or None
+            session_date_mapping_diagnostics = (
+                reconcile_session_candles(
+                    raw_candles, reconciliation_history_records, ticker=ticker,
+                    comparison_history_records=comparison_history_records,
+                )
+                if comparison_history_records is not None
+                else initial_session_diagnostics
             )
             if not research_candles:
                 raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
@@ -183,6 +219,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     "raw_session_candles": len(raw_candles),
                     "raw_reconciliation_history_alias": legacy_alias,
                     "raw_reconciliation_history_alias_error": legacy_history_errors.get(ticker),
+                    "raw_comparison_history_error": comparison_history_error,
                     "session_date_mapping": session_date_mapping_diagnostics,
                     "tqbr_history_crosscheck": history_crosscheck,
                 }
@@ -206,6 +243,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 ) if raw_candles else None,
                 "raw_reconciliation_history_alias": legacy_alias,
                 "raw_reconciliation_history_alias_error": legacy_history_errors.get(ticker),
+                "raw_comparison_history_error": comparison_history_error,
                 "session_date_mapping": session_date_mapping_diagnostics,
                 "research_eligibility": research_eligibility,
                 "research_input_bars": len(research_candles),

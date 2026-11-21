@@ -109,6 +109,7 @@ def fetch_candles(ticker: str, date_from: str, date_till: str, interval: int = 6
 def fetch_history_records(
     ticker: str, date_from: str, date_till: str, board: str = "TQBR",
     timeout: int = 20, retries: int = 3, getter=_get_json,
+    trading_session: int = 3,
 ) -> list[HistoryRecord]:
     """Fetch public per-security daily history, including zero-trade rows.
 
@@ -123,6 +124,8 @@ def fetch_history_records(
         raise ValueError("ticker and board are required")
     if start_date > end_date:
         raise ValueError("date_from must be on or before date_till")
+    if trading_session not in (0, 1, 2, 3):
+        raise ValueError("trading_session must be 0 (morning), 1 (main), 2 (evening), or 3 (total)")
 
     start = 0
     result: list[HistoryRecord] = []
@@ -134,7 +137,7 @@ def fetch_history_records(
         )
         query = urlencode({
             "from": date_from, "till": date_till, "start": start,
-            "tradingsession": 3, "iss.meta": "off",
+            "tradingsession": trading_session, "iss.meta": "off",
         })
         payload = getter(f"{path}?{query}", timeout=timeout, retries=retries)
         block = payload.get("history")
