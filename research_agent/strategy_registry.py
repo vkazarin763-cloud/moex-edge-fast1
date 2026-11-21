@@ -26,10 +26,13 @@ def _candidate_status(candidate: dict[str, Any] | None, stress: dict[str, Any] |
         return "REJECT", ["Development walk-forward screen did not pass"]
     average = candidate.get("average_net_return")
     profit_factor = candidate.get("profit_factor")
+    profit_factor_infinite = candidate.get("profit_factor_infinite") is True
     if not isinstance(average, (int, float)) or average <= 0:
         return "REJECT", ["Average net return is missing or not positive"]
-    if not isinstance(profit_factor, (int, float)) or profit_factor <= 1:
-        return "REJECT", ["Profit factor is missing or not above one"]
+    if not profit_factor_infinite and (
+        not isinstance(profit_factor, (int, float)) or profit_factor <= 1
+    ):
+        return "REJECT", ["Profit factor is missing or not above one or infinite"]
     if not isinstance(stress, dict) or stress.get("survives_double_costs") is not True:
         return "REJECT", ["Candidate did not pass the doubled-cost screen"]
     stressed_average = stress.get("double_cost_average_net_return")
@@ -64,6 +67,7 @@ def build_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
                     "closed_trades": (candidate or {}).get("closed_trades"),
                     "average_net_return": (candidate or {}).get("average_net_return"),
                     "profit_factor": (candidate or {}).get("profit_factor"),
+                    "profit_factor_infinite": (candidate or {}).get("profit_factor_infinite", False),
                     "positive_folds": (candidate or {}).get("positive_folds"),
                     "adequately_sampled_folds": (candidate or {}).get("adequately_sampled_folds"),
                     "folds": (candidate or {}).get("folds"),
