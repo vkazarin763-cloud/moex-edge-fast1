@@ -61,6 +61,49 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(result["timeframes"]["M15"]["ok"], 1)
         self.assertIn("does not modify the frozen D1", result["methodology"]["research_isolation"])
 
+    def test_d1_h1_frame_filter_collects_only_signal_inputs(self):
+        finam_calls = []
+        moex_calls = []
+
+        class RecordingFinam:
+            def fetch_bars(self, symbol, timeframe, start, end):
+                finam_calls.append((symbol, timeframe))
+                stamp = datetime(2026, 11, 20, 12, tzinfo=timezone.utc)
+                return [FinamBar(stamp, 100, 102, 99, 101, 1000, False)]
+
+        def moex_fetcher(ticker, start, end, *, interval, board):
+            moex_calls.append((ticker, interval, board))
+            return []
+
+        result = collect_multi_timeframe(
+            ["SBER"],
+            api_token="not-used",
+            now=datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
+            moex_fetcher=moex_fetcher,
+            moex_history_fetcher=fake_history_fetcher,
+            finam_client=RecordingFinam(),
+            frames=["H1", "D1"],
+        )
+        self.assertEqual(result["requested_frames"], ["H1", "D1"])
+        self.assertEqual(set(result["timeframes"]), {"H1", "D1"})
+        self.assertEqual(set(result["results"]["SBER"]), {"H1", "D1"})
+        self.assertEqual(finam_calls, [("SBER@MISX", "TIME_FRAME_H1")])
+        self.assertEqual(moex_calls, [])
+        self.assertEqual(result["results"]["SBER"]["H1"]["completed_bars"], 1)
+        self.assertEqual(result["results"]["SBER"]["D1"]["completed_bars"], 1)
+
+    def test_frame_filter_rejects_unknown_frames_and_requires_d1(self):
+        common = {
+            "api_token": "not-used",
+            "now": datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
+            "finam_client": FakeFinam(),
+            "moex_history_fetcher": fake_history_fetcher,
+        }
+        with self.assertRaisesRegex(ValueError, "Unsupported timeframes"):
+            collect_multi_timeframe(["SBER"], frames=["D1", "BAD"], **common)
+        with self.assertRaisesRegex(ValueError, "D1 is required"):
+            collect_multi_timeframe(["SBER"], frames=["H1"], **common)
+
     def test_failures_are_isolated_by_symbol_and_timeframe(self):
         class BrokenFinam:
             def fetch_bars(self, *args):
