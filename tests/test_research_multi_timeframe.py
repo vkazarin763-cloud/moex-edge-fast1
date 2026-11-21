@@ -92,6 +92,23 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(result["results"]["SBER"]["H1"]["completed_bars"], 1)
         self.assertEqual(result["results"]["SBER"]["D1"]["completed_bars"], 1)
 
+    def test_latest_signal_d1_collection_uses_one_year_not_frozen_research_history(self):
+        calls = []
+
+        def recording_history(ticker, start, end, *, board):
+            calls.append((ticker, start, end, board))
+            return fake_history_fetcher(ticker, start, end, board=board)
+
+        collect_multi_timeframe(
+            ["SBER"],
+            api_token="not-used",
+            now=datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
+            frames=["D1"],
+            moex_history_fetcher=recording_history,
+            finam_client=FakeFinam(),
+        )
+        self.assertEqual(calls, [("SBER", "2025-11-20", "2026-11-20", "TQBR")])
+
     def test_frame_filter_rejects_unknown_frames_and_requires_d1(self):
         common = {
             "api_token": "not-used",
