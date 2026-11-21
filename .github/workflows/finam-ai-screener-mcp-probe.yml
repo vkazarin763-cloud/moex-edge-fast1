@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - experiment/finam-ai-screener-mcp-probe
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
