@@ -166,6 +166,7 @@ def combine_morning_main_history_records(
     Their OHLC may correspond to morning + main or total-session history,
     depending on the date. The reconciliation checks both candidates instead
     of assuming a single session scope.
+    """
     morning_by_date = _records_by_date(morning_records)
     main_by_date = _records_by_date(main_records)
     combined = []
