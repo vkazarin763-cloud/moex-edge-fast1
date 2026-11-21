@@ -88,6 +88,9 @@ def _audit_experiment_lab(
         errors.append("experiment_lab must be an object")
         return 0, 0
     status = lab.get("status")
+    if status == "SKIPPED_NOT_REQUESTED":
+        warnings.append("experiment lab was intentionally skipped; optional exit-policy trials were not requested")
+        return 0, 0
     if status == "EXPERIMENT_LAB_ERROR":
         warnings.append("experiment lab did not complete: " + str(lab.get("error", "unknown error")))
         return 0, 0
