@@ -6,7 +6,7 @@ from research_agent.independent_validator import validate_research_report
 
 def _report():
     return {
-        "date_till": "2026-11-19",
+        "date_till": "2026-11-20",
         "development_holdout_policy": {
             "holdout_start": "2026-11-20",
             "holdout_is_strictly_prospective": True,
