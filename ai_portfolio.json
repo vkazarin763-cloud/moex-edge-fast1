@@ -1,5 +1,5 @@
 {
-  "cash": 145398.27564794192,
+  "cash": 145393.4677344598,
   "positions": [
     {
       "ticker": "ROSN",
@@ -117,6 +117,19 @@
       "premium": 1.8563953147402188,
       "is_option": true,
       "expiry_time": "2026-12-20"
+    },
+    {
+      "ticker": "SBER",
+      "direction": "PUT",
+      "entry_price": 287.74,
+      "entry_time": "2026-11-20 23:00:00",
+      "qty": 1,
+      "activated": false,
+      "strategy": "Donchian20",
+      "strike": 279.1078,
+      "premium": 4.807913482118337,
+      "is_option": true,
+      "expiry_time": "2026-12-21"
     }
   ],
   "closed_trades": [
