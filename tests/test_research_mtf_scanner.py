@@ -103,6 +103,21 @@ class MTFScannerTests(unittest.TestCase):
         }
         result = scan_multi_timeframe_report(candles_report, validation)
         self.assertTrue(result["signals"])
+        registry = {
+            "registry_version": "test-v1",
+            "generated_at_utc": snapshot,
+            "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
+            "holdout_used_for_selection": False,
+            "scanner_contract": {
+                "consume_only_status": "PASS",
+                "live_trading_authorized": False,
+            },
+            "strategies": [],
+        }
+        gated = scan_multi_timeframe_report(candles_report, validation, registry)
+        self.assertEqual(gated["signals_count"], 0)
+        self.assertGreater(gated["registry_filtered_candidates"], 0)
+        self.assertEqual(gated["strategy_registry_version"], "test-v1")
         self.assertIn("parameters", result["signals"][0])
         self.assertGreater(
             result["signals"][0]["parameters"]["close"],

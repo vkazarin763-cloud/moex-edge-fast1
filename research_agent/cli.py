@@ -16,6 +16,7 @@ from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
 from .independent_validator import validate_research_report
 from .experiment_lab import run_experiment_lab
+from .strategy_registry import build_strategy_registry
 from .session_mapping import (
     earliest_session_date, latest_completed_session_date,
     build_trading_day_candles, reconcile_session_candles,
@@ -413,10 +414,15 @@ def main() -> int:
     parser.add_argument("--tickers", default=",".join(MOEX_FIRST_LISTING_44),
                         help="Comma-separated tickers; defaults to the 44-symbol universe")
     parser.add_argument("--output", default="research_report.json")
+    parser.add_argument("--registry-output", default=None)
     args = parser.parse_args()
     tickers = [item.strip().upper() for item in args.tickers.split(",") if item.strip()]
     report = run_universe(args.date_from, args.date_till, tickers)
     Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    registry_path = Path(args.registry_output) if args.registry_output else Path(args.output).with_name("strategy_registry.json")
+    registry = build_strategy_registry(report)
+    registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8")
+    print("Strategy registry written: " + str(registry_path))
     analyzed = sum(item["status"] == "ANALYZED" for item in report["results"].values())
     errors = len(report["results"]) - analyzed
     print(f"Research complete: {analyzed} analyzed, {errors} errors; report={args.output}")

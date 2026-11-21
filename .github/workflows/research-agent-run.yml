@@ -73,6 +73,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: moex-edge-research-report
-          path: research_report.json
+          path: |
+            research_report.json
+            strategy_registry.json
           if-no-files-found: warn
           retention-days: 30
