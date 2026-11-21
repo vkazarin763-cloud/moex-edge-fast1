@@ -251,13 +251,16 @@ The previous 44-symbol report (run `44886351505`, source commit `691d2a1876460e0
 - 2025-10-27 appears for 19 of 44 symbols.
 - The 2025-04-10 examples commonly differ in low/close and volume; the 2025-10-27 examples are often volume-only.
 
-For a direct endpoint check, MOEX ISS `candles.csv` was compared with hourly candles and TQBR history for SBER and GAZP on 2025-04-10:
-- The daily interval-24 candle ended at 19:04:15 and contained the open/main-session range only.
-- The hourly endpoint returned additional bars through 23:59:56/57.
-- Aggregating all hourly bars reproduced the TQBR history OHLCV for both examples, including the evening-session low/close and full volume. For SBER, the daily candle volume was 49,360,530 while history and hourly aggregation were 62,862,840. For GAZP, daily candle volume was 119,247,830 while history and hourly aggregation were 153,296,370.
-- This confirms that, on these examples, the interval-24 endpoint under-represented the full trading day by omitting the evening session, while hourly bars reconciled to TQBR history. It is a plausible explanation for the broad 2025-04-10 cluster, but does not prove every one of the 36 symbols behaves identically.
+A full targeted hourly check was then completed for all 36 symbols with a 2025-04-10 mismatch in the 44-symbol report:
+- All 36 had hourly TQBR candles through 23:00; 35 returned 18 hourly bars, while OZON returned 15.
+- Aggregating the hourly bars (first open, maximum high, minimum low, last close, summed volume) matched the stored TQBR history OHLCV for **all 36/36 symbols**.
+- Direct interval-24 CSV checks for SBER and GAZP showed the daily candle ending at 19:04:15, while hourly bars continued through 23:59:56/57. For SBER, interval-24 volume was 49,360,530 versus 62,862,840 from hourly aggregation/history; for GAZP, 119,247,830 versus 153,296,370.
+- This establishes that the 2025-04-10 mismatch cluster is explained for all 36 tested symbols by the interval-24 daily candle not representing the complete TQBR trading day, while the full hourly aggregation reconciles to history. Keep D1 candles from this endpoint out of the role of full-session reference for this date. Official MOEX schedule lists the evening session 19:00–23:50: https://www.moex.com/ru/stock-market.
 
-A separate 2025-10-27 GAZP check found daily interval-24 and summed hourly volume of 44,070,553, versus TQBR history volume 46,407,070; OHLC matched and the daily candle ended at 23:59:59. This remains an unexplained volume-only difference, not an evening-session cutoff. Do not normalize or overwrite the history volume without identifying the ISS field semantics.
+A targeted 2025-10-27 check covered all 19 symbols with volume mismatches:
+- All 19 returned 18 hourly bars through 23:00. Hourly aggregation reproduced the daily interval-24 candle volume for each symbol.
+- OHLC matched TQBR history in the original report, but the TQBR history VOLUME field remained different. For GAZP, interval-24 and hourly volume were 44,070,553 versus 46,407,070 in history, while OHLC matched and the daily candle ended at 23:59:59.
+- This is a separate unresolved volume-definition/source-scope discrepancy. Do not normalize or overwrite history volume until the ISS field semantics are independently established.
 
 These patterns suggest a shared session-coverage or data-aggregation issue, but the cause is **not established**. MOEX announced an expansion of morning/evening session eligibility effective 2025-04-11 and a separate morning-session addition for fund AKMP effective 2025-04-10 (https://www.moex.com/n89301). That announcement alone does not explain the broad 36-symbol mismatch pattern. Do not label the residuals as harmless, and do not weaken reconciliation tolerances.
 
