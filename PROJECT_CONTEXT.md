@@ -198,3 +198,18 @@
 - Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
 - No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
+
+
+## 2026-11-21 — актуальный handoff и MTF data validation
+- Актуальное состояние для другой ИИ: `HANDOFF_FOR_NEXT_AI.md`, раздел CURRENT AUTHORITATIVE HANDOFF — 2026-11-21. Старые заметки выше сохранены как история и могут быть устаревшими.
+- Исследовательский репозиторий: `vkazarin763-cloud/moex-edge-fast1`; production-репозиторий не менять. Live trading в рамках исследования остановлен; никаких broker order endpoints.
+- PR #71 merged в main, SHA `a65eeaf3800be1b56deaaa36258a5369fce33cf2`: нативный D1 через официальный per-security MOEX ISS TQBR history.
+- MTF workflow run `44861047844` SUCCESS; artifact `14690518588`; snapshot 2026-11-21 03:25:33 UTC. Validator PASS, 44 symbols, 13 timeframes, 0 issues.
+- 787,929 свечей; все 44 тикера покрыты каждым таймфреймом. Независимая повторная проверка: дубликаты/нарушения хронологии/OHLCV errors/negative volume/future or incomplete bars = 0.
+- Подробный отчёт: `docs/MULTITIMEFRAME_DATASET_2026-11-21.md`; ZIP SHA-256 `6a9ee767f37bec1f9fa9d40d0868ccc8f36b2271dd5ef4a1715f83e4a51af137`.
+
+## 2026-11-21 — D1/H1 scanner prototype (PR #73)
+- Added `research_agent/mtf_scanner.py`: latest closed native TQBR D1 signals from the five frozen strategies plus informational H1 EMA20/EMA50 alignment.
+- H1 confirmation does not filter signals. H1 series is strictly bounded by D1 bar end and as_of; report includes H1 bar end/age.
+- Manual workflow accepts source artifact run ID; future successful MTF collector runs trigger it automatically.
+- PR #73 CI must pass on final head before merge. The scanner has not yet been run against the real MTF artifact. Do not tune against holdout.
