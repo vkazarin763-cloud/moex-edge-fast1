@@ -3,7 +3,7 @@
 **Snapshot date:** 2026-11-21  
 **Repository:** https://github.com/vkazarin763-cloud/moex-edge-fast1  
 **Default branch at snapshot:** `main`  
-**Main SHA at snapshot:** `691d2a1876460e0f5af5b80dac046e4da6b1d12d`
+**Main SHA at snapshot:** `b314dacf6b62989266347e638f700427b98ff505`
 
 This document is the durable handoff for another AI or developer. Treat it as a project-state snapshot, not as proof that workflow runs mentioned below are still current. Recheck GitHub before acting.
 
@@ -202,3 +202,53 @@ PR #106 was merged after both mandatory tests passed on exact head SHA `4a13197a
 - Merge commit: `b89fb7a716cad268fc4c516cf9cbd4366efd641c`.
 
 The Research Agent Safety Tests workflow path filter now includes `docs/HANDOFF.md`, so future edits to this handoff file trigger the research safety tests. This change does not trigger or modify any production workflow.
+
+
+## 11. T legacy ticker reconciliation fix — PR #108
+
+**PR:** https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/108  
+**Merge commit:** `b314dacf6b62989266347e638f700427b98ff505`  
+**PR head:** `2e308ec7c0b3a0ee4528783907615ee2c47e4c43`  
+**Merged:** 2026-11-21 09:02:08 UTC.
+
+Both mandatory safety workflows passed on the exact PR head SHA before merge:
+- Research Agent Safety Tests: run `44887595233`, success.
+- Finam Executor Safety Tests: run `44887595203`, success.
+
+### Verified root cause
+
+MOEX changed the ordinary share trading code from **TCSG to T effective 2024-11-28** (official notice: https://www.moex.com/n74886). The research CLI previously fetched TQBR history only under current ticker `T`, while the raw daily-candle endpoint for `T` still returned pre-rename candles. Therefore those pre-rename raw candles had no same-date history rows under `T` and were counted as unassigned.
+
+Direct public MOEX ISS checks established:
+- T daily-candle endpoint: **243** bars from 2023-11-20 through 2024-11-27.
+- TCSG TQBR history over the same interval: **262** rows total, **243** positive-trade rows and **19** zero-trade rows.
+- The 243 raw bars include 241 weekdays and two working Saturdays: 2024-04-27 and 2024-11-02.
+- MOEX's 2024 trading schedule explicitly identifies those Saturdays as regular trading days: https://www.moex.com/n64121.
+- Same-date TCSG TQBR history confirms positive trades for 2024-04-27 (15,252 trades) and 2024-11-02 (101,942 trades).
+
+This explains the previous T reconciliation report's **243 unassigned raw candles**: 241 weekday candles plus the two working-Saturday candles were checked only against the current `T` code, not legacy `TCSG` history. Do not describe this as a vendor data gap.
+
+### Implemented behavior
+
+PR #108 adds a bounded legacy history fetch for `TCSG` through 2024-11-27, and uses those records only for:
+- raw calendar-candle session reconciliation;
+- raw-candle quality diagnostics;
+- the raw-vs-history date cross-check.
+
+**Frozen/model input remains unchanged:** `build_trading_day_candles` receives only the current `T` TQBR history. The TCSG alias is explicitly marked `used_for_model_input: false`. No historical prices or volumes are rescaled or adjusted. If the auxiliary alias fetch fails, current-T research continues and the alias-fetch error is surfaced in the report.
+
+A new regression test, `tests/test_research_legacy_ticker_reconciliation.py`, verifies that legacy rows reconcile pre-rename raw candles without entering model input. Research Agent and Finam safety tests passed on the PR head.
+
+### What is and is not yet verified
+
+- **Verified in API evidence and synthetic regression test:** legacy ticker lineage, history row counts, working-Saturday confirmation, and separation of reconciliation data from model input.
+- **Not yet verified by a new full 44-ticker research run:** the resulting real-run T unassigned count, mismatch counts, and independent-validation status. The next scheduled research report must be inspected before claiming the production diagnostic counts have changed.
+- The previous run `44886351505` still stands as historical evidence with 243 T unassigned candles and `INDEPENDENT_VALIDATION_INCOMPLETE`; do not rewrite its result retroactively.
+
+### Next actions
+
+1. Inspect the next scheduled full research run and confirm T raw-session reconciliation now maps the 243 pre-rename candles using TCSG history.
+2. Confirm the two working Saturdays are mapped to their same-date history records, with no guessed weekend reassignment.
+3. Compare new T mismatch fields and price-scale classifications. The known 10:1 corporate-action price-basis mismatch remains diagnostic only; no automatic adjustment.
+4. Continue the separate price-basis investigation for PLZL, VTBR, GMKN and TRNFP. Native TQBR history remains model input until a separately reviewed data-basis change is justified.
+5. Keep the frozen cohort, holdout, strategy parameters and all protected files unchanged.
