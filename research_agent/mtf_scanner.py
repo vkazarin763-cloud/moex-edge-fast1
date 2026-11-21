@@ -188,6 +188,12 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
         for candidate in d1_candidates:
             direction = candidate["direction_code"]
             h1 = _h1_alignment(h1_rows, direction)
+            if h1.get("status") != "INSUFFICIENT_HISTORY":
+                h1_end = candle_end_utc(h1_rows[-1].timestamp.isoformat(), h1_item["source"], "H1")
+                h1["h1_bar_end_utc"] = h1_end.isoformat()
+                h1["h1_age_minutes_at_d1_close"] = round(
+                    (d1_end - h1_end).total_seconds() / 60, 2
+                )
             signals.append({
                 "symbol": symbol,
                 "direction": candidate["direction"],
