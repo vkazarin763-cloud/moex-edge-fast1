@@ -156,7 +156,10 @@ def reconcile_session_candles(
     fragments assigned to a trade date (weekend plus that date's weekday
     candle) are aggregated and compared with the official history OHLCV.
     History remains the model-input source even when this diagnostic finds a
-    mismatch; mismatches are surfaced rather than silently repaired.
+    mismatch; mismatches are surfaced rather than silently repaired. The audit
+    also reports positive-trade history dates that have no corresponding raw
+    candle fragments, so incomplete raw-source coverage is not mistaken for a
+    fully reconciled sample.
     """
     if max_next_trading_day_gap < 1:
         raise ValueError("max_next_trading_day_gap must be >= 1")
