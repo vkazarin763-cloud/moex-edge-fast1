@@ -302,6 +302,11 @@ def _audit_raw_session_provenance(
     if counts["raw_weekend_candles"] > counts["raw_candles"]:
         errors.append(f"{ticker}: raw weekend candle count exceeds total raw candles")
 
+    if counts["unassigned_raw_candles"] > counts["raw_candles"]:
+        errors.append(f"{ticker}: unassigned raw candle count exceeds total raw candles")
+    if counts["trading_days_reconciled"] + counts["trading_days_mismatched"] != counts["history_dates_with_raw_fragments"]:
+        errors.append(f"{ticker}: reconciled and mismatched trading-day counts do not cover raw/history matched dates")
+
     expected_missing = counts["positive_trade_history_dates"] - counts["history_dates_with_raw_fragments"]
     if expected_missing < 0 or counts["history_trade_dates_without_raw_fragments"] != expected_missing:
         errors.append(f"{ticker}: raw/history date coverage counts are inconsistent")
@@ -324,6 +329,22 @@ def _audit_raw_session_provenance(
     )
     if audit.get("raw_history_coverage_status") != expected_status:
         errors.append(f"{ticker}: raw/history coverage status is inconsistent")
+
+    expected_complete = (
+        counts["raw_candles"] > 0
+        and counts["trading_days_mismatched"] == 0
+        and counts["unassigned_raw_candles"] == 0
+        and expected_missing == 0
+    )
+    if audit.get("complete") is not expected_complete:
+        errors.append(f"{ticker}: raw session reconciliation complete flag is inconsistent")
+    expected_reconciliation_status = (
+        "RECONCILED" if expected_complete else
+        "NO_RAW_CANDLES" if counts["raw_candles"] == 0 else
+        "RECONCILIATION_WITH_CAVEATS"
+    )
+    if audit.get("status") != expected_reconciliation_status:
+        errors.append(f"{ticker}: raw session reconciliation status is inconsistent")
     if counts["trading_days_mismatched"] or counts["unassigned_raw_candles"] or expected_missing:
         warnings.append(
             f"{ticker}: raw calendar candles do not fully reconcile to TQBR history "
