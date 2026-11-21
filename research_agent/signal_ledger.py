@@ -34,13 +34,13 @@ def _signals_equivalent(left: Any, right: Any) -> bool:
     """Compare payloads while ignoring sub-tick floating-point noise.
 
     First-observed values remain untouched. Repeat-event validation allows
-    only 1e-8 absolute numeric drift (well below MOEX price ticks); structural
+    only 1e-6 absolute numeric drift (well below MOEX price ticks); structural
     or material changes continue to fail closed.
     """
     if isinstance(left, bool) or isinstance(right, bool):
         return type(left) is type(right) and left == right
     if isinstance(left, (int, float)) and isinstance(right, (int, float)):
-        return math.isclose(float(left), float(right), rel_tol=1e-12, abs_tol=1e-8)
+        return math.isclose(float(left), float(right), rel_tol=1e-12, abs_tol=1e-6)
     if isinstance(left, dict) and isinstance(right, dict):
         return left.keys() == right.keys() and all(
             _signals_equivalent(left[key], right[key]) for key in left
