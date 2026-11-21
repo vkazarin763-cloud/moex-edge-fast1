@@ -3,7 +3,7 @@
 **Snapshot date:** 2026-11-21  
 **Repository:** https://github.com/vkazarin763-cloud/moex-edge-fast1  
 **Default branch at snapshot:** `main`  
-**Main SHA at snapshot:** `691d2a1876460e0f5af5b80dac046e4da6b1d12d`
+**Main SHA at snapshot:** `b314dacf6b62989266347e638f700427b98ff505`
 
 This document is the durable handoff for another AI or developer. Treat it as a project-state snapshot, not as proof that workflow runs mentioned below are still current. Recheck GitHub before acting.
 
@@ -202,3 +202,69 @@ PR #106 was merged after both mandatory tests passed on exact head SHA `4a13197a
 - Merge commit: `b89fb7a716cad268fc4c516cf9cbd4366efd641c`.
 
 The Research Agent Safety Tests workflow path filter now includes `docs/HANDOFF.md`, so future edits to this handoff file trigger the research safety tests. This change does not trigger or modify any production workflow.
+
+
+## 11. TCSG legacy ticker reconciliation and latest corporate-action audit — 2026-11-21
+
+**Current main SHA:** `b314dacf6b62989266347e638f700427b98ff505`
+
+### PR #108 — legacy TCSG alias for raw reconciliation only
+
+PR #108 was merged at 2026-11-21 09:02:08 UTC:
+- PR: https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/108
+- PR head: `2e308ec7c0b3a0ee4528783907615ee2c47e4c43`
+- Merge commit: `b314dacf6b62989266347e638f700427b98ff505`
+- Research Agent Safety Tests: run `44887595233`, success on the exact PR head.
+- Finam Executor Safety Tests: run `44887595203`, success on the exact PR head.
+
+The change fetches official TCSG TQBR history through 2024-11-27 because MOEX changed the ticker to T effective 2024-11-28 (source: https://www.moex.com/n74886). TCSG rows are used only for raw-candle/session reconciliation and raw-history cross-checks. They are not added to the current T research/model input. Current T model input continues to use only T TQBR history. The regression test is `tests/test_research_legacy_ticker_reconciliation.py`.
+
+The PR evidence records 243 pre-rename T daily-candle dates and 243 positive-trade TCSG history dates over 2023-11-20—2024-11-27, including two working Saturdays confirmed by same-date positive-trade history. After the alias fix, no raw T candles remain unassigned in the focused corporate-action audit.
+
+### Focused corporate-action audit after PR #108
+
+- Workflow: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44887641981
+- Completed: success.
+- Source commit: `b314dacf6b62989266347e638f700427b98ff505`
+- Artifact: `moex-corporate-action-price-basis-audit`, ID `14701230075`.
+- Data through 2026-11-20; scope GMKN, TRNFP, VTBR, PLZL, T.
+- The workflow succeeded in collecting and producing the report, but the report's independent validator remained `INDEPENDENT_VALIDATION_INCOMPLETE` (70 checks, 5 warnings, 0 errors). The five warnings are the remaining raw-session reconciliation mismatches; do not call this a clean data-quality pass.
+
+| Ticker | Model bars | Raw bars mapped | Unassigned | Trading-day mismatches | Known price-scale matches |
+|---|---:|---:|---:|---:|---:|
+| T | 499 | 876/876 | 0 | 589 | 588 at factor 10 |
+| GMKN | 761 | 899/899 | 0 | 94 | 92 at factor 100 |
+| TRNFP | 761 | 899/899 | 0 | 62 | 61 at factor 100 |
+| VTBR | 761 | 899/899 | 0 | 161 | 160 at factor 0.0002 |
+| PLZL | 762 | 896/896 | 0 | 342 | 341 at factor 10 |
+
+For all five securities, every detected OHLC price-scale mismatch matched the documented pre-event basis; unexplained price-scale mismatch count was zero. This is a diagnostic ratio match, not proof that all vendor OHLCV history is correct. Volume was not adjusted. No automatic price or volume adjustment was made.
+
+T's 499 model bars begin on 2024-11-28. The legacy TCSG observations remain excluded from model input by design; 499 is one bar below the preferred 500-bar history threshold, although above the 200-bar warmup requirement. Keep the caveat visible.
+
+All five focused-audit symbols have zero unassigned raw candles and complete raw date coverage, but retain raw OHLCV mismatches. Their history cross-check remains `CROSSCHECK_INCONCLUSIVE` because raw calendar-date fragments are not a one-to-one set of TQBR trade-date rows.
+
+### Cross-universe residual mismatch dates — unresolved
+
+The previous 44-symbol report (run `44886351505`, source commit `691d2a1876460e0f5af5b80dac046e4da6b1d12d`) shows a striking concentration:
+- 2025-04-10 appears as a mismatch date for 36 of 44 symbols.
+- 2025-10-27 appears for 19 of 44 symbols.
+- The 2025-04-10 examples commonly differ in low/close and volume; the 2025-10-27 examples are often volume-only.
+
+For a direct endpoint check, MOEX ISS `candles.csv` was compared with hourly candles and TQBR history for SBER and GAZP on 2025-04-10:
+- The daily interval-24 candle ended at 19:04:15 and contained the open/main-session range only.
+- The hourly endpoint returned additional bars through 23:59:56/57.
+- Aggregating all hourly bars reproduced the TQBR history OHLCV for both examples, including the evening-session low/close and full volume. For SBER, the daily candle volume was 49,360,530 while history and hourly aggregation were 62,862,840. For GAZP, daily candle volume was 119,247,830 while history and hourly aggregation were 153,296,370.
+- This confirms that, on these examples, the interval-24 endpoint under-represented the full trading day by omitting the evening session, while hourly bars reconciled to TQBR history. It is a plausible explanation for the broad 2025-04-10 cluster, but does not prove every one of the 36 symbols behaves identically.
+
+A separate 2025-10-27 GAZP check found daily interval-24 and summed hourly volume of 44,070,553, versus TQBR history volume 46,407,070; OHLC matched and the daily candle ended at 23:59:59. This remains an unexplained volume-only difference, not an evening-session cutoff. Do not normalize or overwrite the history volume without identifying the ISS field semantics.
+
+These patterns suggest a shared session-coverage or data-aggregation issue, but the cause is **not established**. MOEX announced an expansion of morning/evening session eligibility effective 2025-04-11 and a separate morning-session addition for fund AKMP effective 2025-04-10 (https://www.moex.com/n89301). That announcement alone does not explain the broad 36-symbol mismatch pattern. Do not label the residuals as harmless, and do not weaken reconciliation tolerances.
+
+### Next actions
+
+1. Inspect the MOEX ISS daily candle endpoint's session/aggregation semantics against full TQBR history for representative symbols on 2025-04-10 and 2025-10-27.
+2. Compare daily candle OHLCV with intraday candle aggregation across all available sessions; explicitly document which sessions are included and whether the daily endpoint is a subset of full history.
+3. Recheck other residual mismatch dates after the common dates are understood; distinguish volume-only from price-field differences.
+4. Keep official TQBR history as the frozen model-input source. TCSG remains reconciliation-only.
+5. Do not change the frozen cohort, holdout, strategies, costs, execution model, or broker/production code.
