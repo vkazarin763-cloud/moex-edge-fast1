@@ -44,7 +44,10 @@ def _report():
                 "development_bars": 10,
                 "excluded_holdout_bars": 0,
                 "development_data_sha256": "a" * 64,
-                "execution_config": {"fee_per_side": 0.001, "slippage_per_side": 0.0005},
+                "execution_config": {
+                    "fee_per_side": 0.001, "slippage_per_side": 0.0005,
+                    "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+                },
                 "status": "INSUFFICIENT_OR_INVALID_DEVELOPMENT_DATA",
                 "reason": "not enough trades",
             }],
