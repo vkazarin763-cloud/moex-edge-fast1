@@ -111,6 +111,13 @@ class IndependentValidatorTests(unittest.TestCase):
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
         self.assertTrue(any("coverage ratio is inconsistent" in error for error in result["errors"]))
 
+    def test_missing_raw_session_audit_is_incomplete(self):
+        report = _report()
+        del report["results"]["SBER"]["session_date_mapping"]
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_INCOMPLETE")
+        self.assertTrue(any("reconciliation evidence is missing" in warning for warning in result["warnings"]))
+
 
 if __name__ == "__main__":
     unittest.main()
