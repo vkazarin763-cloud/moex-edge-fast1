@@ -208,3 +208,10 @@
 - 787,929 свечей; все 44 тикера покрыты каждым таймфреймом. Независимая повторная проверка: дубликаты/нарушения хронологии/OHLCV errors/negative volume/future or incomplete bars = 0.
 - Подробный отчёт: `docs/MULTITIMEFRAME_DATASET_2026-11-21.md`; ZIP SHA-256 `6a9ee767f37bec1f9fa9d40d0868ccc8f36b2271dd5ef4a1715f83e4a51af137`.
 - Следующий этап: отдельный read-only MTF scanner (D1 context + H1 confirmation; lower-TF trigger отдельно обосновать). Frozen cohort и holdout с 2026-11-20 не перенастраивать. Сигналы показывать только после фактического расчёта на проверенных данных; без капитал/позиционного sizing.
+
+
+## 2026-11-21 — D1/H1 scanner prototype (PR #74)
+- Added isolated `research_agent/mtf_scanner.py`: latest closed native TQBR D1 signals from the five frozen strategies, with informational H1 EMA20/EMA50 alignment. H1 confirmation does not filter signals.
+- H1 as-of join is bounded by D1 bar end; dedicated test excludes H1 bars after D1 close.
+- Workflow `research-agent-mtf-signals.yml` can manually process artifact run 44861047844 or automatically follow future successful MTF collection.
+- PR #74 awaits CI review; scanner not yet merged or run against artifact. Do not use holdout to tune.
