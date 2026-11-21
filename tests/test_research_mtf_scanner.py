@@ -36,6 +36,55 @@ class MTFScannerTests(unittest.TestCase):
         found = _d1_signals_at_last_bar(rows)
         self.assertTrue(any(x["strategy"] == "Donchian20" and x["direction"] == "LONG" for x in found))
 
+    def test_h1_confirmation_never_uses_bar_after_d1_close(self):
+        from research_agent.mtf_scanner import scan_multi_timeframe_report
+
+        d1 = []
+        for i in range(60):
+            close = 100 + i
+            d1.append({
+                "timestamp": (datetime(2026, 1, 1) + timedelta(days=i)).isoformat(),
+                "open": close, "high": close + 1, "low": close - 1,
+                "close": close, "volume": 1000,
+            })
+        # Force a latest-bar Donchian breakout.
+        d1[-1].update({"open": 200, "high": 205, "low": 199, "close": 204})
+
+        h1 = []
+        start = datetime(2026, 3, 1, 16, 0, tzinfo=timezone.utc)
+        for i in range(51):
+            close = 100 + i
+            stamp = start + timedelta(hours=i)
+            h1.append({
+                "timestamp": stamp.isoformat(), "open": close,
+                "high": close + 1, "low": close - 1, "close": close,
+                "volume": 1000, "is_data_snapshot": False,
+            })
+        # This later H1 bar is after the D1 bar's close and must be ignored.
+        later = start + timedelta(hours=51)
+        h1.append({
+            "timestamp": later.isoformat(), "open": 999, "high": 1000,
+            "low": 998, "close": 999, "volume": 1000,
+            "is_data_snapshot": False,
+        })
+        snapshot = "2026-03-02T00:00:00+00:00"
+        candles_report = {
+            "generated_at_utc": snapshot,
+            "universe": ["TEST"],
+            "results": {"TEST": {
+                "D1": {"source": "MOEX ISS TQBR history", "status": "OK", "candles": d1},
+                "H1": {"source": "Finam", "status": "OK", "candles": h1},
+            }},
+        }
+        validation = {
+            "generated_at_utc": snapshot, "as_of_utc": snapshot,
+            "status": "PASS", "issue_count": 0,
+        }
+        result = scan_multi_timeframe_report(candles_report, validation)
+        self.assertTrue(result["signals"])
+        self.assertEqual(result["signals"][0]["h1"]["h1_timestamp"], "2026-03-01T20:00:00+00:00")
+        self.assertEqual(result["signals"][0]["h1"]["h1_age_minutes_at_d1_close"], 0)
+
     def test_scanner_rejects_failed_validation(self):
         with self.assertRaises(ValueError):
             scan_multi_timeframe_report({}, {"status": "FAIL", "issue_count": 1})
