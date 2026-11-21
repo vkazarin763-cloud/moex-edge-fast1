@@ -98,7 +98,7 @@ jobs:
           else:
               lines.append("| — | — | — | — | — |")
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
-              out.write("\\n".join(lines) + "\\n")
+              out.write("\n".join(lines) + "\n")
           PY
       - name: Upload signal report
         uses: actions/upload-artifact@v4
