@@ -355,11 +355,50 @@ def reconcile_session_candles(
         bool(rows) and not mismatches and not unassigned
         and not history_dates_without_raw_fragments
     )
+
+    # Keep complete reason/field totals in the report; examples remain capped
+    # for readability and must never be used as population counts.
+    unassigned_reason_counts = {}
+    for item in unassigned:
+        reason = item["reason"]
+        if reason.startswith("official weekday additional session target"):
+            category = "OFFICIAL_WEEKDAY_TARGET_NOT_POSITIVE"
+        elif reason == "same-date TQBR history does not confirm positive trades":
+            category = "SAME_DATE_HISTORY_NOT_POSITIVE"
+        elif reason == "no next positive-trade TQBR date within mapping window":
+            category = "WEEKEND_NO_NEXT_POSITIVE_DATE"
+        elif reason.startswith("pre-launch weekend date"):
+            category = "PRELAUNCH_WEEKEND_UNCONFIRMED"
+        elif reason == "weekday candle has no same-date TQBR history row":
+            category = "WEEKDAY_MISSING_SAME_DATE_HISTORY"
+        else:
+            category = "OTHER_UNASSIGNED_REASON"
+        unassigned_reason_counts[category] = unassigned_reason_counts.get(category, 0) + 1
+
+    mismatch_reason_counts = {}
+    mismatch_field_counts = {name: 0 for name in ("open", "high", "low", "close", "volume")}
+    for item in mismatches:
+        reason = item["reason"]
+        category = (
+            "HISTORY_ROW_MISSING_OHLCV"
+            if reason == "TQBR history row lacks complete OHLCV"
+            else "AGGREGATED_OHLCV_DIFFERS"
+        )
+        mismatch_reason_counts[category] = mismatch_reason_counts.get(category, 0) + 1
+        for field in item.get("differences", {}):
+            if field in mismatch_field_counts:
+                mismatch_field_counts[field] += 1
+
+    mapped_raw_candles = sum(len(fragments) for fragments in grouped.values())
     return {
         "status": "RECONCILED" if reconciliation_complete else (
             "NO_RAW_CANDLES" if not rows else "RECONCILIATION_WITH_CAVEATS"
         ),
         "raw_candles": len(rows),
+        "mapped_raw_candles": mapped_raw_candles,
+        "unassigned_reason_counts": unassigned_reason_counts,
+        "mismatch_reason_counts": mismatch_reason_counts,
+        "mismatch_field_counts": mismatch_field_counts,
         "raw_weekend_candles": len(weekend_rows),
         "raw_weekend_candles_mapped": mapped_weekend_candles,
         "raw_weekend_candles_unmapped": len(weekend_rows) - mapped_weekend_candles,
