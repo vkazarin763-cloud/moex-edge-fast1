@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,28 @@ class LedgerError(ValueError):
 
 def _canonical(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def _signals_equivalent(left: Any, right: Any) -> bool:
+    """Compare payloads while ignoring sub-tick floating-point noise.
+
+    First-observed values remain untouched. Repeat-event validation allows
+    only 1e-8 absolute numeric drift (well below MOEX price ticks); structural
+    or material changes continue to fail closed.
+    """
+    if isinstance(left, bool) or isinstance(right, bool):
+        return type(left) is type(right) and left == right
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return math.isclose(float(left), float(right), rel_tol=1e-12, abs_tol=1e-8)
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(
+            _signals_equivalent(left[key], right[key]) for key in left
+        )
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(
+            _signals_equivalent(a, b) for a, b in zip(left, right)
+        )
+    return type(left) is type(right) and left == right
 
 
 def _event_id(cohort: str, signal: dict) -> str:
@@ -58,7 +81,7 @@ def append_signal_report(report: dict, ledger_path: str | Path) -> dict:
     path = Path(ledger_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    existing: dict[str, str] = {}
+    existing: dict[str, dict] = {}
     if path.exists():
         with path.open("r", encoding="utf-8") as stream:
             for line_number, line in enumerate(stream, 1):
@@ -67,10 +90,12 @@ def append_signal_report(report: dict, ledger_path: str | Path) -> dict:
                 try:
                     record = json.loads(line)
                     event_id = record["event_id"]
-                    payload = _canonical(record["signal"])
+                    payload = record["signal"]
+                    if not isinstance(payload, dict):
+                        raise TypeError("signal must be an object")
                 except (json.JSONDecodeError, KeyError, TypeError) as exc:
                     raise LedgerError(f"Invalid ledger row {line_number}") from exc
-                if event_id in existing and existing[event_id] != payload:
+                if event_id in existing and not _signals_equivalent(existing[event_id], payload):
                     raise LedgerError(f"Conflicting duplicate already stored: {event_id}")
                 existing[event_id] = payload
 
@@ -84,9 +109,8 @@ def append_signal_report(report: dict, ledger_path: str | Path) -> dict:
         if signal["direction"] not in ("LONG", "SHORT"):
             raise LedgerError(f"Signal {index} has invalid direction")
         event_id = _event_id(report["strategy_cohort_version"], signal)
-        payload = _canonical(signal)
         if event_id in existing:
-            if existing[event_id] != payload:
+            if not _signals_equivalent(existing[event_id], signal):
                 raise LedgerError(f"Immutable signal changed after first observation: {event_id}")
             duplicates += 1
             continue
@@ -99,7 +123,7 @@ def append_signal_report(report: dict, ledger_path: str | Path) -> dict:
             "signal": signal,
         }
         pending.append(_canonical(record))
-        existing[event_id] = payload
+        existing[event_id] = signal
         added += 1
 
     if pending:
