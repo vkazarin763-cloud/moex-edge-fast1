@@ -47,7 +47,7 @@
 
 ## Interpretation / limitations
 - This proves the collector and this snapshot passed structural/time-boundary checks. It does not prove strategy profitability, future data quality, or scanner correctness.
-- H1 and D1 closed bars exist for all 44 symbols. MTF scanner is not yet implemented.
+- H1 and D1 closed bars exist for all 44 symbols. A separate read-only D1/H1 scanner prototype is proposed in PR #74; it has not yet been merged or run against this artifact.
 - Snapshot is a point-in-time data collection; intraday lookback windows are short (M1 7 calendar days; M5/M15/M30/H1/H2/H4/H8 and M10 30 days). W1/MN/QR/D1 use up to 5 years, subject to listing history and provider availability.
 - Workflow artifact expires after 30 days; download it from the run above before expiry. Do not add the uncompressed JSON (~103 MB) to Git history.
 - Keep the prospective holdout beginning 2026-11-20 sealed. Do not use these post-holdout data to tune or select the frozen strategy cohort.

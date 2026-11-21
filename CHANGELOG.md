@@ -166,3 +166,7 @@
 - Verified successful multi-timeframe workflow run 44861047844 (artifact 14690518588) on main commit a65eeaf3800be1b56deaaa36258a5369fce33cf2.
 - Artifact contains 787,929 completed bars across 13 frames and 44/44 symbols; validator PASS with zero issues. Independent OHLCV, chronology, duplicate, snapshot and as-of checks also passed.
 - Full provenance, frame counts, exclusions, checksum, frozen methodology, safety boundaries and next steps recorded in HANDOFF_FOR_NEXT_AI.md and docs/MULTITIMEFRAME_DATASET_2026-11-21.md.
+
+
+## 2026-11-21 — D1/H1 scanner prototype (PR #74)
+- Added read-only D1/H1 latest-signal scanner, explicit no-lookahead test and artifact-driven Actions workflow. H1 alignment is informational only; await both CI checks on exact PR head.
