@@ -31,6 +31,10 @@ def _report():
                     "raw_weekday_additional_session_candles": 0,
                     "raw_weekday_additional_session_candles_mapped": 0,
                     "raw_weekday_additional_session_candles_unmapped": 0,
+                    "price_scale_mismatch_dates": 0,
+                    "known_price_basis_match_count": 0,
+                    "unexplained_price_scale_mismatch_count": 0,
+                    "price_scale_factor_counts": {},
                     "complete": True,
                     "status": "RECONCILED",
                 },
@@ -121,6 +125,15 @@ class IndependentValidatorTests(unittest.TestCase):
         result = validate_research_report(report)
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
         self.assertTrue(any("coverage ratio is inconsistent" in error for error in result["errors"]))
+
+    def test_inconsistent_price_scale_audit_accounting_is_rejected(self):
+        report = _report()
+        audit = report["results"]["SBER"]["session_date_mapping"]
+        audit["price_scale_mismatch_dates"] = 1
+        audit["unexplained_price_scale_mismatch_count"] = 1
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("price-scale factor counts do not sum" in error for error in result["errors"]))
 
     def test_inconsistent_weekday_additional_session_accounting_is_rejected(self):
         report = _report()
