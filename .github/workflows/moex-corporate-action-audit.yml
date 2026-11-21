@@ -43,6 +43,7 @@ jobs:
           if [ -f corporate_action_audit_report.json ]; then
             python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
           report = json.loads(Path("corporate_action_audit_report.json").read_text(encoding="utf-8"))
@@ -67,7 +68,7 @@ jobs:
                   f"{audit.get('price_scale_factor_counts', {})} |"
               )
           Path("audit_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-          with Path("$GITHUB_STEP_SUMMARY").open("a", encoding="utf-8") as out:
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
               out.write(Path("audit_summary.md").read_text(encoding="utf-8"))
           PY
           else
