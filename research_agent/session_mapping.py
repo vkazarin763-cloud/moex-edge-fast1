@@ -221,6 +221,7 @@ def reconcile_session_candles(
     OHLCV comparison. If neither scope matches, total-session history remains
     the conservative fallback and the mismatch is surfaced. Model-input bars
     continue to use total-session history.
+    """
     if max_next_trading_day_gap < 1:
         raise ValueError("max_next_trading_day_gap must be >= 1")
     rows = validate_candles(raw_candles) if raw_candles else []
