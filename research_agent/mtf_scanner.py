@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -186,14 +186,20 @@ def scan_multi_timeframe_report(
                 or contract.get("consume_only_status") != "PASS"
                 or contract.get("live_trading_authorized") is not False):
             raise ValueError("Strategy registry is not a valid development-only shadow-scanner registry")
-        registry_time = datetime.fromisoformat(
-            strategy_registry["generated_at_utc"].replace("Z", "+00:00")
-        ).astimezone(timezone.utc)
-        registry_age = (cutoff - registry_time).total_seconds()
-        if registry_age < 0:
-            raise ValueError("Strategy registry is newer than the candle snapshot; refusing a non-causal scan")
-        if registry_age > 14 * 86400:
-            raise ValueError("Strategy registry is older than 14 days; rerun research before scanning")
+        # The report timestamp is generated after the research job finishes and
+        # is not the market-data cutoff. Compare the report's last completed
+        # MOEX session date with the candle snapshot's Moscow calendar date.
+        source_date_value = strategy_registry.get("source_report_date_till")
+        try:
+            source_date = date.fromisoformat(source_date_value)
+        except (TypeError, ValueError):
+            raise ValueError("Strategy registry is missing a valid source_report_date_till")
+        snapshot_date = cutoff.astimezone(MOSCOW).date()
+        registry_age_days = (snapshot_date - source_date).days
+        if registry_age_days < 0:
+            raise ValueError("Strategy registry source data is newer than the candle snapshot")
+        if registry_age_days > 14:
+            raise ValueError("Strategy registry source data is older than 14 days; rerun research before scanning")
         allowed = {
             (row.get("ticker"), row.get("direction"), row.get("strategy"))
             for row in strategy_registry.get("strategies", [])
@@ -286,7 +292,7 @@ def scan_multi_timeframe_report(
             "h1_confirmation": "Informational alignment only: LONG requires H1 EMA20>EMA50 and close>EMA20; SHORT requires H1 EMA20<EMA50 and close<EMA20. It does not suppress or rank D1 signals.",
             "lookahead_policy": "Only bars whose native interval end is <= as_of are eligible; H1 is additionally bounded by the D1 signal bar end.",
             "strategy_policy": "Uses the five frozen candidate formulas and their fixed parameters; no optimization or strategy selection is performed.",
-            "research_status": "Scanner prototype only. This output is not a backtest, profitability claim, or trade instruction. The H1 alignment rule is a new informational overlay and must not be used to retune the frozen cohort.",
+            "research_status": "Scanner prototype only. This output is not a backtest, profitability claim, or trade instruction. Registry freshness is checked against its source report's last completed MOEX session, not report-generation time.",
             "execution_policy": "Read-only; no broker account, order, position, or execution endpoints.",
         },
     }

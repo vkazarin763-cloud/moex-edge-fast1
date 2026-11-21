@@ -81,6 +81,7 @@ def build_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
         "source_report_generated_at_utc": report.get("generated_at_utc"),
+        "source_report_date_till": report.get("date_till"),
         "holdout_start": (report.get("development_holdout_policy") or {}).get("holdout_start"),
         "holdout_used_for_selection": False,
         "selection_policy": {
