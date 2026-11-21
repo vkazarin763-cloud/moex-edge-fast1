@@ -38,7 +38,7 @@ class SignalLedgerTests(unittest.TestCase):
             path = Path(tmp) / "signals.jsonl"
             append_signal_report(report(), path)
             changed = report()
-            changed["signals"][0]["h1"]["h1_close"] = 249.000000003
+            changed["signals"][0]["h1"]["h1_close"] = 249.000000022
             result = append_signal_report(changed, path)
             self.assertEqual(result, {"added": 0, "duplicates": 1, "total_events": 1})
             stored = json.loads(path.read_text(encoding="utf-8"))
