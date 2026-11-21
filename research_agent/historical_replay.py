@@ -19,7 +19,11 @@ from .mtf_scanner import STRATEGY_COHORT_VERSION
 
 DEFAULT_CUTOFF_EXCLUSIVE = "2026-11-20"
 DEFAULT_EXCLUDED_SYMBOLS = {
-    "T": "Known 10:1 conversion effective 2026-04-17 falls inside this sample; raw prices are not automatically adjusted."
+    "GMKN": "Known 100-for-1 split effective 2024-04-04 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "TRNFP": "Known 1-for-100 split effective 2024-02-21 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "VTBR": "Known 5000-to-1 consolidation effective 2024-07-15 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "PLZL": "Known 10-for-1 split effective 2025-03-27 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "T": "Known 10-for-1 conversion effective 2026-04-17 falls inside the historical sample; OHLCV is not automatically adjusted.",
 }
 HORIZONS = (1, 5, 10, 20)
 
@@ -267,17 +271,16 @@ def main() -> int:
     parser.add_argument("--candles", required=True, help="Validated multi-timeframe candle JSON artifact")
     parser.add_argument("--output", default="moex_edge_historical_simulation.json")
     parser.add_argument("--cutoff-exclusive", default=DEFAULT_CUTOFF_EXCLUSIVE)
-    parser.add_argument("--exclude-symbols", default="T", help="Comma-separated symbols to exclude")
+    parser.add_argument("--exclude-symbols", default="", help="Additional comma-separated symbols to exclude; known in-window corporate actions are always excluded")
     parser.add_argument("--source-run-id", type=int, default=None)
     args = parser.parse_args()
 
     report = json.loads(Path(args.candles).read_text(encoding="utf-8"))
-    excluded = {
-        symbol.strip().upper(): DEFAULT_EXCLUDED_SYMBOLS.get(
-            symbol.strip().upper(), "Excluded by explicit command-line configuration"
-        )
-        for symbol in args.exclude_symbols.split(",") if symbol.strip()
-    }
+    excluded = dict(DEFAULT_EXCLUDED_SYMBOLS)
+    for symbol in args.exclude_symbols.split(","):
+        symbol = symbol.strip().upper()
+        if symbol:
+            excluded.setdefault(symbol, "Excluded by explicit command-line configuration")
     result = build_historical_simulation(
         report,
         cutoff_exclusive=args.cutoff_exclusive,
