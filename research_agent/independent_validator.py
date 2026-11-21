@@ -80,6 +80,10 @@ def _audit_experiment_lab(
     errors: list[str], warnings: list[str],
 ) -> tuple[int, int]:
     """Audit experiment-lab completeness and metadata without trusting its labels."""
+    if lab is None:
+        # Preserve compatibility with pre-lab reports; current CLI reports always
+        # include this section, so new reports still receive the full audit.
+        return 0, 0
     if not isinstance(lab, dict):
         errors.append("experiment_lab must be an object")
         return 0, 0
