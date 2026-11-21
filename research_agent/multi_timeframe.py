@@ -18,6 +18,7 @@ FINAM_FRAMES = {
     "M5": ("TIME_FRAME_M5", 30),
     "M15": ("TIME_FRAME_M15", 30),
     "M30": ("TIME_FRAME_M30", 30),
+    "H1": ("TIME_FRAME_H1", 30),
     "H2": ("TIME_FRAME_H2", 30),
     "H4": ("TIME_FRAME_H4", 30),
     "H8": ("TIME_FRAME_H8", 30),
@@ -56,6 +57,20 @@ class RefreshingFinamClient:
                 self._api_token, self._source_app_id
             )
             return self._client.fetch_bars(*args)
+
+
+FINAM_FRAME_MINUTES = {
+    "M1": 1, "M5": 5, "M15": 15, "M30": 30,
+    "H1": 60, "H2": 120, "H4": 240, "H8": 480,
+}
+
+
+def _finam_bar_is_complete(timestamp, frame, now_utc):
+    """Finam intraday timestamps mark bar starts; require the full interval to end."""
+    if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+        return False
+    duration = timedelta(minutes=FINAM_FRAME_MINUTES[frame])
+    return timestamp.astimezone(timezone.utc) + duration <= now_utc
 
 
 def _moex_bar_is_complete(timestamp, frame, now_moscow):
@@ -120,14 +135,19 @@ def collect_multi_timeframe(
             start = current - timedelta(days=lookback)
             try:
                 raw = client.fetch_bars(f"{ticker}@MISX", api_frame, start, current)
-                completed = [bar for bar in raw if bar.is_data_snapshot is not True]
+                snapshot_eligible = [bar for bar in raw if bar.is_data_snapshot is not True]
+                completed = [
+                    bar for bar in snapshot_eligible
+                    if _finam_bar_is_complete(bar.timestamp, frame, current)
+                ]
                 symbol_result[frame] = {
                     "source": "Finam",
                     "status": "OK" if completed else "NO_COMPLETED_BARS",
                     "lookback_calendar_days": lookback,
                     "raw_bars": len(raw),
                     "completed_bars": len(completed),
-                    "snapshot_true_excluded": len(raw) - len(completed),
+                    "snapshot_true_excluded": len(raw) - len(snapshot_eligible),
+                    "incomplete_bars_excluded": len(snapshot_eligible) - len(completed),
                     "snapshot_unknown_retained": sum(
                         bar.is_data_snapshot is None for bar in completed
                     ),
@@ -189,7 +209,7 @@ def collect_multi_timeframe(
         "results": results,
         "methodology": {
             "source_policy": "Finam and MOEX ISS candles are kept as separate feeds.",
-            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. MOEX M10 bars are included only after their 10-minute interval has ended; W1/MN/QR bars are included only after the corresponding calendar period has ended.",
+            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. All Finam intraday bars are also required to have reached timestamp plus interval duration. MOEX M10 bars are included only after their 10-minute interval has ended; W1/MN/QR bars are included only after the corresponding calendar period has ended.",
             "aggregation_policy": "No resampling, filling, interpolation, provider merging, or strategy use.",
             "research_isolation": "This artifact does not modify the frozen D1 research dataset, candidate cohort, holdout, or trading configuration.",
         },
