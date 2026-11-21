@@ -117,6 +117,23 @@ class TradingDayBarTests(unittest.TestCase):
                 self.assertEqual(raw[0].close, 105)
                 self.assertEqual(history[0].close, 105 * factor)
 
+    def test_known_split_price_basis_accepts_reciprocal_direction(self):
+        trade_date = date(2024, 4, 3)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
+        history = [HistoryRecord(trade_date, 20, 1, 1.1, 0.9, 1.05, 1000)]
+        result = reconcile_session_candles(raw, history, ticker="GMKN")
+        audit = result["price_scale_mismatch_examples"][0]
+        self.assertEqual(audit["classification"], "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS")
+        self.assertEqual(audit["matched_ratio_direction"], "RECIPROCAL_DOCUMENTED_FACTOR")
+
+    def test_known_corporate_action_factor_after_effective_date_is_not_applied(self):
+        trade_date = date(2024, 4, 5)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
+        history = [HistoryRecord(trade_date, 20, 10000, 11000, 9000, 10500, 1000)]
+        result = reconcile_session_candles(raw, history, ticker="GMKN")
+        self.assertEqual(result["known_price_basis_match_count"], 0)
+        self.assertEqual(result["unexplained_price_scale_mismatch_count"], 1)
+
     def test_unreferenced_price_scale_ratio_remains_unexplained(self):
         trade_date = date(2025, 1, 2)
         raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
