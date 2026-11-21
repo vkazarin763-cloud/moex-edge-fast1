@@ -174,10 +174,6 @@ def combine_morning_main_history_records(
         main = main_by_date.get(trade_date)
         rows = [row for row in (morning, main) if row is not None]
         trade_counts = [row.num_trades for row in rows if row.num_trades is not None]
-        prices_open = [
-            row.open for row in (morning, main)
-            if row is not None and row.open is not None
-        ]
         highs = [
             row.high for row in rows if row.high is not None
         ]
