@@ -16,24 +16,37 @@ identity carries a different signal payload, the writer fails closed instead
 of rewriting history. Malformed existing JSONL also stops the writer without
 repairing or truncating it.
 
+## Durable storage
+
+The workflow **MOEX EDGE Persist MTF Signal Ledger (Read Only)** runs only after
+a successful scanner workflow_run from the default `main` branch. It downloads
+the scanner artifact from that exact completed run, validates that exactly one
+report is present, and appends events to the dedicated
+`moex-edge-signal-ledger` branch. Writes are serialized with GitHub Actions
+concurrency; the scanner's artifact remains a separate 30-day diagnostic copy.
+The data branch is provisioned separately and contains the ledger file, not
+research code changes.
+
+The workflow has `actions: read` and `contents: write` permissions because it
+must commit the durable ledger. It does not read secrets or access any broker
+interface. It never triggers on pull_request or workflow_dispatch.
+
 ## Deliberate limits
 
 - This component records signal creation only; it does not calculate returns,
   exits, trade outcomes, or profitability.
-- No historical signals are backfilled by inference. Only scanner reports
-  explicitly passed to the writer are eligible.
-- The JSONL file is append-only at the application layer. Durable GitHub
-  storage, serialized writes, branch permissions and retention are a separate
-  workflow integration and are not enabled by this change.
-- The writer is local-file-only: no network, broker, token, account or order
-  interfaces.
+- No historical signals are backfilled by inference. Only reports processed
+  after this workflow is enabled are eligible.
+- The JSONL file is append-only at the application layer. Conflicting repeated
+  signal payloads and malformed ledger history stop the writer.
 - The frozen cohort, holdout boundary, scanner formulas and execution rules
   are unchanged.
+- The legacy Finam signal state and all executor workflows are unrelated and
+  must not be used as this ledger's storage.
 
 ## CLI
 
 `python -m research_agent.signal_ledger --report moex_edge_mtf_signals.json --ledger signal-ledger/events.jsonl`
 
-Run the writer only against a dedicated ledger checkout/path after the
-persistence workflow has been reviewed and enabled. Do not point it at the
-research datasets or legacy Finam execution state.
+The CLI is local-file-only. The GitHub workflow supplies the report and the
+dedicated data branch.
