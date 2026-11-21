@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "research_agent/session_mapping.py"
+      - "research_agent/**"
       - ".github/workflows/research-agent-run.yml"
   workflow_dispatch:
     inputs:
