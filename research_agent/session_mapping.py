@@ -12,6 +12,7 @@ import math
 from datetime import date, datetime, time, timedelta
 
 from .core import Candle, validate_candles
+from .corporate_actions import classify_history_to_raw_price_factor
 from .moex_iss import HistoryRecord
 
 
@@ -159,6 +160,7 @@ def reconcile_session_candles(
     raw_candles: list[Candle],
     history_records: list[HistoryRecord],
     max_next_trading_day_gap: int = 7,
+    ticker: str | None = None,
 ) -> dict:
     """Check calendar-date candle fragments against full TQBR trading-day OHLCV.
 
@@ -233,6 +235,7 @@ def reconcile_session_candles(
 
     matched = []
     mismatches = []
+    price_scale_mismatches = []
     for target, fragments in sorted(grouped.items()):
         record = by_date[target]
         expected = (record.open, record.high, record.low, record.close, record.volume)
@@ -258,12 +261,43 @@ def reconcile_session_candles(
             if not math.isclose(float(got), float(want), rel_tol=0.0, abs_tol=tolerance):
                 differences[name] = {"aggregated": got, "history": want}
         if differences:
-            mismatches.append({
+            mismatch = {
                 "trade_date": target.isoformat(),
                 "reason": "aggregated calendar candles differ from TQBR daily history",
                 "fragment_count": len(fragments),
                 "differences": differences,
-            })
+            }
+            price_ratios = [
+                float(want) / float(got)
+                for got, want in zip(actual[:4], expected[:4])
+                if float(got) > 0 and float(want) > 0
+            ]
+            if len(price_ratios) == 4:
+                factor = sum(price_ratios) / len(price_ratios)
+                same_factor = all(
+                    math.isclose(value, factor, rel_tol=1e-6, abs_tol=1e-10)
+                    for value in price_ratios
+                )
+                if same_factor and not math.isclose(
+                    factor, 1.0, rel_tol=1e-6, abs_tol=1e-10
+                ):
+                    classification = classify_history_to_raw_price_factor(
+                        ticker, target, factor
+                    )
+                    scale_audit = {
+                        "trade_date": target.isoformat(),
+                        "history_to_raw_ohlc_price_factor": factor,
+                        "classification": classification["classification"],
+                        "known_event": classification["known_event"],
+                        "effective_date": classification["effective_date"],
+                        "expected_history_to_raw_price_factor": classification[
+                            "expected_history_to_raw_price_factor"
+                        ],
+                        "source": classification["source"],
+                    }
+                    mismatch["price_scale_audit"] = scale_audit
+                    price_scale_mismatches.append(scale_audit)
+            mismatches.append(mismatch)
         else:
             matched.append(target.isoformat())
 
@@ -284,6 +318,17 @@ def reconcile_session_candles(
         for candle in fragments
         if candle.timestamp.date() in OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS
     )
+    price_scale_factor_counts = {}
+    known_price_basis_match_count = 0
+    unexplained_price_scale_mismatch_count = 0
+    for item in price_scale_mismatches:
+        factor_key = format(item["history_to_raw_ohlc_price_factor"], ".10g")
+        price_scale_factor_counts[factor_key] = price_scale_factor_counts.get(factor_key, 0) + 1
+        if item["classification"] == "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS":
+            known_price_basis_match_count += 1
+        else:
+            unexplained_price_scale_mismatch_count += 1
+
     positive_history_dates = set(positive_dates)
     raw_fragment_history_dates = set(grouped)
     history_dates_without_raw_fragments = sorted(
@@ -323,6 +368,11 @@ def reconcile_session_candles(
         "raw_history_coverage_status": raw_history_coverage_status,
         "trading_days_reconciled": len(matched),
         "trading_days_mismatched": len(mismatches),
+        "price_scale_mismatch_dates": len(price_scale_mismatches),
+        "price_scale_factor_counts": price_scale_factor_counts,
+        "known_price_basis_match_count": known_price_basis_match_count,
+        "unexplained_price_scale_mismatch_count": unexplained_price_scale_mismatch_count,
+        "price_scale_mismatch_examples": price_scale_mismatches[:20],
         "unassigned_raw_candles": len(unassigned),
         "matched_trade_dates": matched[:20],
         "mismatch_examples": mismatches[:20],
