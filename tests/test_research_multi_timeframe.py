@@ -77,7 +77,7 @@ class MultiTimeframeTests(unittest.TestCase):
             datetime(2026, 11, 20, 12, 30, tzinfo=timezone.utc), "H1", now
         ))
         self.assertFalse(_finam_bar_is_complete(
-            datetime(2026, 11, 20, 12, 59, tzinfo=timezone.utc), "M1", now
+            datetime(2026, 11, 20, 13, 0, tzinfo=timezone.utc), "M1", now
         ))
         self.assertFalse(_finam_bar_is_complete(
             datetime(2026, 11, 20, 12, 0), "H1", now
