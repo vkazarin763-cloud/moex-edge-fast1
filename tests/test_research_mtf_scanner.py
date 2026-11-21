@@ -115,6 +115,12 @@ class MTFScannerTests(unittest.TestCase):
         self.assertIn("keltner20_upper_2atr", result["signals"][0]["parameters"])
         self.assertEqual(result["signals"][0]["h1"]["h1_timestamp"], "2026-03-01T20:00:00+00:00")
         self.assertEqual(result["signals"][0]["h1"]["h1_age_minutes_at_d1_close"], 0)
+        forbidden_fields = {
+            "qty", "quantity", "entry_price", "position_size",
+            "capital", "allocation", "portfolio_weight",
+        }
+        for signal in result["signals"]:
+            self.assertFalse(forbidden_fields.intersection(signal))
 
     def test_scanner_rejects_failed_validation(self):
         with self.assertRaises(ValueError):
