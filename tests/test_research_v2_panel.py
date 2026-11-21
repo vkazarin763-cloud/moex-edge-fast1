@@ -55,7 +55,7 @@ class V2PanelResearchTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "INSUFFICIENT_UNIVERSE")
 
-    def test_cross_sectional_excludes_missing_as_of_bar(self):
+    def test_cross_sectional_requires_shared_as_of_bar(self):
         panel = {f"T{i:02d}": make_bars() for i in range(10)}
         panel["T09"] = panel["T09"][:-1]
         result = cross_sectional_momentum_12_1(
@@ -63,10 +63,38 @@ class V2PanelResearchTests(unittest.TestCase):
             as_of=panel["T00"][-1]["timestamp"],
             price_basis_status="verified_same_share",
         )
-        self.assertEqual(result["status"], "INSUFFICIENT_UNIVERSE")
-        self.assertEqual(result["excluded"]["T09"], "NO_EXACT_AS_OF_BAR")
+        self.assertEqual(result["status"], "UNSYNCHRONIZED_DATA")
 
-    def test_relative_strength_requires_synchronized_anchors(self):
+    def test_cross_sectional_uses_common_session_anchors(self):
+        panel = {f"T{i:02d}": make_bars(slope=float(i + 1)) for i in range(10)}
+        # A missing internal session in one constituent must not shift its
+        # lookback window relative to the other constituents.
+        panel["T09"] = panel["T09"][:100] + panel["T09"][101:]
+        result = cross_sectional_momentum_12_1(
+            panel,
+            as_of=panel["T00"][-1]["timestamp"],
+            price_basis_status="verified_same_share",
+        )
+        self.assertEqual(result["status"], "INSUFFICIENT_COMMON_HISTORY")
+
+    def test_cross_sectional_ignores_future_bars(self):
+        panel = {f"T{i:02d}": make_bars() for i in range(10)}
+        as_of = panel["T00"][-1]["timestamp"]
+        baseline = cross_sectional_momentum_12_1(
+            panel, as_of=as_of, price_basis_status="verified_same_share"
+        )
+        for bars in panel.values():
+            bars.append({
+                "timestamp": (date.fromisoformat(as_of) + timedelta(days=1)).isoformat(),
+                "close": 1.0,
+                "high": 2.0,
+            })
+        changed_future = cross_sectional_momentum_12_1(
+            panel, as_of=as_of, price_basis_status="verified_same_share"
+        )
+        self.assertEqual(baseline["ranked"], changed_future["ranked"])
+
+    def test_relative_strength_uses_synchronized_anchors(self):
         security = make_bars(127, slope=1.5)
         imoex = make_bars(127, slope=1.0)
         result = relative_strength_vs_imoex(
@@ -82,7 +110,9 @@ class V2PanelResearchTests(unittest.TestCase):
     def test_relative_strength_rejects_different_anchor_sessions(self):
         security = make_bars(127, slope=1.5)
         imoex = make_bars(127, slope=1.0)
-        imoex.pop(10)
+        imoex[105]["timestamp"] = (
+            date(2025, 1, 1) + timedelta(days=105)
+        ).isoformat() + "T12:00:00"
         result = relative_strength_vs_imoex(
             security,
             imoex,
