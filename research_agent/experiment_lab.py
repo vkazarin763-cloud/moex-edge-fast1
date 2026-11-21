@@ -125,6 +125,7 @@ def run_experiment_lab(
     completed = sum(t["status"] == "EXPERIMENTAL_SCREEN_COMPLETE" for t in trials)
     return {
         "lab_version": "exit-policy-experiments-v1",
+        "status": "EXPERIMENT_LAB_COMPLETE",
         "generated_scope": "development_history_only",
         "holdout_start": cutoff.isoformat(),
         "holdout_policy": "All bars on/after holdout_start are excluded before any test.",
