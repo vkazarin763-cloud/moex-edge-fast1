@@ -121,6 +121,7 @@ def run_experiment_lab(
                     min_total_trades=min_total_trades,
                     min_trades_per_fold=min_trades_per_fold,
                     config=hypothesis.config,
+                    baseline_report=walk,
                 )
                 signals = generate_signals(development)
                 signal_audit = audit_signal_generation(development, signals)
