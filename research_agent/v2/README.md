@@ -19,6 +19,10 @@ connected to the v1 scanner or any broker interface.
   timestamps must match exactly. The metric is excess return, not
   beta-adjusted alpha and not a standalone directional signal.
 
+## Hypothesis registry
+
+`registry.py` records the five v2 hypotheses and their implementation state. The first four have research primitives or metrics only; none is validated or approved. Pairs trading is explicitly blocked until adjusted prices, point-in-time pair membership, liquidity/spread data, shortability and borrow-cost assumptions are available. The registry is descriptive metadata, not a promotion gate.
+
 ## Data and safety contract
 
 The price-based functions fail closed as `DATA_NOT_READY` unless the caller
