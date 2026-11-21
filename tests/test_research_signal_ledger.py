@@ -50,10 +50,10 @@ class SignalLedgerTests(unittest.TestCase):
     def test_malformed_existing_ledger_is_not_overwritten(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "signals.jsonl"
-            path.write_text("{broken\\n", encoding="utf-8")
+            path.write_text("{broken\n", encoding="utf-8")
             with self.assertRaises(LedgerError):
                 append_signal_report(report(), path)
-            self.assertEqual(path.read_text(encoding="utf-8"), "{broken\\n")
+            self.assertEqual(path.read_text(encoding="utf-8"), "{broken\n")
 
     def test_conflicting_duplicate_ids_in_existing_ledger_fail_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -61,7 +61,7 @@ class SignalLedgerTests(unittest.TestCase):
             append_signal_report(report(), path)
             row = json.loads(path.read_text(encoding="utf-8"))
             row["signal"]["d1_close"] = 999
-            path.write_text(path.read_text(encoding="utf-8") + json.dumps(row) + "\\n", encoding="utf-8")
+            path.write_text(path.read_text(encoding="utf-8") + json.dumps(row) + "\n", encoding="utf-8")
             with self.assertRaises(LedgerError):
                 append_signal_report(report(), path)
 
