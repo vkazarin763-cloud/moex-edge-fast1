@@ -91,8 +91,8 @@ def _audit_experiment_lab(
     if status == "EXPERIMENT_LAB_ERROR":
         warnings.append("experiment lab did not complete: " + str(lab.get("error", "unknown error")))
         return 0, 0
-    if status not in (None, "EXPERIMENT_LAB_COMPLETE"):
-        errors.append("experiment_lab has an unrecognized status")
+    if status != "EXPERIMENT_LAB_COMPLETE":
+        errors.append("experiment_lab must explicitly declare EXPERIMENT_LAB_COMPLETE status")
     if lab.get("generated_scope") != "development_history_only":
         errors.append("experiment_lab must declare development_history_only scope")
     if holdout_start:
