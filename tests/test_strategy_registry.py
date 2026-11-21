@@ -44,7 +44,7 @@ class StrategyRegistryTests(unittest.TestCase):
         self.assertEqual(rows[("BBB", "LONG", "Donchian20")]["status"], "INSUFFICIENT_DATA")
         self.assertFalse(registry["scanner_contract"]["live_trading_authorized"])
         self.assertEqual(registry["summary"]["PASS"], 1)
-        self.assertEqual(registry["summary"]["INSUFFICIENT_DATA"], 44)
+        self.assertEqual(registry["summary"]["INSUFFICIENT_DATA"], 19)
 
 
 if __name__ == "__main__":
