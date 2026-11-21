@@ -7,6 +7,7 @@ on:
       - "research_agent/**"
       - "tests/**"
       - ".github/workflows/research-agent-tests.yml"
+      - ".github/workflows/research-agent-run.yml"
       - ".github/workflows/research-agent-multi-timeframe.yml"
       - ".github/workflows/research-agent-historical-replay.yml"
       - "HANDOFF_FOR_NEXT_AI.md"
