@@ -19,7 +19,11 @@ from .mtf_scanner import STRATEGY_COHORT_VERSION
 
 DEFAULT_CUTOFF_EXCLUSIVE = "2026-11-20"
 DEFAULT_EXCLUDED_SYMBOLS = {
-    "T": "Known 10:1 conversion effective 2026-04-17 falls inside this sample; raw prices are not automatically adjusted."
+    "GMKN": "Known 100-for-1 split effective 2024-04-04 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "TRNFP": "Known 1-for-100 split effective 2024-02-21 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "VTBR": "Known 5000-to-1 consolidation effective 2024-07-15 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "PLZL": "Known 10-for-1 split effective 2025-03-27 falls inside the historical sample; OHLCV is not automatically adjusted.",
+    "T": "Known 10-for-1 conversion effective 2026-04-17 falls inside the historical sample; OHLCV is not automatically adjusted.",
 }
 HORIZONS = (1, 5, 10, 20)
 
