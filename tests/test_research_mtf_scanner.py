@@ -113,11 +113,15 @@ class MTFScannerTests(unittest.TestCase):
                 "consume_only_status": "PASS",
                 "live_trading_authorized": False,
             },
+            "summary": {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 440},
             "strategies": [],
         }
         gated = scan_multi_timeframe_report(candles_report, validation, registry)
         self.assertEqual(gated["signals_count"], 0)
         self.assertGreater(gated["registry_filtered_candidates"], 0)
+        self.assertEqual(sum(gated["registry_filtered_candidates_by_strategy"].values()), gated["registry_filtered_candidates"])
+        self.assertEqual(sum(gated["registry_filtered_candidates_by_direction"].values()), gated["registry_filtered_candidates"])
+        self.assertEqual(gated["strategy_registry_summary"]["INSUFFICIENT_DATA"], 440)
         self.assertEqual(gated["strategy_registry_version"], "test-v1")
         future_registry = {**registry, "source_report_date_till": "2026-03-03"}
         with self.assertRaisesRegex(ValueError, "newer than the candle snapshot"):
