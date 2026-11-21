@@ -12,7 +12,7 @@ def report():
         "d1_signal_timestamp": "2026-11-20T00:00:00",
         "d1_bar_end_utc": "2026-11-20T21:00:00+00:00",
         "d1_close": 250.0, "parameters": {"close": 250.0},
-        "h1_confirmation": "CONFIRMED", "h1": {"h1_close": 249.0},
+        "h1_confirmation": "CONFIRMED", "h1": {"h1_close": 249.0, "h1_ema50": 3345.90103364428},
     }
     return {
         "status": "READ_ONLY_LATEST_SIGNAL_SCAN",
@@ -38,11 +38,11 @@ class SignalLedgerTests(unittest.TestCase):
             path = Path(tmp) / "signals.jsonl"
             append_signal_report(report(), path)
             changed = report()
-            changed["signals"][0]["h1"]["h1_close"] = 249.000000022
+            changed["signals"][0]["h1"]["h1_ema50"] = 3345.9010325595577
             result = append_signal_report(changed, path)
             self.assertEqual(result, {"added": 0, "duplicates": 1, "total_events": 1})
             stored = json.loads(path.read_text(encoding="utf-8"))
-            self.assertEqual(stored["signal"]["h1"]["h1_close"], 249.0)
+            self.assertEqual(stored["signal"]["h1"]["h1_ema50"], 3345.90103364428)
 
     def test_changed_signal_payload_for_same_identity_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
