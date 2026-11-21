@@ -151,6 +151,16 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             )
             if not research_candles:
                 raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
+            try:
+                history_crosscheck = audit_tqbr_history(
+                    raw_candles, reconciliation_history_records, fetch_from, effective_till
+                )
+            except Exception as history_exc:
+                history_crosscheck = {
+                    "status": "HISTORY_CROSSCHECK_UNAVAILABLE",
+                    "error": str(history_exc),
+                    "exchange_calendar_verified": False,
+                }
             # Corporate-action price bases are handled only for model input.
             # Raw candles/history above remain untouched for independent audit.
             research_candles, corporate_action_history_basis = apply_post_event_price_basis(
@@ -171,19 +181,12 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     "research_input_bars": len(research_candles),
                     "development_bars": len(development),
                     "raw_session_candles": len(raw_candles),
+                    "raw_reconciliation_history_alias": legacy_alias,
+                    "raw_reconciliation_history_alias_error": legacy_history_errors.get(ticker),
                     "session_date_mapping": session_date_mapping_diagnostics,
+                    "tqbr_history_crosscheck": history_crosscheck,
                 }
                 continue
-            try:
-                history_crosscheck = audit_tqbr_history(
-                    raw_candles, reconciliation_history_records, fetch_from, effective_till
-                )
-            except Exception as history_exc:
-                history_crosscheck = {
-                    "status": "HISTORY_CROSSCHECK_UNAVAILABLE",
-                    "error": str(history_exc),
-                    "exchange_calendar_verified": False,
-                }
             results[ticker] = {
                 "status": "ANALYZED",
                 "candles": len(research_candles),
