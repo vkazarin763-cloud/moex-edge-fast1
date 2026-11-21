@@ -1,8 +1,9 @@
 """Deterministic, read-only experiment runner for exit-policy hypotheses.
 
-This first Research Lab iteration explores execution/exit configurations only.
-It reuses the existing frozen entry formulas and simulator; it never changes the
-frozen prospective cohort or evaluates candles on/after the holdout boundary.
+This Research Lab explores execution/exit configurations only. It reuses the
+frozen entry formulas and primary simulator, then independently replays the
+resulting signals as an execution-integrity audit. It never changes the frozen
+prospective cohort or evaluates candles on/after the holdout boundary.
 """
 from __future__ import annotations
 
@@ -12,7 +13,8 @@ from dataclasses import asdict, dataclass
 from datetime import date
 from typing import Any
 
-from .core import BacktestConfig, Candle
+from .core import BacktestConfig, Candle, backtest, generate_signals
+from .reference_audit import compare_replay, reference_replay
 from .validation import walk_forward_report, adversarial_cost_check
 
 HOLDOUT_START = date(2026, 11, 20)
@@ -53,6 +55,14 @@ def _dataset_fingerprint(rows: list[Candle]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _execution_replay_audit(rows: list[Candle], config: BacktestConfig) -> dict[str, Any]:
+    """Compare primary execution against a separately implemented reference replay."""
+    signals = generate_signals(rows)
+    primary = backtest(rows, signals, config)
+    reference = reference_replay(rows, signals, config)
+    return compare_replay(primary, reference)
+
+
 def run_experiment_lab(
     candles_by_ticker: dict[str, list[Candle]],
     *,
@@ -66,6 +76,7 @@ def run_experiment_lab(
     """Run every registered exit hypothesis on development-only D1 candles.
 
     All trials are retained, including insufficient samples and rejected results.
+    Completed trials also carry an independent execution replay comparison.
     The full hypothesis family size is reported so exploratory screens cannot be
     mistaken for multiplicity-adjusted inference.
     """
@@ -110,10 +121,12 @@ def run_experiment_lab(
                     min_trades_per_fold=min_trades_per_fold,
                     config=hypothesis.config,
                 )
+                replay_audit = _execution_replay_audit(development, hypothesis.config)
                 record.update({
                     "status": "EXPERIMENTAL_SCREEN_COMPLETE",
                     "walk_forward": walk,
                     "adversarial_cost_check": stress,
+                    "execution_replay_audit": replay_audit,
                 })
             except (ValueError, TypeError) as exc:
                 record.update({
@@ -150,7 +163,9 @@ def run_experiment_lab(
         "interpretation": (
             "Exploratory development screening only. Results are not holdout evidence, "
             "not multiplicity-adjusted statistical conclusions, not live signals, "
-            "and cannot modify the frozen v1 candidate cohort."
+            "and cannot modify the frozen v1 candidate cohort. Execution replay "
+            "compares fills from supplied signals; it does not independently verify "
+            "signal formulas or source-data provenance."
         ),
         "safety": "Read-only. No broker API, order placement, or production-state writes.",
     }
