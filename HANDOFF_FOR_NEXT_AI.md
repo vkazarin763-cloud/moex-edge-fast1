@@ -239,3 +239,17 @@ Default branch: main
 - Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
 - No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
+
+
+## 2026-11-21 — D1/H1 read-only scanner prototype (PR #73)
+- PR: https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/73
+- Branch: `feature/mtf-signal-scanner-20261121`; latest implementation commit before documentation update: `81bf222b5385ae910d8b65e12b8cab88a00681be`.
+- Adds isolated module `research_agent/mtf_scanner.py` and tests `tests/test_research_mtf_scanner.py`.
+- D1 evaluates only the latest fully closed native TQBR D1 bar using the five frozen formulas: Donchian20, EMA20x50, RSI14Trend50, MACD12x26, Keltner20x2ATR. Parameters are unchanged.
+- H1 confirmation is an informational alignment flag only: LONG = H1 EMA20>EMA50 and close>EMA20; SHORT = H1 EMA20<EMA50 and close<EMA20. It does not filter, rank, or select strategies.
+- H1 bars are bounded by both as_of and the D1 signal bar end; latest H1 timestamp, end, and age at D1 close are reported. Cross-strategy direction conflicts are surfaced, not silently resolved.
+- Requires validator PASS with zero issues and matching collector/validator snapshot times. No network calls, account access, order endpoints, or execution imports.
+- Adds workflow `.github/workflows/research-agent-mtf-signals.yml`: it can be manually dispatched with source run ID, or automatically follows a successful future MTF candle collection. For the existing artifact, after PR #73 merges, manually dispatch it with source_run_id `44861047844`; GitHub MCP cannot dispatch workflows.
+- Initial tests passed on earlier head `b6e3fc6...` (7 scanner tests; Research Agent Safety Tests and Finam Executor Safety Tests both green). A later no-lookahead boundary test and workflow were added; current head CI must be rechecked before merge.
+- This is a scanner prototype, not an approved strategy-performance cohort. The H1 overlay was not tuned against the holdout and must remain informational. Do not claim profitability. Actual current signal output has not yet been generated from the artifact.
+- Since the MTF overlay was specified after the holdout start (2026-11-20), do not retroactively use post-2026-11-20 observations to tune it. Freeze the implementation first; prospective monitoring of the MTF overlay starts only after the frozen scanner is merged/deployed.
