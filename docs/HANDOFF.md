@@ -150,3 +150,55 @@ Other previous validation:
 - Never claim success before tool confirmation.
 - Do not claim notifications or background monitoring unless actually configured.
 - Do not address the user by name.
+
+
+## 10. Latest verified research snapshot — run 44886351505
+
+**Generated:** 2026-11-21 08:54:53 UTC  
+**Run:** https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44886351505  
+**Source commit:** `691d2a1876460e0f5af5b80dac046e4da6b1d12d`  
+**Artifact:** `moex-edge-research-report`, artifact ID `14700094227`, SHA-256 `249fa618027c21178c288a71077fc1bcde057d4529ab6415c839921b6751f021`.
+
+The run completed data collection and analysis for **44/44 tickers with zero history-fetch errors**, but the workflow concluded **failure (exit code 3)** because the report's independent validation status was `INDEPENDENT_VALIDATION_INCOMPLETE`. Do not describe this as a successful/green research run. The report is useful diagnostic evidence, not a validated strategy approval.
+
+### Latest data and reconciliation facts
+
+- Model window: 2023-11-20 through 2026-11-20; 44 symbols; all ticker-level data-quality statuses remain `VALID_WITH_CAVEATS`.
+- Holdout begins 2026-11-20. Each ticker has only one prospective holdout daily bar; all five strategy tests per ticker are `INSUFFICIENT_PROSPECTIVE_SAMPLE`, zero closed trades. No statistical conclusions can be drawn.
+- Across the raw-session diagnostics: 37,577 raw candles; 37,334 mapped; **243 unassigned**; **1,062 trading days with OHLCV reconciliation mismatches**; 30,387 trading days reconciled; zero TQBR history dates missing raw fragments.
+- All 243 unassigned raw candles belong to ticker **T**: 241 are `WEEKDAY_MISSING_SAME_DATE_HISTORY`, 2 are `PRELAUNCH_WEEKEND_UNCONFIRMED`. T has 876 raw fragments, 633 mapped, and 346 mismatched trading dates. Do not map these fragments by guessing.
+- The 1,062 mismatch days all classify as `AGGREGATED_OHLCV_DIFFERS`. Largest concentrations: PLZL 342, T 346, VTBR 161, GMKN 94, TRNFP 62. These four/five names overlap known corporate-action price-basis risk; do not auto-adjust. Investigate field-level examples and vendor price basis independently.
+- 41 independent-validation warnings, zero validator errors; validator checked 616 items. Status remains `INDEPENDENT_VALIDATION_INCOMPLETE`. It explicitly does not independently establish raw market-data provenance or exchange-wide calendar completeness.
+- Native TQBR daily-history OHLCV remains the model input. Raw fragments remain diagnostics only.
+
+### Latest development portfolio diagnostics
+
+These are development-only and not evidence of profitability:
+
+| Position cap | Return | Max drawdown | Closed trades | Profit factor | Slot utilization |
+|---:|---:|---:|---:|---:|---:|
+| 5 | -18.81% | -40.12% | 955 | 0.946 | 95.48% |
+| 7 | -12.19% | -34.86% | 1,277 | 0.964 | 94.04% |
+| 10 | -12.09% | -34.72% | 1,673 | 0.964 | 91.33% |
+
+A separate continuous-development replay (positions may cross fold boundaries) was also negative: cap 5 return -26.58%, DD -41.96%; cap 7 return -21.98%, DD -44.58%; cap 10 return -17.82%, DD -37.66%. Do not mix these two portfolio protocols.
+
+The experiment lab completed 132 development-only trials across three exit configurations. It is exploratory and does not modify the frozen cohort. No holdout tuning is allowed.
+
+### Immediate research priorities after this run
+
+1. **T unassigned candles:** inspect the 243 dates and raw ISS response metadata. Establish whether they represent missing TQBR history, ticker listing/trading transitions, or another data-source behavior. Preserve unassigned classification until supported by evidence.
+2. **Corporate-action-heavy mismatches:** inspect OHLCV field mismatch distributions and dates for PLZL, T, VTBR, GMKN, TRNFP. Distinguish price-scale differences from volume-only differences. Verify event effective dates, trading resumption dates, and vendor series basis from primary sources. No automatic adjustments.
+3. **Ordinary residual mismatches:** inspect examples for the other tickers; do not treat a low count as harmless without classification.
+4. Improve the independent validator only when a genuine diagnostic inconsistency is identified; do not weaken fail-closed criteria to make the workflow green.
+5. Continue prospective holdout collection without tuning. A single day is insufficient; the minimum sample remains 30 closed trades per hypothesis plus the frozen statistical controls.
+6. The hourly workflow run 44886365415 completed successfully in the same snapshot; this is scanner operation only, not a validation of the daily research results.
+
+### PR #106 handoff document publication
+
+PR #106 was merged after both mandatory tests passed on exact head SHA `4a13197a7377fe7dc48b0d6f424d80fa01bbddba`:
+- Research Agent Safety Tests: run `44887056352`, success.
+- Finam Executor Safety Tests: run `44887056184`, success.
+- Merge commit: `b89fb7a716cad268fc4c516cf9cbd4366efd641c`.
+
+The Research Agent Safety Tests workflow path filter now includes `docs/HANDOFF.md`, so future edits to this handoff file trigger the research safety tests. This change does not trigger or modify any production workflow.
