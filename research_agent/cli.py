@@ -8,6 +8,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .moex_iss import fetch_candles, fetch_history_records
+from .corporate_actions import apply_post_event_price_basis
 from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report, audit_tqbr_history
@@ -150,10 +151,6 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             )
             if not research_candles:
                 raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
-            development = [
-                candle for candle in research_candles
-                if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
-            ]
             try:
                 history_crosscheck = audit_tqbr_history(
                     raw_candles, reconciliation_history_records, fetch_from, effective_till
@@ -164,6 +161,32 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     "error": str(history_exc),
                     "exchange_calendar_verified": False,
                 }
+            # Corporate-action price bases are handled only for model input.
+            # Raw candles/history above remain untouched for independent audit.
+            research_candles, corporate_action_history_basis = apply_post_event_price_basis(
+                ticker, research_candles, minimum_development_bars=200
+            )
+            if not research_candles:
+                raise ValueError(
+                    f"{ticker}: no post-corporate-action TQBR candles remain"
+                )
+            development = [
+                candle for candle in research_candles
+                if candle.timestamp.date() < date.fromisoformat(HOLDOUT_START_DATE)
+            ]
+            if corporate_action_history_basis["status"] == "INSUFFICIENT_POST_ACTION_HISTORY":
+                results[ticker] = {
+                    "status": "INSUFFICIENT_POST_ACTION_HISTORY",
+                    "corporate_action_history_basis": corporate_action_history_basis,
+                    "research_input_bars": len(research_candles),
+                    "development_bars": len(development),
+                    "raw_session_candles": len(raw_candles),
+                    "raw_reconciliation_history_alias": legacy_alias,
+                    "raw_reconciliation_history_alias_error": legacy_history_errors.get(ticker),
+                    "session_date_mapping": session_date_mapping_diagnostics,
+                    "tqbr_history_crosscheck": history_crosscheck,
+                }
+                continue
             results[ticker] = {
                 "status": "ANALYZED",
                 "candles": len(research_candles),
@@ -186,6 +209,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "session_date_mapping": session_date_mapping_diagnostics,
                 "research_eligibility": research_eligibility,
                 "research_input_bars": len(research_candles),
+                "corporate_action_history_basis": corporate_action_history_basis,
                 "tqbr_history_crosscheck": history_crosscheck,
                 "development_period_end_exclusive": HOLDOUT_START_DATE,
                 "walk_forward": walk_forward_report(development),

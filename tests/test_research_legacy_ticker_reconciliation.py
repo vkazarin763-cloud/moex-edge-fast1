@@ -68,10 +68,17 @@ class LegacyTickerReconciliationTests(unittest.TestCase):
                 ("TCSG", "2023-11-19", "2024-11-27", "TQBR"),
             ],
         )
-        # The model input stays on the current ticker's official history only.
-        self.assertEqual(result["research_input_bars"], len(current_history))
-        self.assertEqual(result["first_timestamp"], "2024-11-28T00:00:00")
-        self.assertEqual(result["last_timestamp"], "2026-11-20T00:00:00")
+        # T's 2026 split means pre-event candles are excluded from model input.
+        # The remaining post-event development sample is too short for research.
+        self.assertEqual(result["status"], "INSUFFICIENT_POST_ACTION_HISTORY")
+        self.assertEqual(result["research_input_bars"], 3)
+        self.assertEqual(result["development_bars"], 2)
+        self.assertEqual(
+            result["corporate_action_history_basis"]["effective_date"], "2026-04-17"
+        )
+        self.assertEqual(
+            result["corporate_action_history_basis"]["pre_event_bars_excluded"], 1
+        )
 
         # The legacy ticker is used only to reconcile pre-rename raw candles.
         self.assertEqual(result["session_date_mapping"]["unassigned_raw_candles"], 0)

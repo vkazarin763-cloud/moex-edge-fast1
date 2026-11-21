@@ -441,6 +441,26 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(result, dict):
             errors.append(f"{ticker}: result must be an object")
             continue
+        if result.get("status") == "INSUFFICIENT_POST_ACTION_HISTORY":
+            basis = result.get("corporate_action_history_basis")
+            if not isinstance(basis, dict):
+                errors.append(f"{ticker}: post-action exclusion is missing corporate_action_history_basis metadata")
+            else:
+                if basis.get("ticker") != ticker:
+                    errors.append(f"{ticker}: corporate-action exclusion ticker metadata mismatch")
+                if basis.get("status") != "INSUFFICIENT_POST_ACTION_HISTORY":
+                    errors.append(f"{ticker}: corporate-action exclusion status metadata mismatch")
+                if basis.get("policy") != "EXCLUDE_PRE_EVENT_BARS_NO_BACK_ADJUSTMENT":
+                    errors.append(f"{ticker}: corporate-action exclusion policy is invalid")
+                if basis.get("price_adjustment_applied") is not False:
+                    errors.append(f"{ticker}: corporate-action exclusion must not claim adjusted prices")
+                for field in ("pre_event_bars_excluded", "post_event_bars", "post_event_development_bars", "minimum_development_bars"):
+                    value = basis.get(field)
+                    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                        errors.append(f"{ticker}: invalid corporate-action exclusion count {field}")
+                if isinstance(basis.get("post_event_development_bars"), int) and isinstance(basis.get("minimum_development_bars"), int) and basis["post_event_development_bars"] >= basis["minimum_development_bars"]:
+                    errors.append(f"{ticker}: post-action exclusion is inconsistent with its minimum history threshold")
+            continue
         if result.get("status") != "ANALYZED":
             warnings.append(f"{ticker}: not analyzed ({result.get('status', 'missing status')})")
             continue
