@@ -1,8 +1,9 @@
 """Independent structural audit of MOEX EDGE research reports.
 
 This validator checks holdout separation, walk-forward chronology, doubled-cost
-claims, experiment-lab completeness, and independently replayed execution parity.
-It does not certify profitability or independently regenerate entry signals.
+claims, experiment-lab completeness, independent signal/execution replay parity,
+and raw-to-history reconciliation metadata. It does not certify profitability
+or independently establish the provenance of MOEX source data.
 """
 from __future__ import annotations
 
@@ -262,6 +263,68 @@ def _audit_experiment_lab(
     return len(trials), completed
 
 
+def _audit_raw_session_provenance(
+    ticker: str, result: dict[str, Any], warnings: list[str], errors: list[str],
+) -> int:
+    """Check internal consistency of raw calendar-candle reconciliation metadata."""
+    audit = result.get("session_date_mapping")
+    if audit is None:
+        warnings.append(f"{ticker}: raw-to-TQBR session reconciliation evidence is missing")
+        return 0
+    if not isinstance(audit, dict):
+        errors.append(f"{ticker}: session_date_mapping must be an object")
+        return 0
+
+    count_fields = (
+        "positive_trade_history_dates",
+        "history_dates_with_raw_fragments",
+        "history_trade_dates_without_raw_fragments",
+        "trading_days_reconciled",
+        "trading_days_mismatched",
+        "unassigned_raw_candles",
+        "raw_candles",
+    )
+    counts = {}
+    for field in count_fields:
+        value = audit.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            errors.append(f"{ticker}: session_date_mapping {field} must be a non-negative integer")
+        else:
+            counts[field] = value
+
+    if len(counts) != len(count_fields):
+        return 0
+    expected_missing = counts["positive_trade_history_dates"] - counts["history_dates_with_raw_fragments"]
+    if expected_missing < 0 or counts["history_trade_dates_without_raw_fragments"] != expected_missing:
+        errors.append(f"{ticker}: raw/history date coverage counts are inconsistent")
+
+    ratio = audit.get("raw_history_date_coverage_ratio")
+    positive = counts["positive_trade_history_dates"]
+    if positive == 0:
+        if ratio is not None:
+            errors.append(f"{ticker}: raw/history coverage ratio must be null without positive history dates")
+    elif (not isinstance(ratio, (int, float)) or isinstance(ratio, bool)
+          or not math.isfinite(ratio) or not 0 <= ratio <= 1
+          or abs(ratio - counts["history_dates_with_raw_fragments"] / positive) > 1e-12):
+        errors.append(f"{ticker}: raw/history coverage ratio is inconsistent")
+
+    expected_status = (
+        "NO_POSITIVE_HISTORY_DATES" if positive == 0 else
+        "NO_RAW_CANDLES" if counts["raw_candles"] == 0 else
+        "COMPLETE_DATE_COVERAGE" if expected_missing == 0 else
+        "PARTIAL_DATE_COVERAGE"
+    )
+    if audit.get("raw_history_coverage_status") != expected_status:
+        errors.append(f"{ticker}: raw/history coverage status is inconsistent")
+    if counts["trading_days_mismatched"] or counts["unassigned_raw_candles"] or expected_missing:
+        warnings.append(
+            f"{ticker}: raw calendar candles do not fully reconcile to TQBR history "
+            f"(missing dates={max(expected_missing, 0)}, mismatched days={counts['trading_days_mismatched']}, "
+            f"unassigned candles={counts['unassigned_raw_candles']})"
+        )
+    return 1
+
+
 def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
     """Return an auditable PASS/FAIL/INCOMPLETE structural validation report."""
     errors: list[str] = []
@@ -335,6 +398,7 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         elif holdout_start and prospective.get("holdout_start") != holdout_start.isoformat():
             errors.append(f"{ticker}: prospective holdout cutoff mismatch")
         checked_cost_candidates += _audit_cost_claims(ticker, result, errors, warnings)
+        _audit_raw_session_provenance(ticker, result, warnings, errors)
 
     checked_lab_trials, completed_lab_trials = _audit_experiment_lab(
         report.get("experiment_lab"), results, holdout_start, errors, warnings
@@ -360,13 +424,19 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
             1 for trial in report.get("experiment_lab", {}).get("trials", [])
             if isinstance(trial, dict) and isinstance(trial.get("execution_replay_audit"), dict)
         ) if isinstance(report.get("experiment_lab"), dict) else 0,
+        "experiment_lab_signal_replays_checked": sum(
+            1 for trial in report.get("experiment_lab", {}).get("trials", [])
+            if isinstance(trial, dict) and isinstance(trial.get("signal_generation_audit"), dict)
+        ) if isinstance(report.get("experiment_lab"), dict) else 0,
         "errors": errors,
         "warnings": warnings,
         "scope": (
             "Independent structural audit of report chronology, cost-claim consistency, "
-            "experiment-lab metadata/completeness, and execution replay parity, and independent signal-formula replay parity. It does "
-            "not independently regenerate entry signals, verify raw market-data "
-            "provenance, establish statistical significance, prove profitability, "
+            "experiment-lab metadata/completeness, independent signal-formula and "
+            "execution replay parity, and internal consistency of raw-to-history "
+            "reconciliation metadata. It does not independently establish raw market-data "
+            "provenance, verify exchange-wide calendars, establish statistical significance, "
+            "prove profitability, "
             "or approve production use."
         ),
     }
