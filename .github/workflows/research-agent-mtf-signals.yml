@@ -3,7 +3,7 @@ name: MOEX EDGE MTF Signals (Read Only)
 on:
   workflow_run:
     workflows:
-      - "MOEX EDGE Multi-Timeframe Candles (Manual, Read Only)"
+      - "MOEX EDGE Multi-Timeframe Candles (Read Only)"
     types:
       - completed
   workflow_dispatch:
@@ -63,6 +63,43 @@ jobs:
             --candles mtf-data/moex_edge_multi_timeframe_candles.json \
             --validation mtf-data/moex_edge_multi_timeframe_validation.json \
             --output moex_edge_mtf_signals.json
+      - name: Publish concise signal summary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(Path("moex_edge_mtf_signals.json").read_text(encoding="utf-8"))
+          lines = [
+              "# MOEX EDGE D1/H1 signal scan",
+              "",
+              f"- As of (UTC): {report.get('as_of_utc')}",
+              f"- Universe: {report.get('universe_size')} symbols; "
+              f"{report.get('symbols_with_d1_h1_data')} with valid D1/H1 data",
+              f"- Signals: **{report.get('signals_count', 0)}**",
+              f"- Skipped symbols: {len(report.get('skipped_symbols', []))}",
+              "- Read-only output; no position sizing, capital allocation, or order placement.",
+              "- H1 alignment is informational and does not suppress D1 signals.",
+              "",
+              "| Symbol | Direction | Strategy | D1 close | H1 confirmation |",
+              "|---|---|---|---:|---|",
+          ]
+          signals = report.get("signals", [])
+          if signals:
+              for item in signals:
+                  close = item.get("d1_close")
+                  close_text = f"{float(close):.6g}" if close is not None else "—"
+                  lines.append(
+                      f"| {item.get('symbol')} | {item.get('direction')} | "
+                      f"{item.get('strategy')} | {close_text} | "
+                      f"{item.get('h1_confirmation')} |"
+                  )
+          else:
+              lines.append("| — | — | — | — | — |")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("\\n".join(lines) + "\\n")
+          PY
       - name: Upload signal report
         uses: actions/upload-artifact@v4
         with:
