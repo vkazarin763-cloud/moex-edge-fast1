@@ -31,6 +31,12 @@ class MTFScannerTests(unittest.TestCase):
         self.assertEqual(_sma200_direction_gate(bullish)["direction"], "LONG")
         self.assertEqual(_sma200_direction_gate(bearish)["direction"], "SHORT")
 
+    def test_sma200_gate_neutral_equality_blocks_both_directions(self):
+        flat = self._trend(200, 100, 0)
+        result = _sma200_direction_gate(flat)
+        self.assertEqual(result["status"], "NEUTRAL")
+        self.assertIsNone(result["direction"])
+
     def test_sma200_gate_fails_closed_without_200_bars(self):
         result = _sma200_direction_gate(self._trend(199, 100, 1))
         self.assertEqual(result["status"], "INSUFFICIENT_HISTORY")
