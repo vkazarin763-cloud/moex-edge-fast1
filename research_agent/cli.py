@@ -81,6 +81,10 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     legacy_reconciliation_history_by_ticker[ticker] = fetch_history_records(
                         "TCSG", fetch_from, legacy_till, board="TQBR"
                     )
+                except Exception as alias_exc:
+                    legacy_reconciliation_history_by_ticker[ticker] = []
+                    legacy_history_errors[ticker] = str(alias_exc)
+                try:
                     legacy_morning = fetch_history_records(
                         "TCSG", fetch_from, legacy_till, board="TQBR", trading_session=0
                     )
@@ -91,8 +95,6 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                         combine_morning_main_history_records(legacy_morning, legacy_main)
                     )
                 except Exception as alias_exc:
-                    legacy_reconciliation_history_by_ticker[ticker] = []
-                    legacy_history_errors[ticker] = str(alias_exc)
                     legacy_comparison_errors[ticker] = str(alias_exc)
 
     effective_till = latest_completed_session_date(
