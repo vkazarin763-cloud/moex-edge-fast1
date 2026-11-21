@@ -209,6 +209,13 @@ def scan_multi_timeframe_report(
     signals = []
     skipped = []
     registry_filtered = 0
+    registry_filtered_by_strategy = {strategy: 0 for strategy in STRATEGIES}
+    registry_filtered_by_direction = {direction: 0 for direction in ("LONG", "SHORT")}
+    registry_summary = (
+        strategy_registry.get("summary")
+        if isinstance(strategy_registry, dict) and isinstance(strategy_registry.get("summary"), dict)
+        else None
+    )
     for symbol in candles_report.get("universe", []):
         symbol_data = candles_report["results"].get(symbol, {})
         d1_item = symbol_data.get("D1", {})
@@ -246,6 +253,8 @@ def scan_multi_timeframe_report(
                 symbol, candidate["direction"], candidate["strategy"]
             ) not in allowed:
                 registry_filtered += 1
+                registry_filtered_by_strategy[candidate["strategy"]] += 1
+                registry_filtered_by_direction[candidate["direction"]] += 1
                 continue
             h1 = _h1_alignment(h1_rows, direction)
             if h1.get("status") != "INSUFFICIENT_HISTORY":
@@ -283,6 +292,9 @@ def scan_multi_timeframe_report(
         "signals": signals,
         "strategy_registry_version": registry_version,
         "registry_filtered_candidates": registry_filtered,
+        "registry_filtered_candidates_by_strategy": registry_filtered_by_strategy,
+        "registry_filtered_candidates_by_direction": registry_filtered_by_direction,
+        "strategy_registry_summary": registry_summary,
         "skipped_symbols": skipped,
         "strategy_cohort_version": STRATEGY_COHORT_VERSION,
         "strategies": list(STRATEGIES),
