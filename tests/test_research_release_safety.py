@@ -12,7 +12,7 @@ class ResearchWorkflowSafetyTests(unittest.TestCase):
         self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("python -m research_agent.cli", workflow)
         self.assertIn("push:", workflow)
-        self.assertIn('"research_agent/session_mapping.py"', workflow)
+        self.assertIn('"research_agent/**"', workflow)
         self.assertIn("schedule:", workflow)
         self.assertNotIn("FINAM_API_SECRET", workflow)
         self.assertNotIn("FINAM_ACCOUNT_ID", workflow)
