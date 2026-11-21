@@ -19,6 +19,17 @@ class SessionMappingError(ValueError):
     """Raised when history-backed session mapping is inconsistent."""
 
 
+# MOEX explicitly designated these 2026 weekday public holidays as additional
+# weekend sessions. Each session belongs to the next ordinary trading date.
+# Source: https://www.moex.com/n96571
+OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS = {
+    date(2026, 2, 23): date(2026, 2, 24),
+    date(2026, 5, 1): date(2026, 5, 4),
+    date(2026, 6, 12): date(2026, 6, 15),
+    date(2026, 11, 4): date(2026, 11, 5),
+}
+
+
 def _records_by_date(records: list[HistoryRecord]) -> dict[date, HistoryRecord]:
     result = {}
     for record in records:
@@ -183,6 +194,17 @@ def reconcile_session_candles(
                     "reason": "same-date TQBR history does not confirm positive trades",
                 })
                 continue
+        elif day in OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS:
+            target = OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS[day]
+            if target not in positive_dates:
+                unassigned.append({
+                    "calendar_date": day.isoformat(),
+                    "reason": (
+                        "official weekday additional session target is not a "
+                        "positive-trade TQBR date: " + target.isoformat()
+                    ),
+                })
+                continue
         elif day.weekday() >= 5 and day >= date(2025, 3, 1):
             target = next((
                 candidate for candidate in positive_dates
@@ -252,6 +274,16 @@ def reconcile_session_candles(
         for candle in fragments
         if candle.timestamp.weekday() >= 5
     )
+    weekday_additional_rows = [
+        item for item in rows
+        if item.timestamp.date() in OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS
+    ]
+    mapped_weekday_additional_candles = sum(
+        1
+        for fragments in grouped.values()
+        for candle in fragments
+        if candle.timestamp.date() in OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS
+    )
     positive_history_dates = set(positive_dates)
     raw_fragment_history_dates = set(grouped)
     history_dates_without_raw_fragments = sorted(
@@ -279,6 +311,10 @@ def reconcile_session_candles(
         "raw_weekend_candles": len(weekend_rows),
         "raw_weekend_candles_mapped": mapped_weekend_candles,
         "raw_weekend_candles_unmapped": len(weekend_rows) - mapped_weekend_candles,
+        "raw_weekday_additional_session_candles": len(weekday_additional_rows),
+        "raw_weekday_additional_session_candles_mapped": mapped_weekday_additional_candles,
+        "raw_weekday_additional_session_candles_unmapped": len(weekday_additional_rows) - mapped_weekday_additional_candles,
+        "weekday_additional_session_calendar_source": "https://www.moex.com/n96571",
         "positive_trade_history_dates": len(positive_history_dates),
         "history_dates_with_raw_fragments": len(positive_history_dates & raw_fragment_history_dates),
         "history_trade_dates_without_raw_fragments": len(history_dates_without_raw_fragments),
@@ -294,9 +330,11 @@ def reconcile_session_candles(
         "complete": reconciliation_complete,
         "mapping_rule": (
             "Same-date positive TQBR history keeps a calendar candle on that date. "
-            "From the official 2025-03-01 weekend-session launch onward, a weekend "
-            "candle without a same-date history row maps to the next positive-trade "
-            "TQBR date within seven calendar days. Pre-launch weekend dates require "
+            "Official weekday additional sessions published by MOEX for 2026 map "
+            "to their explicitly designated next ordinary trading date. From the "
+            "official 2025-03-01 weekend-session launch onward, a weekend candle "
+            "without a same-date history row maps to the next positive-trade TQBR "
+            "date within seven calendar days. Pre-launch weekend dates require "
             "same-date history confirmation. Fragments are aggregated and checked "
             "against the full trading-day history OHLCV."
         ),
