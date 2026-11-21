@@ -172,7 +172,6 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                     "development_bars": len(development),
                     "raw_session_candles": len(raw_candles),
                     "session_date_mapping": session_date_mapping_diagnostics,
-                    "tqbr_history_crosscheck": history_crosscheck if "history_crosscheck" in locals() else None,
                 }
                 continue
             try:
