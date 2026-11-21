@@ -131,6 +131,9 @@ def run_experiment_lab(
         "holdout_policy": "All bars on/after holdout_start are excluded before any test.",
         "hypothesis_family": "fixed-entry-formulas x exit-policy-variants",
         "hypothesis_ids": ids,
+        "hypothesis_configs": {
+            item.hypothesis_id: asdict(item.config) for item in hypotheses
+        },
         "hypothesis_count": len(hypotheses),
         "entry_strategy_ids": [
             "Donchian20", "EMA20x50", "RSI14Trend50",

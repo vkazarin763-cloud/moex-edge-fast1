@@ -20,6 +20,12 @@ def _report():
             "generated_scope": "development_history_only",
             "holdout_start": "2026-11-20",
             "hypothesis_ids": ["exit-a"],
+            "hypothesis_configs": {
+                "exit-a": {
+                    "fee_per_side": 0.001, "slippage_per_side": 0.0005,
+                    "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+                }
+            },
             "hypothesis_count": 1,
             "entry_strategy_ids": [
                 "Donchian20", "EMA20x50", "RSI14Trend50",
@@ -38,7 +44,10 @@ def _report():
                 "development_bars": 10,
                 "excluded_holdout_bars": 0,
                 "development_data_sha256": "a" * 64,
-                "execution_config": {"fee_per_side": 0.001, "slippage_per_side": 0.0005},
+                "execution_config": {
+                    "fee_per_side": 0.001, "slippage_per_side": 0.0005,
+                    "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+                },
                 "status": "INSUFFICIENT_OR_INVALID_DEVELOPMENT_DATA",
                 "reason": "not enough trades",
             }],
@@ -70,6 +79,20 @@ class ExperimentLabIndependentAuditTests(unittest.TestCase):
         self.assertEqual(research_exit_code(
             {"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}}, 44
         ), 0)
+
+    def test_trial_execution_config_must_match_registered_hypothesis(self):
+        report = _report()
+        report["experiment_lab"]["trials"][0]["execution_config"]["stop_pct"] = 0.01
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("differs from registered hypothesis config" in error for error in result["errors"]))
+
+    def test_non_finite_hypothesis_cost_is_rejected(self):
+        report = _report()
+        report["experiment_lab"]["hypothesis_configs"]["exit-a"]["fee_per_side"] = float("nan")
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("invalid fee_per_side" in error for error in result["errors"]))
 
     def test_missing_ticker_hypothesis_combination_is_rejected(self):
         report = _report()

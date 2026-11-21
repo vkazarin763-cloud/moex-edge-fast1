@@ -7,6 +7,7 @@ claims. It does not rerun the simulator or certify profitability.
 from __future__ import annotations
 
 from datetime import date
+import math
 from typing import Any
 
 
@@ -106,6 +107,32 @@ def _audit_experiment_lab(
         ids = []
     if len(set(ids)) != len(ids):
         errors.append("experiment_lab hypothesis_ids must be unique")
+    hypothesis_configs = lab.get("hypothesis_configs")
+    if not isinstance(hypothesis_configs, dict) or set(hypothesis_configs) != set(ids):
+        errors.append("experiment_lab hypothesis_configs must exactly cover hypothesis_ids")
+        hypothesis_configs = {}
+    for hypothesis_id, cfg in hypothesis_configs.items():
+        if not isinstance(cfg, dict):
+            errors.append(f"experiment_lab hypothesis {hypothesis_id} config must be an object")
+            continue
+        if set(cfg) != {"fee_per_side", "slippage_per_side", "stop_pct", "target_pct", "max_bars"}:
+            errors.append(f"experiment_lab hypothesis {hypothesis_id} config has unexpected or missing fields")
+        for key in ("fee_per_side", "slippage_per_side"):
+            value = cfg.get(key)
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or not 0 <= value < 1:
+                errors.append(f"experiment_lab hypothesis {hypothesis_id} has invalid {key}")
+        for key in ("stop_pct", "target_pct"):
+            value = cfg.get(key)
+            if value is not None and (
+                not isinstance(value, (int, float)) or isinstance(value, bool)
+                or not math.isfinite(value) or not 0 < value < 1
+            ):
+                errors.append(f"experiment_lab hypothesis {hypothesis_id} has invalid {key}")
+        max_bars = cfg.get("max_bars")
+        if max_bars is not None and (
+            not isinstance(max_bars, int) or isinstance(max_bars, bool) or max_bars < 1
+        ):
+            errors.append(f"experiment_lab hypothesis {hypothesis_id} has invalid max_bars")
     hypothesis_count = lab.get("hypothesis_count")
     if hypothesis_count != len(ids):
         errors.append("experiment_lab hypothesis_count does not match hypothesis_ids")
@@ -179,10 +206,9 @@ def _audit_experiment_lab(
         if not isinstance(config, dict):
             errors.append(f"experiment_lab trial {index} is missing execution_config")
         else:
-            for key in ("fee_per_side", "slippage_per_side"):
-                value = config.get(key)
-                if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
-                    errors.append(f"experiment_lab trial {index} has invalid {key}")
+            expected_config = hypothesis_configs.get(hypothesis_id)
+            if expected_config is not None and config != expected_config:
+                errors.append(f"experiment_lab trial {index} execution_config differs from registered hypothesis config")
         trial_status = trial.get("status")
         if trial_status == "EXPERIMENTAL_SCREEN_COMPLETE":
             completed += 1
