@@ -25,7 +25,7 @@ jobs:
   scan:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,23 +57,39 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ steps.source.outputs.run_id }}
-      - name: Resolve latest successful research registry run
+      - name: Wait for the current research run and resolve its registry
         id: research
         uses: actions/github-script@v7
+        timeout-minutes: 45
         with:
           script: |
-            const runs = await github.rest.actions.listWorkflowRuns({
+            const listed = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: "research-agent-run.yml",
-              status: "success",
               per_page: 1
             });
-            if (!runs.data.workflow_runs.length) {
-              core.setFailed("No successful research run is available; refusing to scan without a strategy registry.");
+            if (!listed.data.workflow_runs.length) {
+              core.setFailed("No research run exists; refusing to scan without a strategy registry.");
               return;
             }
-            core.setOutput("run_id", String(runs.data.workflow_runs[0].id));
+            const runId = listed.data.workflow_runs[0].id;
+            const deadline = Date.now() + 40 * 60 * 1000;
+            let run = listed.data.workflow_runs[0];
+            while (run.status !== "completed" && Date.now() < deadline) {
+              await new Promise(resolve => setTimeout(resolve, 15000));
+              const response = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: runId
+              });
+              run = response.data;
+            }
+            if (run.status !== "completed" || run.conclusion !== "success") {
+              core.setFailed("Latest research run did not complete successfully; refusing to use an older registry.");
+              return;
+            }
+            core.setOutput("run_id", String(runId));
       - name: Download research report and strategy registry
         uses: actions/download-artifact@v4
         with:
