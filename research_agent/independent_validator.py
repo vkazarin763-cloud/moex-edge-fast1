@@ -283,6 +283,9 @@ def _audit_raw_session_provenance(
         "trading_days_mismatched",
         "unassigned_raw_candles",
         "raw_candles",
+        "raw_weekend_candles",
+        "raw_weekend_candles_mapped",
+        "raw_weekend_candles_unmapped",
     )
     counts = {}
     for field in count_fields:
@@ -294,6 +297,11 @@ def _audit_raw_session_provenance(
 
     if len(counts) != len(count_fields):
         return 0
+    if counts["raw_weekend_candles_mapped"] + counts["raw_weekend_candles_unmapped"] != counts["raw_weekend_candles"]:
+        errors.append(f"{ticker}: mapped and unmapped weekend candle counts do not sum to raw weekend candle count")
+    if counts["raw_weekend_candles"] > counts["raw_candles"]:
+        errors.append(f"{ticker}: raw weekend candle count exceeds total raw candles")
+
     expected_missing = counts["positive_trade_history_dates"] - counts["history_dates_with_raw_fragments"]
     if expected_missing < 0 or counts["history_trade_dates_without_raw_fragments"] != expected_missing:
         errors.append(f"{ticker}: raw/history date coverage counts are inconsistent")
