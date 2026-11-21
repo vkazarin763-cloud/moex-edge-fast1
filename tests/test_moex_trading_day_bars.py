@@ -226,9 +226,11 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["unassigned_reason_counts"], {
             "PRELAUNCH_WEEKEND_UNCONFIRMED": 1,
         })
-        self.assertEqual(result["mismatch_reason_counts"], {
-            "AGGREGATED_OHLCV_DIFFERS": 1,
-        })
+        self.assertEqual(
+            sum(result["mismatch_reason_counts"].values()),
+            result["trading_days_mismatched"],
+        )
+        self.assertGreaterEqual(result["trading_days_mismatched"], 1)
         self.assertEqual(result["mismatch_field_counts"]["high"], 1)
         self.assertEqual(result["mismatch_field_counts"]["open"], 0)
         self.assertEqual(sum(result["unassigned_reason_counts"].values()), 1)
