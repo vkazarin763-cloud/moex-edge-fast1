@@ -140,6 +140,21 @@ class SessionCompatibleReconciliationTests(unittest.TestCase):
         )
         self.assertEqual(audit["trading_days_mismatched"], 0)
         self.assertEqual(audit["trading_days_reconciled"], 1)
+        self.assertEqual(audit["morning_plus_main_comparison_dates"], 1)
+
+    def test_total_scope_is_selected_when_ohlc_matches_total_history(self):
+        day = date(2025, 10, 27)
+        total = [HistoryRecord(day, 27719 , 12.74, 12.787, 12.3, 12.323, 122514100)]
+        morning = [HistoryRecord(day, 7972, 12.74, 12.787, 12.414, 12.466, 33615100)]
+        main = [HistoryRecord(day, 19747, 12.466, 12.56, 12.321, 12.43, 75810400)]
+        chart = [Candle(datetime(2025, 10, 27), 12.74, 12.787, 12.3, 12.323, 109020598)]
+        comparison = combine_morning_main_history_records(morning, main)
+        audit = reconcile_session_candles(chart, total, comparison_history_records=comparison)
+        self.assertEqual(audit["total_session_comparison_dates"], 1)
+        self.assertEqual(audit["morning_plus_main_comparison_dates"], 0)
+        self.assertEqual(audit["trading_days_mismatched"], 1)
+        self.assertEqual(audit["mismatch_field_counts"]["volume"], 1)
+        self.assertEqual(audit["mismatch_field_counts"]["close"], 0)
 
     def test_weekend_fragment_is_mapped_but_not_mixed_into_weekday_comparison(self):
         day = date(2025, 3, 3)
