@@ -185,16 +185,7 @@ def reconcile_session_candles(
     for candle in rows:
         day = candle.timestamp.date()
         same_date = by_date.get(day)
-        if same_date is not None:
-            if same_date.num_trades is not None and same_date.num_trades > 0:
-                target = day
-            else:
-                unassigned.append({
-                    "calendar_date": day.isoformat(),
-                    "reason": "same-date TQBR history does not confirm positive trades",
-                })
-                continue
-        elif day in OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS:
+        if day in OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS:
             target = OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS[day]
             if target not in positive_dates:
                 unassigned.append({
@@ -203,6 +194,15 @@ def reconcile_session_candles(
                         "official weekday additional session target is not a "
                         "positive-trade TQBR date: " + target.isoformat()
                     ),
+                })
+                continue
+        elif same_date is not None:
+            if same_date.num_trades is not None and same_date.num_trades > 0:
+                target = day
+            else:
+                unassigned.append({
+                    "calendar_date": day.isoformat(),
+                    "reason": "same-date TQBR history does not confirm positive trades",
                 })
                 continue
         elif day.weekday() >= 5 and day >= date(2025, 3, 1):
