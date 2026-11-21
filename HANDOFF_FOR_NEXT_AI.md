@@ -364,3 +364,14 @@ This section is the current project state and supersedes older dated status note
 - However, `.github/workflows/finam-one-shot-test.yml` allows live mode if manually dispatched with `confirm_live=true`; `.github/workflows/finam-direct-t-sltp-test.yml` allows one live T order only if both `confirm_live=true` and confirmation string `BUY_T_ONCE` are supplied.
 - Do not dispatch either manual live-capable workflow as part of research. Do not change repository variables/secrets without explicit user instruction. Before any separate live operation, owner must review Actions Variables and ensure intended mode.
 - This is a time-stamped observation; configuration may change. Re-check current state before any executor-related action.
+
+
+## 2026-11-21 — First real D1/H1 scanner execution
+- Scanner workflow run: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44864842750 (success).
+- Source candle run: 44861047844; source artifact 14690518588. Signal artifact 14690469654, name `moex-edge-mtf-signals-44861047844`, SHA-256 `88a622b1cec8968fb6f17f238f566eace56e053ce1360fa6e72a074885be7414`.
+- Downloaded and inspected both source and signal ZIPs locally. Source report and validator have identical snapshot `2026-11-21T03:25:33.304483+00:00`; validator PASS / 0 issues; D1 and H1 each status OK for 44/44.
+- Signal output: 40 signals across 27 symbols; 40 SHORT, 0 LONG; strategy counts Donchian20 22, Keltner20x2ATR 7, MACD12x26 6, EMA20x50 3, RSI14Trend50 2. All 40 H1 states CONFIRMED; no skipped symbols; no cross-strategy directional conflicts. All signals use D1 date 2026-11-20, D1 bar end 21:00 UTC; selected H1 bar end 21:00 UTC and age 0 minutes at D1 close.
+- Symbols with signals: ALRS, BSPB, CHMF, ENPG, FLOT, GMKN, HEAD, LKOH, MAGN, MDMG, MTSS, NLMK, NVTK, PHOR, PLZL, RAGR, ROSN, RTKM, RUAL, SBER, SBERP, SNGS, TATN, TATNP, TRNFP, VTBR, YDEX.
+- PR #77 merged after both exact-head CI checks passed (Research Agent Safety Tests run 44864714093; Finam Executor Safety Tests run 44864714090); merge commit `27753b29e42b2c431834dfbb4946e1cf14e35bb9`.
+- Interpretation: this is a single latest-bar scan snapshot, not a backtest, profitability assessment, or trade instruction. The H1 rule is an informational alignment overlay; it is not an independently validated filter. Do not infer future performance from all 40 confirmations. Do not tune on the prospective holdout.
+- Next: inspect scanner parity against frozen strategy definitions, add explicit output parameters and stronger regression tests if discrepancies are found; then keep collecting prospective snapshots without retuning. No production, execution, account or order endpoints touched.
