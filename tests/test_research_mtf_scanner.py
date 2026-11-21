@@ -106,6 +106,7 @@ class MTFScannerTests(unittest.TestCase):
         registry = {
             "registry_version": "test-v1",
             "generated_at_utc": snapshot,
+            "source_report_date_till": "2026-03-01",
             "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
             "holdout_used_for_selection": False,
             "scanner_contract": {
@@ -118,6 +119,12 @@ class MTFScannerTests(unittest.TestCase):
         self.assertEqual(gated["signals_count"], 0)
         self.assertGreater(gated["registry_filtered_candidates"], 0)
         self.assertEqual(gated["strategy_registry_version"], "test-v1")
+        future_registry = {**registry, "source_report_date_till": "2026-03-03"}
+        with self.assertRaisesRegex(ValueError, "newer than the candle snapshot"):
+            scan_multi_timeframe_report(candles_report, validation, future_registry)
+        stale_registry = {**registry, "source_report_date_till": "2026-02-01"}
+        with self.assertRaisesRegex(ValueError, "older than 14 days"):
+            scan_multi_timeframe_report(candles_report, validation, stale_registry)
         self.assertIn("parameters", result["signals"][0])
         self.assertGreater(
             result["signals"][0]["parameters"]["close"],
