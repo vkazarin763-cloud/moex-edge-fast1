@@ -359,6 +359,7 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
     checked_cost_candidates = 0
     checked_lab_trials = 0
     completed_lab_trials = 0
+    checked_raw_provenance = 0
     analyzed = 0
     for ticker, result in results.items():
         if not isinstance(result, dict):
@@ -398,14 +399,14 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         elif holdout_start and prospective.get("holdout_start") != holdout_start.isoformat():
             errors.append(f"{ticker}: prospective holdout cutoff mismatch")
         checked_cost_candidates += _audit_cost_claims(ticker, result, errors, warnings)
-        _audit_raw_session_provenance(ticker, result, warnings, errors)
+        checked_raw_provenance += _audit_raw_session_provenance(ticker, result, warnings, errors)
 
     checked_lab_trials, completed_lab_trials = _audit_experiment_lab(
         report.get("experiment_lab"), results, holdout_start, errors, warnings
     )
     if analyzed == 0:
         warnings.append("no ticker has a completed research analysis")
-    checks = checked_folds + checked_cost_candidates + analyzed + checked_lab_trials
+    checks = checked_folds + checked_cost_candidates + analyzed + checked_lab_trials + checked_raw_provenance
     if errors:
         status = "INDEPENDENT_VALIDATION_FAIL"
     elif analyzed == 0 or warnings:
@@ -418,6 +419,7 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         "tickers_analyzed": analyzed,
         "walk_forward_folds_checked": checked_folds,
         "cost_candidates_checked": checked_cost_candidates,
+        "raw_session_provenance_checks": checked_raw_provenance,
         "experiment_lab_trials_checked": checked_lab_trials,
         "experiment_lab_trials_completed": completed_lab_trials,
         "experiment_lab_replays_checked": sum(
