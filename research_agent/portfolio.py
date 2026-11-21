@@ -19,6 +19,41 @@ class PortfolioTrade:
     trade: Trade
 
 
+def _empty_attribution() -> dict:
+    return {
+        "accepted_trades": 0,
+        "closed_trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "net_returns": [],
+        "realized_pnl_normalized": 0.0,
+        "gross_profit_normalized": 0.0,
+        "gross_loss_normalized": 0.0,
+    }
+
+
+def _finalize_attribution(groups: dict[str, dict]) -> dict:
+    result = {}
+    for name, values in sorted(groups.items()):
+        returns = values["net_returns"]
+        gross_profit = values["gross_profit_normalized"]
+        gross_loss = values["gross_loss_normalized"]
+        result[name] = {
+            "accepted_trades": values["accepted_trades"],
+            "closed_trades": values["closed_trades"],
+            "wins": values["wins"],
+            "losses": values["losses"],
+            "win_rate": values["wins"] / len(returns) if returns else None,
+            "average_trade_net_return": sum(returns) / len(returns) if returns else None,
+            "realized_pnl_normalized": values["realized_pnl_normalized"],
+            "gross_profit_normalized": gross_profit,
+            "gross_loss_normalized": gross_loss,
+            "profit_factor": gross_profit / gross_loss if gross_loss else None,
+            "profit_factor_infinite": bool(gross_profit) and not gross_loss,
+        }
+    return result
+
+
 def simulate_portfolio(
     candidates: Iterable[PortfolioTrade],
     max_positions: int = 10,
@@ -78,6 +113,39 @@ def simulate_portfolio(
     previous_time = events[0][0] if events else None
     realized_returns: list[float] = []
     completed_pnl: list[float] = []
+    direction_attribution: dict[str, dict] = {}
+    strategy_direction_attribution: dict[str, dict[str, dict]] = {}
+
+    def attribution_group(groups: dict[str, dict], key: str) -> dict:
+        return groups.setdefault(key, _empty_attribution())
+
+    def record_accepted(candidate: PortfolioTrade) -> None:
+        direction = "LONG" if candidate.trade.direction > 0 else "SHORT"
+        attribution_group(direction_attribution, direction)["accepted_trades"] += 1
+        strategy_groups = strategy_direction_attribution.setdefault(
+            candidate.trade.strategy, {}
+        )
+        attribution_group(strategy_groups, direction)["accepted_trades"] += 1
+
+    def record_closed(candidate: PortfolioTrade, pnl: float) -> None:
+        direction = "LONG" if candidate.trade.direction > 0 else "SHORT"
+        for group in (
+            attribution_group(direction_attribution, direction),
+            attribution_group(
+                strategy_direction_attribution.setdefault(candidate.trade.strategy, {}),
+                direction,
+            ),
+        ):
+            trade_return = candidate.trade.net_return
+            group["closed_trades"] += 1
+            group["wins"] += int(trade_return > 0)
+            group["losses"] += int(trade_return < 0)
+            group["net_returns"].append(trade_return)
+            group["realized_pnl_normalized"] += pnl
+            if pnl > 0:
+                group["gross_profit_normalized"] += pnl
+            elif pnl < 0:
+                group["gross_loss_normalized"] += abs(pnl)
 
     for timestamp, _, ticker, strategy, sequence, kind, candidate in events:
         if previous_time is not None:
@@ -100,6 +168,7 @@ def simulate_portfolio(
             cash += position["notional"] + pnl
             realized_returns.append(trade_return)
             completed_pnl.append(pnl)
+            record_closed(candidate, pnl)
             equity = cash + sum(p["notional"] for p in active_by_sequence.values())
             equity_peak = max(equity_peak, equity)
             drawdown = equity / equity_peak - 1.0 if equity_peak else 0.0
@@ -129,6 +198,7 @@ def simulate_portfolio(
         active_by_ticker[ticker] = position
         active_by_sequence[sequence] = position
         accepted += 1
+        record_accepted(candidate)
         max_concurrent = max(max_concurrent, len(active_by_sequence))
 
     final_equity = cash + sum(p["notional"] for p in active_by_sequence.values())
@@ -161,6 +231,14 @@ def simulate_portfolio(
         ),
         "profit_factor": gross_profit / gross_loss if gross_loss else None,
         "profit_factor_infinite": bool(gross_profit) and not gross_loss,
+        "accepted_trade_attribution": {
+            "method": "realized P&L attribution from trades accepted by this same shared-cap simulation",
+            "by_direction": _finalize_attribution(direction_attribution),
+            "by_strategy_direction": {
+                strategy: _finalize_attribution(groups)
+                for strategy, groups in sorted(strategy_direction_attribution.items())
+            },
+        },
         "equity_curve": equity_curve,
         "limitations": [
             "normalized equity, not a RUB account forecast",

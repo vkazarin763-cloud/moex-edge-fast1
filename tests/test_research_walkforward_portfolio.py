@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from research_agent.core import BacktestConfig, Candle, Signal, Trade
-from research_agent.portfolio import walk_forward_portfolio_report
+from research_agent.portfolio import PortfolioTrade, simulate_portfolio, walk_forward_portfolio_report
 
 
 def daily_candles(count, start=None):
@@ -114,6 +114,80 @@ class WalkForwardPortfolioTests(unittest.TestCase):
             "Donchian20", "EMA20x50", "RSI14Trend50",
             "MACD12x26", "Keltner20x2ATR",
         })
+
+    def test_direction_attribution_uses_the_same_shared_position_cap(self):
+        entry = datetime(2026, 1, 1)
+        exit_time = entry + timedelta(days=1)
+        long_trade = Trade(
+            strategy="Donchian20", direction=1,
+            signal_time=entry - timedelta(days=1),
+            entry_time=entry, exit_time=exit_time,
+            entry_price=100.0, exit_price=110.0,
+            net_return=0.10, status="CLOSED", exit_reason="TEST",
+        )
+        short_trade = Trade(
+            strategy="EMA20x50", direction=-1,
+            signal_time=entry - timedelta(days=1),
+            entry_time=entry, exit_time=exit_time,
+            entry_price=100.0, exit_price=105.0,
+            net_return=-0.05, status="CLOSED", exit_reason="TEST",
+        )
+
+        result = simulate_portfolio(
+            [
+                PortfolioTrade("AAA", long_trade),
+                PortfolioTrade("BBB", short_trade),
+            ],
+            max_positions=2,
+        )
+
+        attribution = result["accepted_trade_attribution"]
+        self.assertEqual(result["closed_trades_accepted"], 2)
+        self.assertAlmostEqual(result["total_return"], 0.025)
+        self.assertEqual(attribution["by_direction"]["LONG"]["accepted_trades"], 1)
+        self.assertEqual(attribution["by_direction"]["SHORT"]["accepted_trades"], 1)
+        self.assertAlmostEqual(
+            attribution["by_direction"]["LONG"]["realized_pnl_normalized"], 0.05
+        )
+        self.assertAlmostEqual(
+            attribution["by_direction"]["SHORT"]["realized_pnl_normalized"], -0.025
+        )
+        self.assertAlmostEqual(
+            sum(
+                row["realized_pnl_normalized"]
+                for row in attribution["by_direction"].values()
+            ),
+            result["total_return"],
+        )
+        self.assertEqual(
+            attribution["by_strategy_direction"]["Donchian20"]["LONG"]["closed_trades"],
+            1,
+        )
+        self.assertEqual(
+            attribution["by_strategy_direction"]["EMA20x50"]["SHORT"]["closed_trades"],
+            1,
+        )
+
+    def test_direction_attribution_respects_shared_cap_rejections(self):
+        entry = datetime(2026, 1, 1)
+        exit_time = entry + timedelta(days=1)
+        candidates = []
+        for ticker, direction in (("AAA", 1), ("BBB", -1)):
+            trade = Trade(
+                strategy="Donchian20", direction=direction,
+                signal_time=entry - timedelta(days=1),
+                entry_time=entry, exit_time=exit_time,
+                entry_price=100.0, exit_price=105.0,
+                net_return=0.05, status="CLOSED", exit_reason="TEST",
+            )
+            candidates.append(PortfolioTrade(ticker, trade))
+
+        result = simulate_portfolio(candidates, max_positions=1)
+        attribution = result["accepted_trade_attribution"]["by_direction"]
+        self.assertEqual(result["closed_trades_accepted"], 1)
+        self.assertEqual(result["skipped_position_limit"], 1)
+        self.assertEqual(attribution["LONG"]["accepted_trades"], 1)
+        self.assertNotIn("SHORT", attribution)
 
     def test_ticker_without_required_pre_fold_history_is_skipped(self):
         long_history = daily_candles(61)
