@@ -227,6 +227,20 @@ def _audit_experiment_lab(
                     errors.append(f"experiment_lab trial {index} has invalid primary replay trade count")
                 if not isinstance(reference_count, int) or isinstance(reference_count, bool) or reference_count != main_count:
                     errors.append(f"experiment_lab trial {index} primary/reference replay trade counts differ")
+            signal_audit = trial.get("signal_generation_audit")
+            if not isinstance(signal_audit, dict):
+                errors.append(f"experiment_lab trial {index} lacks independent signal generation audit")
+            else:
+                if signal_audit.get("status") != "REFERENCE_SIGNAL_MATCH":
+                    errors.append(f"experiment_lab trial {index} independent signal generation replay did not match")
+                if signal_audit.get("mismatch_count") != 0:
+                    errors.append(f"experiment_lab trial {index} signal generation mismatch_count must be zero")
+                primary_count = signal_audit.get("primary_signal_count")
+                reference_signal_count = signal_audit.get("reference_signal_count")
+                if (not isinstance(primary_count, int) or isinstance(primary_count, bool) or primary_count < 0
+                        or not isinstance(reference_signal_count, int) or isinstance(reference_signal_count, bool)
+                        or reference_signal_count != primary_count):
+                    errors.append(f"experiment_lab trial {index} primary/reference signal counts differ")
         elif trial_status != "INSUFFICIENT_OR_INVALID_DEVELOPMENT_DATA":
             errors.append(f"experiment_lab trial {index} has unknown status")
 
@@ -350,7 +364,7 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         "warnings": warnings,
         "scope": (
             "Independent structural audit of report chronology, cost-claim consistency, "
-            "experiment-lab metadata/completeness, and execution replay parity. It does "
+            "experiment-lab metadata/completeness, and execution replay parity, and independent signal-formula replay parity. It does "
             "not independently regenerate entry signals, verify raw market-data "
             "provenance, establish statistical significance, prove profitability, "
             "or approve production use."
