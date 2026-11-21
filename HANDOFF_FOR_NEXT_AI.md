@@ -338,13 +338,20 @@ This section is the current project state and supersedes older dated status note
 
 
 ## 2026-11-21 — D1/H1 read-only scanner prototype (PR #74)
-- PR: https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/74
+- Merged PR #74: https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/74
+- Merge commit: `d004f0fd7600749dd7613bd549f7d62b97aadb58` (current main at this update).
 - Branch: `feature/mtf-signal-scanner-20261121-v2`; module `research_agent/mtf_scanner.py`, tests `tests/test_research_mtf_scanner.py`.
 - D1 evaluates only the latest fully closed native TQBR D1 bar using the five frozen formulas: Donchian20, EMA20x50, RSI14Trend50, MACD12x26, Keltner20x2ATR. Parameters are unchanged.
 - H1 confirmation is informational only: LONG = H1 EMA20>EMA50 and close>EMA20; SHORT = H1 EMA20<EMA50 and close<EMA20. It does not filter, rank, or select strategies.
 - H1 bars are bounded by both as_of and the D1 signal bar end; latest H1 timestamp, end, and age at D1 close are reported. Cross-strategy direction conflicts are surfaced, not silently resolved.
 - Requires validator PASS with zero issues and matching collector/validator snapshot times. No network calls, account access, order endpoints, or execution imports.
 - Workflow `.github/workflows/research-agent-mtf-signals.yml` can be manually dispatched with source run ID, or automatically follows a successful future MTF candle collection. For the existing artifact, after PR #74 merges, manually dispatch it with source_run_id `44861047844`; GitHub MCP cannot dispatch workflows.
-- Initial scanner tests passed on an earlier head. The final branch includes an explicit H1-after-D1-close no-lookahead test; verify both CI checks on the exact PR #74 head before merge.
-- This is a scanner prototype, not an approved strategy-performance cohort. H1 overlay remains informational; do not claim profitability. Actual signal output has not yet been generated from the artifact.
+- Both required CI checks passed on exact final head `b7251aaf513e3ac0c3a5528b6b44e97250969867`: Research Agent Safety Tests and Finam Executor Safety Tests. The explicit H1-after-D1-close no-lookahead test passed.
+- Scanner is merged but is still a read-only prototype, not an approved strategy-performance cohort. H1 overlay remains informational; do not claim profitability. Actual signal output has not yet been generated from the artifact.
 - Since the MTF overlay was specified after the holdout start (2026-11-20), do not retroactively use post-2026-11-20 observations to tune it. Prospective monitoring starts only after the scanner rules are frozen and merged.
+
+
+## 2026-11-21 — scanner merged
+- PR #74 merged as `d004f0fd7600749dd7613bd549f7d62b97aadb58`. Both required CI checks passed on exact PR head `b7251aaf513e3ac0c3a5528b6b44e97250969867`: Research Agent Safety Tests and Finam Executor Safety Tests.
+- MTF scanner workflow is now on main. To process existing validated artifact, manually run Actions workflow `MOEX EDGE MTF Signals (Read Only)` with source_run_id `44861047844`. Future successful MTF collector runs will trigger scanner automatically.
+- GitHub MCP cannot dispatch workflow_dispatch. Do not claim any actual signal output until the workflow has completed and its signal artifact has been inspected.
