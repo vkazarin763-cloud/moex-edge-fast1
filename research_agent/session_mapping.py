@@ -156,13 +156,66 @@ def build_trading_day_candles(
     }
 
 
+def combine_morning_main_history_records(
+    morning_records: list[HistoryRecord],
+    main_records: list[HistoryRecord],
+) -> list[HistoryRecord]:
+    """Combine morning and main-session history into the daily chart candle basis.
+
+    MOEX interval=24 chart candles cover morning plus main sessions; evening
+    trading is excluded. The total-session history row (tradingsession=3)
+    includes evening trading and therefore is not a like-for-like comparator.
+    """
+    morning_by_date = _records_by_date(morning_records)
+    main_by_date = _records_by_date(main_records)
+    combined = []
+    for trade_date in sorted(set(morning_by_date) | set(main_by_date)):
+        morning = morning_by_date.get(trade_date)
+        main = main_by_date.get(trade_date)
+        rows = [row for row in (morning, main) if row is not None]
+        trade_counts = [row.num_trades for row in rows if row.num_trades is not None]
+        prices_open = [
+            row.open for row in (morning, main)
+            if row is not None and row.open is not None
+        ]
+        highs = [
+            row.high for row in rows if row.high is not None
+        ]
+        lows = [
+            row.low for row in rows if row.low is not None
+        ]
+        volumes = [
+            row.volume for row in rows if row.volume is not None
+        ]
+        # Session order is chronological: morning open, then main close.
+        open_price = (
+            morning.open if morning is not None and morning.open is not None
+            else main.open if main is not None else None
+        )
+        close_price = (
+            main.close if main is not None and main.close is not None
+            else morning.close if morning is not None else None
+        )
+        combined.append(HistoryRecord(
+            trade_date=trade_date,
+            num_trades=sum(trade_counts) if trade_counts else None,
+            open=open_price,
+            high=max(highs) if highs else None,
+            low=min(lows) if lows else None,
+            close=close_price,
+            volume=sum(volumes) if volumes else None,
+        ))
+    return combined
+
+
 def reconcile_session_candles(
     raw_candles: list[Candle],
     history_records: list[HistoryRecord],
     max_next_trading_day_gap: int = 7,
     ticker: str | None = None,
+    comparison_history_records: list[HistoryRecord] | None = None,
 ) -> dict:
-    """Check calendar-date candle fragments against full TQBR trading-day OHLCV.
+    """Check calendar-date candle fragments against session-compatible TQBR OHLCV.
 
     A weekend candle without a same-date history row is assigned to the next
     positive-trade TQBR history date within the bounded calendar gap. All
@@ -178,6 +231,10 @@ def reconcile_session_candles(
         raise ValueError("max_next_trading_day_gap must be >= 1")
     rows = validate_candles(raw_candles) if raw_candles else []
     by_date = _records_by_date(history_records)
+    comparison_by_date = (
+        _records_by_date(comparison_history_records)
+        if comparison_history_records is not None else {}
+    )
     positive_dates = sorted(
         record.trade_date for record in history_records
         if record.num_trades is not None and record.num_trades > 0
@@ -236,8 +293,21 @@ def reconcile_session_candles(
     matched = []
     mismatches = []
     price_scale_mismatches = []
+    comparison_dates_used = 0
+    total_session_fallback_dates = 0
     for target, fragments in sorted(grouped.items()):
         record = by_date[target]
+        has_weekend_fragments = any(item.timestamp.weekday() >= 5 for item in fragments)
+        if comparison_history_records is not None and not has_weekend_fragments:
+            if target in comparison_by_date:
+                record = comparison_by_date[target]
+                comparison_dates_used += 1
+            else:
+                total_session_fallback_dates += 1
+        elif comparison_history_records is not None:
+            # Weekend additional-session fragments are already represented in
+            # total-session history; retain that basis for these mapped dates.
+            total_session_fallback_dates += 1
         expected = (record.open, record.high, record.low, record.close, record.volume)
         if any(value is None for value in expected):
             mismatches.append({
@@ -395,6 +465,12 @@ def reconcile_session_candles(
             "NO_RAW_CANDLES" if not rows else "RECONCILIATION_WITH_CAVEATS"
         ),
         "raw_candles": len(rows),
+        "comparison_basis": (
+            "MORNING_PLUS_MAIN_FOR_WEEKDAYS_TOTAL_SESSION_FOR_MAPPED_WEEKENDS"
+            if comparison_history_records is not None else "TOTAL_SESSION_HISTORY"
+        ),
+        "morning_plus_main_comparison_dates": comparison_dates_used,
+        "total_session_fallback_dates": total_session_fallback_dates,
         "mapped_raw_candles": mapped_raw_candles,
         "unassigned_reason_counts": unassigned_reason_counts,
         "mismatch_reason_counts": mismatch_reason_counts,
