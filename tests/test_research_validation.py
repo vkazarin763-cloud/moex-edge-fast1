@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timedelta
 
 from research_agent.core import Candle, BacktestConfig
@@ -46,6 +47,31 @@ class WalkForwardTests(unittest.TestCase):
             "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
         })
         self.assertIn("does not replace", report["warning"])
+
+
+    def test_double_cost_survival_requires_baseline_screen_pass(self):
+        baseline = {
+            "candidates": {
+                "Keltner20x2ATR": {
+                    "status": "REJECT_OR_INSUFFICIENT_EVIDENCE",
+                    "average_net_return": 0.01,
+                }
+            }
+        }
+        stressed = {
+            "candidates": {
+                "Keltner20x2ATR": {
+                    "status": "DEVELOPMENT_SCREEN_PASS_UNADJUSTED",
+                    "average_net_return": 0.007,
+                }
+            }
+        }
+        with patch("research_agent.validation.walk_forward_report",
+                   side_effect=[baseline, stressed]):
+            report = adversarial_cost_check([], folds=2, warmup_bars=55)
+        self.assertFalse(
+            report["candidates"]["Keltner20x2ATR"]["survives_double_costs"]
+        )
 
     def test_invalid_fold_count_rejected(self):
         rows = [Candle(datetime(2024, 1, 1) + timedelta(hours=i),
