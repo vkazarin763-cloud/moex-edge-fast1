@@ -78,6 +78,17 @@ class IndependentValidatorTests(unittest.TestCase):
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_PASS")
         self.assertEqual(result["walk_forward_folds_checked"], 2)
 
+    def test_optional_experiment_lab_skip_is_warning_only(self):
+        report = _report()
+        report["experiment_lab"] = {
+            "status": "SKIPPED_NOT_REQUESTED",
+            "reason": "optional experiment lab disabled by default",
+        }
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_PASS")
+        self.assertEqual(result["experiment_lab_trials_checked"], 0)
+        self.assertTrue(any("intentionally skipped" in warning for warning in result["warnings"]))
+
     def test_development_fold_cannot_touch_holdout(self):
         report = _report()
         report["results"]["SBER"]["walk_forward"]["folds"][1][
