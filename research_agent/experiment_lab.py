@@ -137,6 +137,7 @@ def run_experiment_lab(
             "MACD12x26", "Keltner20x2ATR",
         ],
         "entry_strategy_count": 5,
+        "ticker_ids": tickers,
         "ticker_count": len(tickers),
         "multiple_testing_family_size": len(tickers) * len(hypotheses) * 5,
         "trials_total": len(trials),
