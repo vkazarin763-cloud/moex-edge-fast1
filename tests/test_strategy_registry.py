@@ -43,6 +43,8 @@ class StrategyRegistryTests(unittest.TestCase):
         self.assertEqual(rows[("AAA", "LONG", "EMA20x50")]["status"], "INSUFFICIENT_DATA")
         self.assertEqual(rows[("BBB", "LONG", "Donchian20")]["status"], "INSUFFICIENT_DATA")
         self.assertFalse(registry["scanner_contract"]["live_trading_authorized"])
+        self.assertEqual(registry["summary"]["PASS"], 1)
+        self.assertEqual(registry["summary"]["INSUFFICIENT_DATA"], 19)
 
     def test_registry_rejects_non_positive_average_or_profit_factor(self):
         base = {
@@ -55,8 +57,6 @@ class StrategyRegistryTests(unittest.TestCase):
         self.assertEqual(_candidate_status({**base, "average_net_return": 0}, stress)[0], "REJECT")
         self.assertEqual(_candidate_status({**base, "profit_factor": 1.0}, stress)[0], "REJECT")
         self.assertEqual(_candidate_status(base, {**stress, "double_cost_average_net_return": -0.001})[0], "REJECT")
-        self.assertEqual(registry["summary"]["PASS"], 1)
-        self.assertEqual(registry["summary"]["INSUFFICIENT_DATA"], 19)
 
 
 if __name__ == "__main__":
