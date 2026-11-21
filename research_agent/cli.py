@@ -382,7 +382,8 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "scope": "Raw-candle reconciliation only; TCSG history is not added to research/model input.",
             }
         },
-        "results": results,\n        "cross_sectional_direction_summary": cross_sectional_direction_summary(results),
+        "results": results,
+        "cross_sectional_direction_summary": cross_sectional_direction_summary(results),
         "experiment_lab": experiment_lab,
         "development_portfolio": development_portfolio,
         "safety": "Research only. No broker APIs, order placement, Telegram, or production-state writes.",
