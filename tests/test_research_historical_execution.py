@@ -32,12 +32,15 @@ class HistoricalExecutionReplayTests(unittest.TestCase):
                         "candles": rows,
                     }
                 },
-                "T": {
-                    "D1": {
-                        "source": "MOEX ISS TQBR history",
-                        "status": "OK",
-                        "candles": rows,
+                **{
+                    symbol: {
+                        "D1": {
+                            "source": "MOEX ISS TQBR history",
+                            "status": "OK",
+                            "candles": rows,
+                        }
                     }
+                    for symbol in ("GMKN", "TRNFP", "VTBR", "PLZL", "T")
                 },
             },
         }
@@ -52,7 +55,8 @@ class HistoricalExecutionReplayTests(unittest.TestCase):
             )
 
         self.assertEqual(result["universe_size_used"], 1)
-        self.assertIn("T", result["skipped_symbols"])
+        for symbol in ("GMKN", "TRNFP", "VTBR", "PLZL", "T"):
+            self.assertIn(symbol, result["skipped_symbols"])
         self.assertEqual(result["signal_count"], 1)
         self.assertEqual(result["summary"]["closed_trades"], 1)
         self.assertEqual(result["summary"]["open_terminal_trades"], 0)
