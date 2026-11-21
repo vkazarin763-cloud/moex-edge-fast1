@@ -1,6 +1,18 @@
-name: MOEX EDGE Multi-Timeframe Candles (Manual, Read Only)
+name: MOEX EDGE Multi-Timeframe Candles (Read Only)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "research_agent/multi_timeframe.py"
+      - "research_agent/multi_timeframe_validation.py"
+      - "research_agent/mtf_scanner.py"
+      - "tests/test_research_multi_timeframe.py"
+      - "tests/test_research_mtf_scanner.py"
+      - ".github/workflows/research-agent-multi-timeframe.yml"
+      - ".github/workflows/research-agent-mtf-signals.yml"
+  schedule:
+    - cron: "0 5 * * 1-5"
   workflow_dispatch:
     inputs:
       tickers:
@@ -38,8 +50,11 @@ jobs:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
           TICKERS: ${{ github.event.inputs.tickers }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ -n "${TICKERS:-}" ]; then
+          if [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ]; then
+            python -m research_agent.multi_timeframe --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
+          elif [ -n "${TICKERS:-}" ]; then
             python -m research_agent.multi_timeframe --tickers "$TICKERS" --output moex_edge_multi_timeframe_candles.json
           else
             python -m research_agent.multi_timeframe --output moex_edge_multi_timeframe_candles.json
