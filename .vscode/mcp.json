@@ -1,0 +1,22 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "finam-client-id",
+      "description": "Finam AI Screener ID",
+      "password": false
+    },
+    {
+      "type": "promptString",
+      "id": "finam-client-secret",
+      "description": "Finam AI Screener token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "finam": {
+      "type": "http",
+      "url": "https://ai.finam.ru/mcp"
+    }
+  }
+}
