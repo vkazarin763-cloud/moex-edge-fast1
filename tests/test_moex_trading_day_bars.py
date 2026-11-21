@@ -83,6 +83,30 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["raw_weekend_candles_unmapped"], 1)
         self.assertEqual(result["unassigned_raw_candles"], 1)
 
+    def test_missing_raw_fragments_for_positive_history_date_are_reported(self):
+        raw = [Candle(datetime(2025, 3, 3), 100, 102, 99, 101, 1000)]
+        history = [
+            HistoryRecord(date(2025, 3, 3), 10, 100, 102, 99, 101, 1000),
+            HistoryRecord(date(2025, 3, 4), 20, 101, 103, 100, 102, 1500),
+        ]
+        result = reconcile_session_candles(raw, history)
+        self.assertFalse(result["complete"])
+        self.assertEqual(result["positive_trade_history_dates"], 2)
+        self.assertEqual(result["history_dates_with_raw_fragments"], 1)
+        self.assertEqual(result["history_trade_dates_without_raw_fragments"], 1)
+        self.assertEqual(result["history_trade_dates_without_raw_fragments_examples"], ["2025-03-04"])
+        self.assertEqual(result["raw_history_date_coverage_ratio"], 0.5)
+        self.assertEqual(result["raw_history_coverage_status"], "PARTIAL_DATE_COVERAGE")
+
+    def test_no_raw_candles_reports_zero_raw_history_coverage(self):
+        history = [
+            HistoryRecord(date(2025, 3, 3), 10, 100, 102, 99, 101, 1000),
+        ]
+        result = reconcile_session_candles([], history)
+        self.assertEqual(result["raw_history_coverage_status"], "NO_RAW_CANDLES")
+        self.assertEqual(result["history_trade_dates_without_raw_fragments"], 1)
+        self.assertEqual(result["raw_history_date_coverage_ratio"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()
