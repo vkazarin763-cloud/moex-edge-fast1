@@ -7,6 +7,8 @@ on:
       - "research_agent/multi_timeframe.py"
       - "research_agent/multi_timeframe_validation.py"
       - "research_agent/mtf_scanner.py"
+      - "research_agent/historical_replay.py"
+      - ".github/workflows/research-agent-historical-replay.yml"
       - "tests/test_research_multi_timeframe.py"
       - "tests/test_research_mtf_scanner.py"
       - ".github/workflows/research-agent-multi-timeframe.yml"
