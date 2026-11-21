@@ -28,6 +28,9 @@ def _report():
                     "raw_weekend_candles": 0,
                     "raw_weekend_candles_mapped": 0,
                     "raw_weekend_candles_unmapped": 0,
+                    "raw_weekday_additional_session_candles": 0,
+                    "raw_weekday_additional_session_candles_mapped": 0,
+                    "raw_weekday_additional_session_candles_unmapped": 0,
                     "complete": True,
                     "status": "RECONCILED",
                 },
@@ -118,6 +121,13 @@ class IndependentValidatorTests(unittest.TestCase):
         result = validate_research_report(report)
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
         self.assertTrue(any("coverage ratio is inconsistent" in error for error in result["errors"]))
+
+    def test_inconsistent_weekday_additional_session_accounting_is_rejected(self):
+        report = _report()
+        report["results"]["SBER"]["session_date_mapping"]["raw_weekday_additional_session_candles"] = 1
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("weekday additional-session counts do not sum" in error for error in result["errors"]))
 
     def test_inconsistent_raw_weekend_fragment_accounting_is_rejected(self):
         report = _report()
