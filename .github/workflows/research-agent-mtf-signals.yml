@@ -57,11 +57,37 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ steps.source.outputs.run_id }}
-      - name: Run read-only D1/H1 signal scanner
+      - name: Resolve latest successful research registry run
+        id: research
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "research-agent-run.yml",
+              status: "success",
+              per_page: 1
+            });
+            if (!runs.data.workflow_runs.length) {
+              core.setFailed("No successful research run is available; refusing to scan without a strategy registry.");
+              return;
+            }
+            core.setOutput("run_id", String(runs.data.workflow_runs[0].id));
+      - name: Download research report and strategy registry
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-research-report
+          path: research-data
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.research.outputs.run_id }}
+      - name: Run read-only D1/H1 signal scanner gated by PASS registry
         run: |
           python -m research_agent.mtf_scanner \
             --candles mtf-data/moex_edge_multi_timeframe_candles.json \
             --validation mtf-data/moex_edge_multi_timeframe_validation.json \
+            --registry research-data/strategy_registry.json \
             --output moex_edge_mtf_signals.json
       - name: Publish concise signal summary
         run: |
@@ -78,6 +104,7 @@ jobs:
               f"- Universe: {report.get('universe_size')} symbols; "
               f"{report.get('symbols_with_d1_h1_data')} with valid D1/H1 data",
               f"- Signals: **{report.get('signals_count', 0)}**",
+              f"- Registry: {report.get('strategy_registry_version')}; filtered candidates: {report.get('registry_filtered_candidates', 0)}",
               f"- Skipped symbols: {len(report.get('skipped_symbols', []))}",
               "- Read-only output; no position sizing, capital allocation, or order placement.",
               "- H1 alignment is informational and does not suppress D1 signals.",
