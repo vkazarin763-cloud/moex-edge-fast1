@@ -5,6 +5,7 @@ single-security bars. No universe membership is inferred from today's listings.
 """
 from __future__ import annotations
 
+from math import ceil
 from typing import Any, Mapping, Sequence
 
 from .strategies import (
@@ -109,7 +110,7 @@ def cross_sectional_momentum_12_1(
         }
 
     ranked.sort(key=lambda item: (-item["return_12_1"], item["ticker"]))
-    bucket_size = max(1, len(ranked) // 5)
+    bucket_size = max(1, ceil(len(ranked) * 0.20))
     for rank, item in enumerate(ranked, start=1):
         item["rank"] = rank
         item["cohort"] = (
