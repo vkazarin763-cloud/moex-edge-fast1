@@ -25,7 +25,7 @@ The default configuration is imported directly from `research_agent.core`; the e
 
 - Cutoff is strict: candles dated 2026-11-20 or later are excluded.
 - The frozen cohort remains `v1-frozen-2026-11-19`.
-- T is excluded because its known 10:1 conversion falls inside the sample and prices are not automatically adjusted.
+- GMKN, TRNFP, VTBR, PLZL and T are excluded because their documented share splits/consolidations fall inside the historical sample and OHLCV is not automatically adjusted. The frozen 44-symbol cohort is unchanged; these are data-eligibility exclusions for this raw-price replay only.
 - Only native MOEX ISS TQBR D1 history is accepted.
 - Signals are generated from the frozen five-strategy candidate set.
 - Trades are non-overlapping within each symbol/strategy stream. Different strategies and different symbols are simulated independently and may overlap.
