@@ -156,6 +156,48 @@ class ExperimentLabIndependentAuditTests(unittest.TestCase):
         self.assertTrue(any("did not match" in error for error in result["errors"]))
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
 
+    def test_completed_trial_without_signal_replay_is_rejected(self):
+        report = _report()
+        lab = report["experiment_lab"]
+        trial = lab["trials"][0]
+        trial.update({
+            "status": "EXPERIMENTAL_SCREEN_COMPLETE",
+            "walk_forward": {},
+            "adversarial_cost_check": {},
+            "execution_replay_audit": {
+                "status": "REFERENCE_REPLAY_MATCH", "mismatch_count": 0,
+                "main_trade_count": 0, "reference_trade_count": 0,
+            },
+        })
+        lab["trials_completed"] = 1
+        lab["trials_incomplete"] = 0
+        result = validate_research_report(report)
+        self.assertTrue(any("lacks independent signal generation audit" in error for error in result["errors"]))
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+
+    def test_signal_replay_mismatch_is_rejected(self):
+        report = _report()
+        lab = report["experiment_lab"]
+        trial = lab["trials"][0]
+        trial.update({
+            "status": "EXPERIMENTAL_SCREEN_COMPLETE",
+            "walk_forward": {},
+            "adversarial_cost_check": {},
+            "execution_replay_audit": {
+                "status": "REFERENCE_REPLAY_MATCH", "mismatch_count": 0,
+                "main_trade_count": 2, "reference_trade_count": 2,
+            },
+            "signal_generation_audit": {
+                "status": "REFERENCE_SIGNAL_MISMATCH", "mismatch_count": 1,
+                "primary_signal_count": 3, "reference_signal_count": 3,
+            },
+        })
+        lab["trials_completed"] = 1
+        lab["trials_incomplete"] = 0
+        result = validate_research_report(report)
+        self.assertTrue(any("signal generation replay did not match" in error for error in result["errors"]))
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+
 
 if __name__ == "__main__":
     unittest.main()
