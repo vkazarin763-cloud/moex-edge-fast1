@@ -15,6 +15,7 @@ from typing import Any
 
 from .core import BacktestConfig, Candle, backtest, generate_signals
 from .reference_audit import compare_replay, reference_replay
+from .reference_signals import audit_signal_generation
 from .validation import walk_forward_report, adversarial_cost_check
 
 HOLDOUT_START = date(2026, 11, 20)
@@ -121,11 +122,14 @@ def run_experiment_lab(
                     min_trades_per_fold=min_trades_per_fold,
                     config=hypothesis.config,
                 )
+                signals = generate_signals(development)
+                signal_audit = audit_signal_generation(development, signals)
                 replay_audit = _execution_replay_audit(development, hypothesis.config)
                 record.update({
                     "status": "EXPERIMENTAL_SCREEN_COMPLETE",
                     "walk_forward": walk,
                     "adversarial_cost_check": stress,
+                    "signal_generation_audit": signal_audit,
                     "execution_replay_audit": replay_audit,
                 })
             except (ValueError, TypeError) as exc:
@@ -163,9 +167,9 @@ def run_experiment_lab(
         "interpretation": (
             "Exploratory development screening only. Results are not holdout evidence, "
             "not multiplicity-adjusted statistical conclusions, not live signals, "
-            "and cannot modify the frozen v1 candidate cohort. Execution replay "
-            "compares fills from supplied signals; it does not independently verify "
-            "signal formulas or source-data provenance."
+            "and cannot modify the frozen v1 candidate cohort. Independent signal "
+            "replay checks event parity for the five frozen formulas; neither signal "
+            "nor execution replay verifies raw-data provenance."
         ),
         "safety": "Read-only. No broker API, order placement, or production-state writes.",
     }

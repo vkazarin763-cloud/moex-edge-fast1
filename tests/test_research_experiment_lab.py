@@ -39,6 +39,10 @@ class ExperimentLabTests(unittest.TestCase):
             trial["execution_replay_audit"]["status"], "REFERENCE_REPLAY_MATCH"
         )
         self.assertEqual(trial["execution_replay_audit"]["mismatch_count"], 0)
+        self.assertEqual(
+            trial["signal_generation_audit"]["status"], "REFERENCE_SIGNAL_MATCH"
+        )
+        self.assertEqual(trial["signal_generation_audit"]["mismatch_count"], 0)
 
     def test_every_registered_hypothesis_is_retained(self):
         report = run_experiment_lab(
