@@ -43,7 +43,7 @@ jobs:
           python -m research_agent.multi_timeframe_validation \
             --input mtf-data/moex_edge_multi_timeframe_candles.json \
             --output mtf-data/moex_edge_multi_timeframe_validation.json
-      - name: Build isolated historical signal and outcome replay
+      - name: Build historical signal and fixed-horizon outcome replay
         run: |
           python -m research_agent.historical_replay \
             --candles mtf-data/moex_edge_multi_timeframe_candles.json \
@@ -51,10 +51,20 @@ jobs:
             --cutoff-exclusive 2026-11-20 \
             --exclude-symbols T \
             --source-run-id ${{ github.event.workflow_run.id }}
-      - name: Upload historical simulation artifact
+      - name: Build frozen-cost historical execution replay
+        run: |
+          python -m research_agent.historical_execution \
+            --candles mtf-data/moex_edge_multi_timeframe_candles.json \
+            --output moex_edge_historical_execution.json \
+            --cutoff-exclusive 2026-11-20 \
+            --exclude-symbols T \
+            --source-run-id ${{ github.event.workflow_run.id }}
+      - name: Upload historical simulation artifacts
         uses: actions/upload-artifact@v4
         with:
           name: moex-edge-historical-simulation-${{ github.event.workflow_run.id }}
-          path: moex_edge_historical_simulation.json
+          path: |
+            moex_edge_historical_simulation.json
+            moex_edge_historical_execution.json
           if-no-files-found: error
           retention-days: 30
