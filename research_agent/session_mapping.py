@@ -246,12 +246,12 @@ def reconcile_session_candles(
             matched.append(target.isoformat())
 
     weekend_rows = [item for item in rows if item.timestamp.weekday() >= 5]
-    mapped_weekend_dates = {
-        candle.timestamp.date().isoformat()
-        for target, fragments in grouped.items()
+    mapped_weekend_candles = sum(
+        1
+        for fragments in grouped.values()
         for candle in fragments
         if candle.timestamp.weekday() >= 5
-    }
+    )
     positive_history_dates = set(positive_dates)
     raw_fragment_history_dates = set(grouped)
     history_dates_without_raw_fragments = sorted(
@@ -277,8 +277,8 @@ def reconcile_session_candles(
         ),
         "raw_candles": len(rows),
         "raw_weekend_candles": len(weekend_rows),
-        "raw_weekend_candles_mapped": len(mapped_weekend_dates),
-        "raw_weekend_candles_unmapped": len(weekend_rows) - len(mapped_weekend_dates),
+        "raw_weekend_candles_mapped": mapped_weekend_candles,
+        "raw_weekend_candles_unmapped": len(weekend_rows) - mapped_weekend_candles,
         "positive_trade_history_dates": len(positive_history_dates),
         "history_dates_with_raw_fragments": len(positive_history_dates & raw_fragment_history_dates),
         "history_trade_dates_without_raw_fragments": len(history_dates_without_raw_fragments),
