@@ -86,3 +86,55 @@ def classify_history_to_raw_price_factor(
             result["classification"] = "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS"
             result["matched_ratio_direction"] = "RECIPROCAL_DOCUMENTED_FACTOR"
     return result
+
+
+
+def apply_post_event_price_basis(
+    ticker: str, candles: list[Any], *, minimum_development_bars: int = 200,
+) -> tuple[list[Any], dict[str, Any]]:
+    """Keep only same-share-basis candles for historical model calculations.
+
+    Raw source candles are retained separately for reconciliation. Known
+    corporate-action events are never back-adjusted here: pre-event candles are
+    excluded so indicators, walk-forward folds and experiment trials cannot
+    mix incompatible share units.
+    """
+    symbol = (ticker or "").upper()
+    event = KNOWN_SHARE_BASIS_EVENTS.get(symbol)
+    if event is None:
+        return list(candles), {
+            "status": "NO_KNOWN_CORPORATE_ACTION",
+            "ticker": symbol,
+            "excluded_pre_event_bars": 0,
+            "post_event_bars": len(candles),
+            "minimum_development_bars": minimum_development_bars,
+        }
+
+    effective = date.fromisoformat(event["effective_date"])
+    eligible = [
+        candle for candle in candles
+        if candle.timestamp.date() >= effective
+    ]
+    excluded = len(candles) - len(eligible)
+    development_count = sum(
+        candle.timestamp.date() < date.fromisoformat("2026-11-20")
+        for candle in eligible
+    )
+    metadata = {
+        "status": (
+            "ELIGIBLE_POST_EVENT_HISTORY"
+            if development_count >= minimum_development_bars
+            else "INSUFFICIENT_POST_ACTION_HISTORY"
+        ),
+        "ticker": symbol,
+        "event": event["event"],
+        "effective_date": effective.isoformat(),
+        "source": event["source"],
+        "pre_event_bars_excluded": excluded,
+        "post_event_bars": len(eligible),
+        "post_event_development_bars": development_count,
+        "minimum_development_bars": minimum_development_bars,
+        "price_adjustment_applied": False,
+        "policy": "EXCLUDE_PRE_EVENT_BARS_NO_BACK_ADJUSTMENT",
+    }
+    return eligible, metadata
