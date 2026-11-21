@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 
 from research_agent.core import Candle, generate_signals
@@ -142,6 +143,22 @@ class MTFScannerTests(unittest.TestCase):
         self.assertIn("keltner20_upper_2atr", result["signals"][0]["parameters"])
         self.assertEqual(result["signals"][0]["h1"]["h1_timestamp"], "2026-03-01T20:00:00+00:00")
         self.assertEqual(result["signals"][0]["h1"]["h1_age_minutes_at_d1_close"], 0)
+        with patch(
+            "research_agent.mtf_scanner._d1_signals_at_last_bar",
+            return_value=[{
+                "strategy": "SyntheticOppositeSignal",
+                "direction": "SHORT",
+                "direction_code": -1,
+                "signal_index": 243,
+                "parameters": {},
+            }],
+        ):
+            blocked_result = scan_multi_timeframe_report(candles_report, validation)
+        self.assertEqual(blocked_result["candidate_signals_count"], 1)
+        self.assertEqual(blocked_result["signals_count"], 0)
+        self.assertEqual(blocked_result["blocked_signals_count"], 1)
+        self.assertEqual(blocked_result["blocked_signals"][0]["trend_gate"]["status"], "BULLISH")
+        self.assertEqual(blocked_result["blocked_signals"][0]["trend_filter"], "BLOCKED")
         forbidden_fields = {
             "qty", "quantity", "entry_price", "position_size",
             "capital", "allocation", "portfolio_weight",
