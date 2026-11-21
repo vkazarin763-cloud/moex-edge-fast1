@@ -34,12 +34,15 @@ class HistoricalReplayTests(unittest.TestCase):
                         "candles": rows,
                     }
                 },
-                "T": {
-                    "D1": {
-                        "source": "MOEX ISS TQBR history",
-                        "status": "OK",
-                        "candles": rows,
+                **{
+                    symbol: {
+                        "D1": {
+                            "source": "MOEX ISS TQBR history",
+                            "status": "OK",
+                            "candles": rows,
+                        }
                     }
+                    for symbol in ("GMKN", "TRNFP", "VTBR", "PLZL", "T")
                 },
             },
         }
@@ -54,7 +57,8 @@ class HistoricalReplayTests(unittest.TestCase):
             )
 
         self.assertEqual(result["universe_size_used"], 1)
-        self.assertIn("T", result["skipped_symbols"])
+        for symbol in ("GMKN", "TRNFP", "VTBR", "PLZL", "T"):
+            self.assertIn(symbol, result["skipped_symbols"])
         self.assertEqual(result["signal_count"], 1)
         event = result["events"][0]
         self.assertEqual(event["signal_timestamp"][:10], "2026-02-25")
