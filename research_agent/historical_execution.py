@@ -6,6 +6,7 @@ It is deliberately separate from the prospective holdout and signal ledger.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from collections import defaultdict
 from datetime import date, datetime
@@ -58,6 +59,34 @@ def _grouped_summary(trades: list[tuple[str, Any]], key_fn) -> dict[str, Any]:
     for symbol, trade in trades:
         groups[str(key_fn(symbol, trade))].append((symbol, trade))
     return {key: _trade_summary(groups[key]) for key in sorted(groups)}
+
+
+def _serialize_trade_records(trades: list[tuple[str, Any]]) -> list[dict[str, Any]]:
+    """Return auditable individual trade rows with deterministic historical IDs."""
+    records = []
+    for symbol, trade in trades:
+        direction = "LONG" if trade.direction > 0 else "SHORT"
+        identity = "|".join((
+            "HISTORICAL", "v1-frozen-2026-11-19", symbol, trade.strategy,
+            direction, trade.signal_time.isoformat(), trade.entry_time.isoformat(),
+        ))
+        records.append({
+            "trade_id": hashlib.sha256(identity.encode("utf-8")).hexdigest(),
+            "data_origin": "HISTORICAL",
+            "cohort_version": "v1-frozen-2026-11-19",
+            "symbol": symbol,
+            "strategy": trade.strategy,
+            "direction": direction,
+            "signal_time": trade.signal_time.isoformat(),
+            "entry_time": trade.entry_time.isoformat(),
+            "exit_time": trade.exit_time.isoformat() if trade.exit_time else None,
+            "entry_price": trade.entry_price,
+            "exit_price": trade.exit_price,
+            "net_return": trade.net_return,
+            "status": trade.status,
+            "exit_reason": trade.exit_reason,
+        })
+    return records
 
 
 def build_historical_execution(
@@ -145,6 +174,7 @@ def build_historical_execution(
             "max_bars": config.max_bars,
         },
         "summary": _trade_summary(all_trades),
+        "trade_records": _serialize_trade_records(all_trades),
         "by_direction": _grouped_summary(
             all_trades, lambda _symbol, trade: "LONG" if trade.direction > 0 else "SHORT"
         ),
