@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from research_agent.multi_timeframe import (
     FINAM_FRAMES, MOEX_FRAMES, RefreshingFinamClient,
@@ -7,8 +7,16 @@ from research_agent.multi_timeframe import (
 )
 from research_agent.finam_market_data import FinamAPIError
 from unittest.mock import patch
+from research_agent.moex_iss import HistoryRecord
 from research_agent.core import Candle
 from research_agent.finam_market_data import FinamBar
+
+
+def fake_history_fetcher(ticker, start, end, *, board):
+    return [
+        HistoryRecord(date(2026, 7, 1), 10, 100, 102, 99, 101, 500),
+        HistoryRecord(date(2026, 7, 2), 0, None, None, None, None, 0),
+    ]
 
 
 class FakeFinam:
@@ -36,7 +44,7 @@ class MultiTimeframeTests(unittest.TestCase):
 
         result = collect_multi_timeframe(
             ["SBER"], api_token="not-used", now=datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
-            moex_fetcher=moex_fetcher, finam_client=FakeFinam(),
+            moex_fetcher=moex_fetcher, moex_history_fetcher=fake_history_fetcher, finam_client=FakeFinam(),
         )
         sber = result["results"]["SBER"]
         self.assertEqual(sber["M15"]["source"], "Finam")
@@ -45,6 +53,9 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(sber["M15"]["snapshot_true_excluded"], 1)
         self.assertEqual(sber["M15"]["snapshot_unknown_retained"], 1)
         self.assertEqual(sber["M10"]["source"], "MOEX ISS")
+        self.assertEqual(sber["D1"]["source"], "MOEX ISS TQBR history")
+        self.assertEqual(sber["D1"]["completed_bars"], 1)
+        self.assertEqual(sber["D1"]["zero_trade_rows_excluded"], 1)
         self.assertEqual(len(sber["W1"]["candles"]), 1)
         self.assertEqual(len(calls), len(MOEX_FRAMES))
         self.assertEqual(result["timeframes"]["M15"]["ok"], 1)
@@ -60,7 +71,7 @@ class MultiTimeframeTests(unittest.TestCase):
 
         result = collect_multi_timeframe(
             ["SBER"], api_token="not-used", now=datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
-            moex_fetcher=broken_moex, finam_client=BrokenFinam(),
+            moex_fetcher=broken_moex, moex_history_fetcher=lambda *a, **k: (_ for _ in ()).throw(RuntimeError('history unavailable')), finam_client=BrokenFinam(),
         )
         self.assertEqual(result["results"]["SBER"]["M1"]["status"], "ERROR")
         self.assertEqual(result["results"]["SBER"]["MN"]["status"], "ERROR")
