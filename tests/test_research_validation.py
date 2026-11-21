@@ -25,9 +25,16 @@ class WalkForwardTests(unittest.TestCase):
             self.assertEqual(set(fold["by_direction"]), {"LONG", "SHORT"})
             for direction in ("LONG", "SHORT"):
                 self.assertIsInstance(fold["by_direction"][direction], dict)
+            self.assertIsInstance(fold["trade_ledger"], list)
+            for trade in fold["trade_ledger"]:
+                self.assertIn(trade["direction"], {"LONG", "SHORT"})
+                self.assertGreater(trade["entry_time"], trade["signal_time"])
+                self.assertIn(trade["status"], {"CLOSED", "OPEN"})
+                self.assertIn("exit_reason", trade)
         self.assertIn(
             "not additive portfolio attribution", report["direction_scope"]
         )
+        self.assertIn("auditability", report["trade_ledger_scope"])
         self.assertEqual(report["execution_config"], {
             "fee_per_side": 0, "slippage_per_side": 0,
             "stop_pct": None, "target_pct": None, "max_bars": 2,
