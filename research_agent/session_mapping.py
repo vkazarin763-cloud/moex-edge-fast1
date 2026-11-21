@@ -299,7 +299,7 @@ def reconcile_session_candles(
             item for item in fragments if item.timestamp.weekday() < 5
         ]
         fragments_to_compare = fragments
-        if weekday_fragments:
+        if comparison_history_records is not None and weekday_fragments:
             fragments_to_compare = weekday_fragments
             mapped_weekend_fragments_excluded_from_comparison += (
                 len(fragments) - len(weekday_fragments)
