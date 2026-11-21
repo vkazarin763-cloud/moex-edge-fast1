@@ -261,6 +261,19 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
     report["independent_validation"] = validate_research_report(report)
     return report
 
+def research_exit_code(report: dict, analyzed: int) -> int:
+    """Return non-zero when the saved report fails or cannot complete its audit."""
+    validation = report.get("independent_validation", {})
+    status = validation.get("status") if isinstance(validation, dict) else None
+    if status == "INDEPENDENT_VALIDATION_FAIL":
+        return 2
+    if status == "INDEPENDENT_VALIDATION_INCOMPLETE":
+        return 3
+    validation_status = report.get("independent_validation", {}).get("status", "MISSING")
+    print(f"Independent validation: {validation_status}")
+    return research_exit_code(report, analyzed)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only MOEX EDGE AI Research Agent")
     parser.add_argument("--from", dest="date_from", required=True, help="YYYY-MM-DD")
