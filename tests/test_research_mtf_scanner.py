@@ -1,9 +1,11 @@
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 
 from research_agent.core import Candle, generate_signals
 from research_agent.mtf_scanner import (
     _d1_signals_at_last_bar, _h1_alignment, _parse_candles,
+    _sma200_direction_gate,
     scan_multi_timeframe_report,
 )
 
@@ -23,6 +25,28 @@ class MTFScannerTests(unittest.TestCase):
         self.assertEqual(_h1_alignment(rising, 1)["status"], "CONFIRMED")
         self.assertEqual(_h1_alignment(falling, -1)["status"], "CONFIRMED")
         self.assertEqual(_h1_alignment(rising, -1)["status"], "NOT_CONFIRMED")
+
+    def test_sma200_direction_gate_matches_ai_trader_rule(self):
+        bullish = self._trend(220, 100, 1)
+        bearish = self._trend(220, 320, -1)
+        self.assertEqual(_sma200_direction_gate(bullish)["direction"], "LONG")
+        self.assertEqual(_sma200_direction_gate(bearish)["direction"], "SHORT")
+
+    def test_sma200_gate_neutral_equality_blocks_both_directions(self):
+        flat = self._trend(200, 100, 0)
+        result = _sma200_direction_gate(flat)
+        self.assertEqual(result["status"], "NEUTRAL")
+        self.assertIsNone(result["direction"])
+
+    def test_sma200_gate_fails_closed_without_200_bars(self):
+        result = _sma200_direction_gate(self._trend(199, 100, 1))
+        self.assertEqual(result["status"], "INSUFFICIENT_HISTORY")
+        self.assertIsNone(result["direction"])
+
+    def test_sma200_gate_blocks_opposite_direction(self):
+        gate = _sma200_direction_gate(self._trend(220, 100, 1))
+        self.assertEqual(gate["direction"], "LONG")
+        self.assertNotEqual(gate["direction"], "SHORT")
 
     def test_h1_insufficient_history_is_explicit(self):
         result = _h1_alignment(self._trend(49, 100, 1), 1)
@@ -61,15 +85,15 @@ class MTFScannerTests(unittest.TestCase):
         from research_agent.mtf_scanner import scan_multi_timeframe_report
 
         d1 = []
-        for i in range(60):
+        for i in range(244):
             close = 100 + i
             d1.append({
-                "timestamp": (datetime(2026, 1, 1) + timedelta(days=i)).isoformat(),
+                "timestamp": (datetime(2025, 7, 1) + timedelta(days=i)).isoformat(),
                 "open": close, "high": close + 1, "low": close - 1,
                 "close": close, "volume": 1000,
             })
         # Force a latest-bar Donchian breakout.
-        d1[-1].update({"open": 200, "high": 205, "low": 199, "close": 204})
+        d1[-1].update({"open": 400, "high": 405, "low": 399, "close": 404})
 
         h1 = []
         start = datetime(2026, 2, 27, 18, 0, tzinfo=timezone.utc)
@@ -103,6 +127,10 @@ class MTFScannerTests(unittest.TestCase):
         }
         result = scan_multi_timeframe_report(candles_report, validation)
         self.assertTrue(result["signals"])
+        self.assertGreaterEqual(result["candidate_signals_count"], result["signals_count"])
+        self.assertEqual(result["blocked_signals_count"], len(result["blocked_signals"]))
+        self.assertEqual(result["signals"][0]["trend_gate"]["status"], "BULLISH")
+        self.assertEqual(result["signals"][0]["trend_filter"], "PASSED")
         self.assertIn("parameters", result["signals"][0])
         self.assertGreater(
             result["signals"][0]["parameters"]["close"],
@@ -115,6 +143,22 @@ class MTFScannerTests(unittest.TestCase):
         self.assertIn("keltner20_upper_2atr", result["signals"][0]["parameters"])
         self.assertEqual(result["signals"][0]["h1"]["h1_timestamp"], "2026-03-01T20:00:00+00:00")
         self.assertEqual(result["signals"][0]["h1"]["h1_age_minutes_at_d1_close"], 0)
+        with patch(
+            "research_agent.mtf_scanner._d1_signals_at_last_bar",
+            return_value=[{
+                "strategy": "SyntheticOppositeSignal",
+                "direction": "SHORT",
+                "direction_code": -1,
+                "signal_index": 243,
+                "parameters": {},
+            }],
+        ):
+            blocked_result = scan_multi_timeframe_report(candles_report, validation)
+        self.assertEqual(blocked_result["candidate_signals_count"], 1)
+        self.assertEqual(blocked_result["signals_count"], 0)
+        self.assertEqual(blocked_result["blocked_signals_count"], 1)
+        self.assertEqual(blocked_result["blocked_signals"][0]["trend_gate"]["status"], "BULLISH")
+        self.assertEqual(blocked_result["blocked_signals"][0]["trend_filter"], "BLOCKED")
         forbidden_fields = {
             "qty", "quantity", "entry_price", "position_size",
             "capital", "allocation", "portfolio_weight",
