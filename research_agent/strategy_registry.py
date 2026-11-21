@@ -24,8 +24,17 @@ def _candidate_status(candidate: dict[str, Any] | None, stress: dict[str, Any] |
         return "INSUFFICIENT_DATA", reasons
     if candidate.get("status") != "DEVELOPMENT_SCREEN_PASS_UNADJUSTED":
         return "REJECT", ["Development walk-forward screen did not pass"]
+    average = candidate.get("average_net_return")
+    profit_factor = candidate.get("profit_factor")
+    if not isinstance(average, (int, float)) or average <= 0:
+        return "REJECT", ["Average net return is missing or not positive"]
+    if not isinstance(profit_factor, (int, float)) or profit_factor <= 1:
+        return "REJECT", ["Profit factor is missing or not above one"]
     if not isinstance(stress, dict) or stress.get("survives_double_costs") is not True:
         return "REJECT", ["Candidate did not pass the doubled-cost screen"]
+    stressed_average = stress.get("double_cost_average_net_return")
+    if not isinstance(stressed_average, (int, float)) or stressed_average <= 0:
+        return "REJECT", ["Doubled-cost average net return is missing or not positive"]
     return "PASS", ["Development screen and doubled-cost screen passed"]
 
 def build_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
@@ -43,7 +52,9 @@ def build_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
             candidates = (walk.get("by_direction") or {}).get(direction) or {}
             for strategy in STRATEGIES:
                 candidate = candidates.get(strategy) if analyzed else None
-                stress = (stressed.get(strategy) or {}).get("by_direction", {}).get(direction)
+                stress_item = stressed.get(strategy) or {}
+                stress_by_direction = stress_item.get("by_direction") or {}
+                stress = stress_by_direction.get(direction) if isinstance(stress_by_direction, dict) else None
                 status, reasons = _candidate_status(candidate, stress)
                 if not analyzed:
                     reasons = [str(item.get("status", "Ticker not analyzed")) if isinstance(item, dict) else "Ticker not analyzed"]
