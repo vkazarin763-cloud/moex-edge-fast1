@@ -269,9 +269,11 @@ def research_exit_code(report: dict, analyzed: int) -> int:
         return 2
     if status == "INDEPENDENT_VALIDATION_INCOMPLETE":
         return 3
-    validation_status = report.get("independent_validation", {}).get("status", "MISSING")
+    if status == "INDEPENDENT_VALIDATION_PASS":
+        return 0 if analyzed > 0 else 1
+    validation_status = status or "MISSING"
     print(f"Independent validation: {validation_status}")
-    return research_exit_code(report, analyzed)
+    return 3
 
 
 def main() -> int:
@@ -288,7 +290,7 @@ def main() -> int:
     analyzed = sum(item["status"] == "ANALYZED" for item in report["results"].values())
     errors = len(report["results"]) - analyzed
     print(f"Research complete: {analyzed} analyzed, {errors} errors; report={args.output}")
-    return 0 if analyzed else 1
+    return research_exit_code(report, analyzed)
 
 
 if __name__ == "__main__":

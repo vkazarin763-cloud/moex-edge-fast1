@@ -156,7 +156,10 @@ def reconcile_session_candles(
     fragments assigned to a trade date (weekend plus that date's weekday
     candle) are aggregated and compared with the official history OHLCV.
     History remains the model-input source even when this diagnostic finds a
-    mismatch; mismatches are surfaced rather than silently repaired.
+    mismatch; mismatches are surfaced rather than silently repaired. The audit
+    also reports positive-trade history dates that have no corresponding raw
+    candle fragments, so incomplete raw-source coverage is not mistaken for a
+    fully reconciled sample.
     """
     if max_next_trading_day_gap < 1:
         raise ValueError("max_next_trading_day_gap must be >= 1")
@@ -249,21 +252,46 @@ def reconcile_session_candles(
         for candle in fragments
         if candle.timestamp.weekday() >= 5
     }
+    positive_history_dates = set(positive_dates)
+    raw_fragment_history_dates = set(grouped)
+    history_dates_without_raw_fragments = sorted(
+        day.isoformat() for day in positive_history_dates - raw_fragment_history_dates
+    )
+    raw_history_date_coverage = (
+        len(positive_history_dates & raw_fragment_history_dates) / len(positive_history_dates)
+        if positive_history_dates else None
+    )
+    raw_history_coverage_status = (
+        "NO_POSITIVE_HISTORY_DATES" if not positive_history_dates else
+        "NO_RAW_CANDLES" if not rows else
+        "COMPLETE_DATE_COVERAGE" if not history_dates_without_raw_fragments else
+        "PARTIAL_DATE_COVERAGE"
+    )
+    reconciliation_complete = (
+        bool(rows) and not mismatches and not unassigned
+        and not history_dates_without_raw_fragments
+    )
     return {
-        "status": "RECONCILED" if rows and not mismatches and not unassigned else (
+        "status": "RECONCILED" if reconciliation_complete else (
             "NO_RAW_CANDLES" if not rows else "RECONCILIATION_WITH_CAVEATS"
         ),
         "raw_candles": len(rows),
         "raw_weekend_candles": len(weekend_rows),
         "raw_weekend_candles_mapped": len(mapped_weekend_dates),
         "raw_weekend_candles_unmapped": len(weekend_rows) - len(mapped_weekend_dates),
+        "positive_trade_history_dates": len(positive_history_dates),
+        "history_dates_with_raw_fragments": len(positive_history_dates & raw_fragment_history_dates),
+        "history_trade_dates_without_raw_fragments": len(history_dates_without_raw_fragments),
+        "history_trade_dates_without_raw_fragments_examples": history_dates_without_raw_fragments[:20],
+        "raw_history_date_coverage_ratio": raw_history_date_coverage,
+        "raw_history_coverage_status": raw_history_coverage_status,
         "trading_days_reconciled": len(matched),
         "trading_days_mismatched": len(mismatches),
         "unassigned_raw_candles": len(unassigned),
         "matched_trade_dates": matched[:20],
         "mismatch_examples": mismatches[:20],
         "unassigned_examples": unassigned[:20],
-        "complete": bool(rows) and not mismatches and not unassigned,
+        "complete": reconciliation_complete,
         "mapping_rule": (
             "Same-date positive TQBR history keeps a calendar candle on that date. "
             "From the official 2025-03-01 weekend-session launch onward, a weekend "
