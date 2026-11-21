@@ -164,8 +164,11 @@ def _h1_alignment(rows: list[Candle], direction: int) -> dict:
     }
 
 
-def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -> dict:
-    """Create latest D1 strategy signals and attach the latest causally aligned H1 state."""
+def scan_multi_timeframe_report(
+    candles_report: dict, validation_report: dict,
+    strategy_registry: dict | None = None,
+) -> dict:
+    """Create latest D1/H1 signals, optionally gated by a research strategy registry."""
     if validation_report.get("status") != "PASS" or validation_report.get("issue_count") != 0:
         raise ValueError("Input validation report must be PASS with zero issues")
     cutoff = datetime.fromisoformat(
@@ -174,8 +177,29 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
     if candles_report.get("generated_at_utc") != validation_report.get("generated_at_utc"):
         raise ValueError("Candle and validation reports must have the same snapshot time")
 
+    allowed = None
+    registry_version = None
+    if strategy_registry is not None:
+        contract = strategy_registry.get("scanner_contract") or {}
+        if (strategy_registry.get("stage") != "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL"
+                or strategy_registry.get("holdout_used_for_selection") is not False
+                or contract.get("consume_only_status") != "PASS"
+                or contract.get("live_trading_authorized") is not False):
+            raise ValueError("Strategy registry is not a valid development-only shadow-scanner registry")
+        registry_time = datetime.fromisoformat(
+            strategy_registry["generated_at_utc"].replace("Z", "+00:00")
+        ).astimezone(timezone.utc)
+        if (cutoff - registry_time).total_seconds() > 14 * 86400:
+            raise ValueError("Strategy registry is older than 14 days; rerun research before scanning")
+        allowed = {
+            (row.get("ticker"), row.get("direction"), row.get("strategy"))
+            for row in strategy_registry.get("strategies", [])
+            if row.get("status") == "PASS" and row.get("eligible_for_shadow_scanner") is True
+        }
+        registry_version = strategy_registry.get("registry_version")
     signals = []
     skipped = []
+    registry_filtered = 0
     for symbol in candles_report.get("universe", []):
         symbol_data = candles_report["results"].get(symbol, {})
         d1_item = symbol_data.get("D1", {})
@@ -209,6 +233,11 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
         d1_candidates = _d1_signals_at_last_bar(d1_rows)
         for candidate in d1_candidates:
             direction = candidate["direction_code"]
+            if allowed is not None and (
+                symbol, candidate["direction"], candidate["strategy"]
+            ) not in allowed:
+                registry_filtered += 1
+                continue
             h1 = _h1_alignment(h1_rows, direction)
             if h1.get("status") != "INSUFFICIENT_HISTORY":
                 h1_end = candle_end_utc(h1_rows[-1].timestamp.isoformat(), h1_item["source"], "H1")
@@ -243,6 +272,8 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
         "symbols_with_d1_h1_data": len(candles_report.get("universe", [])) - len(skipped),
         "signals_count": len(signals),
         "signals": signals,
+        "strategy_registry_version": registry_version,
+        "registry_filtered_candidates": registry_filtered,
         "skipped_symbols": skipped,
         "strategy_cohort_version": STRATEGY_COHORT_VERSION,
         "strategies": list(STRATEGIES),
@@ -262,11 +293,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only MOEX EDGE D1/H1 latest signal scanner")
     parser.add_argument("--candles", default="moex_edge_multi_timeframe_candles.json")
     parser.add_argument("--validation", default="moex_edge_multi_timeframe_validation.json")
+    parser.add_argument("--registry", required=True,
+                        help="Research-generated strategy_registry.json; only PASS entries are scanned")
     parser.add_argument("--output", default="moex_edge_mtf_signals.json")
     args = parser.parse_args()
     candles = json.loads(Path(args.candles).read_text(encoding="utf-8"))
     validation = json.loads(Path(args.validation).read_text(encoding="utf-8"))
-    result = scan_multi_timeframe_report(candles, validation)
+    registry = json.loads(Path(args.registry).read_text(encoding="utf-8"))
+    result = scan_multi_timeframe_report(candles, validation, registry)
     Path(args.output).write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
