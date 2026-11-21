@@ -289,6 +289,9 @@ def _audit_raw_session_provenance(
         "raw_weekday_additional_session_candles",
         "raw_weekday_additional_session_candles_mapped",
         "raw_weekday_additional_session_candles_unmapped",
+        "price_scale_mismatch_dates",
+        "known_price_basis_match_count",
+        "unexplained_price_scale_mismatch_count",
     )
     counts = {}
     for field in count_fields:
@@ -309,6 +312,18 @@ def _audit_raw_session_provenance(
         errors.append(f"{ticker}: mapped and unmapped weekday additional-session counts do not sum to total")
     if counts["raw_weekday_additional_session_candles"] > counts["raw_candles"]:
         errors.append(f"{ticker}: weekday additional-session candle count exceeds total raw candles")
+
+    if counts["known_price_basis_match_count"] + counts["unexplained_price_scale_mismatch_count"] != counts["price_scale_mismatch_dates"]:
+        errors.append(f"{ticker}: known and unexplained price-scale mismatch counts do not sum to total")
+    factor_counts = audit.get("price_scale_factor_counts")
+    if not isinstance(factor_counts, dict) or any(
+        not isinstance(key, str) or not isinstance(value, int)
+        or isinstance(value, bool) or value < 0
+        for key, value in factor_counts.items()
+    ):
+        errors.append(f"{ticker}: price_scale_factor_counts must be a string-to-nonnegative-integer map")
+    elif sum(factor_counts.values()) != counts["price_scale_mismatch_dates"]:
+        errors.append(f"{ticker}: price-scale factor counts do not sum to mismatch date count")
 
     if counts["unassigned_raw_candles"] > counts["raw_candles"]:
         errors.append(f"{ticker}: unassigned raw candle count exceeds total raw candles")
