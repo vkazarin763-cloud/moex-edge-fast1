@@ -160,3 +160,9 @@
 - Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
 - No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
+
+
+## 2026-11-21 — MTF data artifact and AI handoff
+- Verified successful multi-timeframe workflow run 44861047844 (artifact 14690518588) on main commit a65eeaf3800be1b56deaaa36258a5369fce33cf2.
+- Artifact contains 787,929 completed bars across 13 frames and 44/44 symbols; validator PASS with zero issues. Independent OHLCV, chronology, duplicate, snapshot and as-of checks also passed.
+- Full provenance, frame counts, exclusions, checksum, frozen methodology, safety boundaries and next steps recorded in HANDOFF_FOR_NEXT_AI.md and docs/MULTITIMEFRAME_DATASET_2026-11-21.md.
