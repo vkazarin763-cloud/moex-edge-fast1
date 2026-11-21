@@ -286,6 +286,9 @@ def _audit_raw_session_provenance(
         "raw_weekend_candles",
         "raw_weekend_candles_mapped",
         "raw_weekend_candles_unmapped",
+        "raw_weekday_additional_session_candles",
+        "raw_weekday_additional_session_candles_mapped",
+        "raw_weekday_additional_session_candles_unmapped",
     )
     counts = {}
     for field in count_fields:
@@ -301,6 +304,11 @@ def _audit_raw_session_provenance(
         errors.append(f"{ticker}: mapped and unmapped weekend candle counts do not sum to raw weekend candle count")
     if counts["raw_weekend_candles"] > counts["raw_candles"]:
         errors.append(f"{ticker}: raw weekend candle count exceeds total raw candles")
+
+    if counts["raw_weekday_additional_session_candles_mapped"] + counts["raw_weekday_additional_session_candles_unmapped"] != counts["raw_weekday_additional_session_candles"]:
+        errors.append(f"{ticker}: mapped and unmapped weekday additional-session counts do not sum to total")
+    if counts["raw_weekday_additional_session_candles"] > counts["raw_candles"]:
+        errors.append(f"{ticker}: weekday additional-session candle count exceeds total raw candles")
 
     if counts["unassigned_raw_candles"] > counts["raw_candles"]:
         errors.append(f"{ticker}: unassigned raw candle count exceeds total raw candles")
