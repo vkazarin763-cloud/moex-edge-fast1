@@ -216,7 +216,7 @@ class TradingDayBarTests(unittest.TestCase):
             Candle(datetime(2025, 3, 4), 101, 103, 100, 102, 30),
         ]
         history = [
-            HistoryRecord(date(2025, 3, 3), 20, 100, 102, 98, 101, 30),
+            HistoryRecord(date(2025, 3, 3), 20, 100, 102, 98, 101, 20),
             HistoryRecord(date(2025, 3, 4), 20, 101, 104, 100, 102, 30),
         ]
         result = reconcile_session_candles(raw, history)
