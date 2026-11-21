@@ -189,7 +189,10 @@ def scan_multi_timeframe_report(
         registry_time = datetime.fromisoformat(
             strategy_registry["generated_at_utc"].replace("Z", "+00:00")
         ).astimezone(timezone.utc)
-        if (cutoff - registry_time).total_seconds() > 14 * 86400:
+        registry_age = (cutoff - registry_time).total_seconds()
+        if registry_age < 0:
+            raise ValueError("Strategy registry is newer than the candle snapshot; refusing a non-causal scan")
+        if registry_age > 14 * 86400:
             raise ValueError("Strategy registry is older than 14 days; rerun research before scanning")
         allowed = {
             (row.get("ticker"), row.get("direction"), row.get("strategy"))
