@@ -215,10 +215,18 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "raw_weekend_candles_retained_for_reconciliation": True,
             "weekend_session_launch_date": "2025-03-01",
             "weekend_sessions_included_in_next_trading_day_history_ohlcv": True,
+            "official_weekday_additional_sessions": {
+                "2026-02-23": "2026-02-24",
+                "2026-05-01": "2026-05-04",
+                "2026-06-12": "2026-06-15",
+                "2026-11-04": "2026-11-05",
+            },
+            "official_weekday_additional_session_calendar_source": "https://www.moex.com/n96571",
             "reason": (
                 "The current Moscow calendar date is excluded. The effective end date is "
                 "the latest positive-trade TQBR history date. Research uses one OHLCV "
-                "bar per TQBR TRADEDATE; MOEX additional weekend sessions are included "
+                "bar per TQBR TRADEDATE; MOEX additional weekend sessions and the "
+                "four officially announced 2026 weekday holiday sessions are included "
                 "in the next ordinary trading day's daily-history OHLCV. Separate "
                 "calendar-date candles are retained only for reconciliation diagnostics."
             ),

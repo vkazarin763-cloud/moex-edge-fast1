@@ -83,6 +83,38 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["raw_weekend_candles_unmapped"], 1)
         self.assertEqual(result["unassigned_raw_candles"], 1)
 
+    def test_official_2026_weekday_additional_sessions_map_to_next_trade_date(self):
+        sessions = [
+            (date(2026, 2, 23), date(2026, 2, 24)),
+            (date(2026, 5, 1), date(2026, 5, 4)),
+            (date(2026, 6, 12), date(2026, 6, 15)),
+            (date(2026, 11, 4), date(2026, 11, 5)),
+        ]
+        for session_date, trade_date in sessions:
+            with self.subTest(session_date=session_date):
+                raw = [
+                    Candle(datetime.combine(session_date, datetime.min.time()), 100, 101, 99, 100, 10),
+                    Candle(datetime.combine(trade_date, datetime.min.time()), 100, 102, 98, 101, 20),
+                ]
+                history = [
+                    HistoryRecord(session_date, 0, None, None, None, None, 0),
+                    HistoryRecord(trade_date, 30, 100, 102, 98, 101, 30),
+                ]
+                result = reconcile_session_candles(raw, history)
+                self.assertTrue(result["complete"])
+                self.assertEqual(result["trading_days_reconciled"], 1)
+                self.assertEqual(result["unassigned_raw_candles"], 0)
+                self.assertEqual(result["raw_weekday_additional_session_candles"], 1)
+                self.assertEqual(result["raw_weekday_additional_session_candles_mapped"], 1)
+                self.assertEqual(result["raw_weekday_additional_session_candles_unmapped"], 0)
+
+    def test_unlisted_weekday_without_history_is_not_silently_mapped(self):
+        raw = [Candle(datetime(2026, 3, 2), 100, 101, 99, 100, 10)]
+        result = reconcile_session_candles(raw, [])
+        self.assertFalse(result["complete"])
+        self.assertEqual(result["raw_weekday_additional_session_candles"], 0)
+        self.assertEqual(result["unassigned_raw_candles"], 1)
+
     def test_mapped_weekend_candle_count_counts_fragments_not_unique_dates(self):
         raw = [
             Candle(datetime(2025, 3, 1, 10), 100, 102, 99, 101, 10),
