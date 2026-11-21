@@ -1,0 +1,85 @@
+name: MOEX Corporate Action Price Basis Audit (Read Only)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research_agent/corporate_actions.py"
+      - "research_agent/session_mapping.py"
+      - "research_agent/cli.py"
+      - ".github/workflows/moex-corporate-action-audit.yml"
+  schedule:
+    - cron: "30 2 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moex-corporate-action-price-basis-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run read-only corporate-action and raw-session audit
+        id: audit
+        continue-on-error: true
+        run: |
+          DATE_TILL="$(date -u +%F)"
+          python -m research_agent.cli \
+            --from "2023-11-20" \
+            --till "$DATE_TILL" \
+            --tickers "GMKN,TRNFP,VTBR,PLZL,T" \
+            --output corporate_action_audit_report.json
+      - name: Write concise audit summary
+        if: always()
+        run: |
+          if [ -f corporate_action_audit_report.json ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("corporate_action_audit_report.json").read_text(encoding="utf-8"))
+          lines = [
+              "# MOEX corporate-action price-basis audit",
+              "",
+              f"- Generated: {report.get('generated_at_utc')}",
+              f"- Data through: {report.get('date_till')}",
+              "- Scope: GMKN, TRNFP, VTBR, PLZL, T",
+              "- Source values are not adjusted by this audit.",
+              "",
+              "| Ticker | Status | Price-scale dates | Known split-basis matches | Unexplained | Volume factor counts |",
+              "|---|---:|---:|---:|---:|---|",
+          ]
+          for ticker, item in report.get("results", {}).items():
+              audit = item.get("session_date_mapping", {})
+              lines.append(
+                  f"| {ticker} | {item.get('status')} | "
+                  f"{audit.get('price_scale_mismatch_dates', 'n/a')} | "
+                  f"{audit.get('known_price_basis_match_count', 'n/a')} | "
+                  f"{audit.get('unexplained_price_scale_mismatch_count', 'n/a')} | "
+                  f"{audit.get('price_scale_factor_counts', {})} |"
+              )
+          Path("audit_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          with Path("$GITHUB_STEP_SUMMARY").open("a", encoding="utf-8") as out:
+              out.write(Path("audit_summary.md").read_text(encoding="utf-8"))
+          PY
+          else
+            echo "Research report was not produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-corporate-action-price-basis-audit
+          path: |
+            corporate_action_audit_report.json
+            audit_summary.md
+          if-no-files-found: warn
+          retention-days: 30
