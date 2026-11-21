@@ -41,6 +41,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
     fold_size = available // folds
     fold_reports = []
     all_by_strategy: dict[str, list] = {}
+    all_by_direction_strategy: dict[str, dict[str, list]] = {"LONG": {}, "SHORT": {}}
 
     for fold in range(folds):
         start = warmup_bars + fold * fold_size
@@ -56,11 +57,23 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
             stats = summarize(selected)
             per_strategy[strategy] = stats
             all_by_strategy.setdefault(strategy, []).extend(selected)
+        per_direction = {}
+        for direction, direction_name in ((1, "LONG"), (-1, "SHORT")):
+            direction_stats = {}
+            for strategy in strategies:
+                selected = [
+                    trade for trade in trades
+                    if trade.strategy == strategy and trade.direction == direction
+                ]
+                direction_stats[strategy] = summarize(selected)
+                all_by_direction_strategy[direction_name].setdefault(strategy, []).extend(selected)
+            per_direction[direction_name] = direction_stats
         fold_reports.append({
             "fold": fold + 1,
             "start": rows[start].timestamp.isoformat(),
             "end_inclusive": rows[end - 1].timestamp.isoformat(),
             "strategies": per_strategy,
+            "by_direction": per_direction,
         })
 
     candidates = {}
@@ -93,6 +106,41 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
             "folds": folds,
             "status": "DEVELOPMENT_SCREEN_PASS_UNADJUSTED" if passes else "REJECT_OR_INSUFFICIENT_EVIDENCE",
         }
+
+    candidates_by_direction = {}
+    for direction_name, strategy_groups in all_by_direction_strategy.items():
+        candidates_by_direction[direction_name] = {}
+        for strategy, direction_trades in sorted(strategy_groups.items()):
+            stats = summarize(direction_trades)
+            fold_stats = [
+                fold["by_direction"][direction_name].get(strategy, summarize([]))
+                for fold in fold_reports
+            ]
+            positive_folds = sum(
+                item["average_net_return"] is not None and item["average_net_return"] > 0
+                for item in fold_stats
+            )
+            adequately_sampled_folds = sum(
+                item["closed_trades"] >= min_trades_per_fold for item in fold_stats
+            )
+            passes = (
+                stats["closed_trades"] >= min_total_trades
+                and adequately_sampled_folds == folds
+                and positive_folds >= math.ceil(0.75 * folds)
+                and stats["average_net_return"] is not None
+                and stats["average_net_return"] > 0
+                and (
+                    stats["profit_factor_infinite"]
+                    or (stats["profit_factor"] is not None and stats["profit_factor"] > 1.0)
+                )
+            )
+            candidates_by_direction[direction_name][strategy] = {
+                **stats,
+                "positive_folds": positive_folds,
+                "adequately_sampled_folds": adequately_sampled_folds,
+                "folds": folds,
+                "status": "DEVELOPMENT_SCREEN_PASS_UNADJUSTED" if passes else "REJECT_OR_INSUFFICIENT_EVIDENCE",
+            }
     return {
         "method": "expanding-history indicators; sequential non-overlapping test folds; fixed candidates",
         "candles": len(rows),
@@ -100,6 +148,8 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
         "warmup_bars": warmup_bars,
         "folds": fold_reports,
         "candidates": candidates,
+        "by_direction": candidates_by_direction,
+        "direction_scope": "LONG and SHORT are separate diagnostic replays within each fold; they are not additive portfolio attribution and do not apply a cross-direction position cap.",
         "warning": "Development screening only. Candidate pass labels are unadjusted for multiple testing and are not independent validation, profitability evidence, or production approval.",
     }
 
@@ -152,7 +202,26 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
             "survives_double_costs": survives,
             "baseline_average_net_return": base["average_net_return"],
             "double_cost_average_net_return": stress["average_net_return"] if stress else None,
+            "by_direction": {},
         }
+        for direction_name, direction_candidates in baseline.get("by_direction", {}).items():
+            direction_base = direction_candidates.get(strategy)
+            direction_stress = stressed.get("by_direction", {}).get(direction_name, {}).get(strategy)
+            direction_survives = bool(
+                direction_base
+                and direction_base["status"] == "DEVELOPMENT_SCREEN_PASS_UNADJUSTED"
+                and direction_stress
+                and direction_stress["status"] == "DEVELOPMENT_SCREEN_PASS_UNADJUSTED"
+                and direction_stress["average_net_return"] is not None
+                and direction_stress["average_net_return"] > 0
+            )
+            results[strategy]["by_direction"][direction_name] = {
+                "baseline_status": direction_base["status"] if direction_base else "NO_BASELINE_SAMPLE",
+                "double_cost_status": direction_stress["status"] if direction_stress else "NO_STRESS_SAMPLE",
+                "survives_double_costs": direction_survives,
+                "baseline_average_net_return": direction_base["average_net_return"] if direction_base else None,
+                "double_cost_average_net_return": direction_stress["average_net_return"] if direction_stress else None,
+            }
     return {
         "stress": "2x entry/exit fees and slippage",
         "baseline_execution_config": _execution_config(config),
