@@ -129,7 +129,8 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
     for strategy, base in baseline["candidates"].items():
         stress = stressed["candidates"].get(strategy)
         survives = bool(
-            stress
+            base["status"] == "DEVELOPMENT_SCREEN_PASS_UNADJUSTED"
+            and stress
             and stress["status"] == "DEVELOPMENT_SCREEN_PASS_UNADJUSTED"
             and stress["average_net_return"] is not None
             and stress["average_net_return"] > 0
