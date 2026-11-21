@@ -2,6 +2,7 @@
 
 The caller supplies the point-in-time eligible universe and already validated
 single-security bars. No universe membership is inferred from today's listings.
+Price-basis verification is required separately for each security.
 """
 from __future__ import annotations
 
@@ -33,7 +34,7 @@ def cross_sectional_momentum_12_1(
     panel: Mapping[str, Sequence[dict[str, Any]]],
     *,
     as_of: str,
-    price_basis_status: str = "unverified",
+    price_basis_status_by_ticker: Mapping[str, str] | None = None,
     min_universe: int = CROSS_SECTIONAL_MIN_UNIVERSE,
 ) -> dict[str, Any]:
     """Rank the supplied point-in-time universe on common 12-1 session anchors.
@@ -45,12 +46,12 @@ def cross_sectional_momentum_12_1(
         raise DataContractError("panel must be a non-empty ticker-to-bars mapping")
     if not isinstance(as_of, str) or not as_of:
         raise DataContractError("as_of must be an exact completed-bar timestamp")
-    if price_basis_status not in VALID_PRICE_BASES:
+    if not isinstance(price_basis_status_by_ticker, Mapping):
         return {
             "strategy": "CS_MOM_12_1",
             "status": "DATA_NOT_READY",
             "as_of": as_of,
-            "reason": "Corporate-action/same-share price basis is not verified",
+            "reason": "Per-security price-basis verification is required",
             "ranked": [],
             "eligible_for_performance_test": False,
         }
@@ -58,22 +59,41 @@ def cross_sectional_momentum_12_1(
         raise DataContractError("min_universe must be an integer >= 5")
 
     normalized = {}
+    excluded = {}
     for ticker, bars in panel.items():
         if not isinstance(ticker, str) or not ticker:
             raise DataContractError("ticker keys must be non-empty strings")
+        if price_basis_status_by_ticker.get(ticker) not in VALID_PRICE_BASES:
+            excluded[ticker] = "PRICE_BASIS_NOT_VERIFIED"
+            continue
         validate_bars(bars)
         normalized[ticker] = {bar["timestamp"]: float(bar["close"]) for bar in bars}
 
-    # Use only dates shared by every supplied point-in-time constituent. This
-    # prevents a missing/suspended bar from shifting one symbol's return window.
-    common_dates = set.intersection(*(set(values) for values in normalized.values()))
-    common_dates = sorted(common_dates)
+    if len(normalized) < min_universe:
+        return {
+            "strategy": "CS_MOM_12_1",
+            "status": "INSUFFICIENT_VERIFIED_UNIVERSE",
+            "as_of": as_of,
+            "verified_symbols": len(normalized),
+            "minimum_symbols": min_universe,
+            "excluded": excluded,
+            "reason": "Too few securities have a verified price basis",
+            "ranked": [],
+            "eligible_for_performance_test": False,
+        }
+
+    # Use only dates shared by every verified constituent. A missing/suspended
+    # bar must not silently shift one security's return window.
+    common_dates = sorted(
+        set.intersection(*(set(values) for values in normalized.values()))
+    )
     if as_of not in common_dates:
         return {
             "strategy": "CS_MOM_12_1",
             "status": "UNSYNCHRONIZED_DATA",
             "as_of": as_of,
-            "reason": "As-of date is not shared by every supplied universe member",
+            "excluded": excluded,
+            "reason": "As-of date is not shared by every verified universe member",
             "ranked": [],
             "eligible_for_performance_test": False,
         }
@@ -85,7 +105,8 @@ def cross_sectional_momentum_12_1(
             "strategy": "CS_MOM_12_1",
             "status": "INSUFFICIENT_COMMON_HISTORY",
             "as_of": as_of,
-            "common_sessions": len(common_dates[: end + 1]),
+            "common_sessions": end + 1,
+            "excluded": excluded,
             "reason": "Fewer than 253 common completed sessions through as-of date",
             "ranked": [],
             "eligible_for_performance_test": False,
@@ -98,16 +119,6 @@ def cross_sectional_momentum_12_1(
         values = normalized[ticker]
         value = values[skipped_date] / values[old_date] - 1.0
         ranked.append({"ticker": ticker, "return_12_1": value})
-
-    if len(ranked) < min_universe:
-        return {
-            "strategy": "CS_MOM_12_1",
-            "status": "INSUFFICIENT_UNIVERSE",
-            "as_of": as_of,
-            "reason": f"Only {len(ranked)} eligible symbols; minimum is {min_universe}",
-            "ranked": [],
-            "eligible_for_performance_test": False,
-        }
 
     ranked.sort(key=lambda item: (-item["return_12_1"], item["ticker"]))
     bucket_size = max(1, ceil(len(ranked) * 0.20))
@@ -128,7 +139,8 @@ def cross_sectional_momentum_12_1(
         "long_bucket_size": bucket_size,
         "short_bucket_size": bucket_size,
         "ranked": ranked,
-        "reason": "Point-in-time 12-1 ranking on identical common sessions",
+        "excluded": excluded,
+        "reason": "Point-in-time 12-1 ranking on identical common sessions and individually verified price bases",
         "eligible_for_performance_test": True,
     }
 
@@ -138,7 +150,8 @@ def relative_strength_vs_imoex(
     imoex_bars: Sequence[dict[str, Any]],
     *,
     as_of: str,
-    price_basis_status: str = "unverified",
+    security_price_basis_status: str = "unverified",
+    imoex_price_basis_status: str = "unverified",
     lookback_sessions: int = RELATIVE_STRENGTH_LOOKBACK,
 ) -> dict[str, Any]:
     """Measure 6-month relative performance vs IMOEX, skipping latest 21 sessions.
@@ -148,13 +161,16 @@ def relative_strength_vs_imoex(
     """
     validate_bars(security_bars)
     validate_bars(imoex_bars)
-    if price_basis_status not in VALID_PRICE_BASES:
+    if (
+        security_price_basis_status not in VALID_PRICE_BASES
+        or imoex_price_basis_status not in VALID_PRICE_BASES
+    ):
         return {
             "strategy": "RS_VS_IMOEX_6M_1M",
             "status": "DATA_NOT_READY",
             "as_of": as_of,
             "excess_return": None,
-            "reason": "Corporate-action/same-share price basis is not verified",
+            "reason": "Both security and IMOEX price bases must be verified",
             "eligible_for_performance_test": False,
         }
     if isinstance(lookback_sessions, bool) or not isinstance(lookback_sessions, int):
