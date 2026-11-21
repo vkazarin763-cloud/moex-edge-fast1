@@ -20,6 +20,14 @@ class WalkForwardTests(unittest.TestCase):
             config=BacktestConfig(0, 0, None, None, 2),
         )
         self.assertEqual(len(report["folds"]), 3)
+        self.assertEqual(set(report["by_direction"]), {"LONG", "SHORT"})
+        for fold in report["folds"]:
+            self.assertEqual(set(fold["by_direction"]), {"LONG", "SHORT"})
+            for direction in ("LONG", "SHORT"):
+                self.assertIsInstance(fold["by_direction"][direction], dict)
+        self.assertIn(
+            "not additive portfolio attribution", report["direction_scope"]
+        )
         self.assertEqual(report["execution_config"], {
             "fee_per_side": 0, "slippage_per_side": 0,
             "stop_pct": None, "target_pct": None, "max_bars": 2,
