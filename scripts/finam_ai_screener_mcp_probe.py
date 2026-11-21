@@ -162,12 +162,26 @@ def main():
 
     grants = oauth_meta.get("grant_types_supported") or []
     methods = oauth_meta.get("token_endpoint_auth_methods_supported") or []
+    scopes = oauth_meta.get("scopes_supported") or []
+    device_endpoint = oauth_meta.get("device_authorization_endpoint")
+    device_grant = "urn:ietf:params:oauth:grant-type:device_code" in grants
+    refresh_grant = "refresh_token" in grants
     print("OAUTH_GRANT_CLIENT_CREDENTIALS_SUPPORTED=" +
           ("yes" if "client_credentials" in grants else "no"))
+    print("OAUTH_DEVICE_CODE_SUPPORTED=" +
+          ("yes" if device_endpoint or device_grant else "no"))
+    print("OAUTH_REFRESH_TOKEN_GRANT_SUPPORTED=" +
+          ("yes" if refresh_grant else "no"))
+    print("OAUTH_OFFLINE_ACCESS_SCOPE_SUPPORTED=" +
+          ("yes" if "offline_access" in scopes else "no"))
     if "client_credentials" not in grants:
-        print("RESULT=INTERACTIVE_AUTH_REQUIRED")
-        print("Published OAuth metadata does not advertise client_credentials.")
-        print("A human Authenticate/browser flow is required; GitHub Actions cannot complete it headlessly.")
+        if device_endpoint or device_grant:
+            print("RESULT=DEVICE_AUTH_FLOW_POTENTIALLY_AVAILABLE")
+            print("Finam advertises a device authorization endpoint/grant; a user-mediated one-time flow may be testable.")
+        else:
+            print("RESULT=INTERACTIVE_AUTH_REQUIRED")
+            print("Published OAuth metadata does not advertise client_credentials or device-code authorization.")
+            print("A human Authenticate/browser flow is required; GitHub Actions cannot complete it headlessly.")
         return 0
 
     token_url = oauth_meta.get("token_endpoint")
