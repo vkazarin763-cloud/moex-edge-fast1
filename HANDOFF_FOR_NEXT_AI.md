@@ -1,5 +1,5 @@
 # MOEX EDGE — handoff for another AI
-Updated: 2026-11-17 (UTC)
+Updated: 2026-11-21 (UTC)
 Repository: https://github.com/vkazarin763-cloud/moex-edge-fast1
 Default branch: main
 
@@ -250,7 +250,7 @@ This section is the current project state and supersedes older dated status note
 ## Repository and hard safety boundaries
 - Active repository: https://github.com/vkazarin763-cloud/moex-edge-fast1
 - Work only in this research repository. Never modify production repository `vkazarin763-cloud/moex-edge-fast`.
-- Current main commit at handoff: `a65eeaf3800be1b56deaaa36258a5369fce33cf2` (PR #71 merged).
+- Current main commit at handoff: `ba8ae120dab55155f13c1d0baaccecba83995bd0` (PR #74 scanner and subsequent documentation update merged).
 - Live trading is stopped for this research work. Research agent must remain read-only.
 - Never call broker order endpoints, submit/cancel/replace orders, enable live trading, or expose Finam tokens/secrets.
 - `FINAM_API_TOKEN` exists as GitHub Actions secret; do not request or print its value.
