@@ -144,7 +144,7 @@ class SessionCompatibleReconciliationTests(unittest.TestCase):
 
     def test_total_scope_is_selected_when_ohlc_matches_total_history(self):
         day = date(2025, 10, 27)
-        total = [HistoryRecord(day, 27719 , 12.74, 12.787, 12.3, 12.323, 122514100)]
+        total = [HistoryRecord(day, 31134, 12.74, 12.787, 12.3, 12.323, 122514100)]
         morning = [HistoryRecord(day, 7972, 12.74, 12.787, 12.414, 12.466, 33615100)]
         main = [HistoryRecord(day, 19747, 12.466, 12.56, 12.321, 12.43, 75810400)]
         chart = [Candle(datetime(2025, 10, 27), 12.74, 12.787, 12.3, 12.323, 109020598)]
