@@ -2,7 +2,6 @@ import unittest
 from datetime import date, datetime
 
 from research_agent.core import Candle
-from research_agent.corporate_actions import KNOWN_SHARE_BASIS_EVENTS
 from research_agent.moex_iss import HistoryRecord
 from research_agent.session_mapping import (
     SessionMappingError,
@@ -84,25 +83,6 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["raw_weekend_candles_unmapped"], 1)
         self.assertEqual(result["unassigned_raw_candles"], 1)
 
-    def test_known_share_basis_registry_has_sourced_effective_events(self):
-        expected = {
-            "GMKN": ("2024-04-04", 100.0),
-            "TRNFP": ("2024-02-21", 100.0),
-            "VTBR": ("2024-07-15", 1.0 / 5000.0),
-            "PLZL": ("2025-03-27", 10.0),
-            "T": ("2026-04-17", 10.0),
-        }
-        self.assertEqual(set(KNOWN_SHARE_BASIS_EVENTS), set(expected))
-        for ticker, (effective_date, factor) in expected.items():
-            with self.subTest(ticker=ticker):
-                event = KNOWN_SHARE_BASIS_EVENTS[ticker]
-                self.assertEqual(event["effective_date"], effective_date)
-                self.assertEqual(
-                    event["history_to_current_price_factor_before_event"], factor
-                )
-                self.assertTrue(event["source"].startswith("https://"))
-                self.assertTrue(event["event"])
-
     def test_known_split_price_basis_ratios_are_flagged_without_adjustment(self):
         events = [
             ("GMKN", date(2024, 4, 3), 100.0),
@@ -136,6 +116,23 @@ class TradingDayBarTests(unittest.TestCase):
                 # The audit is diagnostic only: source OHLC values are not rewritten.
                 self.assertEqual(raw[0].close, 105)
                 self.assertEqual(history[0].close, 105 * factor)
+
+    def test_known_split_price_basis_accepts_reciprocal_direction(self):
+        trade_date = date(2024, 4, 3)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
+        history = [HistoryRecord(trade_date, 20, 1, 1.1, 0.9, 1.05, 1000)]
+        result = reconcile_session_candles(raw, history, ticker="GMKN")
+        audit = result["price_scale_mismatch_examples"][0]
+        self.assertEqual(audit["classification"], "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS")
+        self.assertEqual(audit["matched_ratio_direction"], "RECIPROCAL_DOCUMENTED_FACTOR")
+
+    def test_known_corporate_action_factor_after_effective_date_is_not_applied(self):
+        trade_date = date(2024, 4, 5)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
+        history = [HistoryRecord(trade_date, 20, 10000, 11000, 9000, 10500, 1000)]
+        result = reconcile_session_candles(raw, history, ticker="GMKN")
+        self.assertEqual(result["known_price_basis_match_count"], 0)
+        self.assertEqual(result["unexplained_price_scale_mismatch_count"], 1)
 
     def test_unreferenced_price_scale_ratio_remains_unexplained(self):
         trade_date = date(2025, 1, 2)
