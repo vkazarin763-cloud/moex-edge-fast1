@@ -355,3 +355,12 @@ This section is the current project state and supersedes older dated status note
 - PR #74 merged as `d004f0fd7600749dd7613bd549f7d62b97aadb58`. Both required CI checks passed on exact PR head `b7251aaf513e3ac0c3a5528b6b44e97250969867`: Research Agent Safety Tests and Finam Executor Safety Tests.
 - MTF scanner workflow is now on main. To process existing validated artifact, manually run Actions workflow `MOEX EDGE MTF Signals (Read Only)` with source_run_id `44861047844`. Future successful MTF collector runs will trigger scanner automatically.
 - GitHub MCP cannot dispatch workflow_dispatch. Do not claim any actual signal output until the workflow has completed and its signal artifact has been inspected.
+
+
+## 2026-11-21 — Finam live-mode variable warning (read-only CI observation)
+- Finam Executor Safety Tests run `44864354084` (PR #74 CI) reported `FINAM_DRY_RUN=live`, meaning the repository Actions Variable resolves to a false/live value at that run. The workflow prints only the derived mode, not the variable value.
+- This does NOT mean a live order was sent. This CI workflow only checked config presence, compiled code, and ran unit tests; this research session did not call broker order endpoints or dispatch any executor workflow.
+- Current `.github/workflows/moex-edge-fast.yml` hardcodes `FINAM_DRY_RUN='true'` and `FINAM_LIVE_TRADING_ENABLED='false'`; current `.github/workflows/finam-executor.yml` is DRY_RUN-only and also hardcodes true.
+- However, `.github/workflows/finam-one-shot-test.yml` allows live mode if manually dispatched with `confirm_live=true`; `.github/workflows/finam-direct-t-sltp-test.yml` allows one live T order only if both `confirm_live=true` and confirmation string `BUY_T_ONCE` are supplied.
+- Do not dispatch either manual live-capable workflow as part of research. Do not change repository variables/secrets without explicit user instruction. Before any separate live operation, owner must review Actions Variables and ensure intended mode.
+- This is a time-stamped observation; configuration may change. Re-check current state before any executor-related action.
