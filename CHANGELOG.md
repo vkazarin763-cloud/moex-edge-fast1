@@ -170,3 +170,6 @@
 
 ## 2026-11-21 — D1/H1 scanner prototype (PR #74)
 - Added read-only D1/H1 latest-signal scanner, explicit no-lookahead test and artifact-driven Actions workflow. H1 alignment is informational only; await both CI checks on exact PR head.
+
+## 2026-11-21 — scanner merged
+- PR #74 merged at d004f0fd7600749dd7613bd549f7d62b97aadb58. Existing data artifact can be scanned via manual workflow dispatch using source_run_id 44861047844; future collection runs auto-trigger scanning.
