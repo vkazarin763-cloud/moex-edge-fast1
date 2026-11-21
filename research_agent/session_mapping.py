@@ -301,7 +301,7 @@ def reconcile_session_candles(
             item for item in fragments if item.timestamp.weekday() < 5
         ]
         fragments_to_compare = fragments
-        if comparison_history_records is not None and weekday_fragments:
+        if target in comparison_by_date and weekday_fragments:
             fragments_to_compare = weekday_fragments
             mapped_weekend_fragments_excluded_from_comparison += (
                 len(fragments) - len(weekday_fragments)
@@ -331,7 +331,7 @@ def reconcile_session_candles(
                 for got, want in zip(actual_ohlc, expected_prices)
             )
 
-        if comparison_history_records is not None and weekday_fragments:
+        if target in comparison_by_date and weekday_fragments:
             morning_main_record = comparison_by_date.get(target)
             matches_morning_main = price_matches(morning_main_record)
             matches_total = price_matches(record)
