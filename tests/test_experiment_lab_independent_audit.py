@@ -2,6 +2,7 @@
 import unittest
 
 from research_agent.independent_validator import validate_research_report
+from research_agent.cli import research_exit_code
 
 
 def _report():
@@ -15,6 +16,7 @@ def _report():
         "results": {"SBER": {"status": "DATA_OR_ANALYSIS_ERROR"}},
         "experiment_lab": {
             "lab_version": "exit-policy-experiments-v1",
+            "status": "EXPERIMENT_LAB_COMPLETE",
             "generated_scope": "development_history_only",
             "holdout_start": "2026-11-20",
             "hypothesis_ids": ["exit-a"],
@@ -49,6 +51,24 @@ class ExperimentLabIndependentAuditTests(unittest.TestCase):
         self.assertEqual(result["experiment_lab_trials_checked"], 1)
         self.assertEqual(result["experiment_lab_trials_completed"], 0)
         self.assertEqual(result["errors"], [])
+
+    def test_missing_explicit_lab_completion_status_is_rejected(self):
+        report = _report()
+        del report["experiment_lab"]["status"]
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("must explicitly declare" in error for error in result["errors"]))
+
+    def test_cli_exit_code_fails_closed_for_invalid_or_incomplete_reports(self):
+        self.assertEqual(research_exit_code(
+            {"independent_validation": {"status": "INDEPENDENT_VALIDATION_FAIL"}}, 44
+        ), 2)
+        self.assertEqual(research_exit_code(
+            {"independent_validation": {"status": "INDEPENDENT_VALIDATION_INCOMPLETE"}}, 44
+        ), 3)
+        self.assertEqual(research_exit_code(
+            {"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}}, 44
+        ), 0)
 
     def test_holdout_bar_in_experiment_trial_is_rejected(self):
         report = _report()
