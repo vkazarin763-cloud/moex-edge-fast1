@@ -77,8 +77,8 @@ def run_experiment_lab(
     """Run every registered exit hypothesis on development-only D1 candles.
 
     All trials are retained, including insufficient samples and rejected results.
-    Completed trials also carry an independent execution replay comparison.
-    The full hypothesis family size is reported so exploratory screens cannot be
+    Completed trials carry independent signal-formula and execution replay
+    comparisons. The full hypothesis family size is reported so exploratory screens cannot be
     mistaken for multiplicity-adjusted inference.
     """
     cutoff = date.fromisoformat(holdout_start)
