@@ -22,21 +22,10 @@ RELATIVE_STRENGTH_LOOKBACK = 126
 def _index_for_timestamp(
     bars: Sequence[dict[str, Any]], timestamp: str
 ) -> int | None:
-    # Inputs are strictly ordered, so a simple lookup is deterministic.
     for index, bar in enumerate(bars):
         if bar["timestamp"] == timestamp:
             return index
     return None
-
-
-def _return_12_1(
-    bars: Sequence[dict[str, Any]], end: int, lookback: int
-) -> float | None:
-    old_index = end - lookback
-    skipped_index = end - SKIP_RECENT_SESSIONS
-    if old_index < 0 or skipped_index < 0:
-        return None
-    return float(bars[skipped_index]["close"]) / float(bars[old_index]["close"]) - 1.0
 
 
 def cross_sectional_momentum_12_1(
@@ -46,9 +35,9 @@ def cross_sectional_momentum_12_1(
     price_basis_status: str = "unverified",
     min_universe: int = CROSS_SECTIONAL_MIN_UNIVERSE,
 ) -> dict[str, Any]:
-    """Rank the explicitly supplied point-in-time universe by 12-1 return.
+    """Rank the supplied point-in-time universe on common 12-1 session anchors.
 
-    Highest quintile is labelled LONG_CANDIDATE; lowest quintile SHORT_CANDIDATE.
+    Highest quintile is LONG_CANDIDATE; lowest quintile SHORT_CANDIDATE.
     This is a research ranking only, not a portfolio or trade instruction.
     """
     if not isinstance(panel, Mapping) or not panel:
@@ -67,19 +56,46 @@ def cross_sectional_momentum_12_1(
     if isinstance(min_universe, bool) or not isinstance(min_universe, int) or min_universe < 5:
         raise DataContractError("min_universe must be an integer >= 5")
 
-    ranked = []
-    excluded = {}
-    for ticker in sorted(panel):
-        bars = panel[ticker]
+    normalized = {}
+    for ticker, bars in panel.items():
+        if not isinstance(ticker, str) or not ticker:
+            raise DataContractError("ticker keys must be non-empty strings")
         validate_bars(bars)
-        end = _index_for_timestamp(bars, as_of)
-        if end is None:
-            excluded[ticker] = "NO_EXACT_AS_OF_BAR"
-            continue
-        value = _return_12_1(bars, end, TRADING_SESSIONS_PER_YEAR)
-        if value is None:
-            excluded[ticker] = "INSUFFICIENT_252_SESSION_HISTORY"
-            continue
+        normalized[ticker] = {bar["timestamp"]: float(bar["close"]) for bar in bars}
+
+    # Use only dates shared by every supplied point-in-time constituent. This
+    # prevents a missing/suspended bar from shifting one symbol's return window.
+    common_dates = set.intersection(*(set(values) for values in normalized.values()))
+    common_dates = sorted(common_dates)
+    if as_of not in common_dates:
+        return {
+            "strategy": "CS_MOM_12_1",
+            "status": "UNSYNCHRONIZED_DATA",
+            "as_of": as_of,
+            "reason": "As-of date is not shared by every supplied universe member",
+            "ranked": [],
+            "eligible_for_performance_test": False,
+        }
+    end = common_dates.index(as_of)
+    old_index = end - TRADING_SESSIONS_PER_YEAR
+    skipped_index = end - SKIP_RECENT_SESSIONS
+    if old_index < 0:
+        return {
+            "strategy": "CS_MOM_12_1",
+            "status": "INSUFFICIENT_COMMON_HISTORY",
+            "as_of": as_of,
+            "common_sessions": len(common_dates[: end + 1]),
+            "reason": "Fewer than 253 common completed sessions through as-of date",
+            "ranked": [],
+            "eligible_for_performance_test": False,
+        }
+
+    old_date = common_dates[old_index]
+    skipped_date = common_dates[skipped_index]
+    ranked = []
+    for ticker in sorted(normalized):
+        values = normalized[ticker]
+        value = values[skipped_date] / values[old_date] - 1.0
         ranked.append({"ticker": ticker, "return_12_1": value})
 
     if len(ranked) < min_universe:
@@ -89,7 +105,6 @@ def cross_sectional_momentum_12_1(
             "as_of": as_of,
             "reason": f"Only {len(ranked)} eligible symbols; minimum is {min_universe}",
             "ranked": [],
-            "excluded": excluded,
             "eligible_for_performance_test": False,
         }
 
@@ -106,12 +121,13 @@ def cross_sectional_momentum_12_1(
         "strategy": "CS_MOM_12_1",
         "status": "READY_FOR_RESEARCH",
         "as_of": as_of,
+        "common_anchor_timestamp": old_date,
+        "skip_anchor_timestamp": skipped_date,
         "universe_size": len(ranked),
         "long_bucket_size": bucket_size,
         "short_bucket_size": bucket_size,
         "ranked": ranked,
-        "excluded": excluded,
-        "reason": "Point-in-time 12-1 cross-sectional ranking; no future bars used",
+        "reason": "Point-in-time 12-1 ranking on identical common sessions",
         "eligible_for_performance_test": True,
     }
 
@@ -126,9 +142,8 @@ def relative_strength_vs_imoex(
 ) -> dict[str, Any]:
     """Measure 6-month relative performance vs IMOEX, skipping latest 21 sessions.
 
-    Both instruments must contain the exact same formation timestamp and both
-    historical anchor timestamps. The result is excess return in percentage
-    points; it is not beta-adjusted alpha and is not a directional trade signal.
+    The security and IMOEX must match on the as-of date and both anchor dates.
+    The result is excess return, not beta-adjusted alpha or a trade signal.
     """
     validate_bars(security_bars)
     validate_bars(imoex_bars)
@@ -168,7 +183,7 @@ def relative_strength_vs_imoex(
             "status": "INSUFFICIENT_DATA",
             "as_of": as_of,
             "excess_return": None,
-            "reason": "Not enough synchronized history for lookback and skip window",
+            "reason": "Not enough history for lookback and skip window",
             "eligible_for_performance_test": False,
         }
 
