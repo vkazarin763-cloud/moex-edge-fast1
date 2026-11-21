@@ -20,9 +20,9 @@ class V2StrategyRegistryTests(unittest.TestCase):
     def test_registry_does_not_claim_validation_or_approval(self):
         registry = get_v2_strategy_registry()
         for entry in registry.values():
-            self.assertIn("NOT_VALIDATED", entry["status"]) or self.assertIn(
-                "INCOMPLETE", entry["status"]
-            ) or self.assertIn("BLOCKED", entry["status"])
+            self.assertTrue(
+                any(marker in entry["status"] for marker in ("NOT_VALIDATED", "INCOMPLETE", "BLOCKED"))
+            )
 
     def test_pairs_strategy_is_explicitly_blocked_until_data_exists(self):
         entry = get_v2_strategy_registry()["PAIRS_STAT_ARB"]
