@@ -239,3 +239,99 @@ Default branch: main
 - Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
 - No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
+
+
+---
+
+# CURRENT AUTHORITATIVE HANDOFF — 2026-11-21 (MOEX EDGE research)
+
+This section is the current project state and supersedes older dated status notes above where they conflict. Older historical notes are retained for audit history; do not assume their PR numbers, branches, trading configuration, or status are current.
+
+## Repository and hard safety boundaries
+- Active repository: https://github.com/vkazarin763-cloud/moex-edge-fast1
+- Work only in this research repository. Never modify production repository `vkazarin763-cloud/moex-edge-fast`.
+- Current main commit at handoff: `a65eeaf3800be1b56deaaa36258a5369fce33cf2` (PR #71 merged).
+- Live trading is stopped for this research work. Research agent must remain read-only.
+- Never call broker order endpoints, submit/cancel/replace orders, enable live trading, or expose Finam tokens/secrets.
+- `FINAM_API_TOKEN` exists as GitHub Actions secret; do not request or print its value.
+- Protected files — do not modify for this research project:
+  `moex_edge_fast1.py`, `finam_executor.py`, `futures_scanner.py`,
+  `futures_executor.py`, `ai_agent.py`, `ai_trainer.py`,
+  `ai_portfolio.json`, `ai_weights.json`.
+- User authorizes safe PR merges only after both required CI checks pass and the PR head SHA is rechecked.
+- GitHub MCP cannot dispatch `workflow_dispatch`; user must manually run Actions workflows when needed.
+- User wants autonomous practical progress, Russian explanations, and no fabricated metrics/signals.
+
+## Frozen research design — do not retune
+- Prospective holdout starts: `2026-11-20`. Do not use holdout observations to select, rank, optimize, or tune strategies.
+- Frozen cohort: `v1-frozen-2026-11-19`.
+- Exactly five frozen strategies:
+  1. Donchian20 breakout
+  2. EMA20x50 cross
+  3. RSI14 trend 50 crossing
+  4. MACD12x26 crossover
+  5. Keltner20x2ATR breakout
+- Statistical gates: minimum 30 trades; Newey-West HAC; moving-block bootstrap confidence interval; Holm-Bonferroni correction across family of 220 hypotheses.
+- Simulator conventions: signal at close, entry next open; conservative stop-first if stop and target touched same bar; stop gaps execute at open; target gaps execute at target; two-sided commissions/slippage; non-overlapping trades.
+- Do not claim profitability without completed valid tests.
+- Do not add variants or tune on prospective holdout. Keep development walk-forward separate from prospective holdout.
+- Universe frozen at 44 tickers:
+  `AFKS,AFLT,ALRS,BSPB,CBOM,CHMF,CNRU,DOMRF,ENPG,FLOT,GAZP,GMKN,HEAD,IRAO,LKOH,MAGN,MDMG,MOEX,MTSS,NLMK,NVTK,OZON,PHOR,PLZL,POSI,RAGR,RENI,ROSN,RTKM,RUAL,SBER,SBERP,SNGS,SNGSP,SVCB,T,TATN,TATNP,TRNFP,UGLD,VKCO,VTBR,X5,YDEX`.
+
+## MTF data collection — current verified artifact
+- Workflow: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44861047844
+- Workflow status: completed, `success`; run ID `44861047844`; job `collect` succeeded.
+- Run commit: `a65eeaf3800be1b56deaaa36258a5369fce33cf2`.
+- Artifact name: `moex-edge-multi-timeframe-candles`; artifact ID `14690518588`; uploaded 2026-11-21; retention 30 days.
+- Artifact ZIP filename in working environment: `moex-edge-mtf-44861047844.zip`.
+- ZIP SHA-256: `6a9ee767f37bec1f9fa9d40d0868ccc8f36b2271dd5ef4a1715f83e4a51af137`.
+- ZIP contains `moex_edge_multi_timeframe_candles.json` and `moex_edge_multi_timeframe_validation.json`.
+- JSON snapshot `generated_at_utc/as_of_utc = 2026-11-21T03:25:33.304483+00:00` (06:25:33 Europe/Moscow).
+- Validator status `PASS`, 44 symbols, 13 frames, `issue_count=0`.
+- Independent local recheck across every candle: 787,929 total bars; zero duplicate timestamps, non-monotonic series, invalid/non-finite OHLCV, OHLC inconsistencies, negative volume, Finam snapshot=true records, or bars whose native interval end is after as_of.
+- Frame counts (each frame has 44/44 non-empty symbols):
+  - Finam M1 247,364; M5 218,870; M15 74,160; M30 37,256; H1 18,781; H2 10,114; H4 5,500; H8 3,344.
+  - MOEX ISS M10 110,962; W1 10,088; MN 2,322; QR 750.
+  - MOEX ISS native TQBR D1 history 48,418.
+- Exclusions reported by collector: Finam snapshot=true 0; incomplete Finam intraday 0; unknown Finam snapshot flags retained 0; MOEX incomplete W1/MN/QR 44 each (one per symbol); D1 zero-trade rows 826 total; D1 incomplete/invalid rows 0.
+- All 44 tickers have a latest closed H1 and D1 bar. D1 data is sourced from native per-security TQBR history, not resampled from intraday. Finam and MOEX feeds remain separate. No resampling, filling, interpolation, or provider merging.
+- Time handling: Finam timestamps timezone-aware UTC; naive MOEX timestamps interpreted as Europe/Moscow. Validator uses native timeframe durations and excludes bars ending after as_of.
+- Artifact is a workflow artifact with 30-day retention; retrieve it using GitHub Actions artifact ID above. Do not put the 100MB uncompressed JSON into Git history. Preserve ZIP checksum and run ID when handing off.
+- Full frame-level counts/exclusion details are in `docs/MULTITIMEFRAME_DATASET_2026-11-21.md`.
+
+## Relevant merged PRs in research repository
+- PR #63 — conservative weekend handling; original dates retained; unverified weekend bars diagnostic-only.
+- PR #64 — report metadata/docs corrected for weekend handling.
+- PR #65 — research eligibility filter excludes unverified weekend bars from model inputs.
+- PR #67 — D1 research source uses per-security TQBR daily-history OHLCV; raw calendar candles retained only for reconciliation.
+- PR #68 — manual read-only multi-timeframe collector introduced (Finam intraday and MOEX ISS native frames).
+- PR #69 — Finam 401 refresh/retry once; incomplete MOEX M10/W1/MN/QR bars excluded.
+- PR #70 — native Finam H1 collection; complete-bar and timezone/no-lookahead validation.
+- PR #71 — native official MOEX ISS TQBR D1 collection and D1 close-time validation. Merge commit is current main `a65eeaf...`.
+- All above were merged after required CI checks passed. Do not confuse the separate MTF D1 feed with the frozen historical D1 research dataset.
+
+## Prior research report — development only, no confirmed edge
+- Last completed research run: `44797994665`; artifact ID `14660240933`; report generated 2026-11-20 19:08 UTC.
+- 44/44 tickers; zero history fetch errors; data range 2023-11-20 to 2026-11-19; 31,405 model bars; 37,533 raw calendar candles; 5,869 weekend rows.
+- All 44 reconciliation statuses `VALID_WITH_CAVEATS`; 1,237 aggregate date OHLCV mismatches, 419 unassigned raw candles, 2 unmapped weekend bars; all crosschecks `CROSSCHECK_INCONCLUSIVE`. Notably T, PLZL, VTBR, GMKN, TRNFP had higher mismatch counts. Do not erase these caveats or treat crosscheck as passed.
+- Prospective holdout: all 44 `WAITING_FOR_PROSPECTIVE_DATA`; zero holdout bars/trades in that run.
+- Preliminary development screens: Donchian20 10 ticker unadjusted passes; MACD12x26 7; EMA20x50 0; RSI14Trend50 0; Keltner 0. Global multiple-testing eligible_tests=0; no strategy statistically confirmed.
+- Development walk-forward portfolio (normalized equity, not RUB; equal-slot cash-only; no MTM open positions): cap5 -18.81%, max DD -40.12%, 955 trades; cap7 -12.19%, max DD -34.86%, 1,277 trades; cap10 -12.09%, max DD -34.72%, 1,673 trades. Development evidence only, not prospective holdout and not profitability proof.
+- Scanner output requirement: signals only (LONG/SHORT), strategy, H1 confirmation and relevant signal parameters. No capital, position sizing, or portfolio allocation unless user asks.
+
+## Current development stage and next actions
+1. MTF candle collector and validation are complete for the current run. This is data collection only, not a finished scanner.
+2. Build a separate read-only MTF scanner in research repo; do not change frozen cohort, frozen D1 research inputs, holdout, or protected files.
+3. Architecture candidate for implementation/research: D1 closed-bar direction/context; H1 closed-bar confirmation; use a lower timeframe trigger only as a separately documented design choice (do not silently assume or optimize it). M10/W1/MN/QR/H2/H4/H8 can initially be diagnostics/context, not mandatory gates.
+4. Strict as-of joins: for each candidate signal timestamp, use only the latest D1/H1/lower-TF bar whose native interval has fully ended by that timestamp. Never use current/incomplete bars or future timestamps. Preserve provider provenance and timezone.
+5. Develop scanner logic on development data only. Keep the 2026-11-20+ prospective holdout sealed from selection/tuning; only log prospective outputs with frozen rules.
+6. Do not output fabricated signals. Generate signal lists only after executing code against actual validated data.
+7. Keep all workflows manual/read-only unless specifically authorized; no broker execution.
+8. Before each PR merge: inspect changed files against protected list, verify both required CI checks are green on exact current PR head SHA, then merge only if safe.
+
+## How another AI should resume
+- Read this section first, then `docs/MULTITIMEFRAME_DATASET_2026-11-21.md`, then the code/workflows named above.
+- Start by checking current main SHA and open PRs/workflow status; this handoff can become stale.
+- Download artifact run `44861047844` / artifact `14690518588` before its 30-day expiry if you need the full raw candle arrays.
+- Continue only in `moex-edge-fast1`. Do not assume any other assistant has the artifact in its local filesystem.
+- Do not ask user to repeat details already in this handoff. Provide concise progress in Russian and continue autonomous safe research work.
