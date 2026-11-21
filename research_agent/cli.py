@@ -10,7 +10,8 @@ from zoneinfo import ZoneInfo
 from .moex_iss import fetch_candles, fetch_history_records
 from .corporate_actions import apply_post_event_price_basis
 from .validation import (walk_forward_report, adversarial_cost_check,
-                         prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION,\n                         cross_sectional_direction_summary)
+                         prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION,
+                         cross_sectional_direction_summary)
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
 from .independent_validator import validate_research_report
