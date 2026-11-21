@@ -108,14 +108,25 @@ def adversarial_cost_check(candles: list[Candle], folds: int = 4,
                            warmup_bars: int = 200,
                            min_total_trades: int = 30,
                            min_trades_per_fold: int = 5,
-                           config: BacktestConfig = BacktestConfig()) -> dict[str, Any]:
+                           config: BacktestConfig = BacktestConfig(),
+                           baseline_report: dict[str, Any] | None = None) -> dict[str, Any]:
     """Re-run the same fixed hypotheses with doubled fees and slippage.
 
-    This is an execution-cost sensitivity test, not independent data validation.
+    A matching baseline report may be supplied by callers that have already
+    computed it. This avoids repeating the identical baseline walk-forward run;
+    the stressed run is always recalculated with doubled costs.
     """
-    baseline = walk_forward_report(
-        candles, folds, warmup_bars, min_total_trades, min_trades_per_fold, config
-    )
+    expected_config = _execution_config(config)
+    if baseline_report is None:
+        baseline = walk_forward_report(
+            candles, folds, warmup_bars, min_total_trades, min_trades_per_fold, config
+        )
+    else:
+        if (not isinstance(baseline_report, dict)
+                or baseline_report.get("execution_config") != expected_config
+                or not isinstance(baseline_report.get("candidates"), dict)):
+            raise ValueError("baseline_report must match the supplied execution config")
+        baseline = baseline_report
     stressed_config = replace(
         config,
         fee_per_side=config.fee_per_side * 2.0,
