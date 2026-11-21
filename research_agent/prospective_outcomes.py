@@ -185,9 +185,9 @@ def update_prospective_outcomes(signal_ledger_path: str | Path, candle_report: d
                 skipped_overlap += 1
 
     if candidates:
-        with path.open("a", encoding="utf-8", newline="\\n") as stream:
+        with path.open("a", encoding="utf-8", newline="\n") as stream:
             for record in candidates:
-                stream.write(_canonical(record) + "\\n")
+                stream.write(_canonical(record) + "\n")
             stream.flush()
 
     combined = list(existing.values()) + candidates
@@ -222,7 +222,7 @@ def main() -> int:
     args = parser.parse_args()
     candle_report = json.loads(Path(args.candles).read_text(encoding="utf-8"))
     result = update_prospective_outcomes(args.signals_ledger, candle_report, args.outcomes_ledger)
-    Path(args.report).write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\\n", encoding="utf-8")
+    Path(args.report).write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(f"Prospective outcomes: new_closed={result['newly_closed']}, total_closed={result['total_closed']}, pending_open={result['pending_open']}, waiting_entry={result['pending_waiting_for_entry']}, overlap_skipped={result['skipped_overlap']}")
     return 0
 
