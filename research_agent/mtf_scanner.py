@@ -137,6 +137,37 @@ def _d1_signals_at_last_bar(rows: list[Candle]) -> list[dict]:
     return signals
 
 
+def _sma200_direction_gate(rows: list[Candle]) -> dict:
+    """Mirror AI Virtual Trader's D1 SMA200 direction gate on closed candles."""
+    rows = validate_candles(rows)
+    closes = [row.close for row in rows]
+    if len(closes) < 200:
+        return {
+            "status": "INSUFFICIENT_HISTORY",
+            "direction": None,
+            "bars_available": len(closes),
+            "required_bars": 200,
+            "rule": "LONG only when D1 close > SMA200; SHORT only when D1 close < SMA200",
+        }
+    sma200 = sum(closes[-200:]) / 200.0
+    close = closes[-1]
+    if close > sma200:
+        status, direction = "BULLISH", "LONG"
+    elif close < sma200:
+        status, direction = "BEARISH", "SHORT"
+    else:
+        status, direction = "NEUTRAL", None
+    return {
+        "status": status,
+        "direction": direction,
+        "d1_close": close,
+        "sma200": sma200,
+        "bars_available": len(closes),
+        "required_bars": 200,
+        "rule": "LONG only when D1 close > SMA200; SHORT only when D1 close < SMA200",
+    }
+
+
 def _h1_alignment(rows: list[Candle], direction: int) -> dict:
     """Informational H1 trend confirmation; it does not filter D1 signals."""
     rows = validate_candles(rows)
@@ -175,6 +206,8 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
         raise ValueError("Candle and validation reports must have the same snapshot time")
 
     signals = []
+    candidate_signals = []
+    blocked_signals = []
     skipped = []
     for symbol in candles_report.get("universe", []):
         symbol_data = candles_report["results"].get(symbol, {})
@@ -207,6 +240,7 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
             continue
         h1_rows = _parse_candles(eligible_h1, source=h1_item["source"])
         d1_candidates = _d1_signals_at_last_bar(d1_rows)
+        trend_gate = _sma200_direction_gate(d1_rows)
         for candidate in d1_candidates:
             direction = candidate["direction_code"]
             h1 = _h1_alignment(h1_rows, direction)
@@ -216,7 +250,7 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
                 h1["h1_age_minutes_at_d1_close"] = round(
                     (d1_end - h1_end).total_seconds() / 60, 2
                 )
-            signals.append({
+            signal_record = {
                 "symbol": symbol,
                 "direction": candidate["direction"],
                 "strategy": candidate["strategy"],
@@ -226,7 +260,14 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
                 "d1_bar_end_utc": d1_end.isoformat(),
                 "h1_confirmation": h1["status"],
                 "h1": h1,
-            })
+                "trend_gate": trend_gate,
+                "trend_filter": "PASSED" if trend_gate.get("direction") == candidate["direction"] else "BLOCKED",
+            }
+            candidate_signals.append(signal_record)
+            if signal_record["trend_filter"] == "PASSED":
+                signals.append(signal_record)
+            else:
+                blocked_signals.append(signal_record)
 
     # Mark, but never resolve or suppress, cross-strategy directional conflicts.
     directions_by_symbol = {}
@@ -241,8 +282,12 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
         "as_of_utc": cutoff.isoformat(),
         "universe_size": len(candles_report.get("universe", [])),
         "symbols_with_d1_h1_data": len(candles_report.get("universe", [])) - len(skipped),
+        "candidate_signals_count": len(candidate_signals),
         "signals_count": len(signals),
+        "blocked_signals_count": len(blocked_signals),
+        "candidate_signals": candidate_signals,
         "signals": signals,
+        "blocked_signals": blocked_signals,
         "skipped_symbols": skipped,
         "strategy_cohort_version": STRATEGY_COHORT_VERSION,
         "strategies": list(STRATEGIES),
@@ -250,6 +295,7 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
             "signal_source": "Latest fully closed native MOEX ISS TQBR D1 candle",
             "confirmation_source": "Latest native Finam H1 candle closed no later than the D1 signal candle end",
             "h1_confirmation": "Informational alignment only: LONG requires H1 EMA20>EMA50 and close>EMA20; SHORT requires H1 EMA20<EMA50 and close<EMA20. It does not suppress or rank D1 signals.",
+            "direction_gate": "AI Virtual Trader-compatible D1 SMA200 gate: LONG candidates pass only when the latest fully closed D1 close is above its 200-bar simple moving average; SHORT candidates pass only when below. Equality, missing SMA200 warm-up, or unavailable direction fail closed and block entries. Raw candidates remain separately visible; only passed signals appear in signals.",
             "lookahead_policy": "Only bars whose native interval end is <= as_of are eligible; H1 is additionally bounded by the D1 signal bar end.",
             "strategy_policy": "Uses the five frozen candidate formulas and their fixed parameters; no optimization or strategy selection is performed.",
             "research_status": "Scanner prototype only. This output is not a backtest, profitability claim, or trade instruction. The H1 alignment rule is a new informational overlay and must not be used to retune the frozen cohort.",
