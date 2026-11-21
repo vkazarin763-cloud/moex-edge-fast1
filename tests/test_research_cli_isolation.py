@@ -56,6 +56,7 @@ class CliHoldoutIsolationTests(unittest.TestCase):
             HistoryRecord(date(2026, 11, 20), 10, 102.0, 103.0, 101.0, 102.5, 1000.0),
         ]
         with (
+            patch.object(cli, "run_experiment_lab", return_value={"status": "SHOULD_NOT_RUN"}) as experiment_lab,
             patch.object(cli, "cap_to_last_completed_moscow_date", return_value="2026-11-20"),
             patch.object(cli, "fetch_history_records", return_value=history_records) as history_fetch,
             patch.object(cli, "fetch_candles", return_value=candles) as fetch,
@@ -81,6 +82,8 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         self.assertEqual(observed["portfolio"], observed["development"])
         self.assertEqual(report["development_portfolio"]["status"], "DEVELOPMENT_WALK_FORWARD_PORTFOLIO")
         self.assertEqual(report["results"]["TEST"]["status"], "ANALYZED")
+        self.assertEqual(report["experiment_lab"]["status"], "SKIPPED_NOT_REQUESTED")
+        experiment_lab.assert_not_called()
         fetch.assert_called_once()
         history_fetch.assert_called_once_with(
             "TEST", "2023-11-19", "2026-11-20", board="TQBR"
