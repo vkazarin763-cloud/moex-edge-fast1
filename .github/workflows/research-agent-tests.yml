@@ -8,6 +8,7 @@ on:
       - "tests/**"
       - ".github/workflows/research-agent-tests.yml"
       - "HANDOFF_FOR_NEXT_AI.md"
+      - "docs/HANDOFF.md"
 
 permissions:
   contents: read
