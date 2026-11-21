@@ -1,7 +1,24 @@
 import unittest
 from datetime import datetime, timezone
 
-from research_agent.cli import cap_to_last_completed_moscow_date
+from research_agent.cli import cap_to_last_completed_moscow_date, research_exit_code
+
+
+class ResearchExitCodeTests(unittest.TestCase):
+    def test_pass_returns_zero(self):
+        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}}, 44), 0)
+
+    def test_fail_returns_two(self):
+        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_FAIL"}}, 44), 2)
+
+    def test_incomplete_returns_three(self):
+        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_INCOMPLETE"}}, 44), 3)
+
+    def test_missing_validation_fails_closed_without_recursion(self):
+        self.assertEqual(research_exit_code({}, 44), 3)
+
+    def test_no_analyzed_tickers_returns_nonzero(self):
+        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}}, 0), 1)
 
 
 class CompletedDailyDateTests(unittest.TestCase):
