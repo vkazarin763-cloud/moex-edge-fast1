@@ -122,6 +122,7 @@ def update_prospective_outcomes(signal_ledger_path: str | Path, candle_report: d
     existing = _read_existing(path)
     candidates = []
     pending_waiting_entry = pending_open = skipped_overlap = 0
+    recomputed_closed_event_ids = set()
 
     for symbol, events in sorted(grouped.items()):
         rows = _load_d1(candle_report, symbol)
@@ -152,6 +153,7 @@ def update_prospective_outcomes(signal_ledger_path: str | Path, candle_report: d
             if trade.status == "OPEN":
                 pending_open += 1
                 continue
+            recomputed_closed_event_ids.add(event["event_id"])
             outcome_id = _outcome_id(event["event_id"])
             record = {
                 "schema_version": 1, "outcome_id": outcome_id,
@@ -182,6 +184,14 @@ def update_prospective_outcomes(signal_ledger_path: str | Path, candle_report: d
         for key, event in event_by_key.items():
             if key not in returned_keys and index_by_time[event["signal_time"]] + 1 < len(rows):
                 skipped_overlap += 1
+
+    previously_closed_event_ids = {record["event_id"] for record in existing.values()}
+    missing_closed = previously_closed_event_ids - recomputed_closed_event_ids
+    if missing_closed:
+        raise OutcomeLedgerError(
+            "Previously closed prospective outcomes no longer reproduce; refusing update: "
+            + ", ".join(sorted(missing_closed)[:5])
+        )
 
     if candidates:
         with path.open("a", encoding="utf-8", newline="\n") as stream:
