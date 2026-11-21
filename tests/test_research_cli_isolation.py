@@ -82,22 +82,8 @@ class CliHoldoutIsolationTests(unittest.TestCase):
         self.assertEqual(report["development_portfolio"]["status"], "DEVELOPMENT_WALK_FORWARD_PORTFOLIO")
         self.assertEqual(report["results"]["TEST"]["status"], "ANALYZED")
         fetch.assert_called_once()
-        self.assertEqual(history_fetch.call_count, 3)
-        self.assertEqual(
-            history_fetch.call_args_list,
-            [
-                unittest.mock.call(
-                    "TEST", "2023-11-19", "2026-11-20", board="TQBR"
-                ),
-                unittest.mock.call(
-                    "TEST", "2023-11-19", "2026-11-20",
-                    board="TQBR", trading_session=0,
-                ),
-                unittest.mock.call(
-                    "TEST", "2023-11-19", "2026-11-20",
-                    board="TQBR", trading_session=1,
-                ),
-            ],
+        history_fetch.assert_called_once_with(
+            "TEST", "2023-11-19", "2026-11-20", board="TQBR"
         )
         self.assertLessEqual(
             date.fromisoformat(fetch.call_args.args[1]),
