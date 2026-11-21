@@ -345,3 +345,43 @@ Collection artifact: `moex-edge-multi-timeframe-candles`, ID `14701243872`; vali
 5. The legacy hourly workflow still has a separate CSV output containing `entry_price` and `qty`; do not present that legacy CSV as the compliant signal-only report. Do not modify its workflow or protected executor files as part of this MTF work.
 6. Keep the research agent read-only. Never call broker order endpoints, enable live trading, or expose credentials. Do not use `workflow_dispatch` for project runs.
 
+## 14. Prospective signal ledger and frozen execution replay — 2026-11-21
+
+**Verified main commit:** `0720be08b53c3f0bf75f7d343e1aa8de941ce1a0` (PR #122 merge commit). This supersedes the older main-SHA snapshots above; those historical snapshots are retained as dated context, not current state.
+
+### PR #114–#118: signal and execution evidence pipeline
+
+- **PR #114** added the append-only signal ledger core: deterministic event identity, JSONL append, idempotent duplicate handling, and fail-closed behavior for malformed or materially changed records.
+- **PR #115** added the isolated ledger workflow. It consumes only a successful main-branch scanner artifact and writes to the dedicated `moex-edge-signal-ledger` branch; it does not write to main or use broker credentials.
+- **PR #116–#118** added historical signal replay and frozen-cost execution replay as separate artifacts. Historical replay uses the frozen core signal generator and strict pre-holdout cutoff; execution replay uses the frozen backtest engine/configuration.
+- Frozen protocol and holdout remain unchanged. Historical replay is development evidence only; prospective evidence starts at 2026-11-20.
+
+### PR #122: ledger floating-point idempotency correction
+
+- PR: https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/122
+- Merged: 2026-11-21 10:24:23 UTC.
+- Head SHA: `690b40c4d8cd0f2fc8ea741838408c56c72771ee`.
+- Merge commit: `0720be08b53c3f0bf75f7d343e1aa8de941ce1a0`.
+- Required checks passed on the exact PR head: Research Agent Safety Tests run `44894114142`; Finam Executor Safety Tests run `44894114148`.
+- Numeric repeat-event comparison now uses `math.isclose(rel_tol=1e-9, abs_tol=1e-8)`; booleans remain type-strict and structural changes remain strict. The regression test covers the observed approximately 1.08e-6 drift in YDEX H1 EMA50 around 3346. First-observed payloads are preserved unchanged.
+- Ledger workflow run `44893403407`, attempt 4, completed successfully after the fix. It appended/confirmed 40 records with 40 unique event IDs, all in cohort `v1-frozen-2026-11-19`; 40 SHORT, 0 LONG, 27 distinct symbols; D1 bar end `2026-11-20T21:00:00+00:00`. Ledger file SHA at verification: `375af14d6d72eb5b3b8d2d7bfb9879a9cc243749`.
+
+### Latest automated signal cycle known at this snapshot
+
+- Collector run `44893026379`: successful; 44 D1/H1 series; independent validation reported no known issues.
+- Scanner run `44893384222`: successful; 44 symbols checked; 40 signals, all SHORT; all 40 H1-confirmed. Strategy counts: Donchian20 22, Keltner20x2ATR 7, MACD12x26 6, EMA20x50 3, RSI14Trend50 2.
+- Historical replay run `44893384340`: successful.
+- These are operational scan/replay outputs, not evidence of profitability. The 40 signals are a point-in-time observation, not a trading instruction.
+
+### Historical execution replay — interpretation guardrails
+
+The frozen execution replay is separate from the prospective ledger. Its configuration remains stop 3%, target 6%, max hold 120 D1 bars, commission 0.1% per side and slippage 0.05% per side. It uses next-open entry and the frozen stop/target gap rules. Historical observations overlap across symbols/strategies and are not a portfolio simulation or statistically validated edge. Do not use the replay to tune the prospective holdout.
+
+### Immediate next actions
+
+1. Keep the weekday D1/H1 collector, read-only scanner, and isolated ledger running on their existing schedules/triggers; inspect actual Actions results when available rather than claiming background monitoring.
+2. Confirm the next successful collector → scanner → ledger cycle and check that duplicate events remain idempotent.
+3. Accumulate prospective outcomes without changing the frozen cohort, formulas, exits, costs, or holdout.
+4. Do not tune until each tested hypothesis has at least 30 closed prospective trades and all frozen statistical controls can be applied.
+5. Keep all broker execution paths out of this research workflow. Never use `workflow_dispatch`, live orders, or credentials.
+
