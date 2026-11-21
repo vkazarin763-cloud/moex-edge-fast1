@@ -44,11 +44,14 @@ jobs:
           else
             python -m research_agent.multi_timeframe --output moex_edge_multi_timeframe_candles.json
           fi
+      - name: Validate timestamps and no-lookahead alignment
+        run: |
+          python -m research_agent.multi_timeframe_validation --input moex_edge_multi_timeframe_candles.json --output moex_edge_multi_timeframe_validation.json
       - name: Upload multi-timeframe candle artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: moex-edge-multi-timeframe-candles
-          path: moex_edge_multi_timeframe_candles.json
+          path: |\n            moex_edge_multi_timeframe_candles.json\n            moex_edge_multi_timeframe_validation.json
           if-no-files-found: warn
           retention-days: 30
