@@ -271,3 +271,23 @@ These patterns suggest a shared session-coverage or data-aggregation issue, but 
 3. Recheck other residual mismatch dates after the common dates are understood; distinguish volume-only from price-field differences.
 4. Keep official TQBR history as the frozen model-input source. TCSG remains reconciliation-only.
 5. Do not change the frozen cohort, holdout, strategies, costs, execution model, or broker/production code.
+
+
+## 12. User-facing D1/H1 signal pipeline and scheduled automation proposal
+
+### Correct signal artifact vs legacy hourly log
+
+- The legacy workflow run `44887560484` (`MOEX EDGE FAST (Hourly Trading)`) produced 16 SHORT rows, all marked H1-confirmed, but its `moex_signals.csv` contains `entry_price` and `qty`. This conflicts with the current user-facing output contract (signals, direction, strategy, H1 confirmation, indicator parameters only). Do not present that legacy CSV as the compliant signal report. The legacy workflow and protected executor files remain untouched.
+- The read-only MTF scanner run `44868142437` produced 40 signals from 44/44 symbols with D1/H1 data and zero skipped symbols. Artifact `moex-edge-mtf-signals-44866432461`, ID `14692458973`. Its signal objects contain symbol, direction, strategy, D1 timestamp/close, indicator parameters, H1 confirmation/alignment and conflict status; no quantity, position size, capital allocation, or entry-price sizing fields.
+- The MTF scanner uses the five frozen strategy formulas and applies H1 alignment as informational confirmation only; it does not filter or rank signals. It is read-only and does not call account/order endpoints.
+
+### PR #111 — scheduled lightweight D1/H1 scan
+
+Branch: `feat/scheduled-d1-h1-signal-scan`. Proposed changes:
+- Add a `--frames` selector to `research_agent.multi_timeframe`; default behavior remains the full existing timeframe collection. Explicit selection requires D1 and supports the scheduled `D1,H1` collection.
+- Schedule the MTF candle workflow for weekdays at 05:00 UTC and trigger it on relevant main-branch code changes. Scheduled/push runs fetch only MOEX TQBR D1 history and Finam H1 candles, avoiding the other ten timeframe feeds.
+- Keep manual full-timeframe collection behavior intact.
+- Trigger the read-only MTF signal scanner after a successful collection run and publish a concise GitHub Actions step summary with symbol, direction, strategy, D1 close and H1 confirmation.
+- Add tests for D1/H1-only collection and explicitly prohibit sizing/capital fields in MTF signal objects.
+
+The scheduled data path is read-only: D1 is native MOEX ISS TQBR history; H1 is Finam market data. It does not submit orders, calculate quantity, allocate capital, or modify the frozen research cohort/holdout. Do not claim it is active until PR #111 is merged and the first push-triggered run is confirmed successful.
