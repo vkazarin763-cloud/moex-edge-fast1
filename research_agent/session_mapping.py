@@ -500,12 +500,25 @@ def reconcile_session_candles(
             if field in mismatch_field_counts:
                 mismatch_field_counts[field] += 1
 
+    known_price_basis_dates = {
+        item["trade_date"] for item in price_scale_mismatches
+        if item["classification"] == "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS"
+    }
+    mismatch_dates = {item["trade_date"] for item in mismatches}
+    weekday_bar_dates = {
+        target.isoformat() for target, fragments in grouped.items()
+        if any(item.timestamp.weekday() < 5 for item in fragments)
+    }
+    session_scope_probe_dates = sorted(
+        (mismatch_dates & weekday_bar_dates) - known_price_basis_dates
+    )
     mapped_raw_candles = sum(len(fragments) for fragments in grouped.values())
     return {
         "status": "RECONCILED" if reconciliation_complete else (
             "NO_RAW_CANDLES" if not rows else "RECONCILIATION_WITH_CAVEATS"
         ),
         "raw_candles": len(rows),
+        "session_scope_probe_dates": session_scope_probe_dates,
         "comparison_basis": (
             "OHLC_MATCHED_MORNING_MAIN_OR_TOTAL_SESSION"
             if comparison_history_records is not None else "TOTAL_SESSION_HISTORY"
