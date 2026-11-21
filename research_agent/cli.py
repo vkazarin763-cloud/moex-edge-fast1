@@ -57,6 +57,11 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
 
     history_records_by_ticker = {}
     history_errors = {}
+    # T traded as TCSG through 2024-11-27. Fetch that retired code only as
+    # auxiliary evidence for raw-candle reconciliation; the model input remains
+    # the current T security's own TQBR history.
+    legacy_reconciliation_history_by_ticker = {}
+    legacy_history_errors = {}
     for ticker in selected:
         try:
             history_records_by_ticker[ticker] = fetch_history_records(
@@ -65,6 +70,16 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         except Exception as history_exc:
             history_records_by_ticker[ticker] = None
             history_errors[ticker] = str(history_exc)
+        if ticker == "T" and history_records_by_ticker[ticker] is not None:
+            legacy_till = min(history_fetch_till, "2024-11-27")
+            if fetch_from <= legacy_till:
+                try:
+                    legacy_reconciliation_history_by_ticker[ticker] = fetch_history_records(
+                        "TCSG", fetch_from, legacy_till, board="TQBR"
+                    )
+                except Exception as alias_exc:
+                    legacy_reconciliation_history_by_ticker[ticker] = []
+                    legacy_history_errors[ticker] = str(alias_exc)
 
     effective_till = latest_completed_session_date(
         history_records_by_ticker, calendar_date_ceiling
@@ -100,6 +115,27 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 record for record in history_records
                 if record.trade_date <= date.fromisoformat(effective_till)
             ]
+            reconciliation_history_records = list(bounded_history_records)
+            legacy_alias = None
+            if ticker == "T" and ticker in legacy_reconciliation_history_by_ticker:
+                legacy_alias = {
+                    "ticker": "TCSG",
+                    "through": "2024-11-27",
+                    "source": "MOEX ISS TQBR history; MOEX ticker change effective 2024-11-28",
+                    "used_for_model_input": False,
+                }
+                reconciliation_history_records.extend(
+                    record for record in legacy_reconciliation_history_by_ticker[ticker]
+                    if date.fromisoformat(effective_from)
+                    <= record.trade_date
+                    <= min(date.fromisoformat(effective_till), date(2024, 11, 27))
+                )
+            reconciliation_dates = [record.trade_date for record in reconciliation_history_records]
+            if len(reconciliation_dates) != len(set(reconciliation_dates)):
+                raise ValueError(
+                    f"{ticker}: current and legacy TQBR reconciliation histories overlap"
+                )
+            reconciliation_history_records.sort(key=lambda record: record.trade_date)
             raw_candles = [
                 candle for candle in raw_candles
                 if date.fromisoformat(effective_from)
@@ -110,7 +146,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 bounded_history_records, effective_from, effective_till
             )
             session_date_mapping_diagnostics = reconcile_session_candles(
-                raw_candles, bounded_history_records, ticker=ticker
+                raw_candles, reconciliation_history_records, ticker=ticker
             )
             if not research_candles:
                 raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
@@ -120,7 +156,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             ]
             try:
                 history_crosscheck = audit_tqbr_history(
-                    raw_candles, bounded_history_records, fetch_from, effective_till
+                    raw_candles, reconciliation_history_records, fetch_from, effective_till
                 )
             except Exception as history_exc:
                 history_crosscheck = {
@@ -142,9 +178,11 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
                 "raw_candle_fetch_error": raw_candle_fetch_error,
                 "raw_candle_quality": candle_quality_report(
                     raw_candles, effective_from, effective_till,
-                    history_records=bounded_history_records,
+                    history_records=reconciliation_history_records,
                     session_date_mapping_complete=session_date_mapping_diagnostics["complete"],
                 ) if raw_candles else None,
+                "raw_reconciliation_history_alias": legacy_alias,
+                "raw_reconciliation_history_alias_error": legacy_history_errors.get(ticker),
                 "session_date_mapping": session_date_mapping_diagnostics,
                 "research_eligibility": research_eligibility,
                 "research_input_bars": len(research_candles),
@@ -271,6 +309,16 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "multiple_testing_correction": holdout_correction,
         },
         "history_fetch_errors": history_errors,
+        "legacy_history_fetch_errors": legacy_history_errors,
+        "history_alias_policy": {
+            "T": {
+                "legacy_ticker": "TCSG",
+                "legacy_ticker_valid_through": "2024-11-27",
+                "current_ticker_effective_from": "2024-11-28",
+                "official_source": "https://www.moex.com/n74886",
+                "scope": "Raw-candle reconciliation only; TCSG history is not added to research/model input.",
+            }
+        },
         "results": results,
         "experiment_lab": experiment_lab,
         "development_portfolio": development_portfolio,
