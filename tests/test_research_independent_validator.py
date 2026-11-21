@@ -211,5 +211,46 @@ class IndependentValidatorTests(unittest.TestCase):
         self.assertTrue(any("reconciliation evidence is missing" in warning for warning in result["warnings"]))
 
 
+    def test_explicit_post_action_history_exclusion_is_validated_without_generic_warning(self):
+        report = _report()
+        report["results"]["GMKN"] = {
+            "status": "INSUFFICIENT_POST_ACTION_HISTORY",
+            "corporate_action_history_basis": {
+                "status": "INSUFFICIENT_POST_ACTION_HISTORY",
+                "ticker": "GMKN",
+                "effective_date": "2024-04-04",
+                "event": "documented split",
+                "source": "https://example.com/source",
+                "pre_event_bars_excluded": 50,
+                "post_event_bars": 150,
+                "post_event_development_bars": 150,
+                "minimum_development_bars": 200,
+                "price_adjustment_applied": False,
+                "policy": "EXCLUDE_PRE_EVENT_BARS_NO_BACK_ADJUSTMENT",
+            },
+        }
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_PASS")
+        self.assertFalse(any("GMKN" in warning for warning in result["warnings"]))
+
+    def test_post_action_exclusion_rejects_mixed_price_basis_claim(self):
+        report = _report()
+        report["results"]["GMKN"] = {
+            "status": "INSUFFICIENT_POST_ACTION_HISTORY",
+            "corporate_action_history_basis": {
+                "status": "INSUFFICIENT_POST_ACTION_HISTORY",
+                "ticker": "GMKN",
+                "pre_event_bars_excluded": 50,
+                "post_event_bars": 150,
+                "post_event_development_bars": 150,
+                "minimum_development_bars": 200,
+                "price_adjustment_applied": True,
+                "policy": "EXCLUDE_PRE_EVENT_BARS_NO_BACK_ADJUSTMENT",
+            },
+        }
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("must not claim adjusted prices" in error for error in result["errors"]))
+
 if __name__ == "__main__":
     unittest.main()
