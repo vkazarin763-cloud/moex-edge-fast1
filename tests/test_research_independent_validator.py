@@ -25,6 +25,12 @@ def _report():
                     "trading_days_mismatched": 0,
                     "unassigned_raw_candles": 0,
                     "raw_candles": 2,
+                    "mapped_raw_candles": 2,
+                    "unassigned_reason_counts": {},
+                    "mismatch_reason_counts": {},
+                    "mismatch_field_counts": {
+                        "open": 0, "high": 0, "low": 0, "close": 0, "volume": 0
+                    },
                     "raw_weekend_candles": 0,
                     "raw_weekend_candles_mapped": 0,
                     "raw_weekend_candles_unmapped": 0,
@@ -141,6 +147,32 @@ class IndependentValidatorTests(unittest.TestCase):
         result = validate_research_report(report)
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
         self.assertTrue(any("weekday additional-session counts do not sum" in error for error in result["errors"]))
+
+    def test_inconsistent_raw_mapping_reason_totals_are_rejected(self):
+        report = _report()
+        audit = report["results"]["SBER"]["session_date_mapping"]
+        audit["mapped_raw_candles"] = 1
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("mapped and unassigned raw candle counts" in e for e in result["errors"]))
+
+    def test_unassigned_reason_counts_must_sum_to_total(self):
+        report = _report()
+        report["results"]["SBER"]["session_date_mapping"]["unassigned_reason_counts"] = {
+            "WEEKDAY_MISSING_SAME_DATE_HISTORY": 1
+        }
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("unassigned reason counts do not sum" in e for e in result["errors"]))
+
+    def test_mismatch_reason_counts_must_sum_to_total(self):
+        report = _report()
+        report["results"]["SBER"]["session_date_mapping"]["mismatch_reason_counts"] = {
+            "AGGREGATED_OHLCV_DIFFERS": 1
+        }
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("mismatch reason counts do not sum" in e for e in result["errors"]))
 
     def test_inconsistent_raw_weekend_fragment_accounting_is_rejected(self):
         report = _report()
