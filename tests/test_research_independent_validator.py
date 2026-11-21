@@ -25,6 +25,9 @@ def _report():
                     "trading_days_mismatched": 0,
                     "unassigned_raw_candles": 0,
                     "raw_candles": 2,
+                    "raw_weekend_candles": 0,
+                    "raw_weekend_candles_mapped": 0,
+                    "raw_weekend_candles_unmapped": 0,
                 },
                 "walk_forward": {
                     "folds": [
@@ -110,6 +113,13 @@ class IndependentValidatorTests(unittest.TestCase):
         result = validate_research_report(report)
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
         self.assertTrue(any("coverage ratio is inconsistent" in error for error in result["errors"]))
+
+    def test_inconsistent_raw_weekend_fragment_accounting_is_rejected(self):
+        report = _report()
+        report["results"]["SBER"]["session_date_mapping"]["raw_weekend_candles_mapped"] = 1
+        result = validate_research_report(report)
+        self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_FAIL")
+        self.assertTrue(any("weekend candle counts do not sum" in error for error in result["errors"]))
 
     def test_missing_raw_session_audit_is_incomplete(self):
         report = _report()

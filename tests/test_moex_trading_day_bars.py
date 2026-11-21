@@ -83,6 +83,21 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["raw_weekend_candles_unmapped"], 1)
         self.assertEqual(result["unassigned_raw_candles"], 1)
 
+    def test_mapped_weekend_candle_count_counts_fragments_not_unique_dates(self):
+        raw = [
+            Candle(datetime(2025, 3, 1, 10), 100, 102, 99, 101, 10),
+            Candle(datetime(2025, 3, 1, 12), 101, 103, 100, 102, 20),
+            Candle(datetime(2025, 3, 3), 102, 104, 101, 103, 30),
+        ]
+        history = [
+            HistoryRecord(date(2025, 3, 3), 30, 100, 104, 99, 103, 60)
+        ]
+        result = reconcile_session_candles(raw, history)
+        self.assertTrue(result["complete"])
+        self.assertEqual(result["raw_weekend_candles"], 2)
+        self.assertEqual(result["raw_weekend_candles_mapped"], 2)
+        self.assertEqual(result["raw_weekend_candles_unmapped"], 0)
+
     def test_missing_raw_fragments_for_positive_history_date_are_reported(self):
         raw = [Candle(datetime(2025, 3, 3), 100, 102, 99, 101, 1000)]
         history = [
