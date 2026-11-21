@@ -299,6 +299,7 @@ def reconcile_session_candles(
                         "expected_history_to_raw_price_factor": classification[
                             "expected_history_to_raw_price_factor"
                         ],
+                        "matched_ratio_direction": classification.get("matched_ratio_direction"),
                         "source": classification["source"],
                     }
                     mismatch["price_scale_audit"] = scale_audit

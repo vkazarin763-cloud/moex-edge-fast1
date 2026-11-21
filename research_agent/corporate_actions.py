@@ -72,9 +72,17 @@ def classify_history_to_raw_price_factor(
         ],
         "source": event["source"],
     })
-    expected = float(event["history_to_current_price_factor_before_event"])
-    if trade_date < effective and math.isclose(
-        observed_factor, expected, rel_tol=1e-6, abs_tol=1e-10
-    ):
-        result["classification"] = "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS"
+    documented_factor = float(event["history_to_current_price_factor_before_event"])
+    if trade_date < effective:
+        if math.isclose(
+            observed_factor, documented_factor, rel_tol=1e-6, abs_tol=1e-10
+        ):
+            result["classification"] = "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS"
+            result["matched_ratio_direction"] = "DOCUMENTED_FACTOR"
+        elif math.isclose(
+            observed_factor, 1.0 / documented_factor,
+            rel_tol=1e-6, abs_tol=1e-10,
+        ):
+            result["classification"] = "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS"
+            result["matched_ratio_direction"] = "RECIPROCAL_DOCUMENTED_FACTOR"
     return result
