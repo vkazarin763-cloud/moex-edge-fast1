@@ -145,10 +145,11 @@ def _audit_experiment_lab(
             errors.append(f"experiment_lab trial {index} references an unknown ticker")
         if hypothesis_id not in ids:
             errors.append(f"experiment_lab trial {index} references an unknown hypothesis")
-        pair = (ticker, hypothesis_id)
-        if pair in seen:
-            errors.append(f"experiment_lab duplicate trial: {ticker}/{hypothesis_id}")
-        seen.add(pair)
+        if isinstance(ticker, str) and isinstance(hypothesis_id, str):
+            pair = (ticker, hypothesis_id)
+            if pair in seen:
+                errors.append(f"experiment_lab duplicate trial: {ticker}/{hypothesis_id}")
+            seen.add(pair)
         bars = trial.get("development_bars")
         excluded = trial.get("excluded_holdout_bars")
         if not isinstance(bars, int) or isinstance(bars, bool) or bars < 0:
