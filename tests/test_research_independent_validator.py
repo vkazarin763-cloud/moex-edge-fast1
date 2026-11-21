@@ -105,6 +105,8 @@ class IndependentValidatorTests(unittest.TestCase):
         audit["history_trade_dates_without_raw_fragments"] = 1
         audit["raw_history_date_coverage_ratio"] = 0.5
         audit["raw_history_coverage_status"] = "PARTIAL_DATE_COVERAGE"
+        audit["complete"] = False
+        audit["status"] = "RECONCILIATION_WITH_CAVEATS"
         result = validate_research_report(report)
         self.assertEqual(result["status"], "INDEPENDENT_VALIDATION_INCOMPLETE")
         self.assertTrue(any("do not fully reconcile" in warning for warning in result["warnings"]))
