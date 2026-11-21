@@ -40,7 +40,7 @@ KNOWN_SHARE_BASIS_EVENTS: dict[str, dict[str, Any]] = {
         "effective_date": "2026-04-17",
         "history_to_current_price_factor_before_event": 10.0,
         "event": "10-for-1 share split/conversion; trading resumed 2026-04-17",
-        "source": "https://www.moex.com/n99222",
+        "source": "https://t-technologies.ru/ar2025t-technologies/index.html; https://www.moex.com/n99222",
     },
 }
 
