@@ -173,3 +173,7 @@
 
 ## 2026-11-21 — scanner merged
 - PR #74 merged at d004f0fd7600749dd7613bd549f7d62b97aadb58. Existing data artifact can be scanned via manual workflow dispatch using source_run_id 44861047844; future collection runs auto-trigger scanning.
+
+
+## 2026-11-21 — Finam mode safety observation
+- Safety CI run 44864354084 reported derived `FINAM_DRY_RUN=live`. No order was sent. Scheduled and standard manual executor workflows hardcode DRY_RUN; two separate manual workflows remain live-capable behind explicit confirmations. Recorded in handoff; no configuration was changed.
