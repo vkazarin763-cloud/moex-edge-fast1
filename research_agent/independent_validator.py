@@ -1,8 +1,8 @@
 """Independent structural audit of MOEX EDGE research reports.
 
-This validator deliberately does not trust candidate pass labels. It checks
-holdout separation, walk-forward chronology, and consistency of doubled-cost
-claims. It does not rerun the simulator or certify profitability.
+This validator checks holdout separation, walk-forward chronology, doubled-cost
+claims, experiment-lab completeness, and independently replayed execution parity.
+It does not certify profitability or independently regenerate entry signals.
 """
 from __future__ import annotations
 
@@ -82,8 +82,6 @@ def _audit_experiment_lab(
 ) -> tuple[int, int]:
     """Audit experiment-lab completeness and metadata without trusting its labels."""
     if lab is None:
-        # Preserve compatibility with pre-lab reports; current CLI reports always
-        # include this section, so new reports still receive the full audit.
         return 0, 0
     if not isinstance(lab, dict):
         errors.append("experiment_lab must be an object")
@@ -96,10 +94,8 @@ def _audit_experiment_lab(
         errors.append("experiment_lab must explicitly declare EXPERIMENT_LAB_COMPLETE status")
     if lab.get("generated_scope") != "development_history_only":
         errors.append("experiment_lab must declare development_history_only scope")
-    if holdout_start:
-        lab_cutoff = lab.get("holdout_start")
-        if lab_cutoff != holdout_start.isoformat():
-            errors.append("experiment_lab holdout cutoff does not match report policy")
+    if holdout_start and lab.get("holdout_start") != holdout_start.isoformat():
+        errors.append("experiment_lab holdout cutoff does not match report policy")
 
     ids = lab.get("hypothesis_ids")
     if not isinstance(ids, list) or not ids or any(not isinstance(x, str) or not x for x in ids):
@@ -133,8 +129,7 @@ def _audit_experiment_lab(
             not isinstance(max_bars, int) or isinstance(max_bars, bool) or max_bars < 1
         ):
             errors.append(f"experiment_lab hypothesis {hypothesis_id} has invalid max_bars")
-    hypothesis_count = lab.get("hypothesis_count")
-    if hypothesis_count != len(ids):
+    if lab.get("hypothesis_count") != len(ids):
         errors.append("experiment_lab hypothesis_count does not match hypothesis_ids")
 
     entry_ids = lab.get("entry_strategy_ids")
@@ -177,6 +172,7 @@ def _audit_experiment_lab(
 
     seen: set[tuple[str, str]] = set()
     completed = 0
+    replay_checked = 0
     for index, trial in enumerate(trials):
         if not isinstance(trial, dict):
             errors.append(f"experiment_lab trial {index} must be an object")
@@ -216,6 +212,21 @@ def _audit_experiment_lab(
                 errors.append(f"experiment_lab trial {index} lacks walk_forward results")
             if not isinstance(trial.get("adversarial_cost_check"), dict):
                 errors.append(f"experiment_lab trial {index} lacks cost-stress results")
+            replay = trial.get("execution_replay_audit")
+            if not isinstance(replay, dict):
+                errors.append(f"experiment_lab trial {index} lacks independent execution replay audit")
+            else:
+                replay_checked += 1
+                if replay.get("status") != "REFERENCE_REPLAY_MATCH":
+                    errors.append(f"experiment_lab trial {index} independent execution replay did not match")
+                if replay.get("mismatch_count") != 0:
+                    errors.append(f"experiment_lab trial {index} replay mismatch_count must be zero")
+                main_count = replay.get("main_trade_count")
+                reference_count = replay.get("reference_trade_count")
+                if not isinstance(main_count, int) or isinstance(main_count, bool) or main_count < 0:
+                    errors.append(f"experiment_lab trial {index} has invalid primary replay trade count")
+                if not isinstance(reference_count, int) or isinstance(reference_count, bool) or reference_count != main_count:
+                    errors.append(f"experiment_lab trial {index} primary/reference replay trade counts differ")
         elif trial_status != "INSUFFICIENT_OR_INVALID_DEVELOPMENT_DATA":
             errors.append(f"experiment_lab trial {index} has unknown status")
 
@@ -236,6 +247,7 @@ def _audit_experiment_lab(
         errors.append("experiment_lab trials_incomplete count is inconsistent")
     return len(trials), completed
 
+
 def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
     """Return an auditable PASS/FAIL/INCOMPLETE structural validation report."""
     errors: list[str] = []
@@ -246,7 +258,7 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
             "checks": 0,
             "errors": ["research report must be a JSON object"],
             "warnings": [],
-            "scope": "Structural audit only; no profitability certification.",
+            "scope": "Structural and replay audit only; no profitability certification.",
         }
 
     policy = report.get("development_holdout_policy", {})
@@ -257,7 +269,6 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         errors.append("holdout must be explicitly marked strictly prospective")
     if policy.get("candidate_set_frozen") is not True:
         errors.append("candidate set must be explicitly marked frozen")
-
     holdout_start = _as_date(policy.get("holdout_start"), "holdout_start", errors)
     report_end = _as_date(report.get("date_till"), "date_till", errors)
     if holdout_start and report_end and report_end < holdout_start:
@@ -267,7 +278,6 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(results, dict) or not results:
         errors.append("results must be a non-empty ticker mapping")
         results = {}
-
     checked_folds = 0
     checked_cost_candidates = 0
     checked_lab_trials = 0
@@ -295,33 +305,22 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
                         errors.append(f"{ticker}: fold {index} must be an object")
                         continue
                     start = _as_date(fold.get("start"), f"{ticker} fold {index} start", errors)
-                    end = _as_date(
-                        fold.get("end_inclusive"),
-                        f"{ticker} fold {index} end_inclusive", errors
-                    )
+                    end = _as_date(fold.get("end_inclusive"), f"{ticker} fold {index} end_inclusive", errors)
                     if start and end and start > end:
                         errors.append(f"{ticker}: fold {index} starts after it ends")
                     if start and previous_end and start <= previous_end:
                         errors.append(f"{ticker}: walk-forward folds overlap or are unordered")
                     if end and holdout_start and end >= holdout_start:
-                        errors.append(
-                            f"{ticker}: development fold {index} touches or crosses holdout"
-                        )
+                        errors.append(f"{ticker}: development fold {index} touches or crosses holdout")
                     if end:
                         previous_end = end
                     checked_folds += 1
-
         prospective = result.get("prospective_holdout")
         if not isinstance(prospective, dict):
             errors.append(f"{ticker}: missing prospective_holdout section")
-        elif holdout_start:
-            reported_cutoff = prospective.get("holdout_start")
-            if reported_cutoff != holdout_start.isoformat():
-                errors.append(f"{ticker}: prospective holdout cutoff mismatch")
-
-        checked_cost_candidates += _audit_cost_claims(
-            ticker, result, errors, warnings
-        )
+        elif holdout_start and prospective.get("holdout_start") != holdout_start.isoformat():
+            errors.append(f"{ticker}: prospective holdout cutoff mismatch")
+        checked_cost_candidates += _audit_cost_claims(ticker, result, errors, warnings)
 
     checked_lab_trials, completed_lab_trials = _audit_experiment_lab(
         report.get("experiment_lab"), results, holdout_start, errors, warnings
@@ -335,7 +334,6 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         status = "INDEPENDENT_VALIDATION_INCOMPLETE"
     else:
         status = "INDEPENDENT_VALIDATION_PASS"
-
     return {
         "status": status,
         "checks": checks,
@@ -344,12 +342,17 @@ def validate_research_report(report: dict[str, Any]) -> dict[str, Any]:
         "cost_candidates_checked": checked_cost_candidates,
         "experiment_lab_trials_checked": checked_lab_trials,
         "experiment_lab_trials_completed": completed_lab_trials,
+        "experiment_lab_replays_checked": sum(
+            1 for trial in report.get("experiment_lab", {}).get("trials", [])
+            if isinstance(trial, dict) and isinstance(trial.get("execution_replay_audit"), dict)
+        ) if isinstance(report.get("experiment_lab"), dict) else 0,
         "errors": errors,
         "warnings": warnings,
         "scope": (
             "Independent structural audit of report chronology, cost-claim consistency, "
-            "and experiment-lab metadata/completeness. It does not rerun the "
-            "simulator, establish statistical significance, prove profitability, "
+            "experiment-lab metadata/completeness, and execution replay parity. It does "
+            "not independently regenerate entry signals, verify raw market-data "
+            "provenance, establish statistical significance, prove profitability, "
             "or approve production use."
         ),
     }
