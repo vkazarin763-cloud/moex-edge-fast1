@@ -49,6 +49,41 @@ class WalkForwardTests(unittest.TestCase):
         self.assertIn("does not replace", report["warning"])
 
 
+    def test_supplied_baseline_is_reused_without_recalculation(self):
+        baseline = {
+            "execution_config": {
+                "fee_per_side": 0.001, "slippage_per_side": 0.0005,
+                "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+            },
+            "candidates": {
+                "Keltner20x2ATR": {
+                    "status": "DEVELOPMENT_SCREEN_PASS_UNADJUSTED",
+                    "average_net_return": 0.01,
+                }
+            },
+        }
+        stressed = {
+            "execution_config": {
+                "fee_per_side": 0.002, "slippage_per_side": 0.001,
+                "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+            },
+            "candidates": {
+                "Keltner20x2ATR": {
+                    "status": "DEVELOPMENT_SCREEN_PASS_UNADJUSTED",
+                    "average_net_return": 0.007,
+                }
+            },
+        }
+        with patch("research_agent.validation.walk_forward_report",
+                   return_value=stressed) as run_walk_forward:
+            report = adversarial_cost_check(
+                [], folds=2, warmup_bars=55, baseline_report=baseline
+            )
+        run_walk_forward.assert_called_once()
+        self.assertTrue(
+            report["candidates"]["Keltner20x2ATR"]["survives_double_costs"]
+        )
+
     def test_double_cost_survival_requires_baseline_screen_pass(self):
         baseline = {
             "candidates": {
