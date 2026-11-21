@@ -49,6 +49,41 @@ jobs:
           if len(reports) != 1:
               raise SystemExit(f"Expected exactly one signal report, found {len(reports)}")
           PY
+      - name: Resolve the exact collector run for this scanner artifact
+        id: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCANNER_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          python - <<'PY'
+          import json, os, re, subprocess
+          run_id = os.environ["SCANNER_RUN_ID"]
+          raw = subprocess.check_output([
+              "gh", "api",
+              f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{run_id}/artifacts"
+          ], text=True)
+          artifacts = json.loads(raw).get("artifacts", [])
+          names = [
+              item["name"] for item in artifacts
+              if item["name"].startswith("moex-edge-mtf-signals-")
+              and not item.get("expired", False)
+          ]
+          if len(names) != 1:
+              raise SystemExit(f"Expected exactly one scanner artifact, found {len(names)}")
+          match = re.fullmatch(r"moex-edge-mtf-signals-(\\d+)", names[0])
+          if not match:
+              raise SystemExit(f"Unexpected scanner artifact name: {names[0]}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"collector_run_id={match.group(1)}\\n")
+          PY
+      - name: Download exact source candle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-multi-timeframe-candles
+          path: mtf-data
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.collector_run_id }}
       - name: Load the dedicated ledger branch
         env:
           LEDGER_BRANCH: moex-edge-signal-ledger
@@ -63,16 +98,29 @@ jobs:
       - name: Append only new immutable signal events
         run: |
           python -m research_agent.signal_ledger             --report signal-report/moex_edge_mtf_signals.json             --ledger signal-ledger/events.jsonl
+      - name: Update append-only prospective closed outcomes
+        run: |
+          python -m research_agent.prospective_outcomes \
+            --signals-ledger signal-ledger/events.jsonl \
+            --candles mtf-data/moex_edge_multi_timeframe_candles.json \
+            --outcomes-ledger signal-ledger/prospective-outcomes.jsonl \
+            --report moex_edge_prospective_outcomes.json
       - name: Commit ledger update to its isolated branch
         env:
           LEDGER_BRANCH: moex-edge-signal-ledger
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           cp signal-ledger/events.jsonl "$RUNNER_TEMP/events.jsonl"
+          if [ -f signal-ledger/prospective-outcomes.jsonl ]; then
+            cp signal-ledger/prospective-outcomes.jsonl "$RUNNER_TEMP/prospective-outcomes.jsonl"
+          else
+            : > "$RUNNER_TEMP/prospective-outcomes.jsonl"
+          fi
           git checkout --force -B "$LEDGER_BRANCH" "origin/$LEDGER_BRANCH"
           mkdir -p signal-ledger
           cp "$RUNNER_TEMP/events.jsonl" signal-ledger/events.jsonl
-          git add signal-ledger/events.jsonl
+          cp "$RUNNER_TEMP/prospective-outcomes.jsonl" signal-ledger/prospective-outcomes.jsonl
+          git add signal-ledger/events.jsonl signal-ledger/prospective-outcomes.jsonl
           if git diff --cached --quiet; then
             echo "No new signal events; ledger unchanged."
             exit 0
