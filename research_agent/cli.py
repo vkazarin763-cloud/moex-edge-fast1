@@ -12,6 +12,7 @@ from .validation import (walk_forward_report, adversarial_cost_check,
                          prospective_holdout_report, apply_holm_correction, CANDIDATE_SET_VERSION)
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
+from .independent_validator import validate_research_report
 from .session_mapping import (
     earliest_session_date, latest_completed_session_date,
     build_trading_day_candles, reconcile_session_candles,
@@ -175,7 +176,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             "reason": str(exc),
             "warning": "No portfolio metrics were calculated.",
         }
-    return {
+    report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source": "MOEX ISS per-security TQBR daily history OHLCV; raw daily candles retained for reconciliation",
         "board": "TQBR",
@@ -238,6 +239,8 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         "development_portfolio": development_portfolio,
         "safety": "Research only. No broker APIs, order placement, Telegram, or production-state writes.",
     }
+    report["independent_validation"] = validate_research_report(report)
+    return report
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only MOEX EDGE AI Research Agent")
