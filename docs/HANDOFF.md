@@ -291,3 +291,57 @@ Branch: `feat/scheduled-d1-h1-signal-scan`. Proposed changes:
 - Add tests for D1/H1-only collection and explicitly prohibit sizing/capital fields in MTF signal objects.
 
 The scheduled data path is read-only: D1 is native MOEX ISS TQBR history; H1 is Finam market data. It does not submit orders, calculate quantity, allocate capital, or modify the frozen research cohort/holdout. Do not claim it is active until PR #111 is merged and the first push-triggered run is confirmed successful.
+
+
+## 13. Accelerated D1/H1 collection and first automated signal cycle — 2026-11-21
+
+**Current main SHA:** `15fdcbb3396493e9bd45e90efb0e10a7d48e5b86` (PR #112 merged).
+
+### PR #112 — reduce latest-signal D1 history
+
+- PR: https://github.com/vkazarin763-cloud/moex-edge-fast1/pull/112
+- Change: `research_agent/multi_timeframe.py` latest-signal D1 TQBR-history lookback reduced from five years to 365 calendar days.
+- Frozen research dataset, frozen cohort, holdout, strategy formulas, and execution configuration are unchanged.
+- Regression test added in `tests/test_research_multi_timeframe.py` for the bounded D1 date range.
+- Both required safety workflows passed on exact PR head `5478c3c3a161e0371574fc062a5726d1746869c1`: Research Agent Safety Tests and Finam Executor Safety Tests.
+- PR merged; main is `15fdcbb3396493e9bd45e90efb0e10a7d48e5b86`.
+
+### Actual collection runtime comparison
+
+- Previous five-year collection run: [44888476975](https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44888476975), 09:12:33–09:23:28 UTC = 655 seconds.
+- Optimized one-year collection run: [44889538524](https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44889538524), 09:25:44–09:29:39 UTC = 235 seconds.
+- Measured end-to-end workflow duration decreased by 64.1% (655s to 235s). This is one before/after pair, not a long-run performance guarantee.
+- The optimized collection run and its validation both concluded success.
+
+### Downloaded artifact and independent structural checks
+
+Collection artifact: `moex-edge-multi-timeframe-candles`, ID `14701243872`; validation artifact file is `moex_edge_multi_timeframe_validation.json`.
+
+- Validation status `PASS`, 44 symbols, `issue_count=0`.
+- D1: 44/44 OK, 11,128 completed bars total, 249–253 per symbol; dates 2025-11-21 through 2026-11-20.
+- H1: 44/44 OK, 18,648 completed bars total, 421–424 per symbol; observed candle timestamps 2026-10-22 through 2026-11-21.
+- Independent artifact inspection found zero missing symbol/frame series, zero duplicate timestamps per symbol/frame, zero unsorted series, and zero invalid OHLC rows across D1 and H1.
+- D1 source remains MOEX ISS native TQBR history; H1 source remains Finam. No resampling, interpolation, or provider merging. Only completed bars are included.
+- The reduced D1 window is for the latest-signal collector only; it must not replace the longer frozen research dataset.
+
+### First automated signal scan on optimized data
+
+- Downstream scanner run: [44889832277](https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/44889832277), success.
+- Artifact: `moex-edge-mtf-signals-44889538524`, ID `14701034488`.
+- `generated_at_utc=2026-11-21T09:29:54.845134+00:00`; `as_of_utc=2026-11-21T09:25:51.184499+00:00`.
+- Universe 44; D1/H1 data 44/44; signals 40; skipped 0.
+- Direction: 40 SHORT, 0 LONG. This is a point-in-time output, not an instruction to trade short.
+- Strategy counts: Donchian20 22; Keltner20x2ATR 7; MACD12x26 6; EMA20x50 3; RSI14Trend50 2.
+- H1 status: all 40 `CONFIRMED`. H1 remains informational confirmation and does not suppress D1 signals.
+- Recursive output-key audit found none of: `qty`, `quantity`, `position_size`, `capital`, `allocation`, `investment_amount`.
+- The output is a read-only prototype signal report. It is not evidence of profitability or statistical edge. No prospective outcome sample has accrued sufficient trades; do not tune on the holdout.
+
+### Current project status and next actions
+
+1. The scheduled weekday D1/H1 collection and downstream read-only signal scan are operational on main. The configured schedule is 05:00 UTC weekdays; do not claim background monitoring beyond the actual GitHub Actions schedule/runs.
+2. Continue verifying scheduled runs and artifacts: coverage, validation, closed-bar timestamps, scanner success, skipped symbols, signal composition, and absence of sizing/capital fields.
+3. Preserve the frozen cohort `v1-frozen-2026-11-19`, 2026-11-20 prospective holdout start, 44-symbol universe, five strategies, statistical controls, costs, and execution model. Do not tune based on holdout results.
+4. Build/maintain a prospective signal-outcome ledger only as a separate, auditable component; do not alter the frozen scanner rules or claim edge before adequate sample and valid statistical tests.
+5. The legacy hourly workflow still has a separate CSV output containing `entry_price` and `qty`; do not present that legacy CSV as the compliant signal-only report. Do not modify its workflow or protected executor files as part of this MTF work.
+6. Keep the research agent read-only. Never call broker order endpoints, enable live trading, or expose credentials. Do not use `workflow_dispatch` for project runs.
+
