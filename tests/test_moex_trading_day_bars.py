@@ -109,6 +109,10 @@ class TradingDayBarTests(unittest.TestCase):
                     result["price_scale_mismatch_examples"][0]["classification"],
                     "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS",
                 )
+                self.assertEqual(
+                    result["price_scale_mismatch_examples"][0]["history_to_raw_volume_factor"],
+                    1.0,
+                )
                 # The audit is diagnostic only: source OHLC values are not rewritten.
                 self.assertEqual(raw[0].close, 105)
                 self.assertEqual(history[0].close, 105 * factor)
