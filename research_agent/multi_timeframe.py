@@ -4,11 +4,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from .finam_market_data import FinamMarketDataClient
+from .finam_market_data import FinamAPIError, FinamMarketDataClient, create_access_token
 from .moex_iss import fetch_candles
 
 MOSCOW = ZoneInfo("Europe/Moscow")
@@ -32,6 +32,52 @@ DEFAULT_TICKERS = [
     "SNGS", "SNGSP", "SVCB", "T", "TATN", "TATNP", "TRNFP", "UGLD",
     "VKCO", "VTBR", "X5", "YDEX",
 ]
+
+
+
+
+class RefreshingFinamClient:
+    """Refresh a short-lived Finam access token once after HTTP 401."""
+
+    def __init__(self, api_token, source_app_id=None):
+        self._api_token = api_token
+        self._source_app_id = source_app_id
+        self._client = FinamMarketDataClient.from_api_token(api_token, source_app_id)
+
+    def fetch_bars(self, *args):
+        try:
+            return self._client.fetch_bars(*args)
+        except FinamAPIError as exc:
+            if "HTTP 401" not in str(exc):
+                raise
+            # Re-authenticate once; if the retry still fails, surface the
+            # original symbol/timeframe failure to the caller.
+            self._client = FinamMarketDataClient.from_api_token(
+                self._api_token, self._source_app_id
+            )
+            return self._client.fetch_bars(*args)
+
+
+def _moex_bar_is_complete(timestamp, frame, now_moscow):
+    """MOEX ISS timestamps are exchange-local naive datetimes."""
+    if timestamp.tzinfo is not None and timestamp.utcoffset() is not None:
+        local_stamp = timestamp.astimezone(MOSCOW).replace(tzinfo=None)
+    else:
+        local_stamp = timestamp
+    if frame == "M10":
+        return local_stamp + timedelta(minutes=10) <= now_moscow
+    start = local_stamp.date()
+    if frame == "W1":
+        period_end = start + timedelta(days=7)
+    elif frame == "MN":
+        year, month = start.year, start.month
+        period_end = date(year + (month == 12), 1 if month == 12 else month + 1, 1)
+    else:  # QR
+        month_index = start.month - 1 + 3
+        year = start.year + month_index // 12
+        month = month_index % 12 + 1
+        period_end = date(year, month, 1)
+    return period_end <= now_moscow.date()
 
 
 def _serialize(rows, *, snapshot_field=False):
@@ -59,9 +105,8 @@ def collect_multi_timeframe(
         raise ValueError("now must be timezone-aware")
     current = current.astimezone(timezone.utc)
     local_today = current.astimezone(MOSCOW).date()
-    client = finam_client or FinamMarketDataClient.from_api_token(
-        api_token, source_app_id
-    )
+    client = finam_client or RefreshingFinamClient(api_token, source_app_id)
+    now_moscow = current.astimezone(MOSCOW).replace(tzinfo=None)
     results = {}
 
     for raw_ticker in tickers:
@@ -104,11 +149,17 @@ def collect_multi_timeframe(
                 rows = moex_fetcher(
                     ticker, start_date, end_date, interval=interval, board="TQBR"
                 )
+                completed = [
+                    row for row in rows
+                    if _moex_bar_is_complete(row.timestamp, frame, now_moscow)
+                ]
                 symbol_result[frame] = {
-                    "source": "MOEX ISS", "status": "OK",
+                    "source": "MOEX ISS",
+                    "status": "OK" if completed else "NO_COMPLETED_BARS",
                     "lookback_calendar_days": lookback,
-                    "raw_bars": len(rows), "completed_bars": len(rows),
-                    "candles": _serialize(rows),
+                    "raw_bars": len(rows), "completed_bars": len(completed),
+                    "incomplete_bars_excluded": len(rows) - len(completed),
+                    "candles": _serialize(completed),
                 }
             except Exception as exc:
                 symbol_result[frame] = {
@@ -138,7 +189,7 @@ def collect_multi_timeframe(
         "results": results,
         "methodology": {
             "source_policy": "Finam and MOEX ISS candles are kept as separate feeds.",
-            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. MOEX ISS candles are returned as source candles without synthetic completion inference.",
+            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. MOEX M10 bars are included only after their 10-minute interval has ended; W1/MN/QR bars are included only after the corresponding calendar period has ended.",
             "aggregation_policy": "No resampling, filling, interpolation, provider merging, or strategy use.",
             "research_isolation": "This artifact does not modify the frozen D1 research dataset, candidate cohort, holdout, or trading configuration.",
         },
