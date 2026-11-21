@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from research_agent.core import Candle
+from research_agent.core import Candle, generate_signals
 from research_agent.mtf_scanner import (
     _d1_signals_at_last_bar, _h1_alignment, _parse_candles,
     scan_multi_timeframe_report,
@@ -34,7 +34,28 @@ class MTFScannerTests(unittest.TestCase):
         last = rows[-1]
         rows[-1] = Candle(last.timestamp, 180, 190, 179, 189, 1000)
         found = _d1_signals_at_last_bar(rows)
-        self.assertTrue(any(x["strategy"] == "Donchian20" and x["direction"] == "LONG" for x in found))
+        donchian = next(x for x in found if x["strategy"] == "Donchian20" and x["direction"] == "LONG")
+        self.assertGreater(donchian["parameters"]["close"], donchian["parameters"]["donchian20_prior_high"])
+        self.assertIn("ema20", donchian["parameters"])
+        self.assertIn("rsi14", donchian["parameters"])
+        self.assertIn("macd12_26", donchian["parameters"])
+        self.assertIn("atr14", donchian["parameters"])
+        self.assertIn("keltner20_upper_2atr", donchian["parameters"])
+
+    def test_latest_bar_formulas_match_frozen_core_generator(self):
+        rows = self._trend(62, 100, 1)
+        last = rows[60]
+        rows[60] = Candle(last.timestamp, 180, 190, 179, 189, 1000)
+        expected = [
+            (signal.strategy, "LONG" if signal.direction > 0 else "SHORT")
+            for signal in generate_signals(rows)
+            if signal.index == 60
+        ]
+        actual = [
+            (signal["strategy"], signal["direction"])
+            for signal in _d1_signals_at_last_bar(rows[:61])
+        ]
+        self.assertEqual(actual, expected)
 
     def test_h1_confirmation_never_uses_bar_after_d1_close(self):
         from research_agent.mtf_scanner import scan_multi_timeframe_report
