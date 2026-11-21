@@ -13,6 +13,7 @@ from .validation import (walk_forward_report, adversarial_cost_check,
 from .quality import candle_quality_report, audit_tqbr_history
 from .portfolio import walk_forward_portfolio_report
 from .independent_validator import validate_research_report
+from .experiment_lab import run_experiment_lab
 from .session_mapping import (
     earliest_session_date, latest_completed_session_date,
     build_trading_day_candles, reconcile_session_candles,
@@ -158,6 +159,23 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
             development_candles_by_ticker[ticker] = development
         except Exception as exc:
             results[ticker] = {"status": "DATA_OR_ANALYSIS_ERROR", "error": str(exc)}
+    try:
+        experiment_lab = run_experiment_lab(
+            development_candles_by_ticker,
+            holdout_start=HOLDOUT_START_DATE,
+            folds=4,
+            warmup_bars=200,
+            min_total_trades=30,
+            min_trades_per_fold=5,
+        )
+    except Exception as lab_exc:
+        experiment_lab = {
+            "lab_version": "exit-policy-experiments-v1",
+            "status": "EXPERIMENT_LAB_ERROR",
+            "error": str(lab_exc),
+            "safety": "Research only; no broker APIs or order placement.",
+        }
+
     holdout_correction = apply_holm_correction(
         results, family_size=len(selected) * 5
     )
@@ -236,6 +254,7 @@ def run_universe(date_from: str, date_till: str, tickers: list[str] | None = Non
         },
         "history_fetch_errors": history_errors,
         "results": results,
+        "experiment_lab": experiment_lab,
         "development_portfolio": development_portfolio,
         "safety": "Research only. No broker APIs, order placement, Telegram, or production-state writes.",
     }
