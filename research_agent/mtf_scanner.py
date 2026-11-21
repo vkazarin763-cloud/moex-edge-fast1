@@ -222,6 +222,7 @@ def scan_multi_timeframe_report(candles_report: dict, validation_report: dict) -
                 "strategy": candidate["strategy"],
                 "d1_signal_timestamp": d1_bar["timestamp"],
                 "d1_close": d1_bar["close"],
+                "parameters": candidate["parameters"],
                 "d1_bar_end_utc": d1_end.isoformat(),
                 "h1_confirmation": h1["status"],
                 "h1": h1,
