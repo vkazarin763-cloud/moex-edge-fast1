@@ -68,12 +68,28 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
                 direction_stats[strategy] = summarize(selected)
                 all_by_direction_strategy[direction_name].setdefault(strategy, []).extend(selected)
             per_direction[direction_name] = direction_stats
+        trade_ledger = [
+            {
+                "strategy": trade.strategy,
+                "direction": "LONG" if trade.direction == 1 else "SHORT",
+                "signal_time": trade.signal_time.isoformat(),
+                "entry_time": trade.entry_time.isoformat(),
+                "exit_time": trade.exit_time.isoformat() if trade.exit_time else None,
+                "entry_price": trade.entry_price,
+                "exit_price": trade.exit_price,
+                "net_return": trade.net_return,
+                "status": trade.status,
+                "exit_reason": trade.exit_reason,
+            }
+            for trade in trades
+        ]
         fold_reports.append({
             "fold": fold + 1,
             "start": rows[start].timestamp.isoformat(),
             "end_inclusive": rows[end - 1].timestamp.isoformat(),
             "strategies": per_strategy,
             "by_direction": per_direction,
+            "trade_ledger": trade_ledger,
         })
 
     candidates = {}
@@ -150,6 +166,7 @@ def walk_forward_report(candles: list[Candle], folds: int = 4, warmup_bars: int 
         "candidates": candidates,
         "by_direction": candidates_by_direction,
         "direction_scope": "LONG and SHORT are separate diagnostic replays within each fold; they are not additive portfolio attribution and do not apply a cross-direction position cap.",
+        "trade_ledger_scope": "The fold trade ledger records the exact simulated signal, next-bar entry, exit, net return, status, and exit reason for auditability. It is descriptive research output only and does not alter candidate selection or portfolio attribution.",
         "warning": "Development screening only. Candidate pass labels are unadjusted for multiple testing and are not independent validation, profitability evidence, or production approval.",
     }
 
