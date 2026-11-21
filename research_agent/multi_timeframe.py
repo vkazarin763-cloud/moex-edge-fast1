@@ -47,6 +47,8 @@ def _normalize_frames(frames):
     if "D1" not in selected:
         raise ValueError("D1 is required for the latest-signal scanner")
     return tuple(frame for frame in ALL_FRAMES if frame in selected)
+
+
 DEFAULT_TICKERS = [
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
     "ENPG", "FLOT", "GAZP", "GMKN", "HEAD", "IRAO", "LKOH", "MAGN",
