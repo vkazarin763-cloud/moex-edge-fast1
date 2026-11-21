@@ -284,9 +284,15 @@ def reconcile_session_candles(
                     classification = classify_history_to_raw_price_factor(
                         ticker, target, factor
                     )
+                    volume_ratio = (
+                        float(expected[4]) / float(actual[4])
+                        if float(actual[4]) > 0 and float(expected[4]) > 0
+                        else None
+                    )
                     scale_audit = {
                         "trade_date": target.isoformat(),
                         "history_to_raw_ohlc_price_factor": factor,
+                        "history_to_raw_volume_factor": volume_ratio,
                         "classification": classification["classification"],
                         "known_event": classification["known_event"],
                         "effective_date": classification["effective_date"],
