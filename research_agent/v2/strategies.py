@@ -6,6 +6,7 @@ that the input price basis has been verified before a metric is eligible.
 """
 from __future__ import annotations
 
+from datetime import datetime
 from math import isfinite
 from typing import Any, Sequence
 
@@ -29,6 +30,10 @@ def validate_bars(bars: Sequence[dict[str, Any]]) -> None:
         timestamp = bar.get("timestamp")
         if not isinstance(timestamp, str) or not timestamp:
             raise DataContractError(f"bar {index} has no ISO timestamp string")
+        try:
+            datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise DataContractError(f"bar {index} timestamp is not ISO-8601") from exc
         if previous_timestamp is not None and timestamp <= previous_timestamp:
             raise DataContractError("timestamps must be strictly increasing and unique")
         previous_timestamp = timestamp
