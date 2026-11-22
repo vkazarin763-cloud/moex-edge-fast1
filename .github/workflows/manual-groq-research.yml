@@ -60,8 +60,8 @@ jobs:
           if start > end:
               raise SystemExit("date_from must not be after date_till")
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as out:
-              out.write(f"date_from={start.isoformat()}\\n")
-              out.write(f"date_till={end.isoformat()}\\n")
+              out.write(f"date_from={start.isoformat()}\n")
+              out.write(f"date_till={end.isoformat()}\n")
           PY
 
       - name: Generate deterministic research report from MOEX ISS
