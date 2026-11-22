@@ -34,6 +34,23 @@ class HypothesisDiscoveryTests(unittest.TestCase):
             any(len(item["conditions"]) == 2 for item in result["hypotheses"])
         )
 
+    def test_small_cap_covers_all_quantile_bands_and_both_directions(self):
+        result = generate_hypotheses(
+            self.panel(), formation_indices=list(range(30)),
+            min_observations=20, max_hypotheses=40,
+        )
+        quantiles = {
+            condition["threshold_quantile"]
+            for item in result["hypotheses"]
+            for condition in item["conditions"]
+            if "threshold_quantile" in condition
+        }
+        self.assertEqual(quantiles, {0.20, 0.40, 0.60, 0.80})
+        self.assertEqual(
+            {item["direction"] for item in result["hypotheses"]},
+            {"LONG", "SHORT"},
+        )
+
     def test_generation_is_deterministic(self):
         args = {"formation_indices": list(range(30)), "min_observations": 20}
         first = generate_hypotheses(self.panel(), **args)
@@ -106,7 +123,7 @@ class HypothesisDiscoveryTests(unittest.TestCase):
         self.assertTrue(any(len(item["conditions"]) == 2
                             for item in result["hypotheses"]))
         self.assertEqual(result["generator"],
-                         "balanced_single_and_pair_quantile_rules_v3")
+                         "balanced_single_and_pair_quantile_rules_v4")
 
     def test_exit_hypotheses_are_formation_only_and_rotate_away_from_entry_feature(self):
         data = self.panel()
