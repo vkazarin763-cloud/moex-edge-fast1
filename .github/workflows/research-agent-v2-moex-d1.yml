@@ -4,7 +4,7 @@ on:
   # One-off historical optimizer pilot on the already validated frozen artifact.
   # Ordinary pushes do not trigger this job unless the commit message has the marker.
   push:
-    branches: [feat/autonomous-strategy-discovery-v1]
+    branches: [feat/autonomous-strategy-discovery-v1, feat/evolutionary-discovery-v2]
   workflow_run:
     workflows: ["MOEX EDGE Multi-Timeframe Candles (Read Only)"]
     types: [completed]
@@ -27,7 +27,7 @@ jobs:
       - name: Checkout isolated research branch
         uses: actions/checkout@v4
         with:
-          ref: feat/autonomous-strategy-discovery-v1
+          ref: ${{ github.event_name == 'push' && github.ref_name || 'feat/autonomous-strategy-discovery-v1' }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
