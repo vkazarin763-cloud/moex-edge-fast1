@@ -48,57 +48,81 @@ ROLES: tuple[tuple[str, str], ...] = (
 
 
 def _bounded(value: Any, *, depth: int = 0) -> Any:
-    """Remove bulky audit ledgers/raw series while retaining bounded evidence."""
-    if depth > 8:
+    """Bound small metadata objects without retaining event/fold histories."""
+    if depth > 7:
         return "[omitted: nesting limit]"
     if isinstance(value, dict):
-        cleaned = {}
-        for key, item in value.items():
-            normalized = str(key).lower()
-            if normalized in {
-                "trade_ledger", "raw_candles", "raw_history",
-                "history_records", "records", "ohlcv", "timestamps",
-            }:
-                continue
-            if normalized == "candles" and isinstance(item, (list, dict)):
-                continue
-            cleaned[key] = _bounded(item, depth=depth + 1)
-        return cleaned
+        omitted = {
+            "trade_ledger", "raw_candles", "raw_history", "history_records",
+            "records", "ohlcv", "timestamps", "folds", "candidate_trades",
+            "continuous_development_replay", "mark_to_market_portfolio",
+            "equity_curve", "events", "calendar_gap_candidates",
+        }
+        return {
+            key: _bounded(item, depth=depth + 1)
+            for key, item in value.items()
+            if str(key).lower() not in omitted
+        }
     if isinstance(value, list):
-        # Fold summaries and small diagnostics remain useful; raw event lists do not.
-        return [_bounded(item, depth=depth + 1) for item in value[:12]]
-    if isinstance(value, str) and len(value) > 600:
-        return value[:600] + "…[truncated]"
+        # Keep only tiny scalar metadata arrays; omit event/fold collections.
+        if len(value) <= 4 and all(not isinstance(item, (dict, list)) for item in value):
+            return value
+        return "[omitted: detailed list]"
+    if isinstance(value, str) and len(value) > 400:
+        return value[:400] + "…[truncated]"
     return value
 
 
 def _compact_report(report: Any) -> str:
-    """Build a deterministic evidence-only summary; never send raw candle history."""
+    """Build a strict, deterministic evidence projection under the Groq input budget."""
     if not isinstance(report, dict):
         raise ValueError("Research report must be a JSON object.")
     raw_results = report.get("results")
     if not isinstance(raw_results, dict):
-        # Small structured evidence objects are supported for focused agent reviews/tests.
         encoded = json.dumps(_bounded(report), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         if len(encoded) > MAX_INPUT_CHARS:
             raise ValueError("Focused research evidence exceeds the Groq input budget.")
         return encoded
 
-    ticker_fields = (
-        "status", "error", "candles", "raw_session_candles",
-        "research_input_bars", "development_bars", "first_timestamp",
-        "last_timestamp", "data_quality", "raw_candle_quality",
-        "corporate_action_history_basis", "tqbr_history_crosscheck",
-        "walk_forward", "adversarial_cost_check", "prospective_holdout",
-    )
-    compact_results = {}
+    compact_results: dict[str, Any] = {}
     for ticker, result in sorted(raw_results.items()):
         if not isinstance(result, dict):
             compact_results[ticker] = {"status": "MALFORMED_RESULT"}
             continue
-        compact_results[ticker] = _bounded({
-            key: result[key] for key in ticker_fields if key in result
-        })
+        quality = result.get("data_quality")
+        quality_summary = {}
+        if isinstance(quality, dict):
+            for key in (
+                "status", "out_of_range_bars", "calendar_gap_count",
+                "exchange_calendar_verified", "session_date_mapping_complete",
+            ):
+                if key in quality:
+                    quality_summary[key] = quality[key]
+        walk_forward = result.get("walk_forward")
+        candidates = walk_forward.get("candidates") if isinstance(walk_forward, dict) else None
+        strategy_summary = {}
+        if isinstance(candidates, dict):
+            for strategy, metrics in sorted(candidates.items()):
+                if not isinstance(metrics, dict):
+                    continue
+                strategy_summary[strategy] = {
+                    key: metrics[key]
+                    for key in ("status", "closed_trades", "average_net_return")
+                    if key in metrics
+                }
+        item = {
+            key: result[key]
+            for key in (
+                "status", "error", "candles", "research_input_bars",
+                "first_timestamp", "last_timestamp",
+            )
+            if key in result
+        }
+        if quality_summary:
+            item["data_quality"] = quality_summary
+        if strategy_summary:
+            item["walk_forward_candidates"] = strategy_summary
+        compact_results[ticker] = item
 
     compact = {
         "generated_at_utc": report.get("generated_at_utc"),
@@ -115,27 +139,18 @@ def _compact_report(report: Any) -> str:
             report.get("cross_sectional_direction_summary", {})
         ),
         "experiment_lab": _bounded(report.get("experiment_lab", {})),
-        "development_portfolio": _bounded(report.get("development_portfolio", {})),
-        "safety": report.get("safety"),
+        "safety": _bounded(report.get("safety", {})),
         "compaction_note": (
-            "Raw OHLCV/candle arrays and per-trade ledgers are intentionally excluded. "
-            "All retained metrics are copied from the deterministic source report."
+            "Raw candle arrays, fold details, portfolio replays and trade ledgers are excluded. "
+            "Per-ticker strategy status, trade count and average net return are retained where present."
         ),
     }
     encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded) > MAX_INPUT_CHARS:
-        # Last-resort smaller view: preserve status, errors, validation and aggregate metrics.
-        compact["results"] = {
-            ticker: {
-                key: value for key, value in item.items()
-                if key in {"status", "error", "candles", "research_input_bars",
-                           "first_timestamp", "last_timestamp"}
-            }
-            for ticker, item in compact_results.items()
-        }
-        compact["cross_sectional_direction_summary"] = _bounded(
-            report.get("cross_sectional_direction_summary", {})
-        )
+        # Keep the full 44-name/status/quality universe and aggregate evidence; trim
+        # per-ticker strategy metrics only as a last resort.
+        for item in compact_results.values():
+            item.pop("walk_forward_candidates", None)
         encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded) > MAX_INPUT_CHARS:
         raise ValueError(
