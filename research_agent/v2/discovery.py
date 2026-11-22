@@ -151,13 +151,12 @@ def generate_hypotheses(
             eligible_features.append(name)
             threshold_map[name] = thresholds
 
-    # Build a balanced deterministic candidate stream. The old nested order
-    # exhausted every threshold/operator on the first feature before reaching
-    # the next feature, so a small cap silently became a one-feature search.
-    # This stream rotates across features, quantiles, operators and directions.
+    # Reserve part of the fixed budget for interactions. Without this split,
+    # a 20-hypothesis cap is consumed by single-feature rules and conjunctions
+    # are never explored.
     hypotheses = []
     seen_ids = set()
-    truncated = False
+    single_budget = max(1, (max_hypotheses * 3) // 4)
     for q_index in range(max((len(v) for v in threshold_map.values()), default=0)):
         for operator in (">=", "<="):
             for name in eligible_features:
@@ -172,58 +171,55 @@ def generate_hypotheses(
                             "threshold": item["value"],
                             "threshold_quantile": item["quantile"],
                         }],
-                        "combination": "ALL", "version": 2,
+                        "combination": "ALL", "version": 3,
                     }
                     hypothesis_id = _hypothesis_id(payload)
                     if hypothesis_id in seen_ids:
                         continue
-                    if len(hypotheses) >= max_hypotheses:
-                        truncated = True
+                    if len(hypotheses) >= single_budget:
                         break
                     seen_ids.add(hypothesis_id)
                     hypotheses.append({"id": hypothesis_id, **payload})
-                if truncated:
+                if len(hypotheses) >= single_budget:
                     break
-            if truncated:
+            if len(hypotheses) >= single_budget:
                 break
-        if truncated:
+        if len(hypotheses) >= single_budget:
             break
 
-    # Only spend remaining capacity on interactions after single-feature
-    # coverage. Pairwise conjunctions are then emitted in balanced feature
-    # order, rather than allowing one feature pair to monopolize the cap.
-    if not truncated:
-        pair_specs = []
-        for left, right in combinations(eligible_features, 2):
-            for left_item in threshold_map[left]:
-                for right_item in threshold_map[right]:
-                    for left_op, right_op in ((">=", "<="), ("<=", ">=")):
-                        pair_specs.append([
-                            {"feature": left, "operator": left_op,
-                             "threshold": left_item["value"],
-                             "threshold_quantile": left_item["quantile"]},
-                            {"feature": right, "operator": right_op,
-                             "threshold": right_item["value"],
-                             "threshold_quantile": right_item["quantile"]},
-                        ])
-        for conditions in pair_specs:
-            for direction in ("LONG", "SHORT"):
-                payload = {"direction": direction, "conditions": conditions,
-                           "combination": "ALL", "version": 2}
-                hypothesis_id = _hypothesis_id(payload)
-                if hypothesis_id in seen_ids:
-                    continue
-                if len(hypotheses) >= max_hypotheses:
-                    truncated = True
-                    break
-                seen_ids.add(hypothesis_id)
-                hypotheses.append({"id": hypothesis_id, **payload})
-            if truncated:
+    # Fill the remaining budget with two-feature interactions. Rotate through
+    # distinct feature pairs before moving to further quantile combinations.
+    pair_specs = []
+    for left, right in combinations(eligible_features, 2):
+        for q_index in range(min(len(threshold_map[left]), len(threshold_map[right]))):
+            left_item, right_item = threshold_map[left][q_index], threshold_map[right][q_index]
+            for left_op, right_op in ((">=", "<="), ("<=", ">=")):
+                pair_specs.append([
+                    {"feature": left, "operator": left_op,
+                     "threshold": left_item["value"],
+                     "threshold_quantile": left_item["quantile"]},
+                    {"feature": right, "operator": right_op,
+                     "threshold": right_item["value"],
+                     "threshold_quantile": right_item["quantile"]},
+                ])
+    for conditions in pair_specs:
+        for direction in ("LONG", "SHORT"):
+            payload = {"direction": direction, "conditions": conditions,
+                       "combination": "ALL", "version": 3}
+            hypothesis_id = _hypothesis_id(payload)
+            if hypothesis_id in seen_ids:
+                continue
+            if len(hypotheses) >= max_hypotheses:
                 break
+            seen_ids.add(hypothesis_id)
+            hypotheses.append({"id": hypothesis_id, **payload})
+        if len(hypotheses) >= max_hypotheses:
+            break
+    truncated = len(hypotheses) >= max_hypotheses
 
     return {
         "status": "GENERATED" if hypotheses else "NO_ELIGIBLE_FEATURES",
-        "generator": "balanced_quantile_rule_combinations_v2",
+        "generator": "balanced_single_and_pair_quantile_rules_v3",
         "formation_indices": list(indices),
         "formation_observations": len(indices),
         "eligible_features": eligible_features,
