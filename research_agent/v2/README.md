@@ -87,3 +87,19 @@ This connects raw-bar descriptors to candidate generation without requiring
 preselected indicator names. It still does not constitute a complete discovery
 loop: exits, execution-aware evaluation, multiple-testing correction,
 walk-forward/holdout validation, and promotion gates remain unimplemented.
+
+
+## Causal execution evaluator
+
+`execution.py` evaluates one entry hypothesis and an independent exit rule.
+Signals are evaluated after a completed bar and filled at the next bar open.
+Adverse slippage is applied to each fill and commission is charged on both
+entry and exit notionals. The simulator permits one position at a time, with no
+pyramiding, capital sizing, portfolio allocation, broker access, or orders.
+
+Positions still open at the end of the supplied history are reported separately
+and excluded from closed-trade metrics; a signal on the final bar is not filled.
+The evaluator reports closed-trade win rate, mean/median net return, profit
+factor (only when gross losses exist), and individual trade records. It does
+not approve strategies. Multiple-testing correction and genuinely unseen
+walk-forward/holdout evaluation remain mandatory before any performance claim.
