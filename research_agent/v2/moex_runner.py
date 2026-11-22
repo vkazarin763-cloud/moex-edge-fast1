@@ -17,13 +17,9 @@ from .multiple_testing import holm_bonferroni
 from .pipeline import run_research_pipeline
 
 
-PREDECLARED_EXIT_RULES = {
-    "LONG": {"conditions": [
-        {"feature": "candle_body_pct", "operator": "<=", "threshold": 0.0}
-    ]},
-    "SHORT": {"conditions": [
-        {"feature": "candle_body_pct", "operator": ">=", "threshold": 0.0}
-    ]},
+AUTONOMOUS_EXIT_CONFIG = {
+    "mode": "AUTONOMOUS",
+    "max_exit_hypotheses": 2,
 }
 
 
@@ -66,7 +62,7 @@ def run_moex_d1_research(
         result = run_research_pipeline(
             bars,
             features,
-            PREDECLARED_EXIT_RULES,
+            AUTONOMOUS_EXIT_CONFIG,
             formation_end=formation_end,
             max_features=max_features,
             max_hypotheses=max_hypotheses_per_symbol,
@@ -91,7 +87,7 @@ def run_moex_d1_research(
             "pipeline": result,
         }
         for row in result.get("results", []):
-            key = f"{symbol}:{row['hypothesis']['id']}"
+            key = f"{symbol}:{row.get('candidate_id', row['hypothesis']['id'])}"
             p_value = (
                 row["inference"]["two_sided_p_value"]
                 if row["inference"] is not None else 1.0
@@ -134,6 +130,9 @@ def run_moex_d1_research(
             candidates.append({
                 "symbol": symbol,
                 "hypothesis_id": row["hypothesis"]["id"],
+                "exit_hypothesis_id": row["exit_hypothesis"]["id"],
+                "entry_rule": row["hypothesis"]["conditions"],
+                "exit_rule": row["exit_hypothesis"]["conditions"],
                 "direction": row["hypothesis"]["direction"],
                 "global_adjusted_p_value": correction["holm_adjusted_p_value"],
                 "mean_net_return": row["inference"]["observed_mean"],
@@ -157,8 +156,8 @@ def run_moex_d1_research(
             "entry_hypotheses_generated_from_formation_only": True,
             "validation_window_ends_before_sealed_holdout": True,
             "final_holdout_used": False,
-            "exit_rules": PREDECLARED_EXIT_RULES,
-            "exit_rule_policy": "predeclared candle-body reversal; not optimized on validation",
+            "exit_rules": "autonomously generated from formation-window feature distributions",
+            "exit_rule_policy": "two outcome-blind exit alternatives per entry; thresholds fit on formation only",
             "execution": {
                 "signal": "completed daily close",
                 "fill": "next daily open",
