@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 
 from research_agent.v2.moex_dataset import MOEXDatasetError, load_pre_holdout_d1
@@ -24,8 +25,10 @@ class MOEXDatasetLoaderTests(unittest.TestCase):
             "results": {"SBER": {"D1": {
                 "source": "MOEX ISS TQBR history",
                 "status": "OK",
-                "candles": [candle("2026-11-18"), candle("2026-11-19")]
-                + ([post_holdout] if post_holdout is not None else []),
+                "candles": [
+                    candle((date(2026, 10, 1) + timedelta(days=i)).isoformat())
+                    for i in range(40)
+                ] + ([post_holdout] if post_holdout is not None else []),
             }}},
         }
         validation = {
@@ -47,9 +50,9 @@ class MOEXDatasetLoaderTests(unittest.TestCase):
             )
             result = load_pre_holdout_d1(data_path, validation_path)
         self.assertEqual(result["universe_size"], 1)
-        self.assertEqual(result["total_pre_holdout_bars"], 2)
+        self.assertEqual(result["total_pre_holdout_bars"], 40)
         self.assertEqual(result["post_holdout_rows_excluded"], 1)
-        self.assertEqual(result["symbols"]["SBER"][-1]["timestamp"][:10], "2026-11-19")
+        self.assertEqual(result["symbols"]["SBER"][-1]["timestamp"][:10], "2026-11-09")
         self.assertFalse(result["safety"]["post_holdout_ohlcv_parsed"])
 
     def test_rejects_failed_validation_report(self):
@@ -64,7 +67,7 @@ class MOEXDatasetLoaderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             data_path, validation_path = self.write_artifact(directory)
             data = json.loads(data_path.read_text(encoding="utf-8"))
-            data["results"]["SBER"]["D1"]["candles"].append(candle("2026-11-19"))
+            data["results"]["SBER"]["D1"]["candles"].append(candle("2026-10-01"))
             data_path.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(MOEXDatasetError):
                 load_pre_holdout_d1(data_path, validation_path)
