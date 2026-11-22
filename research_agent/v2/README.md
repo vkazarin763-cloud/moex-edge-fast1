@@ -166,10 +166,10 @@ generation and later validation:
    cannot be promoted.
 
 This is genuine historical parameter/rule optimization over the generated
-candidate grid, not proof of future profitability. The current generator still
-uses quantile-based one- and two-feature conditions; evolutionary mutations,
-three-way interactions and broader feature families are future search-space
-extensions, not yet implemented. The previously reported MOEX pilot predates
+candidate grid, not proof of future profitability. The current generator still uses quantile-based one- and two-feature
+conditions; evolutionary mutations and three-way interactions remain future
+search-space extensions. Rolling reports now retain formation optimization
+metrics so selected rules can be audited against their later validation results. The previously reported MOEX pilot predates
 this optimizer and must not be presented as its result.
 
 The search does not require new candles. The 2026-11-20 sealed row remains
