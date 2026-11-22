@@ -75,6 +75,26 @@ class ResearchPipelineTests(unittest.TestCase):
         self.assertTrue(all(not row["candidate_for_walk_forward"] for row in result["results"]))
         self.assertTrue(all(row["inference"] is None for row in result["results"]))
 
+
+    def test_autonomous_exits_are_generated_before_validation_and_join_global_family(self):
+        data = panel()
+        data["extra_exit_feature"] = [float((i * 5) % 19) for i in range(80)]
+        result = run_research_pipeline(
+            make_bars(), data, {"mode": "AUTONOMOUS", "max_exit_hypotheses": 2},
+            formation_end=40, max_features=2, max_hypotheses=8,
+            min_formation_observations=20, min_trades_for_inference=1000,
+            block_length=5, resamples=999, commission_rate=0, slippage_rate=0,
+            family_id="autonomous-exit-test",
+        )
+        self.assertTrue(result["protocol"]["exit_rules_generated_from_formation_only"])
+        self.assertFalse(result["protocol"]["exit_generation_uses_validation"])
+        self.assertEqual(len(result["results"]), result["family"]["family_size_generated"])
+        self.assertTrue(all(row["exit_hypothesis"]["role"] == "EXIT"
+                            for row in result["results"]))
+        self.assertEqual(len({row["candidate_id"] for row in result["results"]}),
+                         len(result["results"]))
+        self.assertTrue(all(row["inference"] is None for row in result["results"]))
+
     def test_rejects_invalid_split_and_unaligned_features(self):
         with self.assertRaises(PipelineInputError):
             run_research_pipeline(make_bars(), panel(), EXIT, formation_end=1)
