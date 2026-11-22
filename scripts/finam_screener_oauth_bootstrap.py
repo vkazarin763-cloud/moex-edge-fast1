@@ -118,6 +118,8 @@ def parse_mcp_response(raw: bytes):
                     chunks.append(data)
     else:
         chunks.append(text.strip())
+    if not any(chunks):
+        return {}
     for chunk in reversed(chunks):
         try:
             value = json.loads(chunk)
@@ -144,6 +146,8 @@ def mcp_post(token, payload, session_id=None):
     )
     if not 200 <= status < 300:
         raise SafeError(f"MCP_HTTP_{status}")
+    if payload.get("method") and "id" not in payload and not raw.strip():
+        return {}, response_headers
     return parse_mcp_response(raw), response_headers
 
 
