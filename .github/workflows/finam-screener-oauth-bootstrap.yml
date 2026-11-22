@@ -1,0 +1,27 @@
+name: Finam Screener OAuth Bootstrap
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: finam-screener-oauth-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  verify-readonly-mcp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify refresh-token authentication and read-only MCP capability
+        env:
+          FINAM_MCP_ID: ${{ secrets.FINAM_MCP_ID }}
+          FINAM_MCP_TOKEN: ${{ secrets.FINAM_MCP_TOKEN }}
+          FINAM_MCP_REFRESH_TOKEN: ${{ secrets.FINAM_MCP_REFRESH_TOKEN }}
+        run: python scripts/finam_screener_oauth_bootstrap.py
