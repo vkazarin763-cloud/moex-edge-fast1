@@ -57,6 +57,7 @@ jobs:
             --validation moex_edge_multi_timeframe_validation.json \
             --holdout-start 2026-11-20 \
             --max-hypotheses-per-symbol "${MAX_HYPOTHESES}" \
+            --max-optimized-candidates-per-direction "${MAX_OPTIMIZED}" \
             --resamples "${RESAMPLES}" \
             --output moex_edge_v2_rolling_research.json
 
