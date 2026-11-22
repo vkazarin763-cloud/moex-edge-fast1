@@ -46,7 +46,7 @@ class AITeamTests(unittest.TestCase):
         compact = json.loads(_compact_report(source))
         self.assertEqual(compact["results"]["SBER"]["candles"], 700)
         self.assertEqual(
-            compact["results"]["SBER"]["walk_forward"]["candidates"]["Donchian20"]["closed_trades"],
+            compact["results"]["SBER"]["walk_forward_candidates"]["Donchian20"]["closed_trades"],
             42,
         )
         self.assertNotIn("raw_history", compact)
