@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 import math
 from typing import Any, Mapping, Sequence
+from statistics import median
 
 
 class ExecutionInputError(ValueError):
@@ -134,13 +135,10 @@ def evaluate_hypothesis(
     side = 1.0 if direction == "LONG" else -1.0
     trades: list[dict[str, Any]] = []
     position: dict[str, Any] | None = None
-    entry_signals = 0
-    exit_signals = 0
 
     for signal_index in range(n - 1):
         if position is None:
             if _matches(entry_hypothesis, feature_panel, signal_index):
-                entry_signals += 1
                 raw_open = float(bars[signal_index + 1]["open"])
                 fill = raw_open * (1.0 + slippage_rate * side)
                 position = {
@@ -154,7 +152,6 @@ def evaluate_hypothesis(
             continue
 
         if _matches(exit_hypothesis, feature_panel, signal_index):
-            exit_signals += 1
             raw_open = float(bars[signal_index + 1]["open"])
             exit_fill = raw_open * (1.0 - slippage_rate * side)
             entry_price = position["entry_price"]
@@ -179,7 +176,7 @@ def evaluate_hypothesis(
     losses = [value for value in returns if value < 0]
     gross_profit = sum(wins)
     gross_loss = abs(sum(losses))
-    profit_factor = gross_profit / gross_loss if gross_loss > 0 else (math.inf if gross_profit > 0 else None)
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else None
     result = {
         "status": "EVALUATED",
         "direction": direction,
@@ -200,7 +197,7 @@ def evaluate_hypothesis(
         "metrics": {
             "win_rate": len(wins) / len(trades) if trades else None,
             "mean_net_return": sum(returns) / len(returns) if returns else None,
-            "median_net_return": sorted(returns)[len(returns) // 2] if returns else None,
+            "median_net_return": median(returns) if returns else None,
             "profit_factor": profit_factor,
             "total_net_return_sum": sum(returns) if returns else None,
             "gross_profit_sum": gross_profit if trades else None,
