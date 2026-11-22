@@ -16,6 +16,11 @@ on:
         required: false
         type: string
         default: "openrouter/free"
+      tickers:
+        description: "Comma-separated MOEX tickers for the small pilot"
+        required: true
+        type: string
+        default: "SBER,GAZP,LKOH,NVTK,MOEX"
 
 permissions:
   contents: read
@@ -68,11 +73,13 @@ jobs:
         env:
           DATE_FROM: ${{ steps.dates.outputs.date_from }}
           DATE_TILL: ${{ steps.dates.outputs.date_till }}
+          TICKERS: ${{ inputs.tickers }}
         run: |
           set +e
           python -m research_agent.cli \
             --from "$DATE_FROM" \
             --till "$DATE_TILL" \
+            --tickers "$TICKERS" \
             --output research_report.json
           research_exit=$?
           set -e
