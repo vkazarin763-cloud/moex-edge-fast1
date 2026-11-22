@@ -95,6 +95,8 @@ def _extract_rows(response: dict[str, Any]) -> list[dict[str, Any]]:
     payload = response
     while isinstance(payload.get("result"), dict):
         payload = payload["result"]
+    if payload.get("has_next") is True:
+        raise FinamScreenerDataError("screener response has another page; fetch every page before normalization")
     rows = payload.get("data")
     if not isinstance(rows, list):
         raise FinamScreenerDataError("screener response is missing data[]")
@@ -142,8 +144,8 @@ def normalize_screener_responses(
             if asset.get("market") != MARKET_ID:
                 raise FinamScreenerDataError(f"unexpected market for {ticker}")
 
-            price = _number(row.get("quote_last"), "quote_last")
-            cap = _number(row.get("market_capitalization"), "market_capitalization")
+            price = _number(row.get("quote_last"), "quote_last", nullable=False)
+            cap = _number(row.get("market_capitalization"), "market_capitalization", nullable=False)
             pe = _number(row.get("pe_ratio"), "pe_ratio")
             yield_fraction = _number(row.get("dividend_yield_12m"), "dividend_yield_12m")
             if price is not None and price <= 0:
