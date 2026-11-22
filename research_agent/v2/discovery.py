@@ -181,7 +181,7 @@ def generate_hypotheses(
     # Reserve roughly two thirds for singles and one third for interactions.
     # Round-robin buckets guarantee that both directions and all available
     # quantiles are represented before any one bucket consumes the budget.
-    single_budget = max(1, (max_hypotheses * 2) // 3)
+    single_budget = max(1, (max_hypotheses + 1) // 2)
     bucket_keys = [
         (q_index, direction)
         for q_index in range(max((len(v) for v in threshold_map.values()), default=0))
@@ -199,8 +199,20 @@ def generate_hypotheses(
     # Generate two-feature interactions with independently varied quantiles.
     # A stable hash ordering samples broadly across feature pairs, thresholds,
     # operators and directions without using outcomes or runtime randomness.
-    interaction_candidates = []
+    interaction_buckets: dict[tuple[str, str], list[dict]] = {}
+    feature_pairs = []
+    pair_seen = set()
+    # Start with pairs spread across opposite ends of the feature list, then
+    # cover the remaining combinations. This avoids early features dominating.
+    for offset in range(len(eligible_features) // 2):
+        left, right = eligible_features[offset], eligible_features[-1 - offset]
+        feature_pairs.append((left, right))
+        pair_seen.add(frozenset((left, right)))
     for left, right in combinations(eligible_features, 2):
+        if frozenset((left, right)) not in pair_seen:
+            feature_pairs.append((left, right))
+    for left, right in feature_pairs:
+        bucket = []
         for left_item in threshold_map[left]:
             for right_item in threshold_map[right]:
                 for left_op in (">=", "<="):
@@ -219,16 +231,21 @@ def generate_hypotheses(
                                 "combination": "ALL", "version": 4,
                             }
                             hypothesis_id = _hypothesis_id(payload)
-                            interaction_candidates.append(
-                                {"id": hypothesis_id, **payload}
-                            )
-    interaction_candidates.sort(key=lambda item: item["id"])
-    for item in interaction_candidates:
-        if len(hypotheses) >= max_hypotheses:
-            break
-        if item["id"] not in seen_ids:
-            seen_ids.add(item["id"])
-            hypotheses.append(item)
+                            bucket.append({"id": hypothesis_id, **payload})
+        bucket.sort(key=lambda item: item["id"])
+        interaction_buckets[(left, right)] = bucket
+
+    # Round-robin over feature pairs so a small candidate cap still samples
+    # the feature space instead of concentrating on a few pairs.
+    pair_keys = list(interaction_buckets)
+    while len(hypotheses) < max_hypotheses and any(interaction_buckets[k] for k in pair_keys):
+        for key in pair_keys:
+            bucket = interaction_buckets[key]
+            if bucket and len(hypotheses) < max_hypotheses:
+                item = bucket.pop(0)
+                if item["id"] not in seen_ids:
+                    seen_ids.add(item["id"])
+                    hypotheses.append(item)
 
     truncated = len(hypotheses) >= max_hypotheses
 
