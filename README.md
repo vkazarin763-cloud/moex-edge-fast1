@@ -65,3 +65,14 @@ This repository contains an hourly MOEX signal scanner and a Finam execution wor
 3. For any code change, add/update tests, run the full relevant test suite, and report actual results only.
 4. Preserve the user's current operating constraints unless the user explicitly changes them.
 5. Re-read the actual workflow before every operational claim. As last audited on 2026-11-19, the scheduled scanner workflow sets DRY RUN true and LIVE TRADING false; a later workflow change invalidates this statement.
+
+
+### Autonomous research pipeline v2 (draft PR #150)
+
+- `research_agent/v2/pipeline.py` connects hypothesis discovery, next-open execution, moving-block bootstrap inference, and Holm family-wise correction.
+- The split is explicit: thresholds and entry hypotheses are generated only from the formation prefix; the evaluator receives only validation bars and feature rows. Validation features must themselves be causal (current/past only).
+- The exit rule is supplied and fixed by the caller before validation. The pipeline does not optimize or select exits on validation results.
+- All generated hypotheses remain in the registered Holm family. Candidates with too few closed trades, or an invalid block length for their sample, receive a conservative p=1 placeholder for correction and are separately labelled `INSUFFICIENT_DATA`; p=1 is not represented as a measured p-value.
+- A result can only be labelled `CANDIDATE_FOR_WALK_FORWARD` when its bootstrap interval is positive and its null is rejected after Holm correction. This is not approval or a live signal; a separate walk-forward stage and untouched final holdout are still required.
+- This is an orchestration layer, not yet an autonomous end-to-end market-data job. No real MOEX performance is claimed until validated real OHLCV data is supplied and processed.
+- Focused tests: `tests/test_research_agent_v2_pipeline.py`.
