@@ -65,3 +65,25 @@ can be described as tested or useful.
 
 Tests: `tests/test_research_agent_v2_discovery.py`. No v1 scanner, frozen
 cohort, holdout, workflow, broker, or production file is changed.
+
+
+## OHLCV-derived feature panel
+
+`features.py` now derives a generic feature panel directly from validated
+OHLCV bars. It includes multi-horizon returns, candle body/range/wicks/close
+location, opening gap, relative volume versus the *prior* volume window,
+range expansion versus prior ranges, realized close-to-close volatility, and
+trend efficiency. Feature arrays align with input bars; unavailable warm-up
+values remain `None` so they cannot be mistaken for zero.
+
+The extractor validates strictly increasing unique ISO-8601 timestamps,
+positive finite OHLC prices, valid high/low relationships, and finite
+non-negative volume. Every feature at row t uses only information available
+through that bar's close. The test suite includes a future-mutation check:
+changing later bars must not change any earlier feature values.
+
+The output mapping can be passed directly to `generate_hypotheses()`.
+This connects raw-bar descriptors to candidate generation without requiring
+preselected indicator names. It still does not constitute a complete discovery
+loop: exits, execution-aware evaluation, multiple-testing correction,
+walk-forward/holdout validation, and promotion gates remain unimplemented.
