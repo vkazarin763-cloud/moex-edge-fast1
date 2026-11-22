@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .features import extract_ohlcv_features
+from .cross_sectional import extract_cross_sectional_features
 from .moex_dataset import load_pre_holdout_d1
 from .multiple_testing import holm_bonferroni
 from .pipeline import run_research_pipeline
@@ -44,6 +45,16 @@ def run_moex_d1_research(
     if not isinstance(dataset, dict) or not isinstance(dataset.get("symbols"), dict) or not dataset["symbols"]:
         raise ValueError("dataset must contain loaded pre-holdout symbols")
 
+    # Build the full cross-sectional panel before per-symbol discovery. All
+    # values at date t use only that date's completed closes and prior bars.
+    base_features = {
+        symbol: extract_ohlcv_features(bars)
+        for symbol, bars in dataset["symbols"].items()
+    }
+    cross_sectional_features = extract_cross_sectional_features(
+        dataset["symbols"], horizons=(5, 20), min_coverage_fraction=0.5
+    )
+
     per_symbol: dict[str, Any] = {}
     global_p_values: dict[str, float] = {}
     global_row_refs: dict[str, tuple[str, dict[str, Any]]] = {}
@@ -58,7 +69,8 @@ def run_moex_d1_research(
             }
             continue
 
-        features = extract_ohlcv_features(bars)
+        features = dict(base_features[symbol])
+        features.update(cross_sectional_features[symbol])
         result = run_research_pipeline(
             bars,
             features,
