@@ -66,19 +66,44 @@ def moving_block_bootstrap_mean_test(
     null_means = []
     alternative_means = []
     blocks_needed = (n + block_length - 1) // block_length
+    remainder = n % block_length
+
+    # Precompute circular block sums once. The previous implementation copied
+    # every sampled observation into temporary lists for every resample. This
+    # is mathematically equivalent but performs far less Python work, allowing
+    # the larger resample counts needed for a wide Holm family.
+    null_blocks = []
+    alt_blocks = []
+    for start in range(n):
+        null_blocks.append(sum(centered[(start + offset) % n]
+                               for offset in range(block_length)))
+        alt_blocks.append(sum(values[(start + offset) % n]
+                              for offset in range(block_length)))
+    if remainder:
+        null_partial = [
+            sum(centered[(start + offset) % n] for offset in range(remainder))
+            for start in range(n)
+        ]
+        alt_partial = [
+            sum(values[(start + offset) % n] for offset in range(remainder))
+            for start in range(n)
+        ]
+    else:
+        null_partial = alt_partial = None
 
     for _ in range(resamples):
-        null_sample = []
-        alt_sample = []
-        for _block in range(blocks_needed):
+        null_total = 0.0
+        alt_total = 0.0
+        for block_index in range(blocks_needed):
             start = rng.randrange(n)
-            take = min(block_length, n - len(null_sample))
-            for offset in range(take):
-                index = (start + offset) % n
-                null_sample.append(centered[index])
-                alt_sample.append(values[index])
-        null_means.append(mean(null_sample))
-        alternative_means.append(mean(alt_sample))
+            if remainder and block_index == blocks_needed - 1:
+                null_total += null_partial[start]
+                alt_total += alt_partial[start]
+            else:
+                null_total += null_blocks[start]
+                alt_total += alt_blocks[start]
+        null_means.append(null_total / n)
+        alternative_means.append(alt_total / n)
 
     extreme = sum(abs(value) >= abs(observed) for value in null_means)
     p_value = (extreme + 1) / (resamples + 1)
