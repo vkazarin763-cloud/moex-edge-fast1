@@ -310,12 +310,12 @@ def generate_exit_hypotheses(
     max_exit_hypotheses: int = 2,
     min_observations: int = DEFAULT_MIN_OBSERVATIONS,
 ) -> dict:
-    """Generate outcome-blind exit alternatives using formation data only.
+    """Generate two-feature ALL/ANY exit alternatives from formation data only.
 
-    Exit thresholds are fitted on the same chronological formation prefix as
-    entry thresholds. Candidate features are rotated deterministically by
-    entry ID so a small cap does not always select the same first columns.
-    No trade returns, validation rows, or future outcomes are accepted.
+    Each exit combines comparisons on distinct features. Thresholds are
+    estimated only on formation_indices; deterministic round-robin selection
+    retains both logic families when the requested cap permits. No outcomes,
+    trade returns, or validation rows are accepted.
     """
     row_count, panel = _validate_panel(feature_panel)
     indices = _validate_indices(formation_indices, row_count)
@@ -331,38 +331,67 @@ def generate_exit_hypotheses(
     eligible = []
     for name in sorted(panel):
         values = [float(panel[name][i]) for i in indices if panel[name][i] is not None]
-        if len(values) < min_observations:
-            continue
-        eligible.append((name, values))
-    if not eligible:
-        return {"status": "NO_ELIGIBLE_EXIT_FEATURES", "hypotheses": [],
-                "safety": {"forward_returns_used": False,
-                           "thresholds_fit_on_formation_indices_only": True}}
+        if len(values) >= min_observations:
+            eligible.append((name, values))
     preferred = [item for item in eligible if item[0] not in entry_features]
     pool = preferred or eligible
     entry_id = str(entry_hypothesis.get("id", "entry"))
-    offset = int(hashlib.sha256(entry_id.encode("utf-8")).hexdigest()[:8], 16) % len(pool)
-    pool = pool[offset:] + pool[:offset]
+    if pool:
+        offset = int(hashlib.sha256(entry_id.encode("utf-8")).hexdigest()[:8], 16) % len(pool)
+        pool = pool[offset:] + pool[:offset]
+
+    buckets: dict[str, list[dict]] = {"ALL": [], "ANY": []}
+    for (left_name, left_values), (right_name, right_values) in combinations(pool, 2):
+        for left_q in (0.40, 0.60):
+            for right_q in (0.40, 0.60):
+                left_threshold = _quantile(left_values, left_q)
+                right_threshold = _quantile(right_values, right_q)
+                for left_op in ("<=", ">="):
+                    for right_op in ("<=", ">="):
+                        conditions = [
+                            {"feature": left_name, "operator": left_op,
+                             "threshold": left_threshold, "threshold_quantile": left_q},
+                            {"feature": right_name, "operator": right_op,
+                             "threshold": right_threshold, "threshold_quantile": right_q},
+                        ]
+                        for mode in ("ALL", "ANY"):
+                            payload = {
+                                "direction": entry_hypothesis.get("direction"),
+                                "conditions": conditions, "combination": mode,
+                                "role": "EXIT", "version": 2,
+                            }
+                            exit_id = _hypothesis_id(payload)
+                            buckets[mode].append({"id": exit_id, **payload})
+
+    if not buckets["ALL"] and not buckets["ANY"] and pool:
+        # A single eligible feature cannot form a meaningful two-feature rule.
+        name, values = pool[0]
+        for q, operator in ((0.40, "<="), (0.60, ">=")):
+            payload = {
+                "direction": entry_hypothesis.get("direction"),
+                "conditions": [{"feature": name, "operator": operator,
+                                "threshold": _quantile(values, q),
+                                "threshold_quantile": q}],
+                "combination": "ALL", "role": "EXIT", "version": 2,
+            }
+            exit_id = _hypothesis_id(payload)
+            buckets["ALL"].append({"id": exit_id, **payload})
+
+    for mode in buckets:
+        buckets[mode].sort(key=lambda item: hashlib.sha256(item["id"].encode("utf-8")).hexdigest())
     exits = []
-    for index, (name, values) in enumerate(pool):
-        q = 0.40 if index % 2 == 0 else 0.60
-        operator = "<=" if index % 2 == 0 else ">="
-        threshold = _quantile(values, q)
-        payload = {
-            "direction": entry_hypothesis.get("direction"),
-            "conditions": [{
-                "feature": name, "operator": operator,
-                "threshold": threshold, "threshold_quantile": q,
-            }],
-            "combination": "ALL", "role": "EXIT", "version": 1,
-        }
-        exit_id = _hypothesis_id(payload)
-        exits.append({"id": exit_id, **payload})
-        if len(exits) >= max_exit_hypotheses:
+    while len(exits) < max_exit_hypotheses and any(buckets.values()):
+        added = False
+        for mode in ("ALL", "ANY"):
+            if buckets[mode] and len(exits) < max_exit_hypotheses:
+                exits.append(buckets[mode].pop(0))
+                added = True
+        if not added:
             break
     return {
-        "status": "GENERATED",
-        "generator": "formation_only_rotating_exit_rules_v1",
+        "status": "GENERATED" if exits else "NO_ELIGIBLE_EXIT_FEATURES",
+        "generator": "formation_only_two_feature_all_any_exit_rules_v2",
+        "combination_modes": sorted({item["combination"] for item in exits}),
         "hypothesis_count": len(exits),
         "hypotheses": exits,
         "safety": {
