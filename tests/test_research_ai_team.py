@@ -1,9 +1,10 @@
-"""Offline tests for the optional Groq research team."""
+"""Offline tests for the optional multi-provider research team."""
 import json
 import unittest
 
 from research_agent.ai_team import (
     DEFAULT_MODEL,
+    DEFAULT_GROQ_MODEL,
     MAX_INPUT_CHARS,
     _compact_report,
     _extract_text,
@@ -136,7 +137,7 @@ class AITeamTests(unittest.TestCase):
         self.assertNotIn("secret-test", seen["url"])
         self.assertEqual(seen["headers"]["Authorization"], "Bearer secret-test")
         self.assertEqual(seen["timeout"], 60)
-        self.assertEqual(seen["body"]["model"], DEFAULT_MODEL)
+        self.assertEqual(seen["body"]["model"], DEFAULT_GROQ_MODEL)
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
         self.assertEqual(seen["body"]["max_tokens"], 1200)
 
