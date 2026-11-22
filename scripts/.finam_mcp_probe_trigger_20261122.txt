@@ -1,0 +1,1 @@
+Trigger read-only Finam MCP endpoint probe via the existing push workflow. No credentials or account data.
