@@ -94,6 +94,7 @@ def run_rolling_moex_d1_research(
                     "entry_rule": row["hypothesis"]["conditions"],
                     "exit_rule": row["exit_hypothesis"]["conditions"],
                     "closed_trades": row["closed_trade_count"],
+                    "formation_optimization_metrics": row.get("optimization_metrics"),
                     "inference": row.get("inference"),
                     "inference_status": row["inference_status"],
                 }
