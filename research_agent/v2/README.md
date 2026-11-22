@@ -122,3 +122,25 @@ statistically appropriate test and research protocol. This module alone does
 not solve those problems and never marks a strategy approved.
 
 Tests: `tests/test_research_agent_v2_multiple_testing.py`.
+
+
+## Dependence-aware inference
+
+`bootstrap.py` implements a circular moving-block bootstrap test of the
+chronological mean net return against zero. It resamples contiguous blocks,
+centres the series under the null, uses a finite-resample plus-one two-sided
+p-value, and reports a percentile confidence interval. The seed is explicit
+and deterministic. A minimum sample size and valid block-length range are
+enforced.
+
+This is an inference primitive, not an automatic profitability verdict.
+Block length must be varied in sensitivity analysis. Circular wrapping is an
+approximation; structural breaks, volatility clustering, overlapping trades,
+cross-security dependence, and strategy selection can require more careful
+methods (for example, synchronized panel/block resampling or a pre-registered
+reality-check procedure). The test assumes the caller supplies chronological
+observations and does not infer the correct sampling unit. Apply Holm to the
+complete pre-declared hypothesis family only after producing valid marginal
+p-values. Independent walk-forward and holdout evaluation remains mandatory.
+
+Tests: `tests/test_research_agent_v2_bootstrap.py`.
