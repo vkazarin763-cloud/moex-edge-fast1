@@ -1,0 +1,114 @@
+name: Manual AI Agents Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "OpenRouter model ID (default: free router)"
+        required: false
+        type: string
+        default: "openrouter/free"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-agents-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  agents-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile module and run offline tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
+
+      - name: Create tiny synthetic diagnostic input (no MOEX data or signals)
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          fixture = {
+              "report_type": "SYNTHETIC_AGENT_SMOKE_TEST",
+              "notice": "Synthetic fixture only. Not market data, not a backtest, not a trading signal.",
+              "generated_at_utc": "workflow-runtime",
+              "source": {"kind": "synthetic", "market_data_loaded": False},
+              "universe": {"count": 1, "instruments": ["DEMO_ONLY"]},
+              "independent_validation": {
+                  "status": "NOT_RUN",
+                  "reason": "Agent connectivity smoke test skips quantitative research."
+              },
+              "results": {},
+              "expected_agent_behavior": [
+                  "state that all evidence is synthetic",
+                  "do not infer profitability",
+                  "do not produce a LONG or SHORT signal",
+                  "identify missing real-market evidence"
+              ]
+          }
+          Path("smoke_input.json").write_text(
+              json.dumps(fixture, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          PY
+
+      - name: Check OpenRouter secret (without displaying it)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          if not os.environ.get("OPENROUTER_API_KEY", "").strip():
+              raise SystemExit("OPENROUTER_API_KEY is missing.")
+          print("OpenRouter secret is configured.")
+          PY
+
+      - name: Run three specialists and coordinator (4 API calls)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ inputs.model }}
+          AI_PROVIDER: openrouter
+        run: |
+          python -m research_agent.ai_team \
+            --input smoke_input.json \
+            --output smoke_result.json
+
+      - name: Validate agent output
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("smoke_result.json").read_text(encoding="utf-8"))
+          assert result.get("status") == "AI_COMMENTARY_ONLY"
+          assert result.get("calls") == 4
+          assert len(result.get("specialists", {})) == 3
+          assert result.get("coordinator", "").strip()
+          assert len(result.get("providers_used", [])) == 4
+          print("PASS: 3 specialists + coordinator returned non-empty responses.")
+          print("Provider(s): " + ", ".join(sorted(set(result["providers_used"]))))
+          PY
+
+      - name: Upload smoke-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-agents-smoke-${{ github.run_id }}
+          path: |
+            smoke_input.json
+            smoke_result.json
+          if-no-files-found: warn
+          retention-days: 14
