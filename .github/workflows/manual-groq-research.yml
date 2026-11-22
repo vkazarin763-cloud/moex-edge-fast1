@@ -1,0 +1,89 @@
+name: Manual Groq Research Team
+
+on:
+  workflow_dispatch:
+    inputs:
+      report_path:
+        description: "Repository path to a compact, validated research JSON report"
+        required: true
+        type: string
+        default: "research_summary.json"
+      model:
+        description: "Groq model ID (leave default unless you have verified another model)"
+        required: false
+        type: string
+        default: "openai/gpt-oss-20b"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-groq-research-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run-research-team:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate report path and JSON
+        env:
+          REPORT_PATH: ${{ inputs.report_path }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          raw = os.environ["REPORT_PATH"].strip()
+          path = Path(raw)
+          if not raw or path.is_absolute() or ".." in path.parts:
+              raise SystemExit("Invalid report path: use a repository-relative path without '..'.")
+          if path.suffix.lower() != ".json" or not path.is_file():
+              raise SystemExit("Report must be an existing .json file in the selected branch.")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          if not isinstance(data, (dict, list)):
+              raise SystemExit("Research report root must be a JSON object or array.")
+          print(f"Validated JSON report: {path} ({path.stat().st_size} bytes)")
+          PY
+
+      - name: Compile isolated module and run offline tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
+
+      - name: Check Groq secret is available (without displaying it)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          if not os.environ.get("GROQ_API_KEY", "").strip():
+              raise SystemExit("GROQ_API_KEY is missing from repository Actions secrets.")
+          print("GROQ_API_KEY is configured.")
+          PY
+
+      - name: Run four-agent research commentary
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ inputs.model }}
+        run: |
+          python -m research_agent.ai_team \
+            --input "${{ inputs.report_path }}" \
+            --output ai_commentary.json
+
+      - name: Upload AI commentary
+        uses: actions/upload-artifact@v4
+        with:
+          name: groq-research-commentary-${{ github.run_id }}
+          path: ai_commentary.json
+          if-no-files-found: error
+          retention-days: 7
