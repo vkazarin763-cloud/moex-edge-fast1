@@ -52,6 +52,7 @@ class ResearchPipelineTests(unittest.TestCase):
         )
         self.assertEqual(first["discovery"]["feature_thresholds"],
                          second["discovery"]["feature_thresholds"])
+        self.assertEqual(first["optimization"], second["optimization"])
 
     def test_validation_is_separate_and_family_includes_all_candidates(self):
         result = self.run_pipeline()
@@ -94,6 +95,24 @@ class ResearchPipelineTests(unittest.TestCase):
         self.assertEqual(len({row["candidate_id"] for row in result["results"]}),
                          len(result["results"]))
         self.assertTrue(all(row["inference"] is None for row in result["results"]))
+
+
+    def test_optimizer_freezes_a_balanced_shortlist_before_validation(self):
+        result = run_research_pipeline(
+            make_bars(), panel(),
+            {"mode": "AUTONOMOUS", "max_exit_hypotheses": 2},
+            formation_end=40, max_features=2, max_hypotheses=40,
+            max_optimized_candidates_per_direction=1,
+            min_formation_observations=20, min_trades_for_inference=1000,
+            block_length=5, resamples=999, commission_rate=0, slippage_rate=0,
+            family_id="optimizer-shortlist-test",
+        )
+        self.assertTrue(result["optimization"]["formation_returns_used_for_optimization"])
+        self.assertFalse(result["optimization"]["validation_returns_used_for_optimization"])
+        self.assertLessEqual(result["optimization"]["selected_pairs"], 2)
+        self.assertLessEqual(result["optimization"]["selected_by_direction"]["LONG"], 1)
+        self.assertLessEqual(result["optimization"]["selected_by_direction"]["SHORT"], 1)
+        self.assertTrue(result["protocol"]["validation_used_for_statistical_evaluation_only"])
 
     def test_rejects_invalid_split_and_unaligned_features(self):
         with self.assertRaises(PipelineInputError):
