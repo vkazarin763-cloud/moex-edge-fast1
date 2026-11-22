@@ -47,15 +47,102 @@ ROLES: tuple[tuple[str, str], ...] = (
 )
 
 
+def _bounded(value: Any, *, depth: int = 0) -> Any:
+    """Remove bulky audit ledgers/raw series while retaining bounded evidence."""
+    if depth > 8:
+        return "[omitted: nesting limit]"
+    if isinstance(value, dict):
+        cleaned = {}
+        for key, item in value.items():
+            normalized = str(key).lower()
+            if normalized in {
+                "trade_ledger", "raw_candles", "raw_history",
+                "history_records", "records", "ohlcv", "timestamps",
+            }:
+                continue
+            if normalized == "candles" and isinstance(item, (list, dict)):
+                continue
+            cleaned[key] = _bounded(item, depth=depth + 1)
+        return cleaned
+    if isinstance(value, list):
+        # Fold summaries and small diagnostics remain useful; raw event lists do not.
+        return [_bounded(item, depth=depth + 1) for item in value[:12]]
+    if isinstance(value, str) and len(value) > 600:
+        return value[:600] + "…[truncated]"
+    return value
+
+
 def _compact_report(report: Any) -> str:
-    encoded = json.dumps(report, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    """Build a deterministic evidence-only summary; never send raw candle history."""
+    if not isinstance(report, dict):
+        raise ValueError("Research report must be a JSON object.")
+    raw_results = report.get("results")
+    if not isinstance(raw_results, dict):
+        # Small structured evidence objects are supported for focused agent reviews/tests.
+        encoded = json.dumps(_bounded(report), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        if len(encoded) > MAX_INPUT_CHARS:
+            raise ValueError("Focused research evidence exceeds the Groq input budget.")
+        return encoded
+
+    ticker_fields = (
+        "status", "error", "candles", "raw_session_candles",
+        "research_input_bars", "development_bars", "first_timestamp",
+        "last_timestamp", "data_quality", "raw_candle_quality",
+        "corporate_action_history_basis", "tqbr_history_crosscheck",
+        "walk_forward", "adversarial_cost_check", "prospective_holdout",
+    )
+    compact_results = {}
+    for ticker, result in sorted(raw_results.items()):
+        if not isinstance(result, dict):
+            compact_results[ticker] = {"status": "MALFORMED_RESULT"}
+            continue
+        compact_results[ticker] = _bounded({
+            key: result[key] for key in ticker_fields if key in result
+        })
+
+    compact = {
+        "generated_at_utc": report.get("generated_at_utc"),
+        "source": report.get("source"),
+        "board": report.get("board"),
+        "interval_minutes": report.get("interval_minutes"),
+        "date_from": report.get("date_from"),
+        "date_till": report.get("date_till"),
+        "universe": report.get("universe"),
+        "development_holdout_policy": _bounded(report.get("development_holdout_policy", {})),
+        "independent_validation": _bounded(report.get("independent_validation", {})),
+        "results": compact_results,
+        "cross_sectional_direction_summary": _bounded(
+            report.get("cross_sectional_direction_summary", {})
+        ),
+        "experiment_lab": _bounded(report.get("experiment_lab", {})),
+        "development_portfolio": _bounded(report.get("development_portfolio", {})),
+        "safety": report.get("safety"),
+        "compaction_note": (
+            "Raw OHLCV/candle arrays and per-trade ledgers are intentionally excluded. "
+            "All retained metrics are copied from the deterministic source report."
+        ),
+    }
+    encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(encoded) > MAX_INPUT_CHARS:
+        # Last-resort smaller view: preserve status, errors, validation and aggregate metrics.
+        compact["results"] = {
+            ticker: {
+                key: value for key, value in item.items()
+                if key in {"status", "error", "candles", "research_input_bars",
+                           "first_timestamp", "last_timestamp"}
+            }
+            for ticker, item in compact_results.items()
+        }
+        compact["cross_sectional_direction_summary"] = _bounded(
+            report.get("cross_sectional_direction_summary", {})
+        )
+        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded) > MAX_INPUT_CHARS:
         raise ValueError(
-            f"Research input is {len(encoded)} characters; limit is {MAX_INPUT_CHARS}. "
-            "Pass a compact validated summary, not raw candle history."
+            f"Compacted research summary is {len(encoded)} characters; "
+            f"limit is {MAX_INPUT_CHARS}. Reduce report metadata before AI review."
         )
     return encoded
-
 
 def _extract_text(response: dict[str, Any]) -> str:
     choices = response.get("choices") or []
