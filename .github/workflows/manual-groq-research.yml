@@ -1,0 +1,130 @@
+name: Manual Groq Research Team
+
+on:
+  workflow_dispatch:
+    inputs:
+      date_from:
+        description: "Research start date YYYY-MM-DD (blank = rolling 3 years)"
+        required: false
+        type: string
+      date_till:
+        description: "Research end date YYYY-MM-DD (blank = latest completed MOEX date)"
+        required: false
+        type: string
+      model:
+        description: "Groq model ID"
+        required: false
+        type: string
+        default: "openai/gpt-oss-20b"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-groq-research-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run-research-team:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile isolated module and run offline tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
+
+      - name: Resolve research dates
+        id: dates
+        env:
+          INPUT_FROM: ${{ inputs.date_from }}
+          INPUT_TILL: ${{ inputs.date_till }}
+        run: |
+          END="${INPUT_TILL:-$(date -u +%F)}"
+          START="${INPUT_FROM:-$(date -u -d '3 years ago' +%F)}"
+          export START END
+          python - <<'PY'
+          import os
+          from datetime import date
+          from pathlib import Path
+          start = date.fromisoformat(os.environ["START"])
+          end = date.fromisoformat(os.environ["END"])
+          if start > end:
+              raise SystemExit("date_from must not be after date_till")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as out:
+              out.write(f"date_from={start.isoformat()}\n")
+              out.write(f"date_till={end.isoformat()}\n")
+          PY
+
+      - name: Generate deterministic research report from MOEX ISS
+        env:
+          DATE_FROM: ${{ steps.dates.outputs.date_from }}
+          DATE_TILL: ${{ steps.dates.outputs.date_till }}
+        run: |
+          set +e
+          python -m research_agent.cli \
+            --from "$DATE_FROM" \
+            --till "$DATE_TILL" \
+            --output research_report.json
+          research_exit=$?
+          set -e
+          if [ "$research_exit" -eq 3 ] && [ -s research_report.json ]; then
+            echo "::warning::Research report is structurally INCOMPLETE; the AI commentary will be explicitly limited."
+          elif [ "$research_exit" -ne 0 ]; then
+            exit "$research_exit"
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("research_report.json")
+          if not p.is_file():
+              raise SystemExit("MOEX research report was not created.")
+          report = json.loads(p.read_text(encoding="utf-8"))
+          if not isinstance(report, dict) or not isinstance(report.get("results"), dict):
+              raise SystemExit("Unexpected MOEX research report structure.")
+          audit = report.get("independent_validation", {})
+          if audit.get("status") not in {"INDEPENDENT_VALIDATION_PASS", "INDEPENDENT_VALIDATION_INCOMPLETE"}:
+              raise SystemExit("Independent structural validation did not pass or return warning-only INCOMPLETE.")
+          if audit.get("errors"):
+              raise SystemExit("Independent structural validation contains errors; refusing AI commentary.")
+          print(f"Validated source report: {len(report['results'])} instruments; audit={audit.get('status')}")
+          PY
+
+      - name: Check Groq secret is available (without displaying it)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          if not os.environ.get("GROQ_API_KEY", "").strip():
+              raise SystemExit("GROQ_API_KEY is missing from repository Actions secrets.")
+          print("GROQ_API_KEY is configured.")
+          PY
+
+      - name: Run four-agent research commentary
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ inputs.model }}
+        run: |
+          python -m research_agent.ai_team \
+            --input research_report.json \
+            --output ai_commentary.json
+
+      - name: Upload source report and AI commentary
+        uses: actions/upload-artifact@v4
+        with:
+          name: groq-research-report-${{ github.run_id }}
+          path: |
+            research_report.json
+            strategy_registry.json
+            ai_commentary.json
+          if-no-files-found: error
+          retention-days: 14
