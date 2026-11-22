@@ -19,7 +19,7 @@ DEFAULT_PROVIDER = "openrouter"
 DEFAULT_MODEL = "openrouter/free"
 DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
 MAX_INPUT_CHARS = 30_000
-MAX_OUTPUT_TOKENS = 1_200
+MAX_OUTPUT_TOKENS = 4_096
 
 SYSTEM_PROMPT = (
     "You are part of a read-only MOEX research team. Never fabricate facts, prices, "
