@@ -56,9 +56,11 @@ def _bounded(value: Any, *, depth: int = 0) -> Any:
         for key, item in value.items():
             normalized = str(key).lower()
             if normalized in {
-                "trade_ledger", "candles", "raw_candles", "raw_history",
+                "trade_ledger", "raw_candles", "raw_history",
                 "history_records", "records", "ohlcv", "timestamps",
             }:
+                continue
+            if normalized == "candles" and isinstance(item, (list, dict)):
                 continue
             cleaned[key] = _bounded(item, depth=depth + 1)
         return cleaned
@@ -76,7 +78,11 @@ def _compact_report(report: Any) -> str:
         raise ValueError("Research report must be a JSON object.")
     raw_results = report.get("results")
     if not isinstance(raw_results, dict):
-        raise ValueError("Research report has no results object.")
+        # Small structured evidence objects are supported for focused agent reviews/tests.
+        encoded = json.dumps(_bounded(report), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        if len(encoded) > MAX_INPUT_CHARS:
+            raise ValueError("Focused research evidence exceeds the Groq input budget.")
+        return encoded
 
     ticker_fields = (
         "status", "error", "candles", "raw_session_candles",
