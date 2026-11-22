@@ -28,7 +28,7 @@ def run_moex_d1_research(
     dataset: dict[str, Any],
     *,
     formation_fraction: float = 0.70,
-    max_features: int = 12,
+    max_features: int = 20,
     max_hypotheses_per_symbol: int = 20,
     min_trades_for_inference: int = 20,
     block_length: int = 5,
