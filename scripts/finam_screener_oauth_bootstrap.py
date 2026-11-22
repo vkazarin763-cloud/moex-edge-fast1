@@ -52,9 +52,9 @@ def get_header(headers, wanted):
 
 
 def metadata_url(challenge: str):
-    match = re.search(r'resource_metadata\\s*=\\s*"([^"]+)"', challenge, re.I)
+    match = re.search(r'resource_metadata\s*=\s*"([^"]+)"', challenge, re.I)
     if not match:
-        match = re.search(r'resource_metadata\\s*=\\s*([^,\\s]+)', challenge, re.I)
+        match = re.search(r'resource_metadata\s*=\s*([^,\s]+)', challenge, re.I)
     if not match:
         raise SafeError("OAUTH_RESOURCE_METADATA_NOT_ADVERTISED")
     url = match.group(1).strip('"')
