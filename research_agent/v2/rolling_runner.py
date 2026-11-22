@@ -27,7 +27,7 @@ def run_rolling_moex_d1_research(
     if not window_starts or any(not 0.2 <= x < 0.9 for x in window_starts):
         raise ValueError("window_starts must be non-empty fractions in [0.2, 0.9)")
     if not 0.05 <= window_width <= 0.4:
-        raise ValueError("window_width must be between 0.05 and 0.30")
+        raise ValueError("window_width must be between 0.05 and 0.40")
     if isinstance(max_hypotheses_per_symbol, bool) or max_hypotheses_per_symbol < 1:
         raise ValueError("max_hypotheses_per_symbol must be positive")
 
