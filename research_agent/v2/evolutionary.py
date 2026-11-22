@@ -92,7 +92,7 @@ def expand_hypotheses(
         eligible = [name for name in sorted(atoms) if name not in existing]
         for add_count in (1, 2):
             target_size = len(parent["conditions"]) + add_count
-            if target_size > max_conditions:
+            if target_size < 3 or target_size > max_conditions:
                 continue
             for names in combinations(eligible, add_count):
                 choices = [atoms[name] for name in names]
