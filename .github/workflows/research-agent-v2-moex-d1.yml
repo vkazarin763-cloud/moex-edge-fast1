@@ -43,9 +43,8 @@ jobs:
             --data moex_edge_multi_timeframe_candles.json \
             --validation moex_edge_multi_timeframe_validation.json \
             --holdout-start 2026-11-20 \
-            --formation-fraction 0.70 \
             --max-hypotheses-per-symbol 10 \
-            --resamples 49999 \
+            --resamples 199999 \
             --output moex_edge_v2_rolling_research.json
 
       - name: Evaluate any fresh post-seal data without waiting for a fixed bar count
