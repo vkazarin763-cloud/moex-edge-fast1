@@ -77,6 +77,8 @@ def _validate_inputs(
             raise ExecutionInputError(f"{label}_hypothesis must contain a conditions list")
         if not hypothesis["conditions"]:
             raise ExecutionInputError(f"{label}_hypothesis conditions must not be empty")
+        if hypothesis.get("combination", "ALL") not in ("ALL", "ANY"):
+            raise ExecutionInputError(f"{label}_hypothesis combination must be ALL or ANY")
         for condition in hypothesis["conditions"]:
             if not isinstance(condition, Mapping):
                 raise ExecutionInputError("hypothesis conditions must be mappings")
@@ -99,16 +101,20 @@ def _validate_inputs(
 
 
 def _matches(rule: Mapping[str, Any], panel: Mapping[str, Sequence[float | None]], index: int) -> bool:
+    outcomes = []
     for condition in rule["conditions"]:
         value = panel[condition["feature"]][index]
         if value is None:
-            return False
+            outcomes.append(False)
+            continue
         threshold = float(condition["threshold"])
-        if condition["operator"] == ">=" and float(value) < threshold:
-            return False
-        if condition["operator"] == "<=" and float(value) > threshold:
-            return False
-    return True
+        if condition["operator"] == ">=":
+            outcomes.append(float(value) >= threshold)
+        else:
+            outcomes.append(float(value) <= threshold)
+    if rule.get("combination", "ALL") == "ANY":
+        return any(outcomes)
+    return all(outcomes)
 
 
 def evaluate_hypothesis(
