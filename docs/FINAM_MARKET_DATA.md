@@ -29,6 +29,44 @@ Pass the five structured JSON responses to
 must be the caller's actual timezone-aware retrieval time (UTC recommended),
 not a guessed market timestamp.
 
+## Export-to-snapshot bridge
+
+The interactive Copilot MCP session and GitHub Actions are separate execution
+environments. The repository therefore does not pretend it can call tools from
+the user's Copilot session. Instead, after the authenticated MCP session has
+returned the five responses, export them into a JSON file with this envelope:
+
+```json
+{
+  "retrieved_at": "2026-11-22T12:34:56Z",
+  "responses": [
+    { "data": [], "has_next": false },
+    { "data": [], "has_next": false },
+    { "data": [], "has_next": false },
+    { "data": [], "has_next": false },
+    { "data": [], "has_next": false }
+  ]
+}
+```
+
+Replace the illustrative empty `data` arrays with the complete raw MCP
+responses. `retrieved_at` must be the actual timezone-aware time when those
+responses were obtained; do not use the later file-import time or a chart
+candle timestamp. The importer requires exactly five responses, validates all
+44 symbols, rejects incomplete pagination and refuses to overwrite an existing
+snapshot unless explicitly passed `--force`.
+
+Run:
+
+```bash
+python scripts/import_finam_screener_snapshot.py --input /path/to/finam_export.json --output data/research/finam_screener_44.json
+```
+
+The resulting JSON is a research snapshot only. Its quote freshness remains
+`UNKNOWN` because the provider response did not include a verified quote
+timestamp. Do not feed this snapshot into the production scanner or trading
+executor.
+
 ## Data contract
 
 - Returned `security_id`, ticker, and market ID must agree with the frozen map.
@@ -55,3 +93,9 @@ python -m unittest discover -s tests -p "test_finam_screener_adapter.py" -v
 Tests use synthetic fixtures only. They validate mapping, batching, schema,
 normalization, and fail-closed behavior; they do not establish live data
 availability, freshness, or strategy profitability.
+
+Snapshot importer tests:
+
+```bash
+python -m unittest discover -s tests -p "test_finam_screener_snapshot_import.py" -v
+```
