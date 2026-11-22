@@ -31,7 +31,13 @@ def run_rolling_moex_d1_research(
     if isinstance(max_hypotheses_per_symbol, bool) or max_hypotheses_per_symbol < 1:
         raise ValueError("max_hypotheses_per_symbol must be positive")
 
-    minimum_length = min(len(rows) for rows in dataset["symbols"].values())
+    # Define boundaries on the shared exchange calendar, not per-symbol
+    # bar counts (listing dates differ across the universe).
+    calendar = sorted({
+        row["timestamp"][:10]
+        for rows in dataset["symbols"].values()
+        for row in rows
+    })
     folds: list[dict[str, Any]] = []
     pooled: dict[str, float] = {}
     pooled_rows: dict[str, dict[str, Any]] = {}
@@ -39,43 +45,40 @@ def run_rolling_moex_d1_research(
         end_fraction = start_fraction + window_width
         if end_fraction > 0.99:
             continue
-        fold_symbols = {}
-        fold_dates = []
+        train_cutoff = calendar[min(len(calendar) - 1, int(len(calendar) * start_fraction))]
+        eval_cutoff = calendar[min(len(calendar) - 1, int(len(calendar) * end_fraction) - 1)]
+        fold_symbols: dict[str, list[dict[str, Any]]] = {}
+        formation_ends: dict[str, int] = {}
         for symbol, rows in dataset["symbols"].items():
-            n = len(rows)
-            train_end = int(n * start_fraction)
-            eval_end = min(n, int(n * end_fraction))
-            if train_end < 40 or eval_end - train_end < 10:
+            prefix = [row for row in rows if row["timestamp"][:10] <= eval_cutoff]
+            train_count = sum(row["timestamp"][:10] <= train_cutoff for row in prefix)
+            validation_count = len(prefix) - train_count
+            if train_count < 40 or validation_count < 10:
                 continue
-            fold_symbols[symbol] = list(rows[:eval_end])
-            fold_dates.extend([rows[train_end]["timestamp"][:10], rows[eval_end - 1]["timestamp"][:10]])
+            fold_symbols[symbol] = prefix
+            formation_ends[symbol] = train_count
         if not fold_symbols:
             continue
-        # The runner expects one aligned universe. Symbols lacking sufficient
-        # history are omitted for this fold, never padded or forward-filled.
         fold_dataset = dict(dataset)
         fold_dataset["symbols"] = fold_symbols
         fold_dataset["universe_size"] = len(fold_symbols)
         fold_dataset["total_pre_holdout_bars"] = sum(map(len, fold_symbols.values()))
         result = run_moex_d1_research(
             fold_dataset,
-            formation_fraction= start_fraction / end_fraction,
+            formation_end_by_symbol=formation_ends,
             max_hypotheses_per_symbol=max_hypotheses_per_symbol,
             resamples=resamples,
             **kwargs,
         )
-        fold_id = f"expanding-{fold_index}-{start_fraction:.2f}-{end_fraction:.2f}"
+        fold_id = f"expanding-{fold_index}-{train_cutoff}-{eval_cutoff}"
         folds.append({
             "fold_id": fold_id,
-            "formation_fraction_of_full_history": start_fraction,
-            "evaluation_end_fraction_of_full_history": end_fraction,
-            "evaluation_windows_non_overlapping": True,
+            "formation_cutoff_date": train_cutoff,
+            "evaluation_cutoff_date": eval_cutoff,
             "symbols_processed": result["summary"]["symbols_processed"],
             "hypotheses": result["summary"]["hypotheses_in_global_family"],
             "tested": result["summary"]["hypotheses_with_valid_bootstrap_tests"],
             "underpowered": result["summary"]["underpowered_hypotheses"],
-            "first_evaluation_date": min(fold_dates) if fold_dates else None,
-            "last_evaluation_date": max(fold_dates) if fold_dates else None,
         })
         for symbol, item in result.get("per_symbol", {}).items():
             pipe = item.get("pipeline") or {}
@@ -84,8 +87,7 @@ def run_rolling_moex_d1_research(
                 p = row["inference"]["two_sided_p_value"] if row.get("inference") else 1.0
                 pooled[key] = p
                 pooled_rows[key] = {
-                    "fold_id": fold_id,
-                    "symbol": symbol,
+                    "fold_id": fold_id, "symbol": symbol,
                     "direction": row["hypothesis"]["direction"],
                     "entry_rule": row["hypothesis"]["conditions"],
                     "exit_rule": row["exit_hypothesis"]["conditions"],
@@ -147,6 +149,7 @@ def run_rolling_moex_d1_research(
             "method": "expanding formation windows with sequential non-overlapping evaluation windows",
             "window_starts": list(window_starts),
             "window_width": window_width,
+            "calendar_aligned_boundaries": True,
             "all_folds_and_symbols_in_one_global_holm_family": True,
             "formation_only_hypothesis_generation": True,
             "validation_windows_non_overlapping": True,
