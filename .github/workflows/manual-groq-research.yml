@@ -21,7 +21,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: manual-groq-research-${{ github.ref }}
+  group: manual-ai-research-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
