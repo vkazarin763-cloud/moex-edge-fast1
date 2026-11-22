@@ -44,10 +44,12 @@ jobs:
       - name: Run expanding-window autonomous discovery on available pre-holdout history
         run: |
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
-            MAX_HYPOTHESES=3
+            MAX_HYPOTHESES=200
+            MAX_OPTIMIZED=5
             RESAMPLES=49999
           else
-            MAX_HYPOTHESES=10
+            MAX_HYPOTHESES=200
+            MAX_OPTIMIZED=5
             RESAMPLES=199999
           fi
           python -m research_agent.v2.rolling_runner \
