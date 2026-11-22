@@ -10,7 +10,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .bootstrap import moving_block_bootstrap_mean_test
-from .discovery import generate_hypotheses
+from .discovery import generate_hypotheses, generate_exit_hypotheses
 from .execution import evaluate_hypothesis
 from .multiple_testing import holm_bonferroni
 
@@ -63,14 +63,16 @@ def run_research_pipeline(
     if isinstance(block_length, bool) or not isinstance(block_length, int) or block_length < 1:
         raise PipelineInputError("block_length must be a positive integer")
     if not isinstance(exit_hypothesis, Mapping):
-        raise PipelineInputError("a predeclared exit_hypothesis mapping is required")
-    if "LONG" in exit_hypothesis or "SHORT" in exit_hypothesis:
-        for direction in ("LONG", "SHORT"):
-            rule = exit_hypothesis.get(direction)
-            if not isinstance(rule, Mapping) or not isinstance(rule.get("conditions"), list) or not rule["conditions"]:
-                raise PipelineInputError("directional exit rules must define non-empty LONG and SHORT conditions")
-    elif not isinstance(exit_hypothesis.get("conditions"), list) or not exit_hypothesis["conditions"]:
-        raise PipelineInputError("exit_hypothesis must contain non-empty conditions")
+        raise PipelineInputError("exit_hypothesis mapping is required")
+    autonomous_exits = exit_hypothesis.get("mode") == "AUTONOMOUS"
+    if not autonomous_exits:
+        if "LONG" in exit_hypothesis or "SHORT" in exit_hypothesis:
+            for direction in ("LONG", "SHORT"):
+                rule = exit_hypothesis.get(direction)
+                if not isinstance(rule, Mapping) or not isinstance(rule.get("conditions"), list) or not rule["conditions"]:
+                    raise PipelineInputError("directional exit rules must define non-empty LONG and SHORT conditions")
+        elif not isinstance(exit_hypothesis.get("conditions"), list) or not exit_hypothesis["conditions"]:
+            raise PipelineInputError("exit_hypothesis must contain non-empty conditions")
     if not isinstance(family_id, str) or not family_id.strip():
         raise PipelineInputError("family_id must be a non-empty string")
 
@@ -104,40 +106,53 @@ def run_research_pipeline(
     family_p_values: dict[str, float] = {}
     rows: list[dict[str, Any]] = []
     for hypothesis in hypotheses:
-        execution = evaluate_hypothesis(
-            validation_bars,
-            validation_panel,
-            hypothesis,
-            (exit_hypothesis[hypothesis["direction"]]
-             if "LONG" in exit_hypothesis or "SHORT" in exit_hypothesis
-             else exit_hypothesis),
-            commission_rate=commission_rate,
-            slippage_rate=slippage_rate,
-        )
-        returns = [trade["net_return"] for trade in execution["trades"]]
-        inference = None
-        if len(returns) >= min_trades_for_inference and block_length <= len(returns) // 2:
-            inference = moving_block_bootstrap_mean_test(
-                returns,
-                block_length=block_length,
-                resamples=resamples,
-                alpha=alpha,
-                seed=seed,
+        if autonomous_exits:
+            exit_generation = generate_exit_hypotheses(
+                formation_panel,
+                formation_indices=list(range(formation_end)),
+                entry_hypothesis=hypothesis,
+                max_exit_hypotheses=int(exit_hypothesis.get("max_exit_hypotheses", 2)),
+                min_observations=min_formation_observations,
             )
-            family_p_values[hypothesis["id"]] = inference["two_sided_p_value"]
-            inference_status = "TESTED"
+            exit_rules = exit_generation["hypotheses"]
         else:
-            family_p_values[hypothesis["id"]] = 1.0
-            inference_status = "INSUFFICIENT_DATA"
-        rows.append({
-            "hypothesis": hypothesis,
-            "execution": execution,
-            "inference": inference,
-            "inference_status": inference_status,
-            "closed_trade_count": len(returns),
-            "candidate_for_walk_forward": False,
-            "approval_status": "NOT_APPROVED",
-        })
+            exit_rules = [(
+                exit_hypothesis[hypothesis["direction"]]
+                if "LONG" in exit_hypothesis or "SHORT" in exit_hypothesis
+                else exit_hypothesis
+            )]
+        for exit_rule in exit_rules:
+            candidate_id = (
+                f"{hypothesis['id']}::{exit_rule['id']}"
+                if autonomous_exits else hypothesis["id"]
+            )
+            execution = evaluate_hypothesis(
+                validation_bars, validation_panel, hypothesis, exit_rule,
+                commission_rate=commission_rate, slippage_rate=slippage_rate,
+            )
+            returns = [trade["net_return"] for trade in execution["trades"]]
+            inference = None
+            if len(returns) >= min_trades_for_inference and block_length <= len(returns) // 2:
+                inference = moving_block_bootstrap_mean_test(
+                    returns, block_length=block_length, resamples=resamples,
+                    alpha=alpha, seed=seed,
+                )
+                family_p_values[candidate_id] = inference["two_sided_p_value"]
+                inference_status = "TESTED"
+            else:
+                family_p_values[candidate_id] = 1.0
+                inference_status = "INSUFFICIENT_DATA"
+            rows.append({
+                "candidate_id": candidate_id,
+                "hypothesis": hypothesis,
+                "exit_hypothesis": exit_rule,
+                "execution": execution,
+                "inference": inference,
+                "inference_status": inference_status,
+                "closed_trade_count": len(returns),
+                "candidate_for_walk_forward": False,
+                "approval_status": "NOT_APPROVED",
+            })
 
     correction = holm_bonferroni(family_p_values, alpha=alpha, family_id=family_id)
     corrected = {item["hypothesis_id"]: item for item in correction["results"]}
@@ -182,10 +197,13 @@ def run_research_pipeline(
             "walk_forward_candidates": sum(row["candidate_for_walk_forward"] for row in rows),
         },
         "protocol": {
-            "exit_rule_predeclared_by_caller": True,
+            "exit_rule_predeclared_by_caller": not autonomous_exits,
+            "exit_rules_generated_from_formation_only": autonomous_exits,
+            "exit_hypotheses_per_entry": int(exit_hypothesis.get("max_exit_hypotheses", 2)) if autonomous_exits else 1,
             "entry_thresholds_fit_on_formation_only": True,
             "validation_used_for_hypothesis_generation": False,
             "validation_used_for_statistical_evaluation_only": True,
+            "exit_generation_uses_validation": False,
             "signal_on_close_fill_next_open": True,
             "costs_included": True,
             "underpowered_p_value_placeholder": 1.0,
