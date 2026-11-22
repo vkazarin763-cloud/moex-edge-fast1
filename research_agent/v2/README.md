@@ -103,3 +103,22 @@ The evaluator reports closed-trade win rate, mean/median net return, profit
 factor (only when gross losses exist), and individual trade records. It does
 not approve strategies. Multiple-testing correction and genuinely unseen
 walk-forward/holdout evaluation remain mandatory before any performance claim.
+
+
+## Multiple-testing correction
+
+`multiple_testing.py` implements Holm-Bonferroni step-down correction for
+an explicitly supplied, complete hypothesis family. It validates p-values,
+preserves candidate IDs and input order, reports adjusted p-values and
+family-wise rejection decisions, and records the family size and alpha.
+
+The correction accepts externally computed p-values; it does not derive them
+from returns or trade metrics. The caller must register the full tested family
+before examining results and include every tested candidate, not only winners.
+Holm controls family-wise error under arbitrary dependence only if each
+marginal p-value is valid. In particular, overlapping trades, serial
+dependence, repeated parameter searches, and data snooping require a
+statistically appropriate test and research protocol. This module alone does
+not solve those problems and never marks a strategy approved.
+
+Tests: `tests/test_research_agent_v2_multiple_testing.py`.
