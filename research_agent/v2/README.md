@@ -144,3 +144,36 @@ complete pre-declared hypothesis family only after producing valid marginal
 p-values. Independent walk-forward and holdout evaluation remains mandatory.
 
 Tests: `tests/test_research_agent_v2_bootstrap.py`.
+
+
+## Formation-driven autonomous optimization
+
+The current pipeline now has a distinct optimization stage between candidate
+generation and later validation:
+
+1. Generate up to 200 data-driven entry rules per symbol from the formation
+   window, using the existing balanced feature/quantile/operator generator.
+2. Generate up to two formation-only exit alternatives for each entry rule.
+3. Evaluate the entry/exit pairs on the formation history with next-open fills,
+   commission and adverse slippage.
+4. Rank pairs using mean net trade return shrunk for small samples and penalized
+   for trade-sequence drawdown. Keep the best exit for each distinct entry and
+   retain up to five entries per direction.
+5. Freeze that shortlist and evaluate it only on the later chronological
+   validation window. Validation returns are never used to tune or rank rules.
+6. Apply the global Holm correction to the selected validation family across
+   symbols and rolling folds. Underpowered selected rules remain visible but
+   cannot be promoted.
+
+This is genuine historical parameter/rule optimization over the generated
+candidate grid, not proof of future profitability. The current generator still
+uses quantile-based one- and two-feature conditions; evolutionary mutations,
+three-way interactions and broader feature families are future search-space
+extensions, not yet implemented. The previously reported MOEX pilot predates
+this optimizer and must not be presented as its result.
+
+The search does not require new candles. The 2026-11-20 sealed row remains
+excluded. No strategy approval, capital sizing, broker access or live orders
+are introduced.
+
+Focused tests: `tests/test_research_agent_v2_pipeline.py`.
