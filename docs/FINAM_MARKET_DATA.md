@@ -49,7 +49,7 @@ not a guessed market timestamp.
 Run from the repository root:
 
 ```bash
-python -m unittest tests.test_finam_screener_adapter -v
+python -m unittest discover -s tests -p "test_finam_screener_adapter.py" -v
 ```
 
 Tests use synthetic fixtures only. They validate mapping, batching, schema,
