@@ -13,6 +13,7 @@ from typing import Any
 
 from .bootstrap import moving_block_bootstrap_mean_test
 from .discovery import generate_hypotheses, generate_exit_hypotheses
+from .evolutionary import expand_hypotheses
 from .execution import evaluate_hypothesis
 from .multiple_testing import holm_bonferroni
 
@@ -106,12 +107,33 @@ def run_research_pipeline(
 
     formation_bars = list(bars[:formation_end])
     formation_panel = {name: list(values[:formation_end]) for name, values in feature_panel.items()}
-    discovery = generate_hypotheses(
+    seed_limit = max(1, max_hypotheses // 2)
+    seed_discovery = generate_hypotheses(
         formation_panel, formation_indices=list(range(formation_end)),
-        max_features=max_features, max_hypotheses=max_hypotheses,
+        max_features=max_features, max_hypotheses=seed_limit,
         min_observations=min_formation_observations,
     )
-    hypotheses = discovery["hypotheses"]
+    evolutionary = expand_hypotheses(
+        formation_panel, formation_indices=list(range(formation_end)),
+        seed_hypotheses=seed_discovery["hypotheses"],
+        max_hypotheses=max(0, max_hypotheses - len(seed_discovery["hypotheses"])),
+        max_conditions=4, min_observations=min_formation_observations,
+    )
+    hypotheses = list(seed_discovery["hypotheses"]) + list(evolutionary["hypotheses"])
+    discovery = {
+        **seed_discovery,
+        "generator": "balanced_seed_plus_evolutionary_mutation_crossover_v1",
+        "seed_hypothesis_count": len(seed_discovery["hypotheses"]),
+        "evolutionary_expansion": evolutionary,
+        "hypotheses": hypotheses,
+        "hypothesis_count": len(hypotheses),
+        "safety": {
+            **seed_discovery["safety"],
+            "evolution_uses_formation_only": True,
+            "validation_rows_used_for_generation": False,
+            "forward_returns_used_for_generation": False,
+        },
+    }
     if not hypotheses:
         return {
             "status": "NO_CANDIDATES", "discovery": discovery,
@@ -212,11 +234,12 @@ def run_research_pipeline(
         return {
             "status": "NO_OPTIMIZABLE_CANDIDATES", "discovery": discovery,
             "optimization": {
-                "method": "formation_return_ranked_search",
+                "method": "formation_return_ranked_evolutionary_search",
                 "generated_entry_rules": len(hypotheses),
                 "evaluated_pairs": len(ranked), "selected_pairs": 0,
                 "selected_by_direction": counts,
                 "selection_metric": "shrunk_mean_net_return_minus_drawdown_penalty",
+            "evolutionary_expansion": "deterministic mutation and crossover; 3-4 feature conjunctions",
             },
             "family": {"family_id": family_id, "family_size": 0},
             "results": [],
@@ -285,6 +308,7 @@ def run_research_pipeline(
             "exit_rule_predeclared_by_caller": not autonomous_exits,
             "exit_rules_generated_from_formation_only": autonomous_exits,
             "entry_rules_generated_from_formation_only": True,
+            "mutation_and_crossover_use_formation_features_only": True,
             "formation_returns_used_for_optimization": True,
             "validation_used_for_optimization": False,
             "validation_used_for_statistical_evaluation_only": True,
