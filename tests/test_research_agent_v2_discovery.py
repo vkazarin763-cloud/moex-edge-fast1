@@ -103,6 +103,10 @@ class HypothesisDiscoveryTests(unittest.TestCase):
         self.assertGreaterEqual(len(used), 9)
         self.assertEqual({item["direction"] for item in result["hypotheses"]},
                          {"LONG", "SHORT"})
+        self.assertTrue(any(len(item["conditions"]) == 2
+                            for item in result["hypotheses"]))
+        self.assertEqual(result["generator"],
+                         "balanced_single_and_pair_quantile_rules_v3")
 
     def test_exit_hypotheses_are_formation_only_and_rotate_away_from_entry_feature(self):
         data = self.panel()
