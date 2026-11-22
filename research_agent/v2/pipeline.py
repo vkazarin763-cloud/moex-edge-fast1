@@ -13,6 +13,7 @@ from typing import Any
 
 from .bootstrap import moving_block_bootstrap_mean_test
 from .discovery import generate_hypotheses, generate_exit_hypotheses
+from .archetypes import generate_archetype_hypotheses
 from .evolutionary import expand_hypotheses
 from .execution import evaluate_hypothesis
 from .multiple_testing import holm_bonferroni
@@ -107,28 +108,41 @@ def run_research_pipeline(
 
     formation_bars = list(bars[:formation_end])
     formation_panel = {name: list(values[:formation_end]) for name, values in feature_panel.items()}
-    seed_limit = max(1, max_hypotheses // 2)
+    # Reserve bounded portions for generic discovery and distinct market
+    # archetypes; evolution expands both seed populations within the same cap.
+    generic_limit = max(1, max_hypotheses // 3)
+    archetype_limit = max(0, max_hypotheses // 3)
     seed_discovery = generate_hypotheses(
         formation_panel, formation_indices=list(range(formation_end)),
-        max_features=max_features, max_hypotheses=seed_limit,
+        max_features=max_features, max_hypotheses=generic_limit,
         min_observations=min_formation_observations,
     )
+    archetype_discovery = generate_archetype_hypotheses(
+        formation_panel, formation_indices=list(range(formation_end)),
+        max_hypotheses=archetype_limit,
+        min_observations=min_formation_observations,
+    )
+    seed_hypotheses = list(seed_discovery["hypotheses"]) + list(archetype_discovery["hypotheses"])
     evolutionary = expand_hypotheses(
         formation_panel, formation_indices=list(range(formation_end)),
-        seed_hypotheses=seed_discovery["hypotheses"],
-        max_hypotheses=max(0, max_hypotheses - len(seed_discovery["hypotheses"])),
+        seed_hypotheses=seed_hypotheses,
+        max_hypotheses=max(0, max_hypotheses - len(seed_hypotheses)),
         max_conditions=4, min_observations=min_formation_observations,
     )
-    hypotheses = list(seed_discovery["hypotheses"]) + list(evolutionary["hypotheses"])
+    hypotheses = seed_hypotheses + list(evolutionary["hypotheses"])
+    hypotheses = hypotheses[:max_hypotheses]
     discovery = {
         **seed_discovery,
-        "generator": "balanced_seed_plus_evolutionary_mutation_crossover_v1",
+        "generator": "generic_plus_archetype_plus_evolutionary_v1",
         "seed_hypothesis_count": len(seed_discovery["hypotheses"]),
+        "archetype_discovery": archetype_discovery,
+        "archetype_hypothesis_count": len(archetype_discovery["hypotheses"]),
         "evolutionary_expansion": evolutionary,
         "hypotheses": hypotheses,
         "hypothesis_count": len(hypotheses),
         "safety": {
             **seed_discovery["safety"],
+            "archetype_thresholds_fit_on_formation_only": True,
             "evolution_uses_formation_only": True,
             "validation_rows_used_for_generation": False,
             "forward_returns_used_for_generation": False,
