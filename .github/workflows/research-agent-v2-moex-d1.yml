@@ -1,8 +1,8 @@
 name: MOEX EDGE V2 — Immediate Research + Rolling Fresh Checks
 
 on:
-  # Wider-window pilot retry after fixing the 35 percent window guard.
-  # Ordinary pushes do not trigger this job.
+  # One-off historical optimizer pilot on the already validated frozen artifact.
+  # Ordinary pushes do not trigger this job unless the commit message has the marker.
   push:
     branches: [feat/autonomous-strategy-discovery-v1]
   workflow_run:
