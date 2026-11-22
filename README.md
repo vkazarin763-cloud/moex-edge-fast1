@@ -96,9 +96,10 @@ This repository contains an hourly MOEX signal scanner and a Finam execution wor
 
 ### Expanding-window research (draft PR #150)
 
-- The current research workflow runs immediately on the available validated pre-holdout D1 history; it does not wait for new candles.
-- Historical discovery now uses three expanding formation prefixes (50%, 65%, 80%) followed by sequential, non-overlapping 15% evaluation windows. Each fold generates entry and exit rules using only its own formation prefix.
+- The historical research workflow runs on an already validated pre-holdout D1 artifact; it does not wait for new candles.
+- The initial real-data pilot processed 44 MOEX symbols and 792 entry/exit pairs over three 15% evaluation windows. All 792 were underpowered: median 6 closed trades, maximum 17, versus the required minimum of 20. No p-values were calculated for these candidates and no strategy was selected. This is a sample-size finding, not evidence that the strategies are unprofitable.
+- In response to that sample-size limitation, the default rolling design was widened to two sequential, non-overlapping 35% evaluation windows, with formation prefixes of 25% and 60%. This change is based on trade-count adequacy only, not on observed returns or selected symbols.
 - All fold/symbol/entry/exit tests are pooled into one global Holm family. Underpowered tests remain in the family with a conservative p=1 placeholder and are not promoted.
 - The rolling report is a robustness screen, not an untouched final holdout. Formation prefixes overlap by design; only the evaluation windows are non-overlapping. No strategy is approved or sent to the live scanner by this stage.
-- Fresh post-2026-11-20 data is evaluated separately as it becomes available; the historical runner and fresh-data runner do not use the sealed 2026-11-20 row.
-- The production workflow uses 10 entry hypotheses per symbol per fold and 199,999 bootstrap resamples to improve p-value resolution for the pooled family. Runtime and statistical power must be reviewed from actual CI/artifact output; no market performance is claimed until a real-data run completes.
+- Fresh post-2026-11-20 data is evaluated separately as it becomes available; the historical runner and fresh-data runner do not use the sealed 2026-11-20 row. The available collector artifact had zero post-seal dates, so the fresh-data report remained WAITING_FOR_FRESH_DATA.
+- The first pilot used 3 entry hypotheses per symbol per fold and 49,999 bootstrap resamples to limit the initial family size. The normal collector-triggered workflow remains configured for 10 hypotheses and 199,999 resamples. No market performance is claimed until candidates have sufficient trades and valid inference.
