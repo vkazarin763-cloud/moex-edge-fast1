@@ -13,8 +13,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
-API_URL = "https://api.groq.com/openai/v1/chat/completions"
-DEFAULT_MODEL = "openai/gpt-oss-20b"
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+DEFAULT_PROVIDER = "openrouter"
+DEFAULT_MODEL = "openrouter/free"
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
 MAX_INPUT_CHARS = 30_000
 MAX_OUTPUT_TOKENS = 1_200
 
@@ -74,14 +77,14 @@ def _bounded(value: Any, *, depth: int = 0) -> Any:
 
 
 def _compact_report(report: Any) -> str:
-    """Build a strict, compact evidence projection under the Groq input budget."""
+    """Build a strict, compact evidence projection under the AI input budget."""
     if not isinstance(report, dict):
         raise ValueError("Research report must be a JSON object.")
     raw_results = report.get("results")
     if not isinstance(raw_results, dict):
         encoded = json.dumps(_bounded(report), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         if len(encoded) > MAX_INPUT_CHARS:
-            raise ValueError("Focused research evidence exceeds the Groq input budget.")
+            raise ValueError("Focused research evidence exceeds the AI input budget.")
         return encoded
 
     # Compact codes avoid repeating long status strings across 44 tickers x strategies.
@@ -178,10 +181,10 @@ def _compact_report(report: Any) -> str:
         )
     return encoded
 
-def _extract_text(response: dict[str, Any]) -> str:
+def _extract_text(response: dict[str, Any], provider: str = "AI provider") -> str:
     choices = response.get("choices") or []
     if not choices:
-        raise RuntimeError("Groq returned no choices (possibly blocked or quota-limited).")
+        raise RuntimeError(f"{provider} returned no choices (possibly blocked or quota-limited).")
     message = choices[0].get("message") or {}
     content = message.get("content")
     if isinstance(content, str):
@@ -195,23 +198,30 @@ def _extract_text(response: dict[str, Any]) -> str:
     else:
         result = ""
     if not result:
-        raise RuntimeError("Groq response contained no text.")
+        raise RuntimeError(f"{provider} response contained no text.")
     return result
 
 
-def call_groq(
+def call_provider(
     prompt: str,
     *,
     api_key: str,
+    provider: str = DEFAULT_PROVIDER,
     model: str = DEFAULT_MODEL,
     timeout: int = 60,
     opener: Callable[..., Any] = urllib.request.urlopen,
 ) -> str:
-    """Call Groq's OpenAI-compatible Chat Completions API without extra dependencies."""
+    """Call an OpenAI-compatible provider without extra dependencies."""
+    providers = {
+        "openrouter": OPENROUTER_API_URL,
+        "groq": GROQ_API_URL,
+    }
+    if provider not in providers:
+        raise ValueError("Unsupported AI provider. Use 'openrouter' or 'groq'.")
     if not api_key.strip():
-        raise ValueError("GROQ_API_KEY is required.")
+        raise ValueError(f"{provider.upper()}_API_KEY is required.")
     if not model.strip() or any(ch.isspace() for ch in model):
-        raise ValueError("Invalid Groq model identifier.")
+        raise ValueError(f"Invalid {provider} model identifier.")
     body = {
         "model": model,
         "messages": [
@@ -219,23 +229,27 @@ def call_groq(
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.2,
-        "max_completion_tokens": MAX_OUTPUT_TOKENS,
+        "max_tokens": MAX_OUTPUT_TOKENS,
     }
+    if provider == "groq":
+        body["max_completion_tokens"] = body.pop("max_tokens")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    if provider == "openrouter":
+        headers["HTTP-Referer"] = "https://github.com/vkazarin763-cloud/moex-edge-fast1"
+        headers["X-OpenRouter-Title"] = "MOEX EDGE Research Team"
     request = urllib.request.Request(
-        API_URL,
+        providers[provider],
         data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
+        headers=headers,
         method="POST",
     )
     try:
         with opener(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        # Groq's error body usually identifies invalid keys, model access or account
-        # restrictions. Log only the provider's bounded error message; never headers.
         detail = ""
         try:
             error_payload = json.loads(exc.read().decode("utf-8", errors="replace"))
@@ -247,33 +261,65 @@ def call_groq(
         except (ValueError, OSError):
             pass
         if detail:
-            detail = detail.replace(api_key, "[REDACTED]") if api_key else detail
-            detail = detail.replace("Bearer ", "[REDACTED] ") if "Bearer " in detail else detail
-            raise RuntimeError(f"Groq API HTTP {exc.code}: {detail}") from None
+            detail = detail.replace(api_key, "[REDACTED]")
+            raise RuntimeError(f"{provider} API HTTP {exc.code}: {detail}") from None
         raise RuntimeError(
-            f"Groq API HTTP {exc.code}; provider returned no readable error message. "
-            "Check key validity, model access and account restrictions."
+            f"{provider} API HTTP {exc.code}; provider returned no readable error message."
         ) from None
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"Groq API connection failed: {exc.reason}") from None
-    return _extract_text(payload)
+        raise RuntimeError(f"{provider} API connection failed: {exc.reason}") from None
+    return _extract_text(payload, provider)
 
+
+def call_groq(
+    prompt: str,
+    *,
+    api_key: str,
+    model: str = DEFAULT_GROQ_MODEL,
+    timeout: int = 60,
+    opener: Callable[..., Any] = urllib.request.urlopen,
+) -> str:
+    """Backward-compatible Groq call, used as the secondary provider."""
+    return call_provider(
+        prompt, api_key=api_key, provider="groq", model=model,
+        timeout=timeout, opener=opener,
+    )
 
 def run_team(
     report: Any,
     *,
     api_key: str,
     model: str = DEFAULT_MODEL,
-    caller: Callable[..., str] = call_groq,
+    provider: str = DEFAULT_PROVIDER,
+    groq_api_key: str | None = None,
+    groq_model: str = DEFAULT_GROQ_MODEL,
+    caller: Callable[..., str] = call_provider,
 ) -> dict[str, Any]:
-    """Run three specialist agents and a coordinator; four model calls total."""
+    """Run three specialists and a coordinator; four calls total with per-call fallback."""
     report_json = _compact_report(report)
     specialist_results: dict[str, str] = {}
+    providers_used: list[str] = []
+
+    def ask(prompt: str) -> str:
+        try:
+            answer = caller(prompt, api_key=api_key, provider=provider, model=model)
+            providers_used.append(provider)
+            return answer
+        except Exception as primary_error:
+            if provider == "openrouter" and groq_api_key and groq_api_key.strip():
+                answer = caller(
+                    prompt, api_key=groq_api_key, provider="groq", model=groq_model
+                )
+                providers_used.append("groq_fallback")
+                return answer
+            raise RuntimeError(
+                f"Primary provider {provider} failed; no configured fallback. "
+                f"Details: {primary_error}"
+            ) from None
+
     for role, instruction in ROLES:
-        specialist_results[role] = caller(
-            f"{instruction}\n\nValidated research report (JSON):\n{report_json}",
-            api_key=api_key,
-            model=model,
+        specialist_results[role] = ask(
+            f"{instruction}\n\nValidated research report (JSON):\n{report_json}"
         )
 
     coordinator_prompt = (
@@ -286,10 +332,11 @@ def run_team(
         "Specialist notes:\n"
         + "\n\n".join(f"[{name}]\n{note}" for name, note in specialist_results.items())
     )
-    synthesis = caller(coordinator_prompt, api_key=api_key, model=model)
+    synthesis = ask(coordinator_prompt)
     return {
         "status": "AI_COMMENTARY_ONLY",
-        "provider": "groq_api",
+        "provider": provider,
+        "providers_used": providers_used,
         "model": model,
         "calls": len(ROLES) + 1,
         "specialists": specialist_results,
@@ -304,24 +351,40 @@ def run_team(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Run optional read-only Groq research commentary on a validated JSON report."
+        description="Run optional read-only multi-provider AI commentary on a validated JSON report."
     )
     parser.add_argument("--input", required=True, help="Path to a compact validated research JSON report.")
     parser.add_argument("--output", required=True, help="Path for the AI commentary JSON output.")
-    parser.add_argument("--model", default=os.getenv("GROQ_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--provider", default=os.getenv("AI_PROVIDER", DEFAULT_PROVIDER))
+    parser.add_argument("--model", default=os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--groq-model", default=os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL))
     args = parser.parse_args(argv)
 
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        parser.error("Set GROQ_API_KEY in the process environment; never put it in a file or command line.")
+    if args.provider == "openrouter":
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            parser.error("Set OPENROUTER_API_KEY in GitHub Actions secrets.")
+    elif args.provider == "groq":
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            parser.error("Set GROQ_API_KEY in GitHub Actions secrets.")
+    else:
+        parser.error("AI_PROVIDER must be 'openrouter' or 'groq'.")
 
     report = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    result = run_team(report, api_key=api_key, model=args.model)
+    result = run_team(
+        report,
+        api_key=api_key,
+        model=args.model,
+        provider=args.provider,
+        groq_api_key=os.getenv("GROQ_API_KEY"),
+        groq_model=args.groq_model,
+    )
     Path(args.output).write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(f"Wrote read-only AI commentary to {args.output}")
+    print(f"Wrote read-only AI commentary to {args.output}; providers={','.join(result['providers_used'])}")
     return 0
 
 
