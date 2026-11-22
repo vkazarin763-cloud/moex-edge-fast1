@@ -1,6 +1,7 @@
 import unittest
 
 from research_agent.v2.features import FeatureInputError, extract_ohlcv_features
+from research_agent.v2.discovery import generate_hypotheses
 
 
 def make_bars(count=45):
@@ -68,6 +69,16 @@ class OHLCVFeatureTests(unittest.TestCase):
         bars[4]["close"] = float("inf")
         with self.assertRaises(FeatureInputError):
             extract_ohlcv_features(bars)
+
+    def test_feature_panel_feeds_the_hypothesis_generator(self):
+        panel = extract_ohlcv_features(make_bars(80))
+        result = generate_hypotheses(
+            panel, formation_indices=list(range(40, 70)),
+            min_observations=20, max_features=8, max_hypotheses=100,
+        )
+        self.assertEqual(result["status"], "GENERATED")
+        self.assertTrue(result["eligible_features"])
+        self.assertFalse(result["safety"]["forward_returns_used"])
 
     def test_custom_horizons_and_window_validation(self):
         features = extract_ohlcv_features(make_bars(), return_horizons=(2, 7), volume_window=5)
