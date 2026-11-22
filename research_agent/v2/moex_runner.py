@@ -28,6 +28,7 @@ def run_moex_d1_research(
     dataset: dict[str, Any],
     *,
     formation_fraction: float = 0.70,
+    formation_end_by_symbol: dict[str, int] | None = None,
     max_features: int = 20,
     max_hypotheses_per_symbol: int = 20,
     min_trades_for_inference: int = 20,
@@ -61,7 +62,14 @@ def run_moex_d1_research(
 
     for symbol in sorted(dataset["symbols"]):
         bars = dataset["symbols"][symbol]
-        formation_end = int(len(bars) * formation_fraction)
+        formation_end = (
+            formation_end_by_symbol.get(symbol, int(len(bars) * formation_fraction))
+            if formation_end_by_symbol is not None
+            else int(len(bars) * formation_fraction)
+        )
+        if isinstance(formation_end, bool) or not isinstance(formation_end, int) or formation_end < 40 or formation_end > len(bars) - 10:
+            per_symbol[symbol] = {"status": "INSUFFICIENT_HISTORY", "bar_count": len(bars)}
+            continue
         if formation_end < 40 or len(bars) - formation_end < 20:
             per_symbol[symbol] = {
                 "status": "INSUFFICIENT_HISTORY",
