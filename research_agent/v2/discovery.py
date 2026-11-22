@@ -190,7 +190,19 @@ def generate_hypotheses(
     # Fill the remaining budget with two-feature interactions. Rotate through
     # distinct feature pairs before moving to further quantile combinations.
     pair_specs = []
+    # Start with pairs spread across the ordered feature list (first/last,
+    # second/second-last, ...), then add remaining combinations. This avoids
+    # letting the earliest alphabetic feature dominate the interaction budget.
+    feature_pairs = []
+    pair_seen = set()
+    for offset in range(len(eligible_features) // 2):
+        left, right = eligible_features[offset], eligible_features[-1 - offset]
+        feature_pairs.append((left, right))
+        pair_seen.add(frozenset((left, right)))
     for left, right in combinations(eligible_features, 2):
+        if frozenset((left, right)) not in pair_seen:
+            feature_pairs.append((left, right))
+    for left, right in feature_pairs:
         for q_index in range(min(len(threshold_map[left]), len(threshold_map[right]))):
             left_item, right_item = threshold_map[left][q_index], threshold_map[right][q_index]
             for left_op, right_op in ((">=", "<="), ("<=", ">=")):
