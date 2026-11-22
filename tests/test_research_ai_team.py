@@ -139,6 +139,25 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
         self.assertEqual(seen["body"]["max_completion_tokens"], 1200)
 
+
+    def test_http_error_exposes_safe_provider_message_without_api_key(self):
+        import io
+        import urllib.error
+
+        key = "secret-test-key"
+        error_body = json.dumps({
+            "error": {"message": "Invalid API Key", "type": "authentication_error"}
+        }).encode("utf-8")
+
+        def opener(request, timeout):
+            raise urllib.error.HTTPError(
+                request.full_url, 403, "Forbidden", {}, io.BytesIO(error_body)
+            )
+
+        with self.assertRaisesRegex(RuntimeError, "HTTP 403: Invalid API Key") as caught:
+            call_groq("test", api_key=key, opener=opener)
+        self.assertNotIn(key, str(caught.exception))
+
     def test_run_team_calls_three_specialists_then_coordinator(self):
         calls = []
 
