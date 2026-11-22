@@ -30,7 +30,8 @@ def run_moex_d1_research(
     formation_fraction: float = 0.70,
     formation_end_by_symbol: dict[str, int] | None = None,
     max_features: int = 20,
-    max_hypotheses_per_symbol: int = 20,
+    max_hypotheses_per_symbol: int = 200,
+    max_optimized_candidates_per_direction: int = 5,
     min_trades_for_inference: int = 20,
     block_length: int = 5,
     resamples: int = 49_999,
@@ -86,6 +87,7 @@ def run_moex_d1_research(
             formation_end=formation_end,
             max_features=max_features,
             max_hypotheses=max_hypotheses_per_symbol,
+            max_optimized_candidates_per_direction=max_optimized_candidates_per_direction,
             min_formation_observations=20,
             min_trades_for_inference=min_trades_for_inference,
             block_length=block_length,
@@ -177,7 +179,10 @@ def run_moex_d1_research(
             "validation_window_ends_before_sealed_holdout": True,
             "final_holdout_used": False,
             "exit_rules": "autonomously generated from formation-window feature distributions",
-            "exit_rule_policy": "two outcome-blind exit alternatives per entry; thresholds fit on formation only",
+            "exit_rule_policy": "two formation-only exit alternatives per entry, then formation-return optimization",
+            "optimization": "evaluate generated entry/exit pairs on formation data, rank by shrunk mean net return minus drawdown penalty, retain up to five distinct entries per direction, then freeze before validation",
+            "max_generated_entry_rules_per_symbol": max_hypotheses_per_symbol,
+            "max_optimized_candidates_per_direction": max_optimized_candidates_per_direction,
             "execution": {
                 "signal": "completed daily close",
                 "fill": "next daily open",
@@ -227,7 +232,8 @@ def main() -> int:
     parser.add_argument("--output", default="moex_edge_v2_d1_research.json")
     parser.add_argument("--holdout-start", default="2026-11-20")
     parser.add_argument("--formation-fraction", type=float, default=0.70)
-    parser.add_argument("--max-hypotheses-per-symbol", type=int, default=20)
+    parser.add_argument("--max-hypotheses-per-symbol", type=int, default=200)
+    parser.add_argument("--max-optimized-candidates-per-direction", type=int, default=5)
     parser.add_argument("--resamples", type=int, default=49_999)
     parser.add_argument("--commission-rate", type=float, default=0.0008)
     parser.add_argument("--slippage-rate", type=float, default=0.0005)
@@ -240,6 +246,7 @@ def main() -> int:
         dataset,
         formation_fraction=args.formation_fraction,
         max_hypotheses_per_symbol=args.max_hypotheses_per_symbol,
+        max_optimized_candidates_per_direction=args.max_optimized_candidates_per_direction,
         resamples=args.resamples,
         commission_rate=args.commission_rate,
         slippage_rate=args.slippage_rate,
