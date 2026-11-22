@@ -231,6 +231,8 @@ def call_provider(
         "temperature": 0.2,
         "max_tokens": MAX_OUTPUT_TOKENS,
     }
+    if provider == "groq":
+        body["max_completion_tokens"] = body.pop("max_tokens")
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
