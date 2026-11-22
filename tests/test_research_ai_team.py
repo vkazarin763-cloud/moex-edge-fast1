@@ -44,9 +44,9 @@ class AITeamTests(unittest.TestCase):
             "raw_history": "x" * (MAX_INPUT_CHARS * 2),
         }
         compact = json.loads(_compact_report(source))
-        self.assertEqual(compact["results"]["SBER"]["candles"], 700)
+        self.assertEqual(compact["results"]["SBER"]["b"], 700)
         self.assertEqual(
-            compact["results"]["SBER"]["walk_forward_candidates"]["Donchian20"]["closed_trades"],
+            compact["results"]["SBER"]["w"]["D20"][1],
             42,
         )
         self.assertNotIn("raw_history", compact)
@@ -98,10 +98,10 @@ class AITeamTests(unittest.TestCase):
         compact = json.loads(compact_text)
         self.assertLessEqual(len(compact_text), MAX_INPUT_CHARS)
         self.assertEqual(len(compact["results"]), 44)
-        self.assertEqual(compact["results"]["T"]["status"], "INSUFFICIENT_POST_ACTION_HISTORY")
-        metric = compact["results"]["T00"]["walk_forward_candidates"]["Donchian20"]
-        self.assertEqual(metric["closed_trades"], 17)
-        self.assertEqual(metric["average_net_return"], -0.00125)
+        self.assertEqual(compact["schema"]["status_codes"][compact["results"]["T"]["s"]], "INSUFFICIENT_POST_ACTION_HISTORY")
+        metric = compact["results"]["T00"]["w"]["D20"]
+        self.assertEqual(metric[1], 17)
+        self.assertEqual(metric[2], -0.00125)
         self.assertIn("independent_validation", compact)
         self.assertNotIn("raw_candles", compact_text)
         self.assertNotIn("trade_ledger", compact_text)
