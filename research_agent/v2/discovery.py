@@ -251,7 +251,7 @@ def generate_hypotheses(
 
     return {
         "status": "GENERATED" if hypotheses else "NO_ELIGIBLE_FEATURES",
-        "generator": "balanced_single_and_pair_quantile_rules_v3",
+        "generator": "balanced_single_and_pair_quantile_rules_v4",
         "formation_indices": list(indices),
         "formation_observations": len(indices),
         "eligible_features": eligible_features,
