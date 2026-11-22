@@ -1,9 +1,9 @@
 """Deterministic mutation/crossover expansion for autonomous rule discovery.
 
-This module creates 3- and 4-condition entry rules using formation-window
-feature distributions only. It never accepts returns or validation data.
-The caller evaluates the resulting population on formation data and performs
-the existing frozen-shortlist/chronological-validation protocol.
+This module creates 3- and 4-condition entry rules with ALL and ANY logic,
+using formation-window feature distributions only. It never accepts returns
+or validation data. The caller evaluates the resulting population on formation
+data and performs the frozen-shortlist/chronological-validation protocol.
 """
 from __future__ import annotations
 
@@ -30,13 +30,14 @@ def expand_hypotheses(
     max_hypotheses: int = 200,
     max_conditions: int = 4,
     min_observations: int = 20,
+    combination_modes: Sequence[str] = ("ALL", "ANY"),
 ) -> dict:
-    """Mutate and cross seed rules into bounded 3/4-feature conjunctions.
+    """Mutate and cross seed rules into bounded 3/4-feature rule sets.
 
     Mutations append a condition on a previously unused feature. Crossovers
     combine disjoint condition sets from same-direction parent rules. Candidate
-    ordering is stable-hash based, so runs are reproducible and do not depend
-    on runtime randomness.
+    ordering is stable and round-robin across LONG/SHORT and ALL/ANY buckets,
+    so candidate caps do not silently exclude a logic family.
     """
     if not isinstance(feature_panel, Mapping) or not feature_panel:
         raise EvolutionInputError("feature_panel must be a non-empty mapping")
@@ -46,6 +47,10 @@ def expand_hypotheses(
         raise EvolutionInputError("max_hypotheses must be a non-negative integer")
     if isinstance(max_conditions, bool) or not isinstance(max_conditions, int) or not 3 <= max_conditions <= 4:
         raise EvolutionInputError("max_conditions must be 3 or 4")
+    if (not isinstance(combination_modes, Sequence) or isinstance(combination_modes, (str, bytes))
+            or not combination_modes or any(mode not in ("ALL", "ANY") for mode in combination_modes)):
+        raise EvolutionInputError("combination_modes must contain ALL and/or ANY")
+    modes = tuple(dict.fromkeys(combination_modes))
     row_count = len(next(iter(feature_panel.values())))
     if any(len(values) != row_count for values in feature_panel.values()):
         raise EvolutionInputError("feature series must be aligned")
@@ -98,10 +103,11 @@ def expand_hypotheses(
                 choices = [atoms[name] for name in names]
                 for atom_combo in product(*choices):
                     conditions = list(parent["conditions"]) + list(atom_combo)
-                    payload = {"direction": parent["direction"], "conditions": conditions,
-                               "combination": "ALL", "version": 1, "generation": "MUTATION"}
-                    candidate_id = _identifier(payload)
-                    generated[candidate_id] = {"id": candidate_id, **payload}
+                    for mode in modes:
+                        payload = {"direction": parent["direction"], "conditions": conditions,
+                                   "combination": mode, "version": 2, "generation": "MUTATION"}
+                        candidate_id = _identifier(payload)
+                        generated[candidate_id] = {"id": candidate_id, **payload}
 
     # Crossover: combine disjoint parents of the same direction.
     for left, right in combinations(parents, 2):
@@ -114,19 +120,34 @@ def expand_hypotheses(
             continue
         conditions = list(left_conditions) + list(right_conditions)
         if 3 <= len(conditions) <= max_conditions:
-            payload = {"direction": left["direction"], "conditions": conditions,
-                       "combination": "ALL", "version": 1, "generation": "CROSSOVER"}
-            candidate_id = _identifier(payload)
-            generated[candidate_id] = {"id": candidate_id, **payload}
+            for mode in modes:
+                payload = {"direction": left["direction"], "conditions": conditions,
+                           "combination": mode, "version": 2, "generation": "CROSSOVER"}
+                candidate_id = _identifier(payload)
+                generated[candidate_id] = {"id": candidate_id, **payload}
 
-    ordered_candidates = sorted(
-        generated.values(),
-        key=lambda item: hashlib.sha256(item["id"].encode("utf-8")).hexdigest(),
-    )
-    selected = ordered_candidates[:max_hypotheses]
+    # Round-robin buckets preserve representation across direction and logic.
+    buckets: dict[tuple[str, str], list[dict]] = {}
+    for item in generated.values():
+        key = (item["direction"], item["combination"])
+        buckets.setdefault(key, []).append(item)
+    for bucket in buckets.values():
+        bucket.sort(key=lambda item: hashlib.sha256(item["id"].encode("utf-8")).hexdigest())
+    keys = [(direction, mode) for direction in ("LONG", "SHORT") for mode in ("ALL", "ANY")
+            if (direction, mode) in buckets]
+    selected = []
+    while len(selected) < max_hypotheses and any(buckets[key] for key in keys):
+        for key in keys:
+            if buckets[key] and len(selected) < max_hypotheses:
+                selected.append(buckets[key].pop(0))
     return {
         "status": "GENERATED" if selected else "NO_EVOLVED_RULES",
-        "generator": "deterministic_mutation_crossover_v1",
+        "generator": "deterministic_mutation_crossover_all_any_v2",
+        "combination_modes": list(modes),
+        "selected_by_direction_and_logic": {
+            f"{direction}_{mode}": sum(item["direction"] == direction and item["combination"] == mode for item in selected)
+            for direction in ("LONG", "SHORT") for mode in ("ALL", "ANY")
+        },
         "seed_rules": len(parents),
         "mutation_crossover_candidates": len(generated),
         "hypothesis_count": len(selected),
