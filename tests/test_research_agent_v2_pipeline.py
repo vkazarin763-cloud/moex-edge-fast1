@@ -102,21 +102,25 @@ class ResearchPipelineTests(unittest.TestCase):
             make_bars(), panel(),
             {"mode": "AUTONOMOUS", "max_exit_hypotheses": 2},
             formation_end=40, max_features=2, max_hypotheses=40,
-            max_optimized_candidates_per_direction=2,
+            max_optimized_candidates_per_direction=4,
             min_formation_observations=20, min_trades_for_inference=1000,
             block_length=5, resamples=999, commission_rate=0, slippage_rate=0,
             family_id="optimizer-shortlist-test",
         )
         self.assertTrue(result["optimization"]["formation_returns_used_for_optimization"])
         self.assertFalse(result["optimization"]["validation_returns_used_for_optimization"])
-        self.assertLessEqual(result["optimization"]["selected_pairs"], 4)
-        self.assertLessEqual(result["optimization"]["selected_by_direction"]["LONG"], 2)
-        self.assertLessEqual(result["optimization"]["selected_by_direction"]["SHORT"], 2)
+        self.assertLessEqual(result["optimization"]["selected_pairs"], 8)
+        self.assertLessEqual(result["optimization"]["selected_by_direction"]["LONG"], 4)
+        self.assertLessEqual(result["optimization"]["selected_by_direction"]["SHORT"], 4)
         logic_counts = result["optimization"]["selected_by_direction_and_logic"]
         self.assertGreater(logic_counts["LONG_ANY"], 0)
         self.assertGreater(logic_counts["SHORT_ANY"], 0)
         self.assertGreater(logic_counts["LONG_ALL"], 0)
         self.assertGreater(logic_counts["SHORT_ALL"], 0)
+        exit_counts = result["optimization"]["selected_by_direction_entry_exit_logic"]
+        for key in ("LONG_ALL_ALL", "LONG_ALL_ANY", "LONG_ANY_ALL", "LONG_ANY_ANY",
+                    "SHORT_ALL_ALL", "SHORT_ALL_ANY", "SHORT_ANY_ALL", "SHORT_ANY_ANY"):
+            self.assertGreater(exit_counts[key], 0, key)
         self.assertTrue(result["protocol"]["validation_used_for_statistical_evaluation_only"])
 
     def test_rejects_invalid_split_and_unaligned_features(self):
