@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from itertools import combinations
+from itertools import combinations, product
 from typing import Mapping, Sequence
 
 
@@ -63,14 +63,17 @@ def expand_hypotheses(
         thresholds = []
         for q in (0.2, 0.4, 0.6, 0.8):
             pos = (len(ordered) - 1) * q
-            lo, hi = int(pos), int(pos) + (pos % 1 > 0)
-            threshold = ordered[lo] if lo == int(pos) else ordered[lo] * (hi - pos) + ordered[hi] * (pos - lo)
-            if threshold not in thresholds:
-                thresholds.append(threshold)
+            lower = int(pos)
+            upper = min(lower + 1, len(ordered) - 1)
+            fraction = pos - lower
+            threshold = ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+            item = (q, threshold)
+            if item not in thresholds:
+                thresholds.append(item)
         atoms[name] = [
             {"feature": name, "operator": op, "threshold": threshold,
              "threshold_quantile": q}
-            for q, threshold in zip((0.2, 0.4, 0.6, 0.8), thresholds)
+            for q, threshold in thresholds
             for op in (">=", "<=")
         ]
 
@@ -93,7 +96,7 @@ def expand_hypotheses(
                 continue
             for names in combinations(eligible, add_count):
                 choices = [atoms[name] for name in names]
-                for atom_combo in __import__("itertools").product(*choices):
+                for atom_combo in product(*choices):
                     conditions = list(parent["conditions"]) + list(atom_combo)
                     payload = {"direction": parent["direction"], "conditions": conditions,
                                "combination": "ALL", "version": 1, "generation": "MUTATION"}
