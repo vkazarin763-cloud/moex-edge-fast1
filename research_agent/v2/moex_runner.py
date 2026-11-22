@@ -31,7 +31,7 @@ def run_moex_d1_research(
     max_hypotheses_per_symbol: int = 20,
     min_trades_for_inference: int = 20,
     block_length: int = 5,
-    resamples: int = 19_999,
+    resamples: int = 49_999,
     alpha: float = 0.05,
     commission_rate: float = 0.0008,
     slippage_rate: float = 0.0005,
@@ -169,6 +169,8 @@ def run_moex_d1_research(
                 "method": "circular moving-block bootstrap",
                 "block_length_trades": block_length,
                 "resamples": resamples,
+                "minimum_resamples_for_global_holm_resolution": max(999, int(len(global_p_values) / alpha) + 1),
+                "p_value_resolution_sufficient_for_first_holm_step": (1.0 / (resamples + 1)) <= (alpha / len(global_p_values)),
                 "min_closed_trades": min_trades_for_inference,
                 "multiple_testing": "one global Holm family across all symbols and generated hypotheses",
                 "underpowered_hypotheses": "retained in family with p=1 placeholder; not a measured p-value",
@@ -206,7 +208,7 @@ def main() -> int:
     parser.add_argument("--holdout-start", default="2026-11-20")
     parser.add_argument("--formation-fraction", type=float, default=0.70)
     parser.add_argument("--max-hypotheses-per-symbol", type=int, default=20)
-    parser.add_argument("--resamples", type=int, default=19_999)
+    parser.add_argument("--resamples", type=int, default=49_999)
     parser.add_argument("--commission-rate", type=float, default=0.0008)
     parser.add_argument("--slippage-rate", type=float, default=0.0005)
     args = parser.parse_args()
