@@ -8,16 +8,21 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
-API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
-DEFAULT_MODEL = "gemini-3.8-flash"
+API_URL = "https://api.groq.com/openai/v1/chat/completions"
+DEFAULT_MODEL = "openai/gpt-oss-20b"
 MAX_INPUT_CHARS = 30_000
 MAX_OUTPUT_TOKENS = 1_200
+
+SYSTEM_PROMPT = (
+    "You are part of a read-only MOEX research team. Never fabricate facts, prices, "
+    "dates, metrics or citations. If evidence is absent, say UNKNOWN. This is research "
+    "commentary, not a trade instruction. Never recommend broker actions."
+)
 
 ROLES: tuple[tuple[str, str], ...] = (
     (
@@ -53,17 +58,27 @@ def _compact_report(report: Any) -> str:
 
 
 def _extract_text(response: dict[str, Any]) -> str:
-    candidates = response.get("candidates") or []
-    if not candidates:
-        raise RuntimeError("Gemini returned no candidates (possibly blocked or quota-limited).")
-    parts = (candidates[0].get("content") or {}).get("parts") or []
-    text = "".join(str(part.get("text", "")) for part in parts if isinstance(part, dict))
-    if not text.strip():
-        raise RuntimeError("Gemini response contained no text.")
-    return text.strip()
+    choices = response.get("choices") or []
+    if not choices:
+        raise RuntimeError("Groq returned no choices (possibly blocked or quota-limited).")
+    message = choices[0].get("message") or {}
+    content = message.get("content")
+    if isinstance(content, str):
+        result = content.strip()
+    elif isinstance(content, list):
+        result = "".join(
+            str(part.get("text", ""))
+            for part in content
+            if isinstance(part, dict) and part.get("type") == "text"
+        ).strip()
+    else:
+        result = ""
+    if not result:
+        raise RuntimeError("Groq response contained no text.")
+    return result
 
 
-def call_gemini(
+def call_groq(
     prompt: str,
     *,
     api_key: str,
@@ -71,36 +86,26 @@ def call_gemini(
     timeout: int = 60,
     opener: Callable[..., Any] = urllib.request.urlopen,
 ) -> str:
-    """Call Gemini generateContent without third-party dependencies."""
+    """Call Groq's OpenAI-compatible Chat Completions API without extra dependencies."""
     if not api_key.strip():
-        raise ValueError("GEMINI_API_KEY is required.")
-    if not model or "/" in model or ":" in model:
-        raise ValueError("Invalid Gemini model identifier.")
-    url = f"{API_BASE}/{model}:generateContent"
+        raise ValueError("GROQ_API_KEY is required.")
+    if not model.strip() or any(ch.isspace() for ch in model):
+        raise ValueError("Invalid Groq model identifier.")
     body = {
-        "systemInstruction": {
-            "parts": [{
-                "text": (
-                    "You are part of a read-only MOEX research team. "
-                    "Never provide fabricated facts, prices, dates, metrics or citations. "
-                    "If evidence is absent, say UNKNOWN. This is research commentary, "
-                    "not a trade instruction. Never recommend broker actions."
-                )
-            }]
-        },
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.2,
-            "maxOutputTokens": MAX_OUTPUT_TOKENS,
-            "responseMimeType": "text/plain",
-        },
+        "model": model,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.2,
+        "max_completion_tokens": MAX_OUTPUT_TOKENS,
     }
     request = urllib.request.Request(
-        url,
+        API_URL,
         data=json.dumps(body).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
+            "Authorization": f"Bearer {api_key}",
         },
         method="POST",
     )
@@ -108,15 +113,10 @@ def call_gemini(
         with opener(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        # Do not expose request headers or credentials in logs.
-        detail = ""
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")[:500]
-        except Exception:
-            pass
-        raise RuntimeError(f"Gemini API HTTP {exc.code}: {detail}") from None
+        # Never include response bodies or request headers in logs.
+        raise RuntimeError(f"Groq API HTTP {exc.code}. Check the key, model and account limits.") from None
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"Gemini API connection failed: {exc.reason}") from None
+        raise RuntimeError(f"Groq API connection failed: {exc.reason}") from None
     return _extract_text(payload)
 
 
@@ -125,7 +125,7 @@ def run_team(
     *,
     api_key: str,
     model: str = DEFAULT_MODEL,
-    caller: Callable[..., str] = call_gemini,
+    caller: Callable[..., str] = call_groq,
 ) -> dict[str, Any]:
     """Run three specialist agents and a coordinator; four model calls total."""
     report_json = _compact_report(report)
@@ -150,7 +150,7 @@ def run_team(
     synthesis = caller(coordinator_prompt, api_key=api_key, model=model)
     return {
         "status": "AI_COMMENTARY_ONLY",
-        "provider": "google_gemini_api",
+        "provider": "groq_api",
         "model": model,
         "calls": len(ROLES) + 1,
         "specialists": specialist_results,
@@ -165,16 +165,16 @@ def run_team(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Run optional read-only Gemini research commentary on a validated JSON report."
+        description="Run optional read-only Groq research commentary on a validated JSON report."
     )
     parser.add_argument("--input", required=True, help="Path to a compact validated research JSON report.")
     parser.add_argument("--output", required=True, help="Path for the AI commentary JSON output.")
-    parser.add_argument("--model", default=os.getenv("GEMINI_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--model", default=os.getenv("GROQ_MODEL", DEFAULT_MODEL))
     args = parser.parse_args(argv)
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        parser.error("Set GEMINI_API_KEY in the process environment; never put it in a file or command line.")
+        parser.error("Set GROQ_API_KEY in the process environment; never put it in a file or command line.")
 
     report = json.loads(Path(args.input).read_text(encoding="utf-8"))
     result = run_team(report, api_key=api_key, model=args.model)
