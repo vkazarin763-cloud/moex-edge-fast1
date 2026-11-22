@@ -10,8 +10,8 @@ from .multiple_testing import holm_bonferroni
 def run_rolling_moex_d1_research(
     dataset: dict[str, Any],
     *,
-    window_starts: tuple[float, ...] = (0.35,),
-    window_width: float = 0.60,
+    window_starts: tuple[float, ...] = (0.20, 0.55),
+    window_width: float = 0.35,
     max_hypotheses_per_symbol: int = 200,
     max_optimized_candidates_per_direction: int = 5,
     resamples: int = 199_999,
@@ -25,10 +25,20 @@ def run_rolling_moex_d1_research(
     """
     if not isinstance(dataset, dict) or not isinstance(dataset.get("symbols"), dict):
         raise ValueError("dataset must contain symbols")
-    if not window_starts or any(not 0.2 <= x < 0.9 for x in window_starts):
-        raise ValueError("window_starts must be non-empty fractions in [0.2, 0.9)")
-    if not 0.05 <= window_width <= 0.70:
+    if not window_starts or any(
+        isinstance(x, bool) or not isinstance(x, (int, float)) or not 0.2 <= x < 0.9
+        for x in window_starts
+    ):
+        raise ValueError("window_starts must be non-empty numeric fractions in [0.2, 0.9)")
+    if isinstance(window_width, bool) or not isinstance(window_width, (int, float)) or not 0.05 <= window_width <= 0.70:
         raise ValueError("window_width must be between 0.05 and 0.70")
+    if tuple(sorted(set(window_starts))) != tuple(window_starts):
+        raise ValueError("window_starts must be unique and sorted in ascending order")
+    if any(
+        window_starts[index + 1] < window_starts[index] + window_width
+        for index in range(len(window_starts) - 1)
+    ):
+        raise ValueError("validation windows must not overlap")
     if isinstance(max_hypotheses_per_symbol, bool) or max_hypotheses_per_symbol < 1:
         raise ValueError("max_hypotheses_per_symbol must be positive")
 
@@ -153,8 +163,8 @@ def run_rolling_moex_d1_research(
             "sealed_final_holdout_used": False,
         },
         "research_design": {
-            "method": "single extended chronological evaluation window for discovery power screening",
-            "purpose": "increase out-of-sample trade observations per frozen candidate before a separate multi-fold walk-forward stage",
+            "method": "expanding-window multi-fold chronological walk-forward discovery screen",
+            "purpose": "test fold-specific frozen candidates on sequential non-overlapping validation windows; this remains pre-holdout research, not final approval",
             "window_starts": list(window_starts),
             "window_width": window_width,
             "calendar_aligned_boundaries": True,
@@ -163,8 +173,10 @@ def run_rolling_moex_d1_research(
             "formation_return_optimization_before_validation": True,
             "optimized_shortlist_per_direction": max_optimized_candidates_per_direction,
             "validation_windows_non_overlapping": True,
-            "overlapping_formation_prefixes": False,
+            "overlapping_formation_prefixes": len(window_starts) > 1,
             "single_extended_validation_window": len(folds) == 1,
+            "fold_specific_candidate_generation": True,
+            "fold_p_values_pooled_before_holm": True,
             "this_is_not_an_untouched_final_holdout": True,
             "strategy_approval": "NOT_APPROVED",
         },
@@ -203,12 +215,23 @@ def main() -> int:
     parser.add_argument("--max-hypotheses-per-symbol", type=int, default=200)
     parser.add_argument("--max-optimized-candidates-per-direction", type=int, default=5)
     parser.add_argument("--resamples", type=int, default=199_999)
+    parser.add_argument(
+        "--window-starts", default="0.20,0.55",
+        help="comma-separated expanding formation cutoffs; validation windows must not overlap",
+    )
+    parser.add_argument("--window-width", type=float, default=0.35)
     args = parser.parse_args()
+    try:
+        window_starts = tuple(float(value.strip()) for value in args.window_starts.split(",") if value.strip())
+    except ValueError as exc:
+        parser.error(f"invalid --window-starts: {exc}")
     dataset = load_pre_holdout_d1(
         args.data, args.validation, holdout_start=args.holdout_start
     )
     result = run_rolling_moex_d1_research(
         dataset,
+        window_starts=window_starts,
+        window_width=args.window_width,
         max_hypotheses_per_symbol=args.max_hypotheses_per_symbol,
         max_optimized_candidates_per_direction=args.max_optimized_candidates_per_direction,
         resamples=args.resamples,
