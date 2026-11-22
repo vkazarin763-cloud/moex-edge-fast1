@@ -74,7 +74,7 @@ def _bounded(value: Any, *, depth: int = 0) -> Any:
 
 
 def _compact_report(report: Any) -> str:
-    """Build a strict, deterministic evidence projection under the Groq input budget."""
+    """Build a strict, compact evidence projection under the Groq input budget."""
     if not isinstance(report, dict):
         raise ValueError("Research report must be a JSON object.")
     raw_results = report.get("results")
@@ -84,54 +84,78 @@ def _compact_report(report: Any) -> str:
             raise ValueError("Focused research evidence exceeds the Groq input budget.")
         return encoded
 
+    # Compact codes avoid repeating long status strings across 44 tickers x strategies.
+    status_codes: dict[str, str] = {}
+    def status_code(value: Any) -> str | None:
+        if not isinstance(value, str):
+            return None
+        if value not in status_codes:
+            status_codes[value] = f"S{len(status_codes) + 1}"
+        return status_codes[value]
+
+    strategy_codes = {
+        "Donchian20": "D20",
+        "EMA20x50": "E2050",
+        "Keltner20x2ATR": "K20",
+        "MACD12x26": "M1226",
+        "RSI14Trend50": "R14",
+    }
     compact_results: dict[str, Any] = {}
     for ticker, result in sorted(raw_results.items()):
         if not isinstance(result, dict):
-            compact_results[ticker] = {"status": "MALFORMED_RESULT"}
+            compact_results[ticker] = {"s": status_code("MALFORMED_RESULT")}
             continue
         quality = result.get("data_quality")
-        quality_summary = {}
+        quality_row = None
         if isinstance(quality, dict):
-            for key in (
-                "status", "out_of_range_bars", "calendar_gap_count",
-                "exchange_calendar_verified", "session_date_mapping_complete",
-            ):
-                if key in quality:
-                    quality_summary[key] = quality[key]
+            quality_row = [
+                status_code(quality.get("status")),
+                quality.get("out_of_range_bars"),
+                quality.get("calendar_gap_count"),
+                quality.get("exchange_calendar_verified"),
+                quality.get("session_date_mapping_complete"),
+            ]
         walk_forward = result.get("walk_forward")
         candidates = walk_forward.get("candidates") if isinstance(walk_forward, dict) else None
-        strategy_summary = {}
+        strategy_rows = {}
         if isinstance(candidates, dict):
             for strategy, metrics in sorted(candidates.items()):
                 if not isinstance(metrics, dict):
                     continue
-                strategy_summary[strategy] = {
-                    key: metrics[key]
-                    for key in ("status", "closed_trades", "average_net_return")
-                    if key in metrics
-                }
-        item = {
-            key: result[key]
-            for key in (
-                "status", "error", "candles", "research_input_bars",
-                "first_timestamp", "last_timestamp",
-            )
-            if key in result
+                strategy_rows[strategy_codes.get(strategy, strategy)] = [
+                    status_code(metrics.get("status")),
+                    metrics.get("closed_trades"),
+                    round(metrics["average_net_return"], 6)
+                    if isinstance(metrics.get("average_net_return"), (int, float))
+                    else None,
+                ]
+        row = {
+            "s": status_code(result.get("status")),
+            "b": result.get("research_input_bars", result.get("candles")),
         }
-        if quality_summary:
-            item["data_quality"] = quality_summary
-        if strategy_summary:
-            item["walk_forward_candidates"] = strategy_summary
-        compact_results[ticker] = item
+        if quality_row is not None:
+            row["q"] = quality_row
+        if strategy_rows:
+            row["w"] = strategy_rows
+        compact_results[ticker] = row
 
     compact = {
+        "schema": {
+            "ticker_fields": {
+                "s": "ticker status code",
+                "b": "research input bars (fallback: candle count)",
+                "q": "[data-quality status code, out-of-range bars, calendar-gap candidates, exchange calendar verified, session-date mapping complete]",
+                "w": "walk-forward candidates keyed by strategy code; each value is [status code, closed trades, average net return]",
+            },
+            "strategy_codes": {value: key for key, value in strategy_codes.items()},
+            "status_codes": status_codes,
+        },
         "generated_at_utc": report.get("generated_at_utc"),
-        "source": report.get("source"),
+        "source": _bounded(report.get("source")),
         "board": report.get("board"),
         "interval_minutes": report.get("interval_minutes"),
-        "date_from": report.get("date_from"),
-        "date_till": report.get("date_till"),
-        "universe": report.get("universe"),
+        "date_range": [report.get("date_from"), report.get("date_till")],
+        "universe": _bounded(report.get("universe")),
         "development_holdout_policy": _bounded(report.get("development_holdout_policy", {})),
         "independent_validation": _bounded(report.get("independent_validation", {})),
         "results": compact_results,
@@ -141,17 +165,12 @@ def _compact_report(report: Any) -> str:
         "experiment_lab": _bounded(report.get("experiment_lab", {})),
         "safety": _bounded(report.get("safety", {})),
         "compaction_note": (
-            "Raw candle arrays, fold details, portfolio replays and trade ledgers are excluded. "
-            "Per-ticker strategy status, trade count and average net return are retained where present."
+            "Raw OHLCV, detailed folds, trade ledgers and development portfolio replay are excluded. "
+            "All ticker statuses, compact data-quality checks and per-strategy status/trade-count/"
+            "average-net-return metrics are retained where present. Decode status codes using schema."
         ),
     }
     encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    if len(encoded) > MAX_INPUT_CHARS:
-        # Keep the full 44-name/status/quality universe and aggregate evidence; trim
-        # per-ticker strategy metrics only as a last resort.
-        for item in compact_results.values():
-            item.pop("walk_forward_candidates", None)
-        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded) > MAX_INPUT_CHARS:
         raise ValueError(
             f"Compacted research summary is {len(encoded)} characters; "
