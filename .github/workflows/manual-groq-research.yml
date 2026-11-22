@@ -75,9 +75,10 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ inputs.model }}
+          REPORT_PATH: ${{ inputs.report_path }}
         run: |
           python -m research_agent.ai_team \
-            --input "${{ inputs.report_path }}" \
+            --input "$REPORT_PATH" \
             --output ai_commentary.json
 
       - name: Upload AI commentary
