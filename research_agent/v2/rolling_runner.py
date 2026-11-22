@@ -1,4 +1,4 @@
-"""Expanding-window research over several chronological MOEX periods."""
+"""Extended chronological discovery-power screen on frozen MOEX history."""
 from __future__ import annotations
 
 from typing import Any
