@@ -1,8 +1,8 @@
 """Formation-driven optimization followed by a later chronological evaluation.
 
 The optimizer may fit and rank many entry/exit combinations on the historical
-formation prefix. Only frozen top rules are passed to the later validation
-window. Validation returns never influence generation, ranking, or selection.
+formation prefix. Only a logic-balanced frozen shortlist is passed to later validation.
+Validation returns never influence generation, ranking, or selection.
 """
 from __future__ import annotations
 
@@ -186,16 +186,64 @@ def run_research_pipeline(
     selected: list[dict[str, Any]] = []
     seen_entries: set[str] = set()
     counts = {"LONG": 0, "SHORT": 0}
+    logic_counts = {
+        f"{direction}_{mode}": 0
+        for direction in ("LONG", "SHORT") for mode in ("ALL", "ANY")
+    }
+    exit_logic_counts = {
+        f"{direction}_{entry_mode}_{exit_mode}": 0
+        for direction in ("LONG", "SHORT")
+        for entry_mode in ("ALL", "ANY")
+        for exit_mode in ("ALL", "ANY")
+    }
+    buckets: dict[tuple[str, str, str], list[dict[str, Any]]] = {
+        (direction, entry_mode, exit_mode): []
+        for direction in ("LONG", "SHORT")
+        for entry_mode in ("ALL", "ANY")
+        for exit_mode in ("ALL", "ANY")
+    }
     for item in ranked:
-        direction = item["hypothesis"]["direction"]
-        entry_id = item["hypothesis"]["id"]
-        if counts[direction] >= max_optimized_candidates_per_direction or entry_id in seen_entries:
-            continue
-        selected.append(item)
-        seen_entries.add(entry_id)
-        counts[direction] += 1
-    # If one direction has too few distinct entries, do not silently fill it
-    # with duplicates; the other direction retains its own independent quota.
+        key = (
+            item["hypothesis"]["direction"],
+            item["hypothesis"].get("combination", "ALL"),
+            item["exit_hypothesis"].get("combination", "ALL"),
+        )
+        if key in buckets:
+            buckets[key].append(item)
+
+    # Preserve representation across direction, entry logic, and exit logic
+    # after formation-return ranking. This prevents the optimizer from
+    # silently collapsing the search to whichever family scores highest.
+    while any(buckets.values()):
+        added = False
+        for direction in ("LONG", "SHORT"):
+            if counts[direction] >= max_optimized_candidates_per_direction:
+                continue
+            for entry_mode in ("ALL", "ANY"):
+                for exit_mode in ("ALL", "ANY"):
+                    bucket = buckets[(direction, entry_mode, exit_mode)]
+                    while bucket and bucket[0]["hypothesis"]["id"] in seen_entries:
+                        bucket.pop(0)
+                    if not bucket:
+                        continue
+                    item = bucket.pop(0)
+                    entry_id = item["hypothesis"]["id"]
+                    if entry_id in seen_entries:
+                        continue
+                    selected.append(item)
+                    seen_entries.add(entry_id)
+                    counts[direction] += 1
+                    logic_counts[f"{direction}_{entry_mode}"] += 1
+                    exit_logic_counts[f"{direction}_{entry_mode}_{exit_mode}"] += 1
+                    added = True
+                    if counts[direction] >= max_optimized_candidates_per_direction:
+                        break
+                if counts[direction] >= max_optimized_candidates_per_direction:
+                    break
+        if not added:
+            break
+    # If a bucket has too few distinct entry rules, remaining slots are filled
+    # from other buckets without duplicating an entry rule.
 
     validation_bars = list(bars[formation_end:])
     validation_panel = {name: list(values[formation_end:]) for name, values in feature_panel.items()}
@@ -238,6 +286,8 @@ def run_research_pipeline(
                 "generated_entry_rules": len(hypotheses),
                 "evaluated_pairs": len(ranked), "selected_pairs": 0,
                 "selected_by_direction": counts,
+                "selected_by_direction_and_logic": logic_counts,
+                "selected_by_direction_entry_exit_logic": exit_logic_counts,
                 "selection_metric": "shrunk_mean_net_return_minus_drawdown_penalty",
             "evolutionary_expansion": "deterministic mutation and crossover; 3-4 feature conjunctions",
             },
@@ -277,6 +327,8 @@ def run_research_pipeline(
             "generated_entry_rules": len(hypotheses),
             "evaluated_pairs": len(ranked), "selected_pairs": len(selected),
             "selected_by_direction": counts,
+            "selected_by_direction_and_logic": logic_counts,
+            "selected_by_direction_entry_exit_logic": exit_logic_counts,
             "selection_metric": "shrunk_mean_net_return_minus_drawdown_penalty",
             "top_rules": [{
                 "candidate_id": item["candidate_id"],

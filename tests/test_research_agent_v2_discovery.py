@@ -135,8 +135,14 @@ class HypothesisDiscoveryTests(unittest.TestCase):
             entry_hypothesis=entry, max_exit_hypotheses=2,
         )
         self.assertEqual(result["hypothesis_count"], 2)
-        self.assertTrue(all(item["conditions"][0]["feature"] != "range_expansion"
+        self.assertTrue(all(len(item["conditions"]) == 2
                             for item in result["hypotheses"]))
+        self.assertEqual({item["combination"] for item in result["hypotheses"]},
+                         {"ALL", "ANY"})
+        self.assertTrue(all(
+            all(condition["feature"] != "range_expansion" for condition in item["conditions"])
+            for item in result["hypotheses"]
+        ))
         self.assertTrue(result["safety"]["thresholds_fit_on_formation_indices_only"])
         changed = {name: list(values) for name, values in data.items()}
         for values in changed.values():
