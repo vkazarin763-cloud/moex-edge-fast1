@@ -1,4 +1,4 @@
-name: MOEX EDGE V2 — Fresh Forward D1 Validation
+name: MOEX EDGE V2 — Immediate Research + Rolling Fresh Checks
 
 on:
   workflow_run:
@@ -11,19 +11,19 @@ permissions:
   contents: read
 
 concurrency:
-  group: moex-edge-v2-fresh-forward-validation
+  group: moex-edge-v2-research
   cancel-in-progress: false
 
 jobs:
   research:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
-      - name: Checkout collector snapshot commit
+      - name: Checkout isolated research branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: feat/autonomous-strategy-discovery-v1
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,19 +37,33 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Evaluate formation-only hypotheses on fresh forward D1 data
+      - name: Run autonomous discovery on available pre-holdout history
+        run: |
+          python -m research_agent.v2.moex_runner \
+            --data moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --holdout-start 2026-11-20 \
+            --formation-fraction 0.70 \
+            --max-hypotheses-per-symbol 20 \
+            --resamples 49999 \
+            --output moex_edge_v2_historical_research.json
+
+      - name: Evaluate any fresh post-seal data without waiting for a fixed bar count
         run: |
           python -m research_agent.v2.moex_forward_runner \
             --data moex_edge_multi_timeframe_candles.json \
             --validation moex_edge_multi_timeframe_validation.json \
             --sealed-through 2026-11-20 \
-            --minimum-forward-bars 20 \
+            --minimum-forward-bars 1 \
+            --resamples 49999 \
             --output moex_edge_v2_forward_validation.json
 
-      - name: Upload forward-validation report (no raw market data copied into Git)
+      - name: Upload research reports
         uses: actions/upload-artifact@v4
         with:
-          name: moex-edge-v2-forward-validation
-          path: moex_edge_v2_forward_validation.json
+          name: moex-edge-v2-research-reports
+          path: |
+            moex_edge_v2_historical_research.json
+            moex_edge_v2_forward_validation.json
           if-no-files-found: error
           retention-days: 30
