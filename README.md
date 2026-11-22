@@ -92,3 +92,13 @@ This repository contains an hourly MOEX signal scanner and a Finam execution wor
 - The default research assumptions are 70/30 chronological formation/validation, up to 20 balanced entry hypotheses (75% single-feature, 25% two-feature interactions when the cap allows) and two formation-only exit alternatives per entry, 49,999 bootstrap resamples, 5-trade block length, 0.08% commission and 0.05% slippage per side. The resulting entry/exit pairs are all retained in the global testing family. These are explicit research assumptions, not a verified broker tariff or measured execution slippage.
 - Results can only identify candidates for a later walk-forward stage. They do not constitute strategy approval, live signals, or evidence of profitability.
 - Focused tests: `tests/test_research_agent_v2_moex_dataset.py`.
+
+
+### Expanding-window research (draft PR #150)
+
+- The current research workflow runs immediately on the available validated pre-holdout D1 history; it does not wait for new candles.
+- Historical discovery now uses three expanding formation prefixes (50%, 65%, 80%) followed by sequential, non-overlapping 15% evaluation windows. Each fold generates entry and exit rules using only its own formation prefix.
+- All fold/symbol/entry/exit tests are pooled into one global Holm family. Underpowered tests remain in the family with a conservative p=1 placeholder and are not promoted.
+- The rolling report is a robustness screen, not an untouched final holdout. Formation prefixes overlap by design; only the evaluation windows are non-overlapping. No strategy is approved or sent to the live scanner by this stage.
+- Fresh post-2026-11-20 data is evaluated separately as it becomes available; the historical runner and fresh-data runner do not use the sealed 2026-11-20 row.
+- The production workflow uses 10 entry hypotheses per symbol per fold and 199,999 bootstrap resamples to improve p-value resolution for the pooled family. Runtime and statistical power must be reviewed from actual CI/artifact output; no market performance is claimed until a real-data run completes.
