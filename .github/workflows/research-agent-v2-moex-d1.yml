@@ -1,4 +1,4 @@
-name: MOEX EDGE V2 — Pre-holdout D1 Research
+name: MOEX EDGE V2 — Fresh Forward D1 Validation
 
 on:
   workflow_run:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: moex-edge-v2-preholdout-research
+  group: moex-edge-v2-fresh-forward-validation
   cancel-in-progress: false
 
 jobs:
@@ -37,18 +37,19 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run autonomous research on pre-holdout D1 only
+      - name: Evaluate formation-only hypotheses on fresh forward D1 data
         run: |
-          python -m research_agent.v2.moex_runner \
+          python -m research_agent.v2.moex_forward_runner \
             --data moex_edge_multi_timeframe_candles.json \
             --validation moex_edge_multi_timeframe_validation.json \
-            --holdout-start 2026-11-20 \
-            --output moex_edge_v2_d1_research.json
+            --sealed-through 2026-11-20 \
+            --minimum-forward-bars 20 \
+            --output moex_edge_v2_forward_validation.json
 
-      - name: Upload research report (no raw market data copied into Git)
+      - name: Upload forward-validation report (no raw market data copied into Git)
         uses: actions/upload-artifact@v4
         with:
-          name: moex-edge-v2-d1-research
-          path: moex_edge_v2_d1_research.json
+          name: moex-edge-v2-forward-validation
+          path: moex_edge_v2_forward_validation.json
           if-no-files-found: error
           retention-days: 30
