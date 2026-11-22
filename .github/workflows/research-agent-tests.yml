@@ -6,6 +6,7 @@ on:
     paths:
       - "research_agent/**"
       - "tests/**"
+      - "docs/FINAM_MARKET_DATA.md"
       - ".github/workflows/research-agent-tests.yml"
       - ".github/workflows/research-agent-run.yml"
       - ".github/workflows/research-agent-multi-timeframe.yml"
