@@ -30,7 +30,15 @@ def find_candidate(report: dict[str, Any], symbol: str, direction: str) -> dict[
         raise ValueError(
             f"expected exactly one frozen {symbol} {direction} candidate; found {len(matches)}"
         )
-    candidate = matches[0]
+    candidate = dict(matches[0])
+    fold_id = candidate.get("fold_id")
+    folds = report.get("folds")
+    if not isinstance(fold_id, str) or not isinstance(folds, list):
+        raise ValueError("candidate report must identify the selection fold")
+    fold_matches = [fold for fold in folds if fold.get("fold_id") == fold_id]
+    if len(fold_matches) != 1 or not fold_matches[0].get("evaluation_cutoff_date"):
+        raise ValueError("candidate selection cutoff cannot be established")
+    candidate["selection_cutoff_date"] = fold_matches[0]["evaluation_cutoff_date"]
     for field in ("entry_combination", "entry_rule", "exit_combination", "exit_rule"):
         if field not in candidate:
             raise ValueError(f"candidate is missing {field}")
@@ -53,6 +61,11 @@ def replay_frozen_candidate(
         raise ValueError("start_date must not be after end_date")
     if end >= holdout:
         raise ValueError("replay window must end before the sealed holdout")
+    selection_cutoff = candidate.get("selection_cutoff_date")
+    if not isinstance(selection_cutoff, str):
+        raise ValueError("candidate selection cutoff is required to prevent post-selection leakage")
+    if start <= date.fromisoformat(selection_cutoff):
+        raise ValueError("replay must start strictly after the candidate selection cutoff")
     symbol = candidate.get("symbol")
     direction = candidate.get("direction")
     if direction not in ("LONG", "SHORT"):
