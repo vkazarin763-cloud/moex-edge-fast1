@@ -4,7 +4,7 @@ on:
   # One-off historical optimizer pilot on the already validated frozen artifact.
   # Ordinary pushes do not trigger this job unless the commit message has the marker.
   push:
-    branches: [feat/autonomous-strategy-discovery-v1, feat/evolutionary-discovery-v2]
+    branches: [feat/autonomous-strategy-discovery-v1, feat/evolutionary-discovery-v2, feat/discovery-logic-v3]
   workflow_run:
     workflows: ["MOEX EDGE Multi-Timeframe Candles (Read Only)"]
     types: [completed]

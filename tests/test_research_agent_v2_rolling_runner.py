@@ -16,6 +16,26 @@ def make_rows(n=240):
 
 
 class RollingRunnerTests(unittest.TestCase):
+    def test_default_uses_longer_single_validation_window(self):
+        data = {
+            "symbols": {"AAA": make_rows(), "BBB": make_rows()},
+            "generated_at_utc": "2026-11-21T00:00:00+00:00",
+            "holdout_start": "2026-11-20",
+            "universe_size": 2,
+            "total_pre_holdout_bars": 480,
+            "post_holdout_rows_excluded": 2,
+            "validation": {"status": "PASS", "issue_count": 0},
+        }
+        result = run_rolling_moex_d1_research(
+            data, max_hypotheses_per_symbol=2, resamples=999,
+            min_trades_for_inference=20, block_length=5,
+        )
+        self.assertEqual(result["status"], "COMPLETED")
+        self.assertEqual(result["research_design"]["window_starts"], [0.35])
+        self.assertEqual(result["research_design"]["window_width"], 0.60)
+        self.assertTrue(result["research_design"]["single_extended_validation_window"])
+        self.assertFalse(result["research_design"]["overlapping_formation_prefixes"])
+
     def test_runs_sequential_windows_and_keeps_final_holdout_closed(self):
         data = {
             "symbols": {"AAA": make_rows(), "BBB": make_rows()},

@@ -29,6 +29,10 @@ class EvolutionaryDiscoveryTests(unittest.TestCase):
                             for item in result["hypotheses"]))
         self.assertEqual({item["direction"] for item in result["hypotheses"]},
                          {"LONG", "SHORT"})
+        self.assertEqual({item["combination"] for item in result["hypotheses"]},
+                         {"ALL", "ANY"})
+        for key in ("LONG_ALL", "LONG_ANY", "SHORT_ALL", "SHORT_ANY"):
+            self.assertGreater(result["selected_by_direction_and_logic"][key], 0)
         again = expand_hypotheses(
             self.panel(), formation_indices=list(range(60)),
             seed_hypotheses=self.seeds(), max_hypotheses=100,
