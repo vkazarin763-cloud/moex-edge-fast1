@@ -151,18 +151,18 @@ def generate_hypotheses(
             eligible_features.append(name)
             threshold_map[name] = thresholds
 
-    # Reserve part of the fixed budget for interactions. Without this split,
-    # a 20-hypothesis cap is consumed by single-feature rules and conjunctions
-    # are never explored.
+    # Build the full single-feature space first, then sample it evenly across
+    # quantiles and directions. The previous nested loop exhausted its budget
+    # on the lowest quantiles and alphabetically early features.
     hypotheses = []
     seen_ids = set()
-    single_budget = max(1, (max_hypotheses * 3) // 4)
+    single_buckets: dict[tuple[int, str], list[dict]] = {}
     for q_index in range(max((len(v) for v in threshold_map.values()), default=0)):
-        for operator in (">=", "<="):
-            for name in eligible_features:
-                if q_index >= len(threshold_map[name]):
-                    continue
-                item = threshold_map[name][q_index]
+        for name in eligible_features:
+            if q_index >= len(threshold_map[name]):
+                continue
+            item = threshold_map[name][q_index]
+            for operator in (">=", "<="):
                 for direction in ("LONG", "SHORT"):
                     payload = {
                         "direction": direction,
@@ -171,62 +171,65 @@ def generate_hypotheses(
                             "threshold": item["value"],
                             "threshold_quantile": item["quantile"],
                         }],
-                        "combination": "ALL", "version": 3,
+                        "combination": "ALL", "version": 4,
                     }
                     hypothesis_id = _hypothesis_id(payload)
-                    if hypothesis_id in seen_ids:
-                        continue
-                    if len(hypotheses) >= single_budget:
-                        break
-                    seen_ids.add(hypothesis_id)
-                    hypotheses.append({"id": hypothesis_id, **payload})
-                if len(hypotheses) >= single_budget:
-                    break
-            if len(hypotheses) >= single_budget:
-                break
-        if len(hypotheses) >= single_budget:
-            break
+                    single_buckets.setdefault((q_index, direction), []).append(
+                        {"id": hypothesis_id, **payload}
+                    )
 
-    # Fill the remaining budget with two-feature interactions. Rotate through
-    # distinct feature pairs before moving to further quantile combinations.
-    pair_specs = []
-    # Start with pairs spread across the ordered feature list (first/last,
-    # second/second-last, ...), then add remaining combinations. This avoids
-    # letting the earliest alphabetic feature dominate the interaction budget.
-    feature_pairs = []
-    pair_seen = set()
-    for offset in range(len(eligible_features) // 2):
-        left, right = eligible_features[offset], eligible_features[-1 - offset]
-        feature_pairs.append((left, right))
-        pair_seen.add(frozenset((left, right)))
+    # Reserve roughly two thirds for singles and one third for interactions.
+    # Round-robin buckets guarantee that both directions and all available
+    # quantiles are represented before any one bucket consumes the budget.
+    single_budget = max(1, (max_hypotheses * 2) // 3)
+    bucket_keys = [
+        (q_index, direction)
+        for q_index in range(max((len(v) for v in threshold_map.values()), default=0))
+        for direction in ("LONG", "SHORT")
+    ]
+    while len(hypotheses) < single_budget and any(single_buckets.get(k) for k in bucket_keys):
+        for key in bucket_keys:
+            bucket = single_buckets.get(key, [])
+            if bucket and len(hypotheses) < single_budget:
+                item = bucket.pop(0)
+                if item["id"] not in seen_ids:
+                    seen_ids.add(item["id"])
+                    hypotheses.append(item)
+
+    # Generate two-feature interactions with independently varied quantiles.
+    # A stable hash ordering samples broadly across feature pairs, thresholds,
+    # operators and directions without using outcomes or runtime randomness.
+    interaction_candidates = []
     for left, right in combinations(eligible_features, 2):
-        if frozenset((left, right)) not in pair_seen:
-            feature_pairs.append((left, right))
-    for left, right in feature_pairs:
-        for q_index in range(min(len(threshold_map[left]), len(threshold_map[right]))):
-            left_item, right_item = threshold_map[left][q_index], threshold_map[right][q_index]
-            for left_op, right_op in ((">=", "<="), ("<=", ">=")):
-                pair_specs.append([
-                    {"feature": left, "operator": left_op,
-                     "threshold": left_item["value"],
-                     "threshold_quantile": left_item["quantile"]},
-                    {"feature": right, "operator": right_op,
-                     "threshold": right_item["value"],
-                     "threshold_quantile": right_item["quantile"]},
-                ])
-    for conditions in pair_specs:
-        for direction in ("LONG", "SHORT"):
-            payload = {"direction": direction, "conditions": conditions,
-                       "combination": "ALL", "version": 3}
-            hypothesis_id = _hypothesis_id(payload)
-            if hypothesis_id in seen_ids:
-                continue
-            if len(hypotheses) >= max_hypotheses:
-                break
-            seen_ids.add(hypothesis_id)
-            hypotheses.append({"id": hypothesis_id, **payload})
+        for left_item in threshold_map[left]:
+            for right_item in threshold_map[right]:
+                for left_op in (">=", "<="):
+                    for right_op in (">=", "<="):
+                        conditions = [
+                            {"feature": left, "operator": left_op,
+                             "threshold": left_item["value"],
+                             "threshold_quantile": left_item["quantile"]},
+                            {"feature": right, "operator": right_op,
+                             "threshold": right_item["value"],
+                             "threshold_quantile": right_item["quantile"]},
+                        ]
+                        for direction in ("LONG", "SHORT"):
+                            payload = {
+                                "direction": direction, "conditions": conditions,
+                                "combination": "ALL", "version": 4,
+                            }
+                            hypothesis_id = _hypothesis_id(payload)
+                            interaction_candidates.append(
+                                {"id": hypothesis_id, **payload}
+                            )
+    interaction_candidates.sort(key=lambda item: item["id"])
+    for item in interaction_candidates:
         if len(hypotheses) >= max_hypotheses:
             break
+        if item["id"] not in seen_ids:
+            seen_ids.add(item["id"])
+            hypotheses.append(item)
+
     truncated = len(hypotheses) >= max_hypotheses
 
     return {
