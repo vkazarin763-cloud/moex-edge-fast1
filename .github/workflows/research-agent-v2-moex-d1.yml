@@ -1,6 +1,8 @@
 name: MOEX EDGE V2 — Pre-holdout D1 Research
 
 on:
+  push:
+    branches: [feat/autonomous-strategy-discovery-v1]
   workflow_run:
     workflows: ["MOEX EDGE Multi-Timeframe Candles (Read Only)"]
     types: [completed]
@@ -16,14 +18,14 @@ concurrency:
 
 jobs:
   research:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - name: Checkout collector snapshot commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,7 +36,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: moex-edge-multi-timeframe-candles
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ github.event.workflow_run.id || '44861047844' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run autonomous research on pre-holdout D1 only
