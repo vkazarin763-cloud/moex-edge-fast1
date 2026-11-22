@@ -1,4 +1,5 @@
 import unittest
+from datetime import date, timedelta
 
 from research_agent.v2.frozen_candidate_replay import (
     find_candidate,
@@ -8,10 +9,11 @@ from research_agent.v2.frozen_candidate_replay import (
 
 def make_rows(n=36):
     rows = []
+    first = date(2026, 1, 1)
     for i in range(n):
         price = 100.0 + i * 0.1
         rows.append({
-            "timestamp": f"2026-01-{i + 1:02d}T00:00:00",
+            "timestamp": f"{first + timedelta(days=i)}T00:00:00",
             "open": price,
             "high": price + 1.0,
             "low": price - 1.0,
