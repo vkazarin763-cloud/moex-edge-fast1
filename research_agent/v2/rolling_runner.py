@@ -12,7 +12,8 @@ def run_rolling_moex_d1_research(
     *,
     window_starts: tuple[float, ...] = (0.25, 0.60),
     window_width: float = 0.35,
-    max_hypotheses_per_symbol: int = 10,
+    max_hypotheses_per_symbol: int = 200,
+    max_optimized_candidates_per_direction: int = 5,
     resamples: int = 199_999,
     **kwargs: Any,
 ) -> dict[str, Any]:
@@ -67,6 +68,7 @@ def run_rolling_moex_d1_research(
             fold_dataset,
             formation_end_by_symbol=formation_ends,
             max_hypotheses_per_symbol=max_hypotheses_per_symbol,
+            max_optimized_candidates_per_direction=max_optimized_candidates_per_direction,
             resamples=resamples,
             **kwargs,
         )
@@ -152,6 +154,8 @@ def run_rolling_moex_d1_research(
             "calendar_aligned_boundaries": True,
             "all_folds_and_symbols_in_one_global_holm_family": True,
             "formation_only_hypothesis_generation": True,
+            "formation_return_optimization_before_validation": True,
+            "optimized_shortlist_per_direction": max_optimized_candidates_per_direction,
             "validation_windows_non_overlapping": True,
             "overlapping_formation_prefixes": True,
             "this_is_not_an_untouched_final_holdout": True,
@@ -189,7 +193,8 @@ def main() -> int:
     parser.add_argument("--validation", required=True)
     parser.add_argument("--output", default="moex_edge_v2_rolling_research.json")
     parser.add_argument("--holdout-start", default="2026-11-20")
-    parser.add_argument("--max-hypotheses-per-symbol", type=int, default=10)
+    parser.add_argument("--max-hypotheses-per-symbol", type=int, default=200)
+    parser.add_argument("--max-optimized-candidates-per-direction", type=int, default=5)
     parser.add_argument("--resamples", type=int, default=199_999)
     args = parser.parse_args()
     dataset = load_pre_holdout_d1(
@@ -198,6 +203,7 @@ def main() -> int:
     result = run_rolling_moex_d1_research(
         dataset,
         max_hypotheses_per_symbol=args.max_hypotheses_per_symbol,
+        max_optimized_candidates_per_direction=args.max_optimized_candidates_per_direction,
         resamples=args.resamples,
     )
     Path(args.output).write_text(
