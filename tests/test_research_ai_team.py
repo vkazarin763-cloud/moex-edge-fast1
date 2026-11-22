@@ -1,14 +1,13 @@
-"""Offline tests for the optional Gemini research team."""
+"""Offline tests for the optional Groq research team."""
 import json
 import unittest
-from unittest.mock import patch
 
 from research_agent.ai_team import (
     DEFAULT_MODEL,
     MAX_INPUT_CHARS,
     _compact_report,
     _extract_text,
-    call_gemini,
+    call_groq,
     run_team,
 )
 
@@ -32,15 +31,17 @@ class AITeamTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "compact validated summary"):
             _compact_report({"raw": "x" * MAX_INPUT_CHARS})
 
-    def test_extract_text_requires_candidate_text(self):
+    def test_extract_text_requires_choice_text(self):
         self.assertEqual(
-            _extract_text({"candidates": [{"content": {"parts": [{"text": "OK"}]}}]}),
+            _extract_text({"choices": [{"message": {"content": "OK"}}]}),
             "OK",
         )
         with self.assertRaises(RuntimeError):
-            _extract_text({"candidates": []})
+            _extract_text({"choices": []})
+        with self.assertRaises(RuntimeError):
+            _extract_text({"choices": [{"message": {"content": ""}}]})
 
-    def test_call_gemini_uses_header_for_api_key_and_extracts_text(self):
+    def test_call_groq_uses_bearer_header_and_extracts_text(self):
         seen = {}
 
         def opener(request, timeout):
@@ -49,15 +50,18 @@ class AITeamTests(unittest.TestCase):
             seen["body"] = json.loads(request.data)
             seen["timeout"] = timeout
             return FakeResponse({
-                "candidates": [{"content": {"parts": [{"text": "analysis"}]}}]
+                "choices": [{"message": {"role": "assistant", "content": "analysis"}}]
             })
 
-        answer = call_gemini("test prompt", api_key="secret-test", opener=opener)
+        answer = call_groq("test prompt", api_key="secret-test", opener=opener)
         self.assertEqual(answer, "analysis")
+        self.assertEqual(seen["url"], "https://api.groq.com/openai/v1/chat/completions")
         self.assertNotIn("secret-test", seen["url"])
-        self.assertEqual(seen["headers"]["X-goog-api-key"], "secret-test")
+        self.assertEqual(seen["headers"]["Authorization"], "Bearer secret-test")
         self.assertEqual(seen["timeout"], 60)
-        self.assertEqual(seen["body"]["generationConfig"]["temperature"], 0.2)
+        self.assertEqual(seen["body"]["model"], DEFAULT_MODEL)
+        self.assertEqual(seen["body"]["messages"][0]["role"], "system")
+        self.assertEqual(seen["body"]["max_completion_tokens"], 1200)
 
     def test_run_team_calls_three_specialists_then_coordinator(self):
         calls = []
@@ -74,13 +78,14 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(len(calls), 4)
         self.assertEqual(result["calls"], 4)
         self.assertEqual(result["status"], "AI_COMMENTARY_ONLY")
+        self.assertEqual(result["provider"], "groq_api")
         self.assertEqual(result["coordinator"], "note-4")
         self.assertEqual(result["model"], DEFAULT_MODEL)
         self.assertIn("no broker", " ".join(result["limitations"]).lower())
 
     def test_empty_key_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "GEMINI_API_KEY"):
-            call_gemini("x", api_key=" ")
+        with self.assertRaisesRegex(ValueError, "GROQ_API_KEY"):
+            call_groq("x", api_key=" ")
 
 
 if __name__ == "__main__":
