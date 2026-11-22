@@ -1,7 +1,7 @@
 name: MOEX EDGE V2 — Immediate Research + Rolling Fresh Checks
 
 on:
-  # One-time real-data pilot from the already validated collector artifact.
+  # Second one-time pilot using wider evaluation windows on the same validated collector artifact.
   # Ordinary pushes do not trigger this job.
   push:
     branches: [feat/autonomous-strategy-discovery-v1]
