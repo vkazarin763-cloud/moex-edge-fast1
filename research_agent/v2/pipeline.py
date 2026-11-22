@@ -157,7 +157,7 @@ def run_research_pipeline(
     correction = holm_bonferroni(family_p_values, alpha=alpha, family_id=family_id)
     corrected = {item["hypothesis_id"]: item for item in correction["results"]}
     for row in rows:
-        adjusted = corrected[row["hypothesis"]["id"]]
+        adjusted = corrected[row["candidate_id"]]
         row["multiple_testing"] = adjusted
         ci = row["inference"]["confidence_interval"] if row["inference"] else None
         row["candidate_for_walk_forward"] = bool(
@@ -185,7 +185,9 @@ def run_research_pipeline(
         "discovery": discovery,
         "family": {
             "family_id": family_id,
-            "family_size_generated": len(hypotheses),
+            "entry_hypotheses_generated": len(hypotheses),
+            "exit_entry_pairs_generated": len(rows),
+            "family_size_generated": len(rows),
             "family_size_corrected": correction["family_size"],
             "underpowered_candidates_retained_with_conservative_p1": True,
             "correction": correction,
