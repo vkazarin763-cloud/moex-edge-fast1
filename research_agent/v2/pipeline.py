@@ -1,12 +1,14 @@
-"""End-to-end formation/validation loop for autonomous hypothesis research.
+"""Formation-driven optimization followed by a later chronological evaluation.
 
-This module coordinates existing primitives. It is research-only: candidate
-rules are generated on formation data, evaluated once on a later validation
-window, corrected as one registered family, and never approved for trading.
+The optimizer may fit and rank many entry/exit combinations on the historical
+formation prefix. Only frozen top rules are passed to the later validation
+window. Validation returns never influence generation, ranking, or selection.
 """
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from math import sqrt
+from statistics import median
 from typing import Any
 
 from .bootstrap import moving_block_bootstrap_mean_test
@@ -19,6 +21,37 @@ class PipelineInputError(ValueError):
     """Invalid chronological split or research-pipeline configuration."""
 
 
+def _optimization_metrics(execution: Mapping[str, Any]) -> dict[str, float | int]:
+    returns = [float(trade["net_return"]) for trade in execution["trades"]]
+    count = len(returns)
+    if not returns:
+        return {
+            "closed_trades": 0, "mean_net_return": 0.0,
+            "median_net_return": 0.0, "profit_factor": 0.0,
+            "max_drawdown": 1.0, "optimization_score": -1.0,
+        }
+    wins = sum(value for value in returns if value > 0)
+    losses = abs(sum(value for value in returns if value < 0))
+    equity = peak = 1.0
+    max_drawdown = 0.0
+    for value in returns:
+        equity *= max(0.0, 1.0 + value)
+        peak = max(peak, equity)
+        if peak > 0:
+            max_drawdown = max(max_drawdown, 1.0 - equity / peak)
+    mean_value = sum(returns) / count
+    # Shrink noisy small samples and penalize deep trade-sequence drawdowns.
+    score = mean_value * sqrt(count / (count + 10.0)) - 0.25 * max_drawdown
+    return {
+        "closed_trades": count,
+        "mean_net_return": mean_value,
+        "median_net_return": median(returns),
+        "profit_factor": wins / losses if losses > 0 else (999.0 if wins > 0 else 0.0),
+        "max_drawdown": max_drawdown,
+        "optimization_score": score,
+    }
+
+
 def run_research_pipeline(
     bars: Sequence[Mapping[str, Any]],
     feature_panel: Mapping[str, Sequence[float | None]],
@@ -27,6 +60,7 @@ def run_research_pipeline(
     formation_end: int,
     max_features: int = 12,
     max_hypotheses: int = 200,
+    max_optimized_candidates_per_direction: int = 5,
     min_formation_observations: int = 20,
     min_trades_for_inference: int = 20,
     block_length: int = 5,
@@ -37,15 +71,7 @@ def run_research_pipeline(
     seed: int = 1729,
     family_id: str = "moex-edge-v2-validation-family",
 ) -> dict[str, Any]:
-    """Generate rules on [0, formation_end), evaluate on [formation_end, n).
-
-    Feature values may be calculated over the full series only when each row
-    is causal (current/past data). The exit rule is caller-supplied and must
-    be fixed before validation; a LONG/SHORT mapping may provide distinct
-    predeclared exits. This pipeline never searches for an exit on validation
-    outcomes. Validation trades cannot cross the split because the
-    execution simulator receives only validation bars and feature rows.
-    """
+    """Optimize on [0, formation_end), evaluate frozen rules on [formation_end, n)."""
     if isinstance(bars, (str, bytes)) or not isinstance(bars, Sequence):
         raise PipelineInputError("bars must be a chronological sequence")
     if isinstance(feature_panel, (str, bytes)) or not isinstance(feature_panel, Mapping) or not feature_panel:
@@ -62,6 +88,8 @@ def run_research_pipeline(
         raise PipelineInputError("min_trades_for_inference must be an integer >= 20")
     if isinstance(block_length, bool) or not isinstance(block_length, int) or block_length < 1:
         raise PipelineInputError("block_length must be a positive integer")
+    if isinstance(max_optimized_candidates_per_direction, bool) or not isinstance(max_optimized_candidates_per_direction, int) or max_optimized_candidates_per_direction < 1:
+        raise PipelineInputError("max_optimized_candidates_per_direction must be a positive integer")
     if not isinstance(exit_hypothesis, Mapping):
         raise PipelineInputError("exit_hypothesis mapping is required")
     autonomous_exits = exit_hypothesis.get("mode") == "AUTONOMOUS"
@@ -76,40 +104,32 @@ def run_research_pipeline(
     if not isinstance(family_id, str) or not family_id.strip():
         raise PipelineInputError("family_id must be a non-empty string")
 
-    # Explicitly generate on the formation prefix, not on the validation tail.
+    formation_bars = list(bars[:formation_end])
     formation_panel = {name: list(values[:formation_end]) for name, values in feature_panel.items()}
     discovery = generate_hypotheses(
-        formation_panel,
-        formation_indices=list(range(formation_end)),
-        max_features=max_features,
-        max_hypotheses=max_hypotheses,
+        formation_panel, formation_indices=list(range(formation_end)),
+        max_features=max_features, max_hypotheses=max_hypotheses,
         min_observations=min_formation_observations,
     )
     hypotheses = discovery["hypotheses"]
     if not hypotheses:
         return {
-            "status": "NO_CANDIDATES",
-            "discovery": discovery,
+            "status": "NO_CANDIDATES", "discovery": discovery,
+            "optimization": {"generated_entry_rules": 0, "evaluated_pairs": 0, "selected_pairs": 0},
             "family": {"family_id": family_id, "family_size": 0},
             "results": [],
-            "safety": {
-                "formation_precedes_validation": True,
-                "validation_used_for_generation": False,
-                "strategy_approval": "NOT_APPROVED",
-            },
+            "safety": {"formation_precedes_validation": True,
+                       "validation_used_for_generation": False,
+                       "strategy_approval": "NOT_APPROVED"},
         }
 
-    validation_bars = list(bars[formation_end:])
-    validation_panel = {name: list(values[formation_end:]) for name, values in feature_panel.items()}
-    # A p=1 placeholder retains underpowered hypotheses in the full Holm
-    # family. It is not reported as a measured p-value and cannot be promoted.
-    family_p_values: dict[str, float] = {}
-    rows: list[dict[str, Any]] = []
+    # This is deliberately the only stage allowed to rank by historical returns.
+    # Its scores are optimization diagnostics, not independent performance claims.
+    ranked: list[dict[str, Any]] = []
     for hypothesis in hypotheses:
         if autonomous_exits:
             exit_generation = generate_exit_hypotheses(
-                formation_panel,
-                formation_indices=list(range(formation_end)),
+                formation_panel, formation_indices=list(range(formation_end)),
                 entry_hypothesis=hypothesis,
                 max_exit_hypotheses=int(exit_hypothesis.get("max_exit_hypotheses", 2)),
                 min_observations=min_formation_observations,
@@ -122,37 +142,87 @@ def run_research_pipeline(
                 else exit_hypothesis
             )]
         for exit_rule in exit_rules:
-            candidate_id = (
-                f"{hypothesis['id']}::{exit_rule['id']}"
-                if autonomous_exits else hypothesis["id"]
-            )
             execution = evaluate_hypothesis(
-                validation_bars, validation_panel, hypothesis, exit_rule,
+                formation_bars, formation_panel, hypothesis, exit_rule,
                 commission_rate=commission_rate, slippage_rate=slippage_rate,
             )
-            returns = [trade["net_return"] for trade in execution["trades"]]
-            inference = None
-            if len(returns) >= min_trades_for_inference and block_length <= len(returns) // 2:
-                inference = moving_block_bootstrap_mean_test(
-                    returns, block_length=block_length, resamples=resamples,
-                    alpha=alpha, seed=seed,
-                )
-                family_p_values[candidate_id] = inference["two_sided_p_value"]
-                inference_status = "TESTED"
-            else:
-                family_p_values[candidate_id] = 1.0
-                inference_status = "INSUFFICIENT_DATA"
-            rows.append({
-                "candidate_id": candidate_id,
-                "hypothesis": hypothesis,
-                "exit_hypothesis": exit_rule,
-                "execution": execution,
-                "inference": inference,
-                "inference_status": inference_status,
-                "closed_trade_count": len(returns),
-                "candidate_for_walk_forward": False,
-                "approval_status": "NOT_APPROVED",
+            metrics = _optimization_metrics(execution)
+            ranked.append({
+                "candidate_id": f"{hypothesis['id']}::{exit_rule['id']}" if autonomous_exits else hypothesis["id"],
+                "hypothesis": hypothesis, "exit_hypothesis": exit_rule,
+                "optimization_metrics": metrics,
             })
+
+    # Keep the best exit for each entry rule, then retain a balanced LONG/SHORT
+    # shortlist. This bounds the later statistical family and avoids one rule
+    # consuming the shortlist through several nearly identical exits.
+    ranked.sort(key=lambda item: (
+        -float(item["optimization_metrics"]["optimization_score"]),
+        -int(item["optimization_metrics"]["closed_trades"]),
+        item["candidate_id"],
+    ))
+    selected: list[dict[str, Any]] = []
+    seen_entries: set[str] = set()
+    counts = {"LONG": 0, "SHORT": 0}
+    for item in ranked:
+        direction = item["hypothesis"]["direction"]
+        entry_id = item["hypothesis"]["id"]
+        if counts[direction] >= max_optimized_candidates_per_direction or entry_id in seen_entries:
+            continue
+        selected.append(item)
+        seen_entries.add(entry_id)
+        counts[direction] += 1
+    # If one direction has too few distinct entries, do not silently fill it
+    # with duplicates; the other direction retains its own independent quota.
+
+    validation_bars = list(bars[formation_end:])
+    validation_panel = {name: list(values[formation_end:]) for name, values in feature_panel.items()}
+    family_p_values: dict[str, float] = {}
+    rows: list[dict[str, Any]] = []
+    for item in selected:
+        hypothesis = item["hypothesis"]
+        exit_rule = item["exit_hypothesis"]
+        candidate_id = item["candidate_id"]
+        execution = evaluate_hypothesis(
+            validation_bars, validation_panel, hypothesis, exit_rule,
+            commission_rate=commission_rate, slippage_rate=slippage_rate,
+        )
+        returns = [trade["net_return"] for trade in execution["trades"]]
+        inference = None
+        if len(returns) >= min_trades_for_inference and block_length <= len(returns) // 2:
+            inference = moving_block_bootstrap_mean_test(
+                returns, block_length=block_length, resamples=resamples,
+                alpha=alpha, seed=seed,
+            )
+            family_p_values[candidate_id] = inference["two_sided_p_value"]
+            inference_status = "TESTED"
+        else:
+            family_p_values[candidate_id] = 1.0
+            inference_status = "INSUFFICIENT_DATA"
+        rows.append({
+            "candidate_id": candidate_id, "hypothesis": hypothesis,
+            "exit_hypothesis": exit_rule, "execution": execution,
+            "optimization_metrics": item["optimization_metrics"],
+            "inference": inference, "inference_status": inference_status,
+            "closed_trade_count": len(returns),
+            "candidate_for_walk_forward": False, "approval_status": "NOT_APPROVED",
+        })
+
+    if not family_p_values:
+        return {
+            "status": "NO_OPTIMIZABLE_CANDIDATES", "discovery": discovery,
+            "optimization": {
+                "method": "formation_return_ranked_search",
+                "generated_entry_rules": len(hypotheses),
+                "evaluated_pairs": len(ranked), "selected_pairs": 0,
+                "selected_by_direction": counts,
+                "selection_metric": "shrunk_mean_net_return_minus_drawdown_penalty",
+            },
+            "family": {"family_id": family_id, "family_size": 0},
+            "results": [],
+            "safety": {"validation_used_for_optimization": False,
+                       "strategy_approval": "NOT_APPROVED"},
+        }
 
     correction = holm_bonferroni(family_p_values, alpha=alpha, family_id=family_id)
     corrected = {item["hypothesis_id"]: item for item in correction["results"]}
@@ -161,10 +231,8 @@ def run_research_pipeline(
         row["multiple_testing"] = adjusted
         ci = row["inference"]["confidence_interval"] if row["inference"] else None
         row["candidate_for_walk_forward"] = bool(
-            row["inference_status"] == "TESTED"
-            and adjusted["reject_null"]
-            and ci is not None
-            and ci["lower"] > 0.0
+            row["inference_status"] == "TESTED" and adjusted["reject_null"]
+            and ci is not None and ci["lower"] > 0.0
         )
         if row["inference_status"] == "INSUFFICIENT_DATA":
             row["status"] = "INSUFFICIENT_DATA"
@@ -176,17 +244,32 @@ def run_research_pipeline(
     return {
         "status": "COMPLETED",
         "split": {
-            "formation_start_index": 0,
-            "formation_end_exclusive": formation_end,
-            "validation_start_index": formation_end,
-            "validation_end_exclusive": n,
+            "formation_start_index": 0, "formation_end_exclusive": formation_end,
+            "validation_start_index": formation_end, "validation_end_exclusive": n,
             "validation_bars": len(validation_bars),
         },
         "discovery": discovery,
+        "optimization": {
+            "method": "formation_return_ranked_search",
+            "generated_entry_rules": len(hypotheses),
+            "evaluated_pairs": len(ranked), "selected_pairs": len(selected),
+            "selected_by_direction": counts,
+            "selection_metric": "shrunk_mean_net_return_minus_drawdown_penalty",
+            "top_rules": [{
+                "candidate_id": item["candidate_id"],
+                "direction": item["hypothesis"]["direction"],
+                "entry_rule": item["hypothesis"]["conditions"],
+                "exit_rule": item["exit_hypothesis"]["conditions"],
+                **item["optimization_metrics"],
+            } for item in selected],
+            "formation_returns_used_for_optimization": True,
+            "validation_returns_used_for_optimization": False,
+        },
         "family": {
             "family_id": family_id,
             "entry_hypotheses_generated": len(hypotheses),
-            "exit_entry_pairs_generated": len(rows),
+            "exit_entry_pairs_generated": len(ranked),
+            "optimized_pairs_selected": len(selected),
             "family_size_generated": len(rows),
             "family_size_corrected": correction["family_size"],
             "underpowered_candidates_retained_with_conservative_p1": True,
@@ -201,13 +284,13 @@ def run_research_pipeline(
         "protocol": {
             "exit_rule_predeclared_by_caller": not autonomous_exits,
             "exit_rules_generated_from_formation_only": autonomous_exits,
-            "exit_hypotheses_per_entry": int(exit_hypothesis.get("max_exit_hypotheses", 2)) if autonomous_exits else 1,
-            "entry_thresholds_fit_on_formation_only": True,
-            "validation_used_for_hypothesis_generation": False,
+            "entry_rules_generated_from_formation_only": True,
+            "formation_returns_used_for_optimization": True,
+            "validation_used_for_optimization": False,
             "validation_used_for_statistical_evaluation_only": True,
             "exit_generation_uses_validation": False,
-            "signal_on_close_fill_next_open": True,
-            "costs_included": True,
+            "max_optimized_candidates_per_direction": max_optimized_candidates_per_direction,
+            "signal_on_close_fill_next_open": True, "costs_included": True,
             "underpowered_p_value_placeholder": 1.0,
             "p1_placeholder_is_not_a_measured_p_value": True,
             "block_length_sensitivity_analysis_required": True,
@@ -218,6 +301,7 @@ def run_research_pipeline(
         "safety": {
             "lookahead_used_for_rule_generation": False,
             "trades_crossing_formation_validation_boundary": False,
+            "validation_used_for_optimization": False,
             "capital_or_position_sizing_used": False,
             "broker_or_live_trading_accessed": False,
             "strategy_approval": "NOT_APPROVED",
