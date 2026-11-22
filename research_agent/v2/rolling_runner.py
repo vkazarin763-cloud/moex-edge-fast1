@@ -10,8 +10,8 @@ from .multiple_testing import holm_bonferroni
 def run_rolling_moex_d1_research(
     dataset: dict[str, Any],
     *,
-    window_starts: tuple[float, ...] = (0.25, 0.60),
-    window_width: float = 0.35,
+    window_starts: tuple[float, ...] = (0.35,),
+    window_width: float = 0.60,
     max_hypotheses_per_symbol: int = 200,
     max_optimized_candidates_per_direction: int = 5,
     resamples: int = 199_999,
@@ -27,8 +27,8 @@ def run_rolling_moex_d1_research(
         raise ValueError("dataset must contain symbols")
     if not window_starts or any(not 0.2 <= x < 0.9 for x in window_starts):
         raise ValueError("window_starts must be non-empty fractions in [0.2, 0.9)")
-    if not 0.05 <= window_width <= 0.4:
-        raise ValueError("window_width must be between 0.05 and 0.40")
+    if not 0.05 <= window_width <= 0.70:
+        raise ValueError("window_width must be between 0.05 and 0.70")
     if isinstance(max_hypotheses_per_symbol, bool) or max_hypotheses_per_symbol < 1:
         raise ValueError("max_hypotheses_per_symbol must be positive")
 
@@ -91,7 +91,9 @@ def run_rolling_moex_d1_research(
                 pooled_rows[key] = {
                     "fold_id": fold_id, "symbol": symbol,
                     "direction": row["hypothesis"]["direction"],
+                    "entry_combination": row["hypothesis"].get("combination", "ALL"),
                     "entry_rule": row["hypothesis"]["conditions"],
+                    "exit_combination": row["exit_hypothesis"].get("combination", "ALL"),
                     "exit_rule": row["exit_hypothesis"]["conditions"],
                     "closed_trades": row["closed_trade_count"],
                     "formation_optimization_metrics": row.get("optimization_metrics"),
@@ -132,8 +134,10 @@ def run_rolling_moex_d1_research(
         if eligible:
             candidates.append({
                 "fold_id": row["fold_id"], "symbol": row["symbol"],
-                "direction": row["direction"], "entry_rule": row["entry_rule"],
-                "exit_rule": row["exit_rule"], "closed_trades": row["closed_trades"],
+                "direction": row["direction"],
+                "entry_combination": row["entry_combination"], "entry_rule": row["entry_rule"],
+                "exit_combination": row["exit_combination"], "exit_rule": row["exit_rule"],
+                "closed_trades": row["closed_trades"],
                 "mean_net_return": inf["observed_mean"],
                 "confidence_interval": interval,
                 "global_adjusted_p_value": adj["holm_adjusted_p_value"],
@@ -149,7 +153,8 @@ def run_rolling_moex_d1_research(
             "sealed_final_holdout_used": False,
         },
         "research_design": {
-            "method": "expanding formation windows with sequential non-overlapping evaluation windows",
+            "method": "single extended chronological evaluation window for discovery power screening",
+            "purpose": "increase out-of-sample trade observations per frozen candidate before a separate multi-fold walk-forward stage",
             "window_starts": list(window_starts),
             "window_width": window_width,
             "calendar_aligned_boundaries": True,
@@ -158,7 +163,8 @@ def run_rolling_moex_d1_research(
             "formation_return_optimization_before_validation": True,
             "optimized_shortlist_per_direction": max_optimized_candidates_per_direction,
             "validation_windows_non_overlapping": True,
-            "overlapping_formation_prefixes": True,
+            "overlapping_formation_prefixes": False,
+            "single_extended_validation_window": len(folds) == 1,
             "this_is_not_an_untouched_final_holdout": True,
             "strategy_approval": "NOT_APPROVED",
         },
