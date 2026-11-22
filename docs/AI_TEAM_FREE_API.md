@@ -1,22 +1,26 @@
-# Optional free Gemini research team
+# Optional Groq multi-agent research team
 
-The existing `research_agent` is the deterministic MOEX research and validation
-pipeline. This optional LLM layer adds commentary; it does not replace calculations,
-data-quality checks, walk-forward validation, the prospective holdout, or human review.
+The existing `research_agent` remains the deterministic MOEX research and validation
+pipeline. This optional LLM layer adds commentary only; it does not replace calculations,
+data-quality checks, walk-forward validation, prospective holdout testing, or human review.
 
 ## Provider
 
-- Google Gemini Developer API, default model: `gemini-3.8-flash`.
-- The model is listed with free-tier input/output pricing by Google. Actual RPM/TPM/RPD
-  quotas are project-specific and may change; check Google AI Studio before use.
-- Free-tier prompts and responses may be used by Google to improve its products.
-  Do not send broker credentials, account data, personal information, or confidential data.
-- The runner makes four sequential model calls: market analyst, strategy researcher,
-  skeptical reviewer, then coordinator. It is manual-only and does not schedule itself.
+- Provider: GroqCloud Chat Completions API (OpenAI-compatible).
+- Default model: `openai/gpt-oss-20b`, listed in Groq's current supported-model catalogue.
+- API endpoint: `https://api.groq.com/openai/v1/chat/completions`.
+- Groq publishes Free-tier rate limits; exact limits depend on the account/organization
+  and can change. Check the Limits page in GroqCloud before running. The current docs
+  list `openai/gpt-oss-20b` with 30 RPM, 1,000 RPD, 8K TPM and 200K TPD as base
+  limits; do not treat these as a guarantee for every account.
+- The runner makes four sequential calls: market analyst, strategy researcher,
+  skeptical reviewer, then coordinator. It is manual-only and has no schedule.
 
-Create a key at https://aistudio.google.com/ and store it locally in the environment
-or as a GitHub Actions secret named `GEMINI_API_KEY`. Never commit the key, paste it
-into code, or print it in logs.
+Create an API key in GroqCloud and store it as an environment variable named
+`GROQ_API_KEY` locally or as a GitHub Actions repository secret. Never commit the
+key, paste it into code, or print it in logs. Optional model override: `GROQ_MODEL`.
+
+Do not send broker credentials, account data, personal information, or confidential data.
 
 ## Run
 
@@ -24,14 +28,14 @@ First create a compact JSON file containing the already validated research summa
 Do not pass raw candle histories or account/portfolio data.
 
 ```bash
-export GEMINI_API_KEY="..."
+export GROQ_API_KEY="..."
 python -m research_agent.ai_team --input research_summary.json --output ai_commentary.json
 ```
 
 Optional model override:
 
 ```bash
-export GEMINI_MODEL="gemini-3.5-flash-lite"
+export GROQ_MODEL="openai/gpt-oss-120b"
 ```
 
 The output is labelled `AI_COMMENTARY_ONLY`. It is not a signal, recommendation,
@@ -44,3 +48,5 @@ scheduled workflow.
 ```bash
 python -m unittest tests.test_research_ai_team -v
 ```
+
+Tests mock the HTTP response and do not use the API key or make a live request.
