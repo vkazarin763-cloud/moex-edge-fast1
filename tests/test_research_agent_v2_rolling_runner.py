@@ -40,6 +40,9 @@ class RollingRunnerTests(unittest.TestCase):
         self.assertTrue(result["research_design"]["overlapping_formation_prefixes"])
         self.assertTrue(result["research_design"]["fold_specific_candidate_generation"])
         self.assertEqual(result["summary"]["folds_completed"], 2)
+        self.assertIn("cross_fold_repeatability", result)
+        self.assertTrue(result["cross_fold_repeatability"]["not_a_strategy_approval"])
+        self.assertEqual(result["cross_fold_repeatability"]["exact_repeated_rule_count"] + result["cross_fold_repeatability"]["single_fold_rule_count"], len(result["cross_fold_repeatability"]["rules"]))
 
     def test_runs_sequential_windows_and_keeps_final_holdout_closed(self):
         result = run_rolling_moex_d1_research(
