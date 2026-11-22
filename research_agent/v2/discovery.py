@@ -272,3 +272,75 @@ def matches_hypothesis(
         if operator == "<=" and value > threshold:
             return False
     return True
+
+
+def generate_exit_hypotheses(
+    feature_panel: Mapping[str, Sequence[float | None]],
+    *,
+    formation_indices: Sequence[int],
+    entry_hypothesis: Mapping,
+    max_exit_hypotheses: int = 2,
+    min_observations: int = DEFAULT_MIN_OBSERVATIONS,
+) -> dict:
+    """Generate outcome-blind exit alternatives using formation data only.
+
+    Exit thresholds are fitted on the same chronological formation prefix as
+    entry thresholds. Candidate features are rotated deterministically by
+    entry ID so a small cap does not always select the same first columns.
+    No trade returns, validation rows, or future outcomes are accepted.
+    """
+    row_count, panel = _validate_panel(feature_panel)
+    indices = _validate_indices(formation_indices, row_count)
+    if not isinstance(entry_hypothesis, Mapping):
+        raise DiscoveryInputError("entry_hypothesis must be a mapping")
+    if isinstance(max_exit_hypotheses, bool) or not isinstance(max_exit_hypotheses, int) or max_exit_hypotheses < 1:
+        raise DiscoveryInputError("max_exit_hypotheses must be a positive integer")
+    entry_features = {
+        condition.get("feature")
+        for condition in entry_hypothesis.get("conditions", [])
+        if isinstance(condition, Mapping)
+    }
+    eligible = []
+    for name in sorted(panel):
+        values = [float(panel[name][i]) for i in indices if panel[name][i] is not None]
+        if len(values) < min_observations:
+            continue
+        eligible.append((name, values))
+    if not eligible:
+        return {"status": "NO_ELIGIBLE_EXIT_FEATURES", "hypotheses": [],
+                "safety": {"forward_returns_used": False,
+                           "thresholds_fit_on_formation_indices_only": True}}
+    preferred = [item for item in eligible if item[0] not in entry_features]
+    pool = preferred or eligible
+    entry_id = str(entry_hypothesis.get("id", "entry"))
+    offset = int(hashlib.sha256(entry_id.encode("utf-8")).hexdigest()[:8], 16) % len(pool)
+    pool = pool[offset:] + pool[:offset]
+    exits = []
+    for index, (name, values) in enumerate(pool):
+        q = 0.40 if index % 2 == 0 else 0.60
+        operator = "<=" if index % 2 == 0 else ">="
+        threshold = _quantile(values, q)
+        payload = {
+            "direction": entry_hypothesis.get("direction"),
+            "conditions": [{
+                "feature": name, "operator": operator,
+                "threshold": threshold, "threshold_quantile": q,
+            }],
+            "combination": "ALL", "role": "EXIT", "version": 1,
+        }
+        exit_id = _hypothesis_id(payload)
+        exits.append({"id": exit_id, **payload})
+        if len(exits) >= max_exit_hypotheses:
+            break
+    return {
+        "status": "GENERATED",
+        "generator": "formation_only_rotating_exit_rules_v1",
+        "hypothesis_count": len(exits),
+        "hypotheses": exits,
+        "safety": {
+            "forward_returns_used": False,
+            "thresholds_fit_on_formation_indices_only": True,
+            "validation_used_for_exit_generation": False,
+            "requires_global_multiple_testing_and_unseen_evaluation": True,
+        },
+    }
