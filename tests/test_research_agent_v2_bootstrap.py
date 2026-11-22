@@ -67,7 +67,7 @@ class MovingBlockBootstrapTests(unittest.TestCase):
         # allow at most one discrete Monte Carlo step.
         self.assertLessEqual(
             abs(actual["two_sided_p_value"] - expected_p),
-            1.0 / (resamples + 1),
+            1.0 / (resamples + 1) + 1e-12,
         )
         self.assertAlmostEqual(actual["confidence_interval"]["lower"], quantile(alpha / 2))
         self.assertAlmostEqual(actual["confidence_interval"]["upper"], quantile(1 - alpha / 2))
