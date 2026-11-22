@@ -77,14 +77,14 @@ def _bounded(value: Any, *, depth: int = 0) -> Any:
 
 
 def _compact_report(report: Any) -> str:
-    """Build a strict, compact evidence projection under the Groq input budget."""
+    """Build a strict, compact evidence projection under the AI input budget."""
     if not isinstance(report, dict):
         raise ValueError("Research report must be a JSON object.")
     raw_results = report.get("results")
     if not isinstance(raw_results, dict):
         encoded = json.dumps(_bounded(report), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         if len(encoded) > MAX_INPUT_CHARS:
-            raise ValueError("Focused research evidence exceeds the Groq input budget.")
+            raise ValueError("Focused research evidence exceeds the AI input budget.")
         return encoded
 
     # Compact codes avoid repeating long status strings across 44 tickers x strategies.
@@ -317,7 +317,7 @@ def run_team(
 
     for role, instruction in ROLES:
         specialist_results[role] = ask(
-            f"{instruction}\\n\\nValidated research report (JSON):\\n{report_json}"
+            f"{instruction}\n\nValidated research report (JSON):\n{report_json}"
         )
 
     coordinator_prompt = (
@@ -325,10 +325,10 @@ def run_team(
         "independent notes below. Return a concise report with: verified facts, "
         "disagreements, unresolved questions, data-quality caveats, and next research "
         "checks. Never invent evidence or turn commentary into a trading signal. "
-        "The supplied deterministic report is the sole quantitative source.\\n\\n"
-        f"Validated report (JSON):\\n{report_json}\\n\\n"
-        "Specialist notes:\\n"
-        + "\\n\\n".join(f"[{name}]\\n{note}" for name, note in specialist_results.items())
+        "The supplied deterministic report is the sole quantitative source.\n\n"
+        f"Validated report (JSON):\n{report_json}\n\n"
+        "Specialist notes:\n"
+        + "\n\n".join(f"[{name}]\n{note}" for name, note in specialist_results.items())
     )
     synthesis = ask(coordinator_prompt)
     return {
@@ -379,7 +379,7 @@ def main(argv: list[str] | None = None) -> int:
         groq_model=args.groq_model,
     )
     Path(args.output).write_text(
-        json.dumps(result, ensure_ascii=False, indent=2) + "\\n",
+        json.dumps(result, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     print(f"Wrote read-only AI commentary to {args.output}; providers={','.join(result['providers_used'])}")
