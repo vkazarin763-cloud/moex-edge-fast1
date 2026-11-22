@@ -1,0 +1,43 @@
+name: Finam Screener Snapshot Intake
+
+on:
+  push:
+    paths:
+      - "data/research/finam_screener_exports/*.json"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate exported Finam MCP responses
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(data/research/finam_screener_exports/*.json)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No Finam screener export found."
+            exit 1
+          fi
+          mkdir -p /tmp/finam-screener-normalized
+          for file in "${files[@]}"; do
+            name="$(basename "$file" .json)"
+            python scripts/import_finam_screener_snapshot.py \
+              --input "$file" \
+              --output "/tmp/finam-screener-normalized/${name}.normalized.json"
+          done
+      - name: Upload validated research snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: finam-screener-normalized-snapshots
+          path: /tmp/finam-screener-normalized/*.normalized.json
+          if-no-files-found: error
+          retention-days: 14
