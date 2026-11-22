@@ -37,6 +37,7 @@ jobs:
           python -m unittest discover -s tests -p "test_moex_trading_day_bars.py" -v
           python -m unittest discover -s tests -p "test_finam_market_data.py" -v
           python -m unittest discover -s tests -p "test_finam_screener_adapter.py" -v
+          python -m unittest discover -s tests -p "test_finam_screener_snapshot_import.py" -v
           python -m unittest discover -s tests -p "test_finam_crosscheck.py" -v
           python -m unittest discover -s tests -p "test_finam_h1_crosscheck.py" -v
           python -m unittest discover -s tests -p "test_timeframe_reconciliation.py" -v
