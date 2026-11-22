@@ -4,6 +4,7 @@ from research_agent.v2.discovery import (
     DiscoveryInputError,
     generate_hypotheses,
     matches_hypothesis,
+    generate_exit_hypotheses,
 )
 
 
