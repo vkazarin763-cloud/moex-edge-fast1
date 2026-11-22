@@ -41,8 +41,9 @@ def run_research_pipeline(
 
     Feature values may be calculated over the full series only when each row
     is causal (current/past data). The exit rule is caller-supplied and must
-    be fixed before validation; this pipeline never searches for an exit on
-    validation outcomes. Validation trades cannot cross the split because the
+    be fixed before validation; a LONG/SHORT mapping may provide distinct
+    predeclared exits. This pipeline never searches for an exit on validation
+    outcomes. Validation trades cannot cross the split because the
     execution simulator receives only validation bars and feature rows.
     """
     if isinstance(bars, (str, bytes)) or not isinstance(bars, Sequence):
@@ -61,8 +62,15 @@ def run_research_pipeline(
         raise PipelineInputError("min_trades_for_inference must be an integer >= 20")
     if isinstance(block_length, bool) or not isinstance(block_length, int) or block_length < 1:
         raise PipelineInputError("block_length must be a positive integer")
-    if not isinstance(exit_hypothesis, Mapping) or not isinstance(exit_hypothesis.get("conditions"), list) or not exit_hypothesis["conditions"]:
-        raise PipelineInputError("a predeclared exit_hypothesis with conditions is required")
+    if not isinstance(exit_hypothesis, Mapping):
+        raise PipelineInputError("a predeclared exit_hypothesis mapping is required")
+    if "LONG" in exit_hypothesis or "SHORT" in exit_hypothesis:
+        for direction in ("LONG", "SHORT"):
+            rule = exit_hypothesis.get(direction)
+            if not isinstance(rule, Mapping) or not isinstance(rule.get("conditions"), list) or not rule["conditions"]:
+                raise PipelineInputError("directional exit rules must define non-empty LONG and SHORT conditions")
+    elif not isinstance(exit_hypothesis.get("conditions"), list) or not exit_hypothesis["conditions"]:
+        raise PipelineInputError("exit_hypothesis must contain non-empty conditions")
     if not isinstance(family_id, str) or not family_id.strip():
         raise PipelineInputError("family_id must be a non-empty string")
 
@@ -100,7 +108,9 @@ def run_research_pipeline(
             validation_bars,
             validation_panel,
             hypothesis,
-            exit_hypothesis,
+            (exit_hypothesis[hypothesis["direction"]]
+             if "LONG" in exit_hypothesis or "SHORT" in exit_hypothesis
+             else exit_hypothesis),
             commission_rate=commission_rate,
             slippage_rate=slippage_rate,
         )
