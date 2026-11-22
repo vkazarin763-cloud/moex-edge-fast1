@@ -53,6 +53,60 @@ class AITeamTests(unittest.TestCase):
         self.assertNotIn("trade_ledger", json.dumps(compact))
         self.assertLessEqual(len(_compact_report(source)), MAX_INPUT_CHARS)
 
+    def test_large_report_projection_preserves_compact_evidence_and_all_tickers(self):
+        strategies = {
+            "Donchian20": {
+                "status": "REJECT_OR_INSUFFICIENT_EVIDENCE",
+                "closed_trades": 17,
+                "average_net_return": -0.00125,
+                "folds": [{"trade_ledger": [{"price": 1}] * 1000}] * 20,
+            }
+        }
+        source = {
+            "generated_at_utc": "2026-11-22T00:00:00Z",
+            "universe": {"count": 44},
+            "independent_validation": {"status": "CHECKED"},
+            "cross_sectional_direction_summary": {"LONG": {"count": 44}},
+            "results": {
+                **{
+                    f"T{i:02d}": {
+                        "status": "ANALYZED",
+                        "candles": 500,
+                        "research_input_bars": 480,
+                        "data_quality": {
+                            "status": "VALID_WITH_CAVEATS",
+                            "out_of_range_bars": 0,
+                            "calendar_gap_count": 3,
+                            "exchange_calendar_verified": False,
+                        },
+                        "walk_forward": {"candidates": strategies},
+                        "raw_candles": [{"close": 1}] * 5000,
+                    }
+                    for i in range(43)
+                },
+                "T": {
+                    "status": "INSUFFICIENT_POST_ACTION_HISTORY",
+                    "research_input_bars": 12,
+                },
+            },
+            "development_portfolio": {
+                "candidate_trades": [{"trade_ledger": [1] * 1000}] * 100,
+                "continuous_development_replay": {"history": [1] * 10000},
+            },
+        }
+        compact_text = _compact_report(source)
+        compact = json.loads(compact_text)
+        self.assertLessEqual(len(compact_text), MAX_INPUT_CHARS)
+        self.assertEqual(len(compact["results"]), 44)
+        self.assertEqual(compact["results"]["T"]["status"], "INSUFFICIENT_POST_ACTION_HISTORY")
+        metric = compact["results"]["T00"]["walk_forward_candidates"]["Donchian20"]
+        self.assertEqual(metric["closed_trades"], 17)
+        self.assertEqual(metric["average_net_return"], -0.00125)
+        self.assertIn("independent_validation", compact)
+        self.assertNotIn("raw_candles", compact_text)
+        self.assertNotIn("trade_ledger", compact_text)
+        self.assertNotIn("continuous_development_replay", compact_text)
+
     def test_extract_text_requires_choice_text(self):
         self.assertEqual(
             _extract_text({"choices": [{"message": {"content": "OK"}}]}),
