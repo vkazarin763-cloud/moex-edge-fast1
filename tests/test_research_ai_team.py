@@ -139,7 +139,7 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["timeout"], 60)
         self.assertEqual(seen["body"]["model"], DEFAULT_GROQ_MODEL)
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
-        self.assertEqual(seen["body"]["max_tokens"], 1200)
+        self.assertEqual(seen["body"]["max_completion_tokens"], 1200)
 
 
     def test_http_error_exposes_safe_provider_message_without_api_key(self):
