@@ -43,3 +43,25 @@ fees/slippage, or establish profitability.
 
 No live scanner integration, broker interface, order path, or credentials are
 present. V1 remains untouched.
+
+
+## Autonomous hypothesis discovery — first isolated slice
+
+`discovery.py` adds a deterministic, data-driven rule generator. It accepts a
+caller-supplied feature panel (feature series may be any validated numeric
+market descriptors; no indicator names are hard-coded), estimates feature
+thresholds from explicit formation indices only, and emits LONG/SHORT
+single-feature rules plus two-feature conjunctions. Thresholds use configurable
+quantiles. Candidate IDs are deterministic, missing feature values fail closed,
+and a hard candidate cap prevents combinatorial growth.
+
+The generator deliberately does **not** accept forward returns, so outcomes
+cannot influence threshold selection or candidate construction. The caller
+must keep formation indices chronological and strictly before the evaluation
+window. This first slice generates entry hypotheses only: it does not yet
+define exits, run backtests, perform multiple-testing correction, or promote
+strategies. Those are separate stages and must be added before any candidate
+can be described as tested or useful.
+
+Tests: `tests/test_research_agent_v2_discovery.py`. No v1 scanner, frozen
+cohort, holdout, workflow, broker, or production file is changed.
