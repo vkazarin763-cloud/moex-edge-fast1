@@ -220,6 +220,7 @@ def main():
     h1_till = datetime.now().strftime('%Y-%m-%d')
 
     signals_found = []
+    research_signals_found = []
     
     for ticker in TICKERS:
         try:
@@ -263,6 +264,25 @@ def main():
                 'ticker': ticker, 'direction': 'LONG' if direction == 1 else 'SHORT',
                 'strategy': strat, 'h1_confirmed': h1_confirmed, 'date': t, 'entry_price': entry_price, 'qty': qty
             })
+            signal_bar = d1.iloc[-1]
+            research_signals_found.append({
+                'ticker': ticker,
+                'direction': 'LONG' if direction == 1 else 'SHORT',
+                'strategy': strat,
+                'strategy_priority': STRATEGY_PRIORITY.get(strat, 0),
+                'signal_date': t,
+                'signal_price_d1_close': float(signal_bar['close']),
+                'd1_atr14': float(signal_bar['atr14']) if pd.notna(signal_bar['atr14']) else np.nan,
+                'd1_rsi14': float(signal_bar['rsi14']) if pd.notna(signal_bar['rsi14']) else np.nan,
+                'd1_adx14': float(signal_bar['adx14']) if pd.notna(signal_bar['adx14']) else np.nan,
+                'd1_ema20': float(signal_bar['ema20']),
+                'd1_ema50': float(signal_bar['ema50']),
+                'd1_ema200': float(signal_bar['ema200']),
+                'h1_timestamp': last_h1['begin'],
+                'h1_close': float(last_h1['close']),
+                'h1_ema20': float(last_h1['ema20']),
+                'h1_confirmed': h1_confirmed,
+            })
         except Exception as e:
             print(f"Ошибка {ticker}: {e}")
             time.sleep(1)
@@ -272,6 +292,17 @@ def main():
         df_res.to_csv("moex_signals.csv", index=False)
     else:
         pd.DataFrame(columns=["ticker","direction","strategy","h1_confirmed","date","entry_price","qty"]).to_csv("moex_signals.csv", index=False)
+
+    # Research-only export: signal context without portfolio sizing or order fields.
+    research_columns = [
+        "ticker", "direction", "strategy", "strategy_priority", "signal_date",
+        "signal_price_d1_close", "d1_atr14", "d1_rsi14", "d1_adx14",
+        "d1_ema20", "d1_ema50", "d1_ema200", "h1_timestamp",
+        "h1_close", "h1_ema20", "h1_confirmed",
+    ]
+    pd.DataFrame(research_signals_found, columns=research_columns).to_csv(
+        "moex_signals_research.csv", index=False
+    )
 
     print("\n" + "="*50)
     if not signals_found:
