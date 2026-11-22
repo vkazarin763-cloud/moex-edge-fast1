@@ -34,7 +34,7 @@ class RollingRunnerTests(unittest.TestCase):
         self.assertEqual(result["status"], "COMPLETED")
         self.assertEqual(result["summary"]["folds_completed"], 2)
         self.assertTrue(result["research_design"]["validation_windows_non_overlapping"])
-        self.assertFalse(result["research_design"]["this_is_not_an_untouched_final_holdout"] is False)
+        self.assertTrue(result["research_design"]["this_is_not_an_untouched_final_holdout"])
         self.assertFalse(result["safety"]["final_holdout_used"])
         self.assertEqual(
             result["summary"]["hypotheses"],
