@@ -157,7 +157,7 @@ def _compact_report(report: Any) -> str:
                 "w": "walk-forward candidates keyed by strategy code; each value is [status code, closed trades, average net return]",
             },
             "strategy_codes": {value: key for key, value in strategy_codes.items()},
-            "status_codes": status_codes,
+            "status_codes": {code: value for value, code in status_codes.items()},
         },
         "cross_sectional_direction_summary": _bounded(
             report.get("cross_sectional_direction_summary", {})
