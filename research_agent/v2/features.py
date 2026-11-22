@@ -89,9 +89,9 @@ def extract_ohlcv_features(
             raise FeatureInputError(f"{name} must be an integer >= 2")
     if isinstance(return_horizons, (str, bytes)) or not isinstance(return_horizons, Sequence) or not return_horizons:
         raise FeatureInputError("return_horizons must be a non-empty sequence")
-    horizons = sorted(set(return_horizons))
-    if any(isinstance(v, bool) or not isinstance(v, int) or v < 1 for v in horizons):
+    if any(isinstance(v, bool) or not isinstance(v, int) or v < 1 for v in return_horizons):
         raise FeatureInputError("return horizons must be positive integers")
+    horizons = sorted(set(return_horizons))
 
     n = len(data)
     opens = [float(row["open"]) for row in data]
