@@ -1,8 +1,8 @@
 """Formation-driven optimization followed by a later chronological evaluation.
 
 The optimizer may fit and rank many entry/exit combinations on the historical
-formation prefix. Only frozen top rules are passed to the later validation
-window. Validation returns never influence generation, ranking, or selection.
+formation prefix. Only a logic-balanced frozen shortlist is passed to later validation.
+Validation returns never influence generation, ranking, or selection.
 """
 from __future__ import annotations
 
