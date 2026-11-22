@@ -27,9 +27,31 @@ class FakeResponse:
 
 
 class AITeamTests(unittest.TestCase):
-    def test_compact_report_rejects_oversized_raw_data(self):
-        with self.assertRaisesRegex(ValueError, "compact validated summary"):
-            _compact_report({"raw": "x" * MAX_INPUT_CHARS})
+    def test_compact_report_drops_raw_history_and_trade_ledgers(self):
+        source = {
+            "date_from": "2023-01-01",
+            "results": {
+                "SBER": {
+                    "status": "ANALYZED",
+                    "candles": 700,
+                    "walk_forward": {
+                        "candidates": {"Donchian20": {"closed_trades": 42}},
+                        "folds": [{"trade_ledger": [{"entry_price": 1}] * 500}],
+                    },
+                    "raw_candles": [{"close": 1}] * 500,
+                }
+            },
+            "raw_history": "x" * (MAX_INPUT_CHARS * 2),
+        }
+        compact = json.loads(_compact_report(source))
+        self.assertEqual(compact["results"]["SBER"]["candles"], 700)
+        self.assertEqual(
+            compact["results"]["SBER"]["walk_forward"]["candidates"]["Donchian20"]["closed_trades"],
+            42,
+        )
+        self.assertNotIn("raw_history", compact)
+        self.assertNotIn("trade_ledger", json.dumps(compact))
+        self.assertLessEqual(len(_compact_report(source)), MAX_INPUT_CHARS)
 
     def test_extract_text_requires_choice_text(self):
         self.assertEqual(
