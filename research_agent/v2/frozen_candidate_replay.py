@@ -169,6 +169,11 @@ def main() -> int:
         args.data, args.validation, holdout_start=args.holdout_start
     )
     report = json.loads(Path(args.candidate_report).read_text(encoding="utf-8"))
+    report_data = report.get("data", {})
+    if report_data.get("generated_at_utc") != dataset["generated_at_utc"]:
+        raise ValueError("candidate report and dataset provenance timestamps do not match")
+    if report_data.get("holdout_start") != dataset["holdout_start"]:
+        raise ValueError("candidate report and dataset holdout boundaries do not match")
     candidate = find_candidate(report, args.symbol, args.direction)
     result = replay_frozen_candidate(
         dataset, candidate,
