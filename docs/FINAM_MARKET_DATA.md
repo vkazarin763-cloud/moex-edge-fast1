@@ -99,3 +99,31 @@ Snapshot importer tests:
 ```bash
 python -m unittest discover -s tests -p "test_finam_screener_snapshot_import.py" -v
 ```
+
+## GitHub Actions intake (no Finam credentials in CI)
+
+The repository includes `.github/workflows/finam-screener-snapshot-intake.yml`.
+It runs only when a JSON export is pushed under
+`data/research/finam_screener_exports/`. It validates each export with the
+same fail-closed importer and publishes normalized JSON as a downloadable
+Actions artifact (14-day retention).
+
+The workflow does **not** connect to Finam or perform MCP authentication.
+Finam's documented connection flow requires the user's Finam ID and token and
+an interactive `Authenticate` step in the MCP client. Keep those credentials
+out of GitHub Actions until Finam documents a supported non-interactive
+machine-to-machine flow. Never commit credentials or broker account data.
+
+To use the intake bridge:
+1. Retrieve the five `screen_securities` responses through an authenticated
+   Finam MCP client.
+2. Save the raw response envelope (with the actual timezone-aware
+   `retrieved_at`) as a JSON file under
+   `data/research/finam_screener_exports/`.
+3. Commit and push that file to this branch.
+4. Download the `finam-screener-normalized-snapshots` artifact from the
+   resulting Actions run. Its quote freshness remains UNKNOWN unless the
+   provider supplies a verified quote timestamp.
+
+This is a read-only research intake. It does not update scanner signals,
+strategies, the sealed holdout, or any trading/execution component.
