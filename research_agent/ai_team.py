@@ -182,10 +182,21 @@ def _compact_report(report: Any) -> str:
     return encoded
 
 def _extract_text(response: dict[str, Any], provider: str = "AI provider") -> str:
+    """Extract user-facing text and report safe metadata for empty generations."""
+    if not isinstance(response, dict):
+        raise RuntimeError(f"{provider} returned a malformed response object.")
+    api_error = response.get("error")
+    if isinstance(api_error, dict):
+        code = api_error.get("code", "unknown")
+        message = api_error.get("message")
+        detail = " ".join(message.split())[:300] if isinstance(message, str) else "no error message"
+        raise RuntimeError(f"{provider} returned API error {code}: {detail}")
+
     choices = response.get("choices") or []
     if not choices:
-        raise RuntimeError(f"{provider} returned no choices (possibly blocked or quota-limited).")
-    message = choices[0].get("message") or {}
+        raise RuntimeError(f"{provider} returned no choices (possibly blocked, unavailable, or quota-limited).")
+    choice = choices[0] if isinstance(choices[0], dict) else {}
+    message = choice.get("message") or {}
     content = message.get("content")
     if isinstance(content, str):
         result = content.strip()
@@ -193,12 +204,23 @@ def _extract_text(response: dict[str, Any], provider: str = "AI provider") -> st
         result = "".join(
             str(part.get("text", ""))
             for part in content
-            if isinstance(part, dict) and part.get("type") == "text"
+            if isinstance(part, dict) and part.get("type") in {"text", "output_text"}
         ).strip()
     else:
         result = ""
+
     if not result:
-        raise RuntimeError(f"{provider} response contained no text.")
+        finish = choice.get("finish_reason") or "unknown"
+        native_finish = choice.get("native_finish_reason") or "unknown"
+        usage = response.get("usage") or {}
+        completion_details = usage.get("completion_tokens_details") or {}
+        reasoning_tokens = completion_details.get("reasoning_tokens", "unknown")
+        generation_id = response.get("id") or "unavailable"
+        raise RuntimeError(
+            f"{provider} returned empty content (finish_reason={finish}, "
+            f"native_finish_reason={native_finish}, reasoning_tokens={reasoning_tokens}, "
+            f"generation_id={generation_id})."
+        )
     return result
 
 
@@ -233,6 +255,10 @@ def call_provider(
     }
     if provider == "groq":
         body["max_completion_tokens"] = body.pop("max_tokens")
+    else:
+        # Free-model routing can select reasoning models; keep reasoning bounded
+        # so the entire output budget is not consumed before user-facing text.
+        body["reasoning"] = {"effort": "low", "exclude": True}
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
