@@ -1,0 +1,54 @@
+name: MOEX EDGE V2 — Pre-holdout D1 Research
+
+on:
+  workflow_run:
+    workflows: ["MOEX EDGE Multi-Timeframe Candles (Read Only)"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: moex-edge-v2-preholdout-research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout collector snapshot commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download the exact collector run artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-multi-timeframe-candles
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run autonomous research on pre-holdout D1 only
+        run: |
+          python -m research_agent.v2.moex_runner \
+            --data moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --holdout-start 2026-11-20 \
+            --output moex_edge_v2_d1_research.json
+
+      - name: Upload research report (no raw market data copied into Git)
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-v2-d1-research
+          path: moex_edge_v2_d1_research.json
+          if-no-files-found: error
+          retention-days: 30
