@@ -8,6 +8,7 @@ from research_agent.ai_team import (
     _compact_report,
     _extract_text,
     call_groq,
+    call_provider,
     run_team,
 )
 
@@ -137,7 +138,7 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["timeout"], 60)
         self.assertEqual(seen["body"]["model"], DEFAULT_MODEL)
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
-        self.assertEqual(seen["body"]["max_completion_tokens"], 1200)
+        self.assertEqual(seen["body"]["max_tokens"], 1200)
 
 
     def test_http_error_exposes_safe_provider_message_without_api_key(self):
@@ -161,8 +162,8 @@ class AITeamTests(unittest.TestCase):
     def test_run_team_calls_three_specialists_then_coordinator(self):
         calls = []
 
-        def fake_caller(prompt, *, api_key, model):
-            calls.append((prompt, model))
+        def fake_caller(prompt, *, api_key, provider, model):
+            calls.append((prompt, provider, model))
             return f"note-{len(calls)}"
 
         result = run_team(
@@ -173,7 +174,8 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(len(calls), 4)
         self.assertEqual(result["calls"], 4)
         self.assertEqual(result["status"], "AI_COMMENTARY_ONLY")
-        self.assertEqual(result["provider"], "groq_api")
+        self.assertEqual(result["provider"], "openrouter")
+        self.assertEqual(result["providers_used"], ["openrouter"] * 4)
         self.assertEqual(result["coordinator"], "note-4")
         self.assertEqual(result["model"], DEFAULT_MODEL)
         self.assertIn("no broker", " ".join(result["limitations"]).lower())
@@ -181,6 +183,43 @@ class AITeamTests(unittest.TestCase):
     def test_empty_key_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "GROQ_API_KEY"):
             call_groq("x", api_key=" ")
+
+    def test_call_provider_uses_openrouter_endpoint_and_headers(self):
+        seen = {}
+
+        def opener(request, timeout):
+            seen["url"] = request.full_url
+            seen["headers"] = dict(request.header_items())
+            seen["body"] = json.loads(request.data)
+            return FakeResponse({"choices": [{"message": {"content": "ok"}}]})
+
+        answer = call_provider(
+            "test", api_key="openrouter-secret", provider="openrouter",
+            model="openrouter/free", opener=opener,
+        )
+        self.assertEqual(answer, "ok")
+        self.assertEqual(seen["url"], "https://openrouter.ai/api/v1/chat/completions")
+        self.assertEqual(seen["headers"]["Authorization"], "Bearer openrouter-secret")
+        self.assertEqual(seen["body"]["model"], "openrouter/free")
+
+    def test_openrouter_failure_uses_groq_fallback(self):
+        calls = []
+
+        def fake_caller(prompt, *, api_key, provider, model):
+            calls.append(provider)
+            if provider == "openrouter":
+                raise RuntimeError("OpenRouter unavailable")
+            return "fallback-note"
+
+        result = run_team(
+            {"ticker": "SBER"},
+            api_key="openrouter-key",
+            groq_api_key="groq-key",
+            caller=fake_caller,
+        )
+        self.assertEqual(calls, ["openrouter", "groq"] * 4)
+        self.assertEqual(result["providers_used"], ["groq_fallback"] * 4)
+        self.assertEqual(result["coordinator"], "fallback-note")
 
 
 if __name__ == "__main__":
