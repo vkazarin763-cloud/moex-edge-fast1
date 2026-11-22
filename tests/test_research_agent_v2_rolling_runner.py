@@ -27,13 +27,15 @@ class RollingRunnerTests(unittest.TestCase):
             "validation": {"status": "PASS", "issue_count": 0},
         }
         result = run_rolling_moex_d1_research(
-            data, window_starts=(0.50, 0.65), window_width=0.15,
+            data, window_starts=(0.25, 0.60), window_width=0.35,
             max_hypotheses_per_symbol=2, resamples=999,
             min_trades_for_inference=20, block_length=5,
         )
         self.assertEqual(result["status"], "COMPLETED")
         self.assertEqual(result["summary"]["folds_completed"], 2)
         self.assertTrue(result["research_design"]["validation_windows_non_overlapping"])
+        self.assertEqual(result["research_design"]["window_width"], 0.35)
+        self.assertEqual(result["research_design"]["window_starts"], [0.25, 0.60])
         self.assertTrue(result["research_design"]["this_is_not_an_untouched_final_holdout"])
         self.assertFalse(result["safety"]["final_holdout_used"])
         self.assertEqual(
