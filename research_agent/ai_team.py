@@ -234,8 +234,26 @@ def call_groq(
         with opener(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        # Never include response bodies or request headers in logs.
-        raise RuntimeError(f"Groq API HTTP {exc.code}. Check the key, model and account limits.") from None
+        # Groq's error body usually identifies invalid keys, model access or account
+        # restrictions. Log only the provider's bounded error message; never headers.
+        detail = ""
+        try:
+            error_payload = json.loads(exc.read().decode("utf-8", errors="replace"))
+            error_obj = error_payload.get("error", {}) if isinstance(error_payload, dict) else {}
+            if isinstance(error_obj, dict):
+                message = error_obj.get("message")
+                if isinstance(message, str):
+                    detail = " ".join(message.split())[:400]
+        except (ValueError, OSError):
+            pass
+        if detail:
+            detail = detail.replace(api_key, "[REDACTED]") if api_key else detail
+            detail = detail.replace("Bearer ", "[REDACTED] ") if "Bearer " in detail else detail
+            raise RuntimeError(f"Groq API HTTP {exc.code}: {detail}") from None
+        raise RuntimeError(
+            f"Groq API HTTP {exc.code}; provider returned no readable error message. "
+            "Check key validity, model access and account restrictions."
+        ) from None
     except urllib.error.URLError as exc:
         raise RuntimeError(f"Groq API connection failed: {exc.reason}") from None
     return _extract_text(payload)
