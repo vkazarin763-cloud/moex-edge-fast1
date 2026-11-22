@@ -202,6 +202,37 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["url"], "https://openrouter.ai/api/v1/chat/completions")
         self.assertEqual(seen["headers"]["Authorization"], "Bearer openrouter-secret")
         self.assertEqual(seen["body"]["model"], "openrouter/free")
+        self.assertEqual(
+            seen["body"]["reasoning"],
+            {"effort": "low", "exclude": True},
+        )
+
+    def test_empty_openrouter_content_reports_finish_reason_and_reasoning_usage(self):
+        payload = {
+            "id": "gen-test-safe-id",
+            "choices": [{
+                "message": {"role": "assistant", "content": None},
+                "finish_reason": "length",
+                "native_finish_reason": "max_tokens",
+            }],
+            "usage": {
+                "completion_tokens_details": {"reasoning_tokens": 1200}
+            },
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"finish_reason=length.*reasoning_tokens=1200.*generation_id=gen-test-safe-id",
+        ):
+            _extract_text(payload, "openrouter")
+
+    def test_openrouter_embedded_api_error_is_not_reported_as_empty_text(self):
+        with self.assertRaisesRegex(
+            RuntimeError, "openrouter returned API error 502: Provider unavailable"
+        ):
+            _extract_text(
+                {"error": {"code": 502, "message": "Provider unavailable"}},
+                "openrouter",
+            )
 
     def test_openrouter_failure_uses_groq_fallback(self):
         calls = []
