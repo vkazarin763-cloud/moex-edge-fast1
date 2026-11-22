@@ -42,6 +42,45 @@ class ExecutionEvaluatorTests(unittest.TestCase):
         self.assertEqual(trade["entry_price"], bars()[1]["open"])
         self.assertEqual(trade["exit_price"], bars()[3]["open"])
 
+    def test_any_combination_matches_when_one_condition_is_true(self):
+        panel = {
+            "entry_a": [1, 0, 0, 0, 0, 0, 0, 0, 0],
+            "entry_b": [0, 1, 0, 0, 0, 0, 0, 0, 0],
+            "exit": [0, 0, 1, 0, 0, 0, 0, 0, 0],
+        }
+        entry = {
+            "direction": "LONG", "combination": "ANY",
+            "conditions": [
+                {"feature": "entry_a", "operator": ">=", "threshold": 1},
+                {"feature": "entry_b", "operator": ">=", "threshold": 1},
+            ],
+        }
+        result = evaluate_hypothesis(
+            bars(), panel, entry, rule("exit", ">=", 1),
+            commission_rate=0, slippage_rate=0,
+        )
+        self.assertEqual(result["counts"]["closed_trades"], 1)
+        self.assertEqual(result["trades"][0]["signal_timestamp"], bars()[0]["timestamp"])
+
+    def test_all_combination_requires_every_condition(self):
+        panel = {
+            "entry_a": [1] * 9,
+            "entry_b": [0] * 9,
+            "exit": [0, 0, 1, 0, 0, 0, 0, 0, 0],
+        }
+        entry = {
+            "direction": "LONG", "combination": "ALL",
+            "conditions": [
+                {"feature": "entry_a", "operator": ">=", "threshold": 1},
+                {"feature": "entry_b", "operator": ">=", "threshold": 1},
+            ],
+        }
+        result = evaluate_hypothesis(
+            bars(), panel, entry, rule("exit", ">=", 1),
+            commission_rate=0, slippage_rate=0,
+        )
+        self.assertEqual(result["counts"]["closed_trades"], 0)
+
     def test_slippage_and_commission_reduce_net_return(self):
         panel = {"entry": [1, 0, 0, 0, 0, 0, 0, 0, 0],
                  "exit":  [0, 0, 1, 0, 0, 0, 0, 0, 0]}
