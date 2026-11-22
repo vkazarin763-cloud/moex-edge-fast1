@@ -6,5 +6,6 @@ from .features import FeatureInputError, extract_ohlcv_features
 from .execution import ExecutionInputError, evaluate_hypothesis
 from .multiple_testing import MultipleTestingInputError, holm_bonferroni
 from .bootstrap import BootstrapInputError, moving_block_bootstrap_mean_test
+from .pipeline import PipelineInputError, run_research_pipeline
 
-__all__ = ["V2_VERSION", "FeatureInputError", "extract_ohlcv_features", "ExecutionInputError", "evaluate_hypothesis", "MultipleTestingInputError", "holm_bonferroni", "BootstrapInputError", "moving_block_bootstrap_mean_test"]
+__all__ = ["V2_VERSION", "FeatureInputError", "extract_ohlcv_features", "ExecutionInputError", "evaluate_hypothesis", "MultipleTestingInputError", "holm_bonferroni", "BootstrapInputError", "moving_block_bootstrap_mean_test", "PipelineInputError", "run_research_pipeline"]
