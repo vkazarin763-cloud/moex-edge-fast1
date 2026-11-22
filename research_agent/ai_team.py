@@ -140,6 +140,15 @@ def _compact_report(report: Any) -> str:
         compact_results[ticker] = row
 
     compact = {
+        "generated_at_utc": report.get("generated_at_utc"),
+        "source": _bounded(report.get("source")),
+        "board": report.get("board"),
+        "interval_minutes": report.get("interval_minutes"),
+        "date_range": [report.get("date_from"), report.get("date_till")],
+        "universe": _bounded(report.get("universe")),
+        "development_holdout_policy": _bounded(report.get("development_holdout_policy", {})),
+        "independent_validation": _bounded(report.get("independent_validation", {})),
+        "results": compact_results,
         "schema": {
             "ticker_fields": {
                 "s": "ticker status code",
@@ -150,15 +159,6 @@ def _compact_report(report: Any) -> str:
             "strategy_codes": {value: key for key, value in strategy_codes.items()},
             "status_codes": status_codes,
         },
-        "generated_at_utc": report.get("generated_at_utc"),
-        "source": _bounded(report.get("source")),
-        "board": report.get("board"),
-        "interval_minutes": report.get("interval_minutes"),
-        "date_range": [report.get("date_from"), report.get("date_till")],
-        "universe": _bounded(report.get("universe")),
-        "development_holdout_policy": _bounded(report.get("development_holdout_policy", {})),
-        "independent_validation": _bounded(report.get("independent_validation", {})),
-        "results": compact_results,
         "cross_sectional_direction_summary": _bounded(
             report.get("cross_sectional_direction_summary", {})
         ),
