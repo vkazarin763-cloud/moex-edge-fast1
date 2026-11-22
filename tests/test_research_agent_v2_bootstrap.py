@@ -1,4 +1,7 @@
 import unittest
+import math
+import random
+from statistics import mean
 from research_agent.v2.bootstrap import BootstrapInputError, moving_block_bootstrap_mean_test
 
 
@@ -23,6 +26,45 @@ class MovingBlockBootstrapTests(unittest.TestCase):
         result = moving_block_bootstrap_mean_test(values, block_length=4, resamples=999, seed=9)
         self.assertTrue(result["reject_null"])
         self.assertGreater(result["confidence_interval"]["lower"], 0)
+
+
+    def test_precomputed_block_sums_match_reference_resampling(self):
+        values = [((i * 17) % 29 - 14) / 10000 for i in range(23)]
+        block_length, resamples, seed, alpha = 4, 999, 123, 0.05
+        actual = moving_block_bootstrap_mean_test(
+            values, block_length=block_length, resamples=resamples,
+            seed=seed, alpha=alpha,
+        )
+        observed = mean(values)
+        centered = [value - observed for value in values]
+        rng = random.Random(seed)
+        null_means, alt_means = [], []
+        blocks_needed = (len(values) + block_length - 1) // block_length
+        for _ in range(resamples):
+            null_sample, alt_sample = [], []
+            for _block in range(blocks_needed):
+                start = rng.randrange(len(values))
+                take = min(block_length, len(values) - len(null_sample))
+                for offset in range(take):
+                    index = (start + offset) % len(values)
+                    null_sample.append(centered[index])
+                    alt_sample.append(values[index])
+            null_means.append(mean(null_sample))
+            alt_means.append(mean(alt_sample))
+        expected_p = (sum(abs(value) >= abs(observed) for value in null_means) + 1) / (resamples + 1)
+        alt_means.sort()
+
+        def quantile(probability):
+            position = (len(alt_means) - 1) * probability
+            lower, upper = math.floor(position), math.ceil(position)
+            if lower == upper:
+                return alt_means[lower]
+            weight = position - lower
+            return alt_means[lower] * (1 - weight) + alt_means[upper] * weight
+
+        self.assertEqual(actual["two_sided_p_value"], expected_p)
+        self.assertAlmostEqual(actual["confidence_interval"]["lower"], quantile(alpha / 2))
+        self.assertAlmostEqual(actual["confidence_interval"]["upper"], quantile(1 - alpha / 2))
 
     def test_rejects_bad_inputs(self):
         invalid = [
