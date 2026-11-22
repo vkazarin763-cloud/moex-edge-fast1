@@ -151,50 +151,79 @@ def generate_hypotheses(
             eligible_features.append(name)
             threshold_map[name] = thresholds
 
-    # Build a deterministic bounded candidate space. Single conditions first,
-    # then pairwise conjunctions; each condition is mirrored for both directions.
-    condition_sets: list[list[dict]] = []
-    conditions_by_feature = {
-        name: [
-            {"feature": name, "operator": operator, "threshold": item["value"],
-             "threshold_quantile": item["quantile"]}
-            for item in threshold_map[name]
-            for operator in (">=", "<=")
-        ]
-        for name in eligible_features
-    }
-    for name in eligible_features:
-        condition_sets.extend([[condition] for condition in conditions_by_feature[name]])
-    for left, right in combinations(eligible_features, 2):
-        for left_condition in conditions_by_feature[left]:
-            for right_condition in conditions_by_feature[right]:
-                condition_sets.append([left_condition, right_condition])
-
+    # Build a balanced deterministic candidate stream. The old nested order
+    # exhausted every threshold/operator on the first feature before reaching
+    # the next feature, so a small cap silently became a one-feature search.
+    # This stream rotates across features, quantiles, operators and directions.
     hypotheses = []
     seen_ids = set()
     truncated = False
-    for conditions in condition_sets:
-        for direction in ("LONG", "SHORT"):
-            payload = {
-                "direction": direction,
-                "conditions": conditions,
-                "combination": "ALL",
-                "version": 1,
-            }
-            hypothesis_id = _hypothesis_id(payload)
-            if hypothesis_id in seen_ids:
-                continue
-            if len(hypotheses) >= max_hypotheses:
-                truncated = True
+    for q_index in range(max((len(v) for v in threshold_map.values()), default=0)):
+        for operator in (">=", "<="):
+            for name in eligible_features:
+                if q_index >= len(threshold_map[name]):
+                    continue
+                item = threshold_map[name][q_index]
+                for direction in ("LONG", "SHORT"):
+                    payload = {
+                        "direction": direction,
+                        "conditions": [{
+                            "feature": name, "operator": operator,
+                            "threshold": item["value"],
+                            "threshold_quantile": item["quantile"],
+                        }],
+                        "combination": "ALL", "version": 2,
+                    }
+                    hypothesis_id = _hypothesis_id(payload)
+                    if hypothesis_id in seen_ids:
+                        continue
+                    if len(hypotheses) >= max_hypotheses:
+                        truncated = True
+                        break
+                    seen_ids.add(hypothesis_id)
+                    hypotheses.append({"id": hypothesis_id, **payload})
+                if truncated:
+                    break
+            if truncated:
                 break
-            seen_ids.add(hypothesis_id)
-            hypotheses.append({"id": hypothesis_id, **payload})
         if truncated:
             break
 
+    # Only spend remaining capacity on interactions after single-feature
+    # coverage. Pairwise conjunctions are then emitted in balanced feature
+    # order, rather than allowing one feature pair to monopolize the cap.
+    if not truncated:
+        pair_specs = []
+        for left, right in combinations(eligible_features, 2):
+            for left_item in threshold_map[left]:
+                for right_item in threshold_map[right]:
+                    for left_op, right_op in ((">=", "<="), ("<=", ">=")):
+                        pair_specs.append([
+                            {"feature": left, "operator": left_op,
+                             "threshold": left_item["value"],
+                             "threshold_quantile": left_item["quantile"]},
+                            {"feature": right, "operator": right_op,
+                             "threshold": right_item["value"],
+                             "threshold_quantile": right_item["quantile"]},
+                        ])
+        for conditions in pair_specs:
+            for direction in ("LONG", "SHORT"):
+                payload = {"direction": direction, "conditions": conditions,
+                           "combination": "ALL", "version": 2}
+                hypothesis_id = _hypothesis_id(payload)
+                if hypothesis_id in seen_ids:
+                    continue
+                if len(hypotheses) >= max_hypotheses:
+                    truncated = True
+                    break
+                seen_ids.add(hypothesis_id)
+                hypotheses.append({"id": hypothesis_id, **payload})
+            if truncated:
+                break
+
     return {
         "status": "GENERATED" if hypotheses else "NO_ELIGIBLE_FEATURES",
-        "generator": "quantile_rule_combinations_v1",
+        "generator": "balanced_quantile_rule_combinations_v2",
         "formation_indices": list(indices),
         "formation_observations": len(indices),
         "eligible_features": eligible_features,
