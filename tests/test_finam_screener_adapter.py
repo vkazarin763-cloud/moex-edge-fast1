@@ -95,6 +95,18 @@ class FinamScreenerAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(FinamScreenerDataError, "timezone"):
             normalize_screener_responses(make_responses(), retrieved_at="2026-11-22T12:00:00")
 
+    def test_missing_quote_price_fails_closed(self):
+        responses = make_responses()
+        responses[0]["data"][0]["quote_last"] = None
+        with self.assertRaisesRegex(FinamScreenerDataError, "must be numeric"):
+            normalize_screener_responses(responses, retrieved_at="2026-11-22T12:00:00Z")
+
+    def test_unconsumed_pagination_fails_closed(self):
+        responses = make_responses()
+        responses[0]["has_next"] = True
+        with self.assertRaisesRegex(FinamScreenerDataError, "another page"):
+            normalize_screener_responses(responses, retrieved_at="2026-11-22T12:00:00Z")
+
 
 if __name__ == "__main__":
     unittest.main()
