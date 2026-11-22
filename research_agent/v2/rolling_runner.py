@@ -173,3 +173,42 @@ def run_rolling_moex_d1_research(
             "strategy_approval": "NOT_APPROVED",
         },
     }
+
+
+def main() -> int:
+    import argparse
+    import json
+    from pathlib import Path
+    from .moex_dataset import load_pre_holdout_d1
+
+    parser = argparse.ArgumentParser(description="Run expanding-window autonomous MOEX D1 research")
+    parser.add_argument("--data", required=True)
+    parser.add_argument("--validation", required=True)
+    parser.add_argument("--output", default="moex_edge_v2_rolling_research.json")
+    parser.add_argument("--holdout-start", default="2026-11-20")
+    parser.add_argument("--max-hypotheses-per-symbol", type=int, default=10)
+    parser.add_argument("--resamples", type=int, default=199_999)
+    args = parser.parse_args()
+    dataset = load_pre_holdout_d1(
+        args.data, args.validation, holdout_start=args.holdout_start
+    )
+    result = run_rolling_moex_d1_research(
+        dataset,
+        max_hypotheses_per_symbol=args.max_hypotheses_per_symbol,
+        resamples=args.resamples,
+    )
+    Path(args.output).write_text(
+        json.dumps(result, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "status": result["status"],
+        "summary": result.get("summary"),
+        "folds": result.get("folds"),
+        "safety": result.get("safety"),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
