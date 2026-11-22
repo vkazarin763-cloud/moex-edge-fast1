@@ -118,7 +118,8 @@ jobs:
             --input research_report.json \
             --output ai_commentary.json
 
-      - name: Upload source report and AI commentary
+      - name: Upload source report and AI commentary (also when Groq fails)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: groq-research-report-${{ github.run_id }}
@@ -126,5 +127,5 @@ jobs:
             research_report.json
             strategy_registry.json
             ai_commentary.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
