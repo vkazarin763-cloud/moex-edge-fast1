@@ -76,3 +76,16 @@ This repository contains an hourly MOEX signal scanner and a Finam execution wor
 - A result can only be labelled `CANDIDATE_FOR_WALK_FORWARD` when its bootstrap interval is positive and its null is rejected after Holm correction. This is not approval or a live signal; a separate walk-forward stage and untouched final holdout are still required.
 - This is an orchestration layer, not yet an autonomous end-to-end market-data job. No real MOEX performance is claimed until validated real OHLCV data is supplied and processed.
 - Focused tests: `tests/test_research_agent_v2_pipeline.py`.
+
+
+### Real MOEX D1 data connection (pre-holdout only)
+
+- `research_agent/v2/moex_dataset.py` loads the matching multi-timeframe collector JSON and validation JSON. It fails closed unless the collector validation is PASS with zero issues and provenance timestamps match.
+- Only native `MOEX ISS TQBR history` D1 bars strictly before `2026-11-20` are returned. OHLCV fields on/after the holdout boundary are not parsed, used for features, generated hypotheses, or candidate selection.
+- `research_agent/v2/moex_runner.py` extracts causal OHLCV features, runs the v2 pipeline per symbol, then applies one global Holm correction across the complete generated family across all symbols.
+- The current integration baseline uses a predeclared candle-body reversal exit (LONG exits on a non-positive body; SHORT exits on a non-negative body). Exit discovery is not yet autonomous; this fixed exit is only an explicit baseline and is not optimized on validation data.
+- The current frozen collector artifact contains 44 symbols and native D1 history. The prospective holdout from 2026-11-20 remains sealed. Intraday H1 data is not used in this D1 discovery run.
+- `.github/workflows/research-agent-v2-moex-d1.yml` runs automatically after a successful read-only multi-timeframe collector workflow, downloads that exact run's artifact, and uploads only the research JSON report. It does not use `workflow_dispatch`, broker credentials, account endpoints, or order endpoints.
+- The default research assumptions are 70/30 chronological formation/validation, 20 generated hypotheses per symbol, 19,999 bootstrap resamples, 5-trade block length, 0.08% commission and 0.05% slippage per side. These are explicit research assumptions, not a verified broker tariff or measured execution slippage.
+- Results can only identify candidates for a later walk-forward stage. They do not constitute strategy approval, live signals, or evidence of profitability.
+- Focused tests: `tests/test_research_agent_v2_moex_dataset.py`.
