@@ -10,8 +10,8 @@ from .multiple_testing import holm_bonferroni
 def run_rolling_moex_d1_research(
     dataset: dict[str, Any],
     *,
-    window_starts: tuple[float, ...] = (0.50, 0.65, 0.80),
-    window_width: float = 0.15,
+    window_starts: tuple[float, ...] = (0.25, 0.60),
+    window_width: float = 0.35,
     max_hypotheses_per_symbol: int = 10,
     resamples: int = 199_999,
     **kwargs: Any,
