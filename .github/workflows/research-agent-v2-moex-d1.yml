@@ -1,6 +1,10 @@
 name: MOEX EDGE V2 — Immediate Research + Rolling Fresh Checks
 
 on:
+  # One-time real-data pilot from the already validated collector artifact.
+  # Ordinary pushes do not trigger this job.
+  push:
+    branches: [feat/autonomous-strategy-discovery-v1]
   workflow_run:
     workflows: ["MOEX EDGE Multi-Timeframe Candles (Read Only)"]
     types: [completed]
@@ -16,7 +20,7 @@ concurrency:
 
 jobs:
   research:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[run-moex-pilot]'))
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -30,21 +34,28 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Download the exact collector run artifact
+      - name: Download the exact validated collector artifact
         uses: actions/download-artifact@v4
         with:
           name: moex-edge-multi-timeframe-candles
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ github.event.workflow_run.id || 44933369191 }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run expanding-window autonomous discovery on available pre-holdout history
         run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            MAX_HYPOTHESES=3
+            RESAMPLES=49999
+          else
+            MAX_HYPOTHESES=10
+            RESAMPLES=199999
+          fi
           python -m research_agent.v2.rolling_runner \
             --data moex_edge_multi_timeframe_candles.json \
             --validation moex_edge_multi_timeframe_validation.json \
             --holdout-start 2026-11-20 \
-            --max-hypotheses-per-symbol 10 \
-            --resamples 199999 \
+            --max-hypotheses-per-symbol "${MAX_HYPOTHESES}" \
+            --resamples "${RESAMPLES}" \
             --output moex_edge_v2_rolling_research.json
 
       - name: Evaluate any fresh post-seal data without waiting for a fixed bar count
