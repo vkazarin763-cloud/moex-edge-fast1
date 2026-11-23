@@ -518,6 +518,10 @@ def call_provider(
     if provider == "openrouter":
         headers["HTTP-Referer"] = "https://github.com/vkazarin763-cloud/moex-edge-fast1"
         headers["X-OpenRouter-Title"] = "MOEX EDGE Research Team"
+    elif provider == "groq":
+        # Cloudflare may reject the default urllib client signature (1010).
+        # Identify this application honestly; do not impersonate a browser.
+        headers["User-Agent"] = "MOEX-EDGE-Research/1.0 (+https://github.com/vkazarin763-cloud/moex-edge-fast1)"
     request = urllib.request.Request(
         providers[provider],
         data=json.dumps(body).encode("utf-8"),
