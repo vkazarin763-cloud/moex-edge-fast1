@@ -27,7 +27,29 @@ TICKERS = [
     "VKCO", "VTBR", "X5", "YDEX",
 ]
 NATIVE = {"M1": 1, "H1": 60, "D1": 24, "W1": 7}
-MOSCOW = None  # MOEX ISS candle timestamps are naive exchange-local wall time.
+CONFIGS = {
+    "A": {"D1", "H1"},
+    "B": {"W1", "D1", "H1"},
+    "C": {"D1", "H4", "H1"},
+    "D": {"W1", "D1", "H4", "H1"},
+    "E": {"W1", "D1", "H4", "H1", "M15"},
+}
+
+
+def resolve_native_frames(configs: list[str]) -> set[str]:
+    """Return only native MOEX intervals needed for selected configurations."""
+    selected = {item.strip().upper() for item in configs if item.strip()}
+    unknown = selected - CONFIGS.keys()
+    if unknown:
+        raise ValueError(f"Unknown configurations: {sorted(unknown)}")
+    if not selected:
+        raise ValueError("At least one configuration must be selected")
+    requested = set().union(*(CONFIGS[item] for item in selected))
+    # H4 is built from H1; M15 is built from M1.
+    native = requested - {"H4", "M15"}
+    if "M15" in requested:
+        native.add("M1")
+    return native
 
 
 def _write_candles(path: Path, rows: list[Candle]) -> None:
@@ -140,16 +162,19 @@ def audit_rows(rows: list[Candle], timeframe: str) -> dict:
     }
 
 
-def run(date_from: str, date_till: str, output: Path, tickers: list[str]) -> dict:
+def run(date_from: str, date_till: str, output: Path, tickers: list[str], configs: list[str] | None = None) -> dict:
     date.fromisoformat(date_from)
     date.fromisoformat(date_till)
     if date_from > date_till:
         raise ValueError("date_from must be <= date_till")
+    configs = configs or ["A", "B", "C", "D"]
+    native_frames = resolve_native_frames(configs)
     output.mkdir(parents=True, exist_ok=True)
     report = {
         "source": "public MOEX ISS TQBR candles; delayed public market data",
         "date_from": date_from, "date_till": date_till,
-        "universe": tickers, "native_intervals": NATIVE,
+        "universe": tickers, "selected_configurations": sorted({x.upper() for x in configs}),
+        "required_native_intervals": sorted(native_frames), "native_intervals": NATIVE,
         "derived_intervals": {"M15": "M1", "H4": "H1"},
         "aggregation": {
             "timezone": "Europe/Moscow (MOEX ISS naive timestamps)",
@@ -163,6 +188,9 @@ def run(date_from: str, date_till: str, output: Path, tickers: list[str]) -> dic
         symbol = {}
         native_rows = {}
         for frame, interval in NATIVE.items():
+            if frame not in native_frames:
+                symbol[frame] = {"status": "NOT_REQUESTED", "bars": 0}
+                continue
             try:
                 rows = fetch_candles(ticker, date_from, date_till, interval=interval)
                 native_rows[frame] = rows
@@ -179,7 +207,7 @@ def run(date_from: str, date_till: str, output: Path, tickers: list[str]) -> dic
                 _write_candles(output / f"{ticker}_M15.csv", rows)
                 report["totals"]["M15"] += len(rows)
         else:
-            symbol["M15"] = {"status": "BLOCKED_NO_M1", "bars": 0}
+            symbol["M15"] = {"status": "NOT_REQUESTED" if "M1" not in native_frames else "BLOCKED_NO_M1", "bars": 0}
         if "H1" in native_rows:
             rows = aggregate_h4(native_rows["H1"])
             symbol["H4"] = audit_rows(rows, "H4")
@@ -223,12 +251,17 @@ def main() -> None:
     parser.add_argument("--till-date", default=date.today().isoformat())
     parser.add_argument("--output", default="artifacts/moex_five_timeframe_history")
     parser.add_argument("--tickers", default=",".join(TICKERS))
+    parser.add_argument("--configs", default="A,B,C,D",
+                        help="Comma-separated configurations to audit: A,B,C,D,E")
     args = parser.parse_args()
     report = run(args.from_date, args.till_date, Path(args.output),
-                 [x.strip().upper() for x in args.tickers.split(",") if x.strip()])
+                 [x.strip().upper() for x in args.tickers.split(",") if x.strip()],
+                 [x.strip().upper() for x in args.configs.split(",") if x.strip()])
     print(json.dumps({
         "coverage": report["coverage"], "totals": report["totals"],
         "all_44_have_all_frames": report["all_44_have_all_frames"],
+        "selected_configurations": report["selected_configurations"],
+        "required_native_intervals": report["required_native_intervals"],
     }, ensure_ascii=False))
 
 
