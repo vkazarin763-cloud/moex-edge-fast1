@@ -1,5 +1,5 @@
 import unittest
-from research_agent.external_strategy_scout import discover, _market_evidence, _candidate_type
+from research_agent.external_strategy_scout import discover, _market_evidence, _candidate_type, _base_record
 
 class ScoutTests(unittest.TestCase):
     def test_market_tags_come_from_result_evidence_not_query(self):
@@ -7,6 +7,10 @@ class ScoutTests(unittest.TestCase):
         self.assertEqual(_market_evidence("A stock screener and equity strategy"), ["equities"])
         self.assertEqual(_market_evidence("Generic backtesting toolkit"), [])
         self.assertEqual(_market_evidence("ETH perpetual futures options"), ["futures", "options"])
+
+    def test_repository_topics_contribute_market_evidence(self):
+        item = _base_record("github_repository", "systematic trading", "https://github.com/demo/x", topics=["options", "futures"])
+        self.assertEqual(item["market_tags"], ["futures", "options"])
 
     def test_infrastructure_is_not_mislabeled_as_strategy(self):
         self.assertEqual(_candidate_type("Backtesting engine for systematic research", "github_repository"), "INFRASTRUCTURE_OR_EDUCATION")
