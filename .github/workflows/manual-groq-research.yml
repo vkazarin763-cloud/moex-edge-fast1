@@ -12,10 +12,15 @@ on:
         required: false
         type: string
       model:
-        description: "OpenRouter model ID"
+        description: "Primary OpenRouter model ID"
         required: false
         type: string
         default: "openrouter/free"
+      fallback_model:
+        description: "Free NVIDIA backup model on OpenRouter"
+        required: false
+        type: string
+        default: "nvidia/nemotron-3-ultra-550b-a55b:free"
       tickers:
         description: "Comma-separated MOEX tickers for the small pilot"
         required: true
@@ -105,25 +110,22 @@ jobs:
           print(f"Validated source report: {len(report['results'])} instruments; audit={audit.get('status')}")
           PY
 
-      - name: Check OpenRouter key and optional Groq fallback (without displaying secrets)
+      - name: Check OpenRouter key (without displaying secrets)
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python - <<'PY'
           import os
           if not os.environ.get("OPENROUTER_API_KEY", "").strip():
               raise SystemExit("OPENROUTER_API_KEY is missing from repository Actions secrets.")
-          print("OPENROUTER_API_KEY is configured.")
-          print("GROQ_API_KEY fallback is configured." if os.environ.get("GROQ_API_KEY", "").strip() else "No Groq fallback configured.")
+          print("OpenRouter API key is configured.")
           PY
 
       - name: Run four-agent research commentary
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENROUTER_MODEL: ${{ inputs.model }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: "openai/gpt-oss-20b"
+          OPENROUTER_BACKUP_MODEL: ${{ inputs.fallback_model }}
           AI_PROVIDER: "openrouter"
         run: |
           python -m research_agent.ai_team --input research_report.json --output ai_commentary.json
