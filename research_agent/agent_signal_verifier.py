@@ -140,7 +140,7 @@ def verify_agent_proposals(
             "symbol": proposal["symbol"],
             "direction": proposal["direction"],
             "strategy": proposal["strategy"],
-            "d1_signal_timestamp": proposal["d1_bar_end_utc"],
+            "d1_bar_end_utc": proposal["d1_bar_end_utc"],
             "status": status,
             "reason": reason,
             "verified_signal": actual if actual is not None else None,
