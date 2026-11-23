@@ -1,0 +1,98 @@
+name: Groq Connectivity Smoke Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  groq-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check Groq secret is configured
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -z "$GROQ_API_KEY" ]; then
+            echo "::error::GROQ_API_KEY secret is missing or empty"
+            exit 1
+          fi
+          echo "GROQ_API_KEY is configured (value hidden)."
+
+      - name: Check model catalog
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          set +x
+          code=$(curl --silent --show-error --output /tmp/groq-models.json --write-out "%{http_code}" \
+            --max-time 30 \
+            --header "Authorization: Bearer $GROQ_API_KEY" \
+            --header "User-Agent: MOEX-EDGE-Research/1.0 (+https://github.com/vkazarin763-cloud/moex-edge-fast1)" \
+            https://api.groq.com/openai/v1/models)
+          echo "Groq models endpoint HTTP status: $code"
+          if [ "$code" != "200" ]; then
+            echo "Model catalog request failed; response (redacted):"
+            python - <<'PY'
+          import json
+          try:
+              d=json.load(open("/tmp/groq-models.json"))
+              print(json.dumps(d.get("error", {"message":"No structured error returned"}), ensure_ascii=False)[:1200])
+          except Exception:
+              print("Non-JSON error response")
+          PY
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/groq-models.json"))
+          ids=[m.get("id","") for m in d.get("data",[])]
+          target="openai/gpt-oss-20b"
+          print("Target model listed:", target in ids)
+          if target not in ids:
+              print("Available matching model IDs:", [x for x in ids if "gpt-oss" in x][:20])
+              raise SystemExit("Configured Groq model is not listed")
+          PY
+
+      - name: Send one minimal completion
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          set +x
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          payload = {
+              "model": "openai/gpt-oss-20b",
+              "messages": [{"role": "user", "content": "Reply with exactly: GROQ_OK"}],
+              "max_completion_tokens": 32,
+              "temperature": 0
+          }
+          req = urllib.request.Request(
+              "https://api.groq.com/openai/v1/chat/completions",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "Authorization": "Bearer " + os.environ["GROQ_API_KEY"],
+                  "Content-Type": "application/json",
+                  "User-Agent": "MOEX-EDGE-Research/1.0 (+https://github.com/vkazarin763-cloud/moex-edge-fast1)"
+              },
+              method="POST"
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  print("Groq completion HTTP status:", response.status)
+                  result=json.loads(response.read().decode())
+          except urllib.error.HTTPError as e:
+              print("Groq completion HTTP status:", e.code)
+              print("Groq error response:", e.read().decode(errors="replace")[:1500])
+              raise SystemExit(1)
+          choice=result.get("choices",[{}])[0]
+          message=choice.get("message",{})
+          content=message.get("content")
+          if not content:
+              print("Groq returned no message content; finish_reason:", choice.get("finish_reason"))
+              raise SystemExit(1)
+          print("Groq model:", result.get("model"))
+          print("Groq response:", content[:200])
+          print("Groq smoke test: PASS")
+          PY
