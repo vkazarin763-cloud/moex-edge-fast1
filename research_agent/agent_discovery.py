@@ -169,12 +169,18 @@ def call_groq_discovery(
         ],
         "temperature": 0.1,
         "max_completion_tokens": 1400,
+        "reasoning_format": "hidden",
+        "reasoning_effort": "low",
         "response_format": OUTPUT_SCHEMA,
     }
     request = urllib.request.Request(
         API_URL,
         data=json.dumps(body).encode("utf-8"),
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "User-Agent": "MOEX-EDGE-Research/1.0 (+https://github.com/vkazarin763-cloud/moex-edge-fast1)",
+        },
         method="POST",
     )
     for attempt in range(3):
