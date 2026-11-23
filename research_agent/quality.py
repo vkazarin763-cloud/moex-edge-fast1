@@ -8,6 +8,79 @@ from .core import Candle, validate_candles
 from .moex_iss import HistoryRecord
 
 
+# Official MOEX calendar explanations for the exact gaps observed in the
+# 2023-11-20..2026-11-20 research sample. This is a targeted review of these
+# candidates, not a complete exchange-wide calendar certification.
+MOEX_CALENDAR_GAP_REVIEWS: dict[tuple[str, str], dict[str, Any]] = {
+    ("2023-12-29", "2024-01-03"): {
+        "status": "OFFICIAL_NON_TRADING_DATES_CONFIRMED",
+        "non_trading_dates": ["2024-01-01", "2024-01-02"],
+        "additional_session_dates": [],
+        "mapped_to_trade_date": None,
+        "sources": ["https://www.moex.com/n64121"],
+    },
+    ("2024-02-22", "2024-02-26"): {
+        "status": "OFFICIAL_NON_TRADING_DATES_CONFIRMED",
+        "non_trading_dates": ["2024-02-23"],
+        "additional_session_dates": [],
+        "mapped_to_trade_date": None,
+        "sources": ["https://www.moex.com/n64121"],
+    },
+    ("2024-03-07", "2024-03-11"): {
+        "status": "OFFICIAL_NON_TRADING_DATES_CONFIRMED",
+        "non_trading_dates": ["2024-03-08"],
+        "additional_session_dates": [],
+        "mapped_to_trade_date": None,
+        "sources": ["https://www.moex.com/n64121"],
+    },
+    ("2024-12-30", "2025-01-03"): {
+        "status": "OFFICIAL_NON_TRADING_DATES_CONFIRMED",
+        "non_trading_dates": ["2024-12-31", "2025-01-01", "2025-01-02"],
+        "additional_session_dates": [],
+        "mapped_to_trade_date": None,
+        "sources": ["https://www.moex.com/n64121", "https://www.moex.com/n73701"],
+    },
+    ("2025-05-08", "2025-05-12"): {
+        "status": "HOLIDAY_AND_WEEKEND_SESSIONS_CONFIRMED",
+        "non_trading_dates": ["2025-05-09"],
+        "additional_session_dates": ["2025-05-10", "2025-05-11"],
+        "mapped_to_trade_date": "2025-05-12",
+        "sources": ["https://www.moex.com/n73701", "https://www.moex.com/n89969"],
+    },
+    ("2025-12-30", "2026-01-05"): {
+        "status": "OFFICIAL_NON_TRADING_DATES_CONFIRMED",
+        "non_trading_dates": [
+            "2025-12-31", "2026-01-01", "2026-01-02",
+            "2026-01-03", "2026-01-04",
+        ],
+        "additional_session_dates": [],
+        "mapped_to_trade_date": None,
+        "sources": ["https://www.moex.com/n73701", "https://www.moex.com/n94172"],
+    },
+    ("2026-02-20", "2026-02-24"): {
+        "status": "ADDITIONAL_SESSIONS_CARRIED_TO_NEXT_TRADEDATE",
+        "non_trading_dates": [],
+        "additional_session_dates": ["2026-02-21", "2026-02-22", "2026-02-23"],
+        "mapped_to_trade_date": "2026-02-24",
+        "sources": ["https://www.moex.com/n95564", "https://www.moex.com/n96571"],
+    },
+    ("2026-04-30", "2026-05-04"): {
+        "status": "ADDITIONAL_SESSIONS_CARRIED_TO_NEXT_TRADEDATE",
+        "non_trading_dates": [],
+        "additional_session_dates": ["2026-05-01", "2026-05-02", "2026-05-03"],
+        "mapped_to_trade_date": "2026-05-04",
+        "sources": ["https://www.moex.com/n95564", "https://www.moex.com/n96571"],
+    },
+    ("2026-06-11", "2026-06-15"): {
+        "status": "ADDITIONAL_SESSIONS_CARRIED_TO_NEXT_TRADEDATE",
+        "non_trading_dates": [],
+        "additional_session_dates": ["2026-06-12", "2026-06-13", "2026-06-14"],
+        "mapped_to_trade_date": "2026-06-15",
+        "sources": ["https://www.moex.com/n95564", "https://www.moex.com/n96571"],
+    },
+}
+
+
 def candle_quality_report(
     candles: list[Candle],
     requested_from: str | None = None,
@@ -34,12 +107,19 @@ def candle_quality_report(
                 for ordinal in range(previous.timestamp.date().toordinal() + 1,
                                      current.timestamp.date().toordinal())
             )
+            gap_from = previous.timestamp.date().isoformat()
+            gap_to = current.timestamp.date().isoformat()
+            review = MOEX_CALENDAR_GAP_REVIEWS.get((gap_from, gap_to))
             gaps.append({
-                "from": previous.timestamp.date().isoformat(),
-                "to": current.timestamp.date().isoformat(),
+                "from": gap_from,
+                "to": gap_to,
                 "calendar_days_between": delta - 1,
                 "weekdays_between_unverified": weekdays,
-                "classification": "UNVERIFIED_CALENDAR_GAP",
+                "classification": (
+                    review["status"] if review
+                    else "UNVERIFIED_CALENDAR_GAP"
+                ),
+                "calendar_review": dict(review) if review else None,
             })
 
     requested_start = date.fromisoformat(requested_from) if requested_from else None
