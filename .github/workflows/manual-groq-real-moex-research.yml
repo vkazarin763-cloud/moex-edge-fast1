@@ -128,16 +128,20 @@ jobs:
 
           result = json.loads(Path("ai_commentary.json").read_text(encoding="utf-8"))
           expected = {"market_analyst", "strategy_researcher", "skeptical_reviewer"}
-          if result.get("status") != "AI_COMMENTARY_ONLY" or result.get("provider") != "groq_api":
+          if result.get("status") != "AI_COMMENTARY_EVIDENCE_CHECKED" or result.get("provider") != "groq_api":
               raise SystemExit("Unexpected AI team status or provider.")
           if result.get("calls") != 4 or set(result.get("specialists", {})) != expected:
               raise SystemExit("Expected three specialist responses and one coordinator response.")
-          if not all(str(value).strip() for value in result["specialists"].values()):
-              raise SystemExit("One or more specialists returned empty commentary.")
-          if not str(result.get("coordinator", "")).strip():
-              raise SystemExit("Coordinator returned empty synthesis.")
+          if not all(value.get("status") == "EVIDENCE_REFERENCES_VALIDATED" for value in result["specialists"].values()):
+              raise SystemExit("One or more specialist responses failed evidence validation.")
+          if result.get("coordinator", {}).get("status") != "EVIDENCE_REFERENCES_VALIDATED":
+              raise SystemExit("Coordinator response failed evidence validation.")
+          check = result.get("fact_check", {})
+          if check.get("status") != "PASS" or check.get("numeric_claims_in_free_text") != 0:
+              raise SystemExit("AI commentary did not pass deterministic evidence checks.")
           print("PASS: three specialists and coordinator completed four Groq calls.")
-          print("PASS: quantitative source is the validated MOEX ISS report; AI output is commentary only.")
+          print(f"PASS: {check.get('validated_evidence_references')} evidence references match exact source-report values.")
+          print("PASS: free-text hypotheses contain no numeric claims and remain explicitly unverified.")
           PY
 
       - name: Upload deterministic report, registry and AI commentary
