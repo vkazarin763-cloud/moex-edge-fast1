@@ -2,6 +2,7 @@
 import json
 import unittest
 
+from research_agent.evidence_guard import EVIDENCE_RESPONSE_FORMAT, validate_commentary
 from research_agent.ai_team import (
     DEFAULT_MODEL,
     MAX_INPUT_CHARS,
@@ -152,6 +153,7 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["body"]["max_completion_tokens"], 700)
         self.assertIs(seen["body"]["include_reasoning"], False)
         self.assertEqual(seen["body"]["reasoning_effort"], "low")
+        self.assertEqual(seen["body"]["response_format"], EVIDENCE_RESPONSE_FORMAT)
 
 
     def test_http_error_exposes_safe_provider_message_without_api_key(self):
@@ -208,7 +210,13 @@ class AITeamTests(unittest.TestCase):
 
         def fake_caller(prompt, *, api_key, model):
             calls.append((prompt, model))
-            return f"note-{len(calls)}"
+            return json.dumps({
+                "hypotheses": [{
+                    "hypothesis": "A qualitative possibility worth checking",
+                    "evidence": [{"path": "evidence.status", "value_json": "\\"UNKNOWN\\""}],
+                }],
+                "questions": ["What additional evidence is needed?"],
+            })
 
         result = run_team(
             {"ticker": "SBER", "evidence": {"status": "UNKNOWN"}},
@@ -217,11 +225,71 @@ class AITeamTests(unittest.TestCase):
         )
         self.assertEqual(len(calls), 4)
         self.assertEqual(result["calls"], 4)
-        self.assertEqual(result["status"], "AI_COMMENTARY_ONLY")
+        self.assertEqual(result["status"], "AI_COMMENTARY_EVIDENCE_CHECKED")
         self.assertEqual(result["provider"], "groq_api")
-        self.assertEqual(result["coordinator"], "note-4")
+        self.assertEqual(result["coordinator"]["status"], "EVIDENCE_REFERENCES_VALIDATED")
+        self.assertEqual(result["fact_check"]["status"], "PASS")
+        self.assertEqual(result["fact_check"]["validated_evidence_references"], 4)
         self.assertEqual(result["model"], DEFAULT_MODEL)
         self.assertIn("no broker", " ".join(result["limitations"]).lower())
+
+
+    def test_evidence_guard_accepts_exact_source_value(self):
+        source = {"cross_sectional": {"SHORT": {"trades": 79}}}
+        response = json.dumps({
+            "hypotheses": [{
+                "hypothesis": "A possible difference between the two directions deserves review",
+                "evidence": [{
+                    "path": "cross_sectional.SHORT.trades",
+                    "value_json": "79",
+                }],
+            }],
+            "questions": ["Could the underlying trades be inspected?"],
+        })
+        checked = validate_commentary(response, source)
+        self.assertEqual(checked["status"], "EVIDENCE_REFERENCES_VALIDATED")
+        self.assertEqual(checked["evidence_reference_count"], 1)
+        self.assertEqual(checked["hypotheses"][0]["evidence"][0]["value"], 79)
+
+    def test_evidence_guard_rejects_fabricated_or_mismatched_value(self):
+        source = {"audit": {"walk_forward_folds_checked": 20}}
+        response = json.dumps({
+            "hypotheses": [{
+                "hypothesis": "The sample structure deserves review",
+                "evidence": [{
+                    "path": "audit.walk_forward_folds_checked",
+                    "value_json": "20 per ticker",
+                }],
+            }],
+            "questions": [],
+        })
+        with self.assertRaisesRegex(ValueError, "value mismatch"):
+            validate_commentary(response, source)
+
+    def test_evidence_guard_rejects_numeric_claims_in_free_text(self):
+        source = {"audit": {"walk_forward_folds_checked": 20}}
+        response = json.dumps({
+            "hypotheses": [{
+                "hypothesis": "There are 20 folds per ticker",
+                "evidence": [{
+                    "path": "audit.walk_forward_folds_checked",
+                    "value_json": "20",
+                }],
+            }],
+            "questions": [],
+        })
+        with self.assertRaisesRegex(ValueError, "Numeric claims"):
+            validate_commentary(response, source)
+
+    def test_evidence_guard_rejects_missing_evidence_and_bad_json(self):
+        with self.assertRaisesRegex(ValueError, "not valid JSON"):
+            validate_commentary("not json", {})
+        response = json.dumps({
+            "hypotheses": [{"hypothesis": "An unsupported assertion", "evidence": []}],
+            "questions": [],
+        })
+        with self.assertRaisesRegex(ValueError, "at least one"):
+            validate_commentary(response, {})
 
     def test_empty_key_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "GROQ_API_KEY"):
