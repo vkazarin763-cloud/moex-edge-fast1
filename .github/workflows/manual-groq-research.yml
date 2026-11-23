@@ -102,6 +102,17 @@ jobs:
           report = json.loads(p.read_text(encoding="utf-8"))
           if not isinstance(report, dict) or not isinstance(report.get("results"), dict):
               raise SystemExit("Unexpected MOEX research report structure.")
+          registry_path = Path("strategy_registry.json")
+          if not registry_path.is_file():
+              raise SystemExit("Direction-specific strategy_registry.json was not created.")
+          registry = json.loads(registry_path.read_text(encoding="utf-8"))
+          if not isinstance(registry, dict) or not isinstance(registry.get("strategies"), list):
+              raise SystemExit("Unexpected strategy registry structure.")
+          if registry.get("source_report_generated_at_utc") != report.get("generated_at_utc"):
+              raise SystemExit("Strategy registry does not match the generated research report.")
+          if registry.get("source_report_date_till") != report.get("date_till"):
+              raise SystemExit("Strategy registry date does not match the research report.")
+          print(f"Validated direction-specific registry: {len(registry['strategies'])} candidates; summary={registry.get('summary')}")
           audit = report.get("independent_validation", {})
           if audit.get("status") not in {"INDEPENDENT_VALIDATION_PASS", "INDEPENDENT_VALIDATION_INCOMPLETE"}:
               raise SystemExit("Independent structural validation did not pass or return warning-only INCOMPLETE.")
@@ -128,7 +139,7 @@ jobs:
           OPENROUTER_BACKUP_MODEL: ${{ inputs.fallback_model }}
           AI_PROVIDER: "openrouter"
         run: |
-          python -m research_agent.ai_team --input research_report.json --output ai_commentary.json
+          python -m research_agent.ai_team --input research_report.json --registry strategy_registry.json --output ai_commentary.json
 
       - name: Upload source report and AI commentary (also when AI provider fails)
         if: always()
