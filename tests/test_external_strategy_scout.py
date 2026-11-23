@@ -28,7 +28,7 @@ class ScoutTests(unittest.TestCase):
                 {"title": ["Oil futures trading strategy"], "URL": "https://doi.org/10.0000/demo", "DOI": "10.0000/demo", "author": [{"given": "A", "family": "Author"}], "published": {"date-parts": [[2024]]}}
             ]}}
         report = discover(limit=2, fetcher=fake_fetch, pause_seconds=0)
-        self.assertEqual(report["candidate_count"], 2)
+        self.assertEqual(report["candidate_count"], 1)
         self.assertEqual(len(calls), 2)
         self.assertEqual(report['markets'], ['equities'])
         self.assertIn('in%3Areadme', calls[0])
@@ -37,7 +37,7 @@ class ScoutTests(unittest.TestCase):
         self.assertEqual(report["mode"], "METADATA_ONLY_NO_MARKET_DATA_NO_SIGNALS_NO_BACKTEST")
         by_title = {x["title"]: x for x in report["candidates"]}
         self.assertEqual(by_title["demo/equity-strategy"]["market_tags"], ["equities"])
-        self.assertEqual(by_title["Oil futures trading strategy"]["market_tags"], ["futures"])
+        self.assertNotIn("Oil futures trading strategy", by_title)
         self.assertEqual(by_title["demo/equity-strategy"]["query_market"], "equities")
         self.assertIsNotNone(by_title["demo/equity-strategy"]["candidate_id"])
         self.assertTrue(all(x["evidence_status"] == "SOURCE_LEAD_ONLY_RULES_NOT_REVIEWED" for x in report["candidates"]))
