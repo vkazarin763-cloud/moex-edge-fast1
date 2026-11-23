@@ -1,0 +1,92 @@
+name: Manual Groq Discovery Compatibility Probe (Synthetic Only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: groq-discovery-compatibility-probe
+  cancel-in-progress: false
+
+jobs:
+  compatibility-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Probe discovery request with known-good transport options
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from research_agent.agent_discovery import call_groq_discovery
+
+          key = os.environ.get("GROQ_API_KEY", "").strip()
+          if not key:
+              raise SystemExit("GROQ_API_KEY is missing from repository secrets")
+
+          def compatible_opener(request, *, timeout):
+              # Preserve discovery's own prompt, model, token budget and JSON schema.
+              # Add only transport/request options used by the known-good ai_team path.
+              body = json.loads(request.data.decode("utf-8"))
+              body["reasoning_format"] = "hidden"
+              body["reasoning_effort"] = "low"
+              request.data = json.dumps(body).encode("utf-8")
+              request.add_header(
+                  "User-Agent",
+                  "MOEX-EDGE-Research/1.0 (+https://github.com/vkazarin763-cloud/moex-edge-fast1)",
+              )
+              return urllib.request.urlopen(request, timeout=timeout)
+
+          prompt = (
+              "Synthetic provider compatibility probe only. No market research. "
+              "Return exactly this JSON object and no other text: "
+              '{"proposals":[],"strategy_hypotheses":[]}.'
+          )
+
+          result = call_groq_discovery(
+              prompt,
+              api_key=key,
+              model="openai/gpt-oss-20b",
+              opener=compatible_opener,
+          )
+
+          if set(result) != {"proposals", "strategy_hypotheses"}:
+              raise SystemExit("Unexpected discovery response schema")
+          if result != {"proposals": [], "strategy_hypotheses": []}:
+              raise SystemExit("Synthetic probe returned non-empty arrays")
+
+          print(json.dumps({
+              "status": "PASS",
+              "provider": "groq",
+              "model": "openai/gpt-oss-20b",
+              "request_profile": "discovery schema + known-good reasoning and User-Agent options",
+              "real_groq_requests": 1,
+              "market_data_used": False,
+              "signals_generated": False,
+              "broker_accessed": False,
+          }, ensure_ascii=False))
+          PY
+
+      - name: Record safety summary
+        if: always()
+        run: |
+          {
+            echo "## Groq discovery compatibility probe"
+            echo "- One live Groq request with synthetic prompt only"
+            echo "- Discovery JSON schema retained"
+            echo "- Known-good reasoning options and User-Agent added for comparison"
+            echo "- No market data, signals, broker accounts, or orders accessed"
+          } >> "$GITHUB_STEP_SUMMARY"
