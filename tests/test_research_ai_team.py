@@ -151,7 +151,7 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["body"]["model"], DEFAULT_MODEL)
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
         self.assertEqual(seen["body"]["max_completion_tokens"], 700)
-        self.assertIs(seen["body"]["include_reasoning"], False)
+        self.assertEqual(seen["body"]["reasoning_format"], "hidden")
         self.assertEqual(seen["body"]["reasoning_effort"], "low")
         self.assertEqual(seen["body"]["response_format"], EVIDENCE_RESPONSE_FORMAT)
 
