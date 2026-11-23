@@ -98,6 +98,8 @@ def verify_agent_proposals(
         raise AgentContractError("Strategy registry is not a valid development-only registry")
 
     universe = deterministic_scan.get("universe") or []
+    if not isinstance(universe, list) or any(not isinstance(item, str) for item in universe):
+        raise AgentContractError("Deterministic scan universe must be a list of ticker strings")
     validate_agent_proposals(agent_report, universe)
     reproduced = {
         (row.get("symbol"), row.get("direction"), row.get("strategy"), row.get("d1_bar_end_utc")): row
