@@ -166,6 +166,7 @@ def audit_tqbr_history(
     history_records: list[HistoryRecord],
     requested_from: str,
     requested_till: str,
+    session_mapping_diagnostics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Cross-check candle dates only against explicit per-security TQBR rows."""
     start = date.fromisoformat(requested_from)
@@ -204,9 +205,24 @@ def audit_tqbr_history(
         elif record.num_trades == 0 and has_candle:
             candle_with_zero_trades.append(trade_date.isoformat())
 
+    weekend_dates_without_same_date_history = {
+        row.timestamp.date() for row in validate_candles(candles)
+        if row.timestamp.weekday() >= 5 and row.timestamp.date() not in records_by_date
+    }
+    weekend_mapping_verified = bool(
+        isinstance(session_mapping_diagnostics, dict)
+        and isinstance(session_mapping_diagnostics.get("raw_weekend_candles"), int)
+        and session_mapping_diagnostics.get("raw_weekend_candles_mapped")
+            == session_mapping_diagnostics.get("raw_weekend_candles")
+        and session_mapping_diagnostics.get("raw_weekend_candles_unmapped") == 0
+    )
+    expected_mapped_weekend_dates = (
+        weekend_dates_without_same_date_history if weekend_mapping_verified else set()
+    )
     candles_without_history = sorted(
         trade_date.isoformat() for trade_date in candle_dates
         if trade_date not in records_by_date
+        and trade_date not in expected_mapped_weekend_dates
     )
     if not records_by_date:
         status = "NO_HISTORY_RECORDS"
@@ -230,10 +246,15 @@ def audit_tqbr_history(
         "candles_present_on_zero_trade_dates": candle_with_zero_trades,
         "history_rows_unknown_trade_count": unknown_trade_count,
         "candles_without_history_record": candles_without_history,
+        "mapped_weekend_fragments_without_same_date_history": len(expected_mapped_weekend_dates),
+        "weekend_fragments_excluded_from_same_date_crosscheck": weekend_mapping_verified,
         "coverage_scope": (
             "Only dates explicitly returned for this security on TQBR are checked. "
-            "No row is not proof of a holiday, suspension, listing boundary, or "
-            "exchange-wide non-trading day."
+            "Weekend calendar-date fragments are excluded from same-date mismatch "
+            "classification only when the independent session mapper confirms every "
+            "weekend fragment is mapped to a positive-trade TQBR date with zero unmapped "
+            "raw candles. This does not independently verify the exchange-wide calendar. "
+            "No row is not proof of a holiday, suspension, or listing boundary."
         ),
         "exchange_calendar_verified": False,
     }
