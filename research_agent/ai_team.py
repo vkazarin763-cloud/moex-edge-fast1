@@ -389,6 +389,33 @@ def _compact_report(report: Any, registry: Any = None) -> str:
                 compact["independent_validation"]["warnings_count"] = len(audit["warnings"])
             encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded) > MAX_INPUT_CHARS:
+        # Detailed reconciliation examples are already retained in the source artifact.
+        # For AI commentary, keep the mismatch counts/field counts and preserve the
+        # explicit calendar booleans, but omit repeated per-ticker example payloads.
+        for row in compact_results.values():
+            if not isinstance(row, dict):
+                continue
+            mapping = row.get("m")
+            if isinstance(mapping, dict):
+                mapping.pop("mismatch_examples", None)
+            quality = row.get("q")
+            if isinstance(quality, dict):
+                caveat = quality.get("calendar_caveat")
+                if isinstance(caveat, str) and len(caveat) > 180:
+                    quality["calendar_caveat"] = caveat[:177] + "..."
+        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(encoded) > MAX_INPUT_CHARS:
+        # Keep the complete directional registry and decision metrics. Reason text
+        # is secondary to the explicit status/reason codes and is capped per reason.
+        if isinstance(compact_registry, dict):
+            reasons = compact_registry.get("reason_codes")
+            if isinstance(reasons, dict):
+                compact_registry["reason_codes"] = {
+                    code: (reason[:160] + "..." if isinstance(reason, str) and len(reason) > 160 else reason)
+                    for code, reason in reasons.items()
+                }
+        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(encoded) > MAX_INPUT_CHARS:
         raise ValueError(
             f"Decision-critical research evidence is {len(encoded)} characters; "
             f"limit is {MAX_INPUT_CHARS}. Core registry and ticker evidence were not truncated."
