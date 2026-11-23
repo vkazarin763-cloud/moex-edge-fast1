@@ -1,0 +1,167 @@
+name: MOEX EDGE Finam Hourly Signals (Read Only)
+
+on:
+  schedule:
+    # MOEX equities trading day in UTC (MSK 09:50-23:50).
+    - cron: "0 7-21 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: moex-edge-finam-hourly-fast-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime dependencies
+        run: pip install pandas requests numpy
+
+      - name: Verify Finam credential is configured
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+        run: |
+          if [ -z "${FINAM_API_TOKEN:-}" ]; then
+            echo "::error::FINAM_API_TOKEN is not configured."
+            exit 1
+          fi
+          echo "Finam API credential is configured; value is masked."
+
+      - name: Resolve latest successful research registry
+        id: research
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "research-agent-run.yml",
+              branch: "main",
+              status: "completed",
+              per_page: 20
+            });
+            const run = response.data.workflow_runs.find(
+              item => item.conclusion === "success"
+            );
+            if (!run) {
+              core.setFailed("No successful research run is available; refusing to scan without a registry.");
+              return;
+            }
+            core.setOutput("run_id", String(run.id));
+            core.info(`Using research run ${run.id}, completed ${run.updated_at}`);
+
+      - name: Download latest research report and strategy registry
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-research-report
+          path: research-data
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.research.outputs.run_id }}
+
+      - name: Collect closed D1 and H1 candles for 44 symbols
+        id: collect
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
+        run: |
+          START=$(date +%s)
+          python -m research_agent.multi_timeframe --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
+          END=$(date +%s)
+          echo "seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+
+      - name: Validate OHLC, chronology, duplicates and no-lookahead
+        id: validate
+        run: |
+          START=$(date +%s)
+          python -m research_agent.multi_timeframe_validation \
+            --input moex_edge_multi_timeframe_candles.json \
+            --output moex_edge_multi_timeframe_validation.json
+          END=$(date +%s)
+          echo "seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+
+      - name: Run read-only D1/H1 scanner gated by PASS registry
+        id: scan
+        run: |
+          START=$(date +%s)
+          python -m research_agent.mtf_scanner \
+            --candles moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --registry research-data/strategy_registry.json \
+            --output moex_edge_mtf_signals.json
+          END=$(date +%s)
+          echo "seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+
+      - name: Publish timing, coverage and signal summary
+        if: always()
+        env:
+          COLLECT_SECONDS: ${{ steps.collect.outputs.seconds }}
+          VALIDATION_SECONDS: ${{ steps.validate.outputs.seconds }}
+          SCAN_SECONDS: ${{ steps.scan.outputs.seconds }}
+          RESEARCH_RUN_ID: ${{ steps.research.outputs.run_id }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          lines = [
+              "# MOEX EDGE hourly read-only scan",
+              "",
+              f"- Research registry run: {os.getenv('RESEARCH_RUN_ID', 'not resolved')}",
+              f"- Collection: {os.getenv('COLLECT_SECONDS', 'not completed')} sec",
+              f"- Validation: {os.getenv('VALIDATION_SECONDS', 'not completed')} sec",
+              f"- Scanner: {os.getenv('SCAN_SECONDS', 'not completed')} sec",
+          ]
+          for filename in ("moex_edge_multi_timeframe_candles.json",
+                           "moex_edge_multi_timeframe_validation.json",
+                           "moex_edge_mtf_signals.json"):
+              if not Path(filename).exists():
+                  continue
+              data = json.loads(Path(filename).read_text(encoding="utf-8"))
+              if filename.endswith("candles.json"):
+                  lines += ["", "## Coverage"]
+                  for frame, item in data.get("timeframes", {}).items():
+                      lines.append(
+                          f"- {frame}: {item.get('ok')}/{item.get('symbols')} symbols; "
+                          f"{item.get('total_completed_bars')} bars; {item.get('errors')} errors"
+                      )
+              elif filename.endswith("validation.json"):
+                  lines += ["", "## Data validation",
+                            f"- Status: {data.get('status')}",
+                            f"- Issues: {data.get('issue_count')}"]
+              else:
+                  lines += ["", "## Signals",
+                            f"- Signals: {data.get('signals_count', 0)}",
+                            f"- Symbols with D1/H1 data: {data.get('symbols_with_d1_h1_data')}/{data.get('universe_size')}",
+                            f"- Skipped symbols: {len(data.get('skipped_symbols', []))}",
+                            f"- Registry: {data.get('strategy_registry_version')}"]
+          lines += ["", "Read-only workflow. No broker account, order, position, or execution endpoints are used."]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload scan evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-hourly-scan-${{ github.run_id }}
+          path: |
+            moex_edge_multi_timeframe_candles.json
+            moex_edge_multi_timeframe_validation.json
+            moex_edge_mtf_signals.json
+          if-no-files-found: warn
+          retention-days: 7
