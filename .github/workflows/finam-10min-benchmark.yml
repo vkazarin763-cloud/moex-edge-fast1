@@ -1,4 +1,5 @@
 name: MOEX EDGE Finam 10-minute benchmark (Read Only)
+# Repeatability check: second independent read-only run.
 
 on:
   push:
