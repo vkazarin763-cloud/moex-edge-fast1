@@ -202,10 +202,9 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(len(compact["results"]), 25)
         self.assertEqual(compact["strategy_registry"]["summary"]["INSUFFICIENT_DATA"], 50)
         self.assertFalse(compact["strategy_registry"]["strategies"][0]["eligible_for_shadow_scanner"])
-        self.assertEqual(
-            compact["cost_model_by_ticker"]["T00"]["double_cost_execution_config"]["fee_per_side"],
-            0.002,
-        )
+        cost_profile_code = compact["cost_model_by_ticker"]["T00"]
+        cost_profile = compact["cost_model_profiles"][cost_profile_code]
+        self.assertEqual(cost_profile["double_cost_execution_config"]["fee_per_side"], 0.002)
         self.assertEqual(
             compact["independent_validation"]["status"],
             "INDEPENDENT_VALIDATION_INCOMPLETE",
