@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.request
@@ -265,6 +266,7 @@ def run_discovery(
             if (key[0] in STRATEGIES and key[1] in DIRECTIONS and key[2] in TIMEFRAME_CONFIGS
                     and isinstance(idea.get("hypothesis"), str)
                     and isinstance(idea.get("research_question"), str)
+                    and not re.search(r"\d", idea.get("hypothesis", "") + idea.get("research_question", ""))
                     and key not in seen_hypotheses_this_agent):
                 hypothesis_votes[key].append({"role": role, **idea})
                 seen_hypotheses_this_agent.add(key)
