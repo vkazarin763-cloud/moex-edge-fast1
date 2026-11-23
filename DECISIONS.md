@@ -177,3 +177,8 @@
 - Календарные gaps 2023-12-29—2026-06-15 вручную сопоставлены с официальными расписаниями MOEX: это закрытые дни и/или дополнительные сессии, учитываемые в следующей обычной торговой дате. Автоматическую проверку календаря в коде всё ещё требуется сделать.
 - Три расхождения raw candle vs TQBR history относятся только к VOLUME; OHLC и VALUE совпадают. Причина неизвестна, поэтому reconciliation остаётся incomplete.
 - Weekend raw fragments можно исключать из same-date crosscheck только при подтверждённом полном session mapping; это не означает, что официальный календарь полностью проверен.
+
+## 2026-11-23 — raw volume and calendar audit decisions
+- Do not silently replace or normalize raw MOEX candle volume. For the three investigated dates, disclose the mismatch; strategy D1 volume is built from TQBR history VOLUME.
+- Mapped weekend/holiday session fragments are not same-date missing-history errors when the session mapper confirms complete mapping. Verify this with a new real-data run after the current CLI change.
+- Annotate only the nine specifically reviewed calendar gaps with MOEX sources; keep global exchange_calendar_verified=false until the complete calendar is independently validated.
