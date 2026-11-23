@@ -1,0 +1,141 @@
+name: Manual AI Team and Fallback Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      primary_model:
+        description: "Primary OpenRouter model"
+        required: true
+        type: string
+        default: "openrouter/free"
+      fallback_model:
+        description: "Free NVIDIA backup model"
+        required: true
+        type: string
+        default: "nvidia/nemotron-3-ultra-550b-a55b:free"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-team-fallback-test
+  cancel-in-progress: false
+
+jobs:
+  team-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out tested research branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/openrouter-primary-groq-fallback
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile and run offline tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
+
+      - name: Run four-agent primary and forced-fallback integration tests
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PRIMARY_MODEL: ${{ inputs.primary_model }}
+          FALLBACK_MODEL: ${{ inputs.fallback_model }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from research_agent.ai_team import call_provider, run_team
+
+          key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+          if not key:
+              raise SystemExit("OPENROUTER_API_KEY is missing.")
+          primary = os.environ["PRIMARY_MODEL"]
+          fallback = os.environ["FALLBACK_MODEL"]
+          if primary == fallback:
+              raise SystemExit("Primary and fallback models must differ.")
+
+          synthetic = {
+              "report_type": "SYNTHETIC_AGENT_INTEGRATION_TEST",
+              "notice": "Synthetic fixture only; not MOEX data, not a backtest, not a signal.",
+              "source": {"kind": "synthetic", "market_data_loaded": False},
+              "universe": {"count": 1, "instruments": ["DEMO_ONLY"]},
+              "independent_validation": {"status": "NOT_RUN"},
+              "results": {},
+          }
+
+          primary_result = run_team(
+              synthetic, api_key=key, model=primary, provider="openrouter"
+          )
+
+          def forced_primary_failure(prompt, *, api_key, provider, model):
+              if provider == "openrouter" and model == primary:
+                  raise RuntimeError("SIMULATED_PRIMARY_MODEL_FAILURE_FOR_FALLBACK_TEST")
+              return call_provider(
+                  prompt, api_key=api_key, provider=provider, model=model
+              )
+
+          fallback_result = run_team(
+              synthetic, api_key=key, model=primary, provider="openrouter",
+              fallback_model=fallback, caller=forced_primary_failure
+          )
+
+          assert primary_result["calls"] == 4
+          assert len(primary_result["specialists"]) == 3
+          assert primary_result["coordinator"].strip()
+          assert primary_result["providers_used"] == ["openrouter"] * 4
+
+          assert fallback_result["calls"] == 4
+          assert len(fallback_result["specialists"]) == 3
+          assert fallback_result["coordinator"].strip()
+          assert fallback_result["providers_used"] == ["openrouter_model_fallback"] * 4
+          assert len(fallback_result["provider_diagnostics"]) == 4
+          assert all(
+              item.get("fallback_status") == "SUCCEEDED"
+              and item.get("fallback_model") == fallback
+              for item in fallback_result["provider_diagnostics"]
+          )
+
+          output = {
+              "status": "PASS",
+              "purpose": "synthetic four-agent integration; no market data or broker access",
+              "primary": {
+                  "model": primary,
+                  "calls": primary_result["calls"],
+                  "roles": list(primary_result["specialists"]),
+                  "coordinator_nonempty": bool(primary_result["coordinator"].strip()),
+                  "providers_used": primary_result["providers_used"],
+              },
+              "forced_fallback": {
+                  "model": fallback,
+                  "calls": fallback_result["calls"],
+                  "roles": list(fallback_result["specialists"]),
+                  "coordinator_nonempty": bool(fallback_result["coordinator"].strip()),
+                  "providers_used": fallback_result["providers_used"],
+                  "primary_failure_simulated": True,
+                  "fallback_successes": len(fallback_result["provider_diagnostics"]),
+              },
+          }
+          Path("ai_team_fallback_test.json").write_text(
+              json.dumps(output, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          print("PASS: 3 specialists + coordinator on primary model.")
+          print("PASS: forced primary failure switched all 4 calls to backup model.")
+          print("PASS: synthetic-only test; no market data, signals, or broker access.")
+          PY
+
+      - name: Upload sanitized integration report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-team-fallback-test-${{ github.run_id }}
+          path: ai_team_fallback_test.json
+          if-no-files-found: warn
+          retention-days: 14
