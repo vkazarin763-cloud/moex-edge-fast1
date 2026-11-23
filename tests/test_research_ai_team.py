@@ -64,7 +64,10 @@ class AITeamTests(unittest.TestCase):
         self.assertIs(quality["exchange_calendar_verified"], False)
         self.assertIs(quality["session_date_mapping_complete"], True)
         self.assertIn("does not mean the exchange calendar is verified", SYSTEM_PROMPT)
-        self.assertIn('"exchange_calendar_verified": "boolean', compact["schema"]["ticker_fields"]["q"].__str__())
+        self.assertEqual(
+            compact["schema"]["ticker_fields"]["q"]["exchange_calendar_verified"],
+            "boolean: full exchange-wide calendar independently verified",
+        )
 
     def test_compact_report_preserves_session_reconciliation_and_history_crosscheck(self):
         source = {
