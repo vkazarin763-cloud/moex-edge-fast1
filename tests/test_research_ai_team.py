@@ -109,6 +109,77 @@ class AITeamTests(unittest.TestCase):
         self.assertNotIn("trade_ledger", compact_text)
         self.assertNotIn("continuous_development_replay", compact_text)
 
+    def test_compact_report_includes_authoritative_directional_registry_and_costs(self):
+        report = {
+            "generated_at_utc": "2026-11-23T00:00:00Z",
+            "date_till": "2026-11-20",
+            "results": {
+                "GAZP": {
+                    "status": "ANALYZED",
+                    "adversarial_cost_check": {
+                        "stress": "2x entry/exit fees and slippage",
+                        "baseline_execution_config": {
+                            "fee_per_side": 0.001, "slippage_per_side": 0.0005,
+                            "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+                        },
+                        "double_cost_execution_config": {
+                            "fee_per_side": 0.002, "slippage_per_side": 0.001,
+                            "stop_pct": 0.03, "target_pct": 0.06, "max_bars": 120,
+                        },
+                    },
+                }
+            },
+        }
+        registry = {
+            "registry_version": "development-registry-v1",
+            "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
+            "source_report_generated_at_utc": "2026-11-23T00:00:00Z",
+            "source_report_date_till": "2026-11-20",
+            "summary": {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 2},
+            "selection_policy": {"minimum_closed_trades": 30},
+            "scanner_contract": {"live_trading_authorized": False},
+            "strategies": [
+                {
+                    "ticker": "GAZP", "direction": "LONG", "strategy": "Donchian20",
+                    "status": "INSUFFICIENT_DATA",
+                    "reasons": ["Only 17 closed trades; minimum is 30"],
+                    "closed_trades": 17, "average_net_return": 0.0098,
+                    "profit_factor": 1.57, "positive_folds": 3,
+                    "adequately_sampled_folds": 2, "folds": 4,
+                    "double_cost_average_net_return": 0.0073,
+                    "eligible_for_shadow_scanner": False,
+                },
+                {
+                    "ticker": "GAZP", "direction": "SHORT", "strategy": "Donchian20",
+                    "status": "INSUFFICIENT_DATA",
+                    "reasons": ["Only 20 closed trades; minimum is 30"],
+                    "closed_trades": 20, "average_net_return": 0.026,
+                    "profit_factor": 3.28, "positive_folds": 3,
+                    "adequately_sampled_folds": 2, "folds": 4,
+                    "double_cost_average_net_return": 0.019,
+                    "eligible_for_shadow_scanner": False,
+                },
+            ],
+        }
+        compact = json.loads(_compact_report(report, registry=registry))
+        self.assertEqual(len(compact["strategy_registry"]["strategies"]), 2)
+        self.assertEqual(
+            compact["strategy_registry"]["strategies"][0]["status"],
+            "INSUFFICIENT_DATA",
+        )
+        self.assertFalse(
+            compact["strategy_registry"]["strategies"][0]["eligible_for_shadow_scanner"]
+        )
+        self.assertEqual(
+            compact["cost_model_by_ticker"]["GAZP"]["baseline_execution_config"]["fee_per_side"],
+            0.001,
+        )
+        self.assertEqual(
+            compact["cost_model_by_ticker"]["GAZP"]["double_cost_execution_config"]["slippage_per_side"],
+            0.001,
+        )
+        self.assertIn("authoritative", compact["strategy_registry"]["authority_note"])
+
     def test_extract_text_requires_choice_text(self):
         self.assertEqual(
             _extract_text({"choices": [{"message": {"content": "OK"}}]}),
