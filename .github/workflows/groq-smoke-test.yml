@@ -65,7 +65,7 @@ jobs:
           payload = {
               "model": "openai/gpt-oss-20b",
               "messages": [{"role": "user", "content": "Reply with exactly: GROQ_OK"}],
-              "max_completion_tokens": 32,
+              "max_completion_tokens": 512,
               "temperature": 0
           }
           req = urllib.request.Request(
