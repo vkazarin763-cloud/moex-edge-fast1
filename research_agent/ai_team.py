@@ -179,10 +179,17 @@ def _compact_report(report: Any) -> str:
     return encoded
 
 def _extract_text(response: dict[str, Any]) -> str:
+    """Extract user-facing text and report safe metadata when it is absent."""
     choices = response.get("choices") or []
     if not choices:
-        raise RuntimeError("Groq returned no choices (possibly blocked or quota-limited).")
-    message = choices[0].get("message") or {}
+        usage = response.get("usage") or {}
+        raise RuntimeError(
+            "Groq returned no choices; "
+            f"usage_completion_tokens={usage.get('completion_tokens', 'unknown')}; "
+            f"response_id_present={bool(response.get('id'))}."
+        )
+    choice = choices[0] if isinstance(choices[0], dict) else {}
+    message = choice.get("message") or {}
     content = message.get("content")
     if isinstance(content, str):
         result = content.strip()
@@ -195,7 +202,19 @@ def _extract_text(response: dict[str, Any]) -> str:
     else:
         result = ""
     if not result:
-        raise RuntimeError("Groq response contained no text.")
+        usage = response.get("usage") or {}
+        reasoning = message.get("reasoning")
+        reasoning_present = bool(reasoning)
+        reasoning_chars = len(reasoning) if isinstance(reasoning, str) else 0
+        raise RuntimeError(
+            "Groq response contained no message.content text; "
+            f"finish_reason={choice.get('finish_reason', 'unknown')}; "
+            f"reasoning_present={reasoning_present}; "
+            f"reasoning_chars={reasoning_chars}; "
+            f"completion_tokens={usage.get('completion_tokens', 'unknown')}; "
+            f"prompt_tokens={usage.get('prompt_tokens', 'unknown')}. "
+            "Reasoning text is intentionally not exposed as agent commentary."
+        )
     return result
 
 
@@ -220,6 +239,10 @@ def call_groq(
         ],
         "temperature": 0.2,
         "max_completion_tokens": MAX_OUTPUT_TOKENS,
+        # GPT-OSS returns reasoning separately by default. Exclude it so the
+        # agent receives ordinary assistant content in message.content.
+        "include_reasoning": False,
+        "reasoning_effort": "low",
     }
     request = urllib.request.Request(
         API_URL,
