@@ -173,6 +173,7 @@ jobs:
         with:
           name: moex-edge-agent-discovery-${{ github.run_id }}
           path: |
+            moex_edge_multi_timeframe_candles.json
             moex_edge_multi_timeframe_validation.json
             moex_edge_mtf_signals.json
             agent_proposals.json
