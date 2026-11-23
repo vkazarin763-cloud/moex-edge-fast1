@@ -1,0 +1,136 @@
+name: Manual Groq Four-Agent Integration Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Groq model ID"
+        required: true
+        type: string
+        default: "openai/gpt-oss-20b"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: groq-four-agent-synthetic
+  cancel-in-progress: false
+
+jobs:
+  synthetic-agent-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile and run offline tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
+
+      - name: Verify Groq secret is configured
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          if not os.environ.get("GROQ_API_KEY", "").strip():
+              raise SystemExit("GROQ_API_KEY is missing from repository Actions secrets.")
+          print("GROQ_API_KEY is configured; secret value is not displayed.")
+          PY
+
+      - name: Run three specialists and coordinator on synthetic-only fixture
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ inputs.model }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from research_agent.ai_team import DEFAULT_MODEL, run_team
+
+          model = os.environ.get("GROQ_MODEL", "").strip() or DEFAULT_MODEL
+          synthetic = {
+              "report_type": "SYNTHETIC_AGENT_INTEGRATION_TEST",
+              "notice": (
+                  "Synthetic fixture only. No MOEX market data, prices, "
+                  "indicators, backtest, trading signals, or broker data."
+              ),
+              "source": {"kind": "synthetic", "market_data_loaded": False},
+              "universe": {"count": 1, "instruments": ["DEMO_ONLY"]},
+              "independent_validation": {"status": "NOT_RUN"},
+              "results": {},
+              "safety": {
+                  "read_only": True,
+                  "broker_access": False,
+                  "orders_enabled": False,
+                  "signals_generated": False,
+              },
+          }
+
+          result = run_team(
+              synthetic,
+              api_key=os.environ["GROQ_API_KEY"],
+              model=model,
+          )
+
+          expected_roles = {"market_analyst", "strategy_researcher", "skeptical_reviewer"}
+          if result.get("status") != "AI_COMMENTARY_ONLY":
+              raise SystemExit("Unexpected AI team status.")
+          if result.get("provider") != "groq_api" or result.get("calls") != 4:
+              raise SystemExit("Expected exactly four sequential Groq calls.")
+          if set(result.get("specialists", {})) != expected_roles:
+              raise SystemExit("One or more specialist agents did not return.")
+          if not all(str(value).strip() for value in result["specialists"].values()):
+              raise SystemExit("A specialist returned empty commentary.")
+          if not str(result.get("coordinator", "")).strip():
+              raise SystemExit("Coordinator returned empty synthesis.")
+
+          output = {
+              "status": "PASS",
+              "test_type": "SYNTHETIC_ONLY",
+              "provider": result["provider"],
+              "model": result["model"],
+              "calls": result["calls"],
+              "specialists": {
+                  name: {"status": "NONEMPTY", "characters": len(text)}
+                  for name, text in result["specialists"].items()
+              },
+              "coordinator": {
+                  "status": "NONEMPTY",
+                  "characters": len(result["coordinator"]),
+              },
+              "market_data_loaded": False,
+              "signals_generated": False,
+              "broker_access": False,
+              "orders_enabled": False,
+              "limitations": result["limitations"],
+              "commentary": result,
+          }
+          Path("groq_agent_integration_test.json").write_text(
+              json.dumps(output, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print("PASS: all three specialist agents returned non-empty text.")
+          print("PASS: coordinator returned non-empty synthesis.")
+          print("PASS: exactly four sequential Groq calls completed.")
+          print("PASS: synthetic fixture only; no market data, signals, or broker access.")
+          PY
+
+      - name: Upload integration report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: groq-four-agent-test-${{ github.run_id }}
+          path: groq_agent_integration_test.json
+          if-no-files-found: warn
+          retention-days: 14
