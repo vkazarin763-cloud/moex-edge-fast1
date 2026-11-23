@@ -276,21 +276,39 @@ def call_provider(
         with opener(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
+        # Preserve a short, sanitized provider response even when it is not JSON.
+        # Request IDs are useful for provider support and are not credentials.
+        raw_detail = ""
+        try:
+            raw_detail = exc.read().decode("utf-8", errors="replace")
+        except OSError:
+            pass
         detail = ""
         try:
-            error_payload = json.loads(exc.read().decode("utf-8", errors="replace"))
+            error_payload = json.loads(raw_detail)
             error_obj = error_payload.get("error", {}) if isinstance(error_payload, dict) else {}
             if isinstance(error_obj, dict):
                 message = error_obj.get("message")
                 if isinstance(message, str):
-                    detail = " ".join(message.split())[:400]
-        except (ValueError, OSError):
-            pass
+                    detail = " ".join(message.split())
+        except ValueError:
+            detail = " ".join(raw_detail.split())
+        detail = detail.replace(api_key, "[REDACTED]")[:400]
+        request_id = ""
+        if exc.headers:
+            request_id = (
+                exc.headers.get("x-request-id")
+                or exc.headers.get("request-id")
+                or exc.headers.get("cf-ray")
+                or ""
+            )
+        suffix = f"; request_id={request_id[:120]}" if request_id else ""
         if detail:
-            detail = detail.replace(api_key, "[REDACTED]")
-            raise RuntimeError(f"{provider} API HTTP {exc.code}: {detail}") from None
+            raise RuntimeError(
+                f"{provider} API HTTP {exc.code}: {detail}{suffix}"
+            ) from None
         raise RuntimeError(
-            f"{provider} API HTTP {exc.code}; provider returned no readable error message."
+            f"{provider} API HTTP {exc.code}: empty response body{suffix}"
         ) from None
     except urllib.error.URLError as exc:
         raise RuntimeError(f"{provider} API connection failed: {exc.reason}") from None
@@ -325,6 +343,7 @@ def run_team(
     report_json = _compact_report(report)
     specialist_results: dict[str, str] = {}
     providers_used: list[str] = []
+    provider_diagnostics: list[dict[str, str]] = []
 
     def ask(prompt: str) -> str:
         try:
@@ -332,15 +351,35 @@ def run_team(
             providers_used.append(provider)
             return answer
         except Exception as primary_error:
+            primary_detail = str(primary_error)[:600]
             if provider == "openrouter" and groq_api_key and groq_api_key.strip():
-                answer = caller(
-                    prompt, api_key=groq_api_key, provider="groq", model=groq_model
-                )
+                try:
+                    answer = caller(
+                        prompt, api_key=groq_api_key, provider="groq", model=groq_model
+                    )
+                except Exception as fallback_error:
+                    fallback_detail = str(fallback_error)[:600]
+                    provider_diagnostics.append({
+                        "primary_provider": provider,
+                        "primary_error": primary_detail,
+                        "fallback_provider": "groq",
+                        "fallback_error": fallback_detail,
+                    })
+                    raise RuntimeError(
+                        f"Primary provider {provider} failed: {primary_detail}; "
+                        f"fallback provider groq failed: {fallback_detail}"
+                    ) from None
+                provider_diagnostics.append({
+                    "primary_provider": provider,
+                    "primary_error": primary_detail,
+                    "fallback_provider": "groq",
+                    "fallback_status": "SUCCEEDED",
+                })
                 providers_used.append("groq_fallback")
                 return answer
             raise RuntimeError(
                 f"Primary provider {provider} failed; no configured fallback. "
-                f"Details: {primary_error}"
+                f"Details: {primary_detail}"
             ) from None
 
     for role, instruction in ROLES:
@@ -363,6 +402,7 @@ def run_team(
         "status": "AI_COMMENTARY_ONLY",
         "provider": provider,
         "providers_used": providers_used,
+        "provider_diagnostics": provider_diagnostics,
         "model": model,
         "calls": len(ROLES) + 1,
         "specialists": specialist_results,
