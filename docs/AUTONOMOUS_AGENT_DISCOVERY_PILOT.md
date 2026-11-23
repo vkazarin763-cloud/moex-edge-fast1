@@ -26,6 +26,10 @@ It does not yet invent arbitrary new indicator formulas. New formula discovery r
 - If the registry has no PASS entry, reproducible candidates remain EXPERIMENTAL_STRATEGY_UNAPPROVED.
 - Confirmed means exact deterministic reproduction + fresh registry PASS + H1 confirmation. It is not a production or execution authorization.
 
+## First-run data window
+
+The pilot fetches only D1/H1 operational lookback: approximately one year of D1 history for indicator warm-up and the source's supported recent H1 window. It does not download M1/M15/H4/W1. This first manual pilot does not yet persist an incremental candle cache; caching must be implemented and verified before enabling a recurring schedule.
+
 ## Safety and cost
 
 - Free-tier Groq model by default; three sequential API calls per pilot.
