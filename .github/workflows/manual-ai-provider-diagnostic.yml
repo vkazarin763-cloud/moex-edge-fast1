@@ -13,6 +13,11 @@ on:
         required: true
         type: string
         default: "openai/gpt-oss-20b"
+      openrouter_backup_model:
+        description: "Free NVIDIA backup model on OpenRouter"
+        required: true
+        type: string
+        default: "nvidia/nemotron-3-ultra-550b-a55b:free"
 
 permissions:
   contents: read
@@ -39,12 +44,13 @@ jobs:
           python -m compileall -q research_agent tests
           python -m unittest tests.test_research_ai_team -v
 
-      - name: Test OpenRouter and Groq independently
+      - name: Test primary OpenRouter, NVIDIA free backup, and Groq independently
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_MODEL: ${{ inputs.openrouter_model }}
           GROQ_MODEL: ${{ inputs.groq_model }}
+          OPENROUTER_BACKUP_MODEL: ${{ inputs.openrouter_backup_model }}
         run: python -m research_agent.provider_diagnostic
 
       - name: Upload sanitized diagnostic
