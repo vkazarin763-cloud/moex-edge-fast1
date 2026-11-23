@@ -123,7 +123,7 @@ The three `session_date_mapping` mismatches were queried directly from MOEX ISS.
   - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45110078016
 - Current branch HEAD at this handoff update: `f183eacc95f933bd9e6645ff0d8ccb463675c8c7`. PR #163 remains open and unmerged.
 - The research workflow now includes a branch-push trigger for relevant research code/tests, retains manual dispatch, and runs all three offline test modules before any market-data/AI work. Push trigger is VERIFIED: run #45110189920 started automatically from push event on SHA `f183eacc95f933bd9e6645ff0d8ccb463675c8c7`; offline tests, date resolution, MOEX research generation and OpenRouter key check passed. Four-agent commentary was still running at the last check. Do not claim end-to-end completion until the run finishes and its artifact is inspected.
-- Required next verification: confirm the push trigger works on a subsequent qualifying branch push; otherwise dispatch `Manual AI Research Team` manually once. Use the latest commit and check the new artifact's `tqbr_history_crosscheck`, `session_date_mapping`, 50-row registry, AI roles and costs.
+- Required next verification: monitor run #45110189920 to completion, download its artifact, and check `tqbr_history_crosscheck`, `session_date_mapping`, 50-row registry, AI roles and costs. If the run fails, diagnose and fix on this feature branch; the push trigger should rerun after a relevant code change.
 
 
 ### Deeper volume-field diagnosis (MOEX ISS cross-check)
