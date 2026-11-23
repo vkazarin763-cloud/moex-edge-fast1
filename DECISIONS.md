@@ -167,3 +167,11 @@
 - Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
 - No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
+
+## 2026-11-23 — AI research pilot decisions
+- Сначала доказываем полезность бесплатного AI research workflow; платные модели/ускорение не подключать без измеримого обоснования.
+- AI-агенты дают только read-only commentary/critique; quantitative market calculations and candidate eligibility remain deterministic.
+- 50 development registry rows = ticker × strategy × LONG/SHORT. Holm family_size=25 = prospective holdout ticker × frozen strategy; prospective holdout currently does not split directions. These are separate hypothesis families, not a direct count mismatch.
+- Ни одна из 50 комбинаций не прошла пороги выборки; ничего не допускать к shadow scanner/production.
+- Не объединять PR #163 без отдельного разрешения; не изменять production repo `moex-edge`.
+- Следующие блокеры: reconcile raw/TQBR mismatches for SBER/GAZP/MOEX and validate calendar gaps against authoritative MOEX trading calendar.
