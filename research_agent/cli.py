@@ -294,9 +294,7 @@ def run_universe(
                 "safety": "Research only; no broker APIs or order placement.",
             }
 
-    holdout_correction = apply_holm_correction(
-        results, family_size=len(selected) * 5
-    )
+    holdout_correction = apply_holm_correction(results)
     try:
         development_portfolio = walk_forward_portfolio_report(
             development_candles_by_ticker,
