@@ -85,7 +85,7 @@ class RefreshingFinamClient:
 
 FINAM_FRAME_MINUTES = {
     "M1": 1, "M5": 5, "M15": 15, "M30": 30,
-    "H1": 60, "H2": 120, "H4": 240, "H8": 480,
+    "H1": 60, "H2": 120, "H4": 240, "H8": 480, "D1": 1440,
 }
 
 
@@ -263,10 +263,40 @@ def collect_multi_timeframe(
                 "candles": d1_candles,
             }
         except Exception as exc:
-            symbol_result["D1"] = {
-                "source": "MOEX ISS TQBR history", "status": "ERROR",
-                "error": str(exc),
-            }
+            # MOEX ISS remains the preferred independent D1 source. If it is
+            # unavailable, use Finam's documented daily timeframe. Keep the
+            # provider failure visible; fallback candles are never mislabeled.
+            moex_error = f"{type(exc).__name__}: {exc}"
+            try:
+                daily_start = current - timedelta(days=365)
+                raw_daily = client.fetch_bars(
+                    f"{ticker}@MISX", "TIME_FRAME_D", daily_start, current
+                )
+                eligible_daily = [
+                    bar for bar in raw_daily if bar.is_data_snapshot is not True
+                ]
+                completed_daily = [
+                    bar for bar in eligible_daily
+                    if _finam_bar_is_complete(bar.timestamp, "D1", current)
+                ]
+                symbol_result["D1"] = {
+                    "source": "Finam daily fallback (MOEX ISS unavailable)",
+                    "status": "OK" if completed_daily else "NO_COMPLETED_BARS",
+                    "lookback_calendar_days": 365,
+                    "raw_bars": len(raw_daily),
+                    "completed_bars": len(completed_daily),
+                    "snapshot_true_excluded": len(raw_daily) - len(eligible_daily),
+                    "incomplete_bars_excluded": len(eligible_daily) - len(completed_daily),
+                    "moex_iss_error": moex_error,
+                    "candles": _serialize(completed_daily, snapshot_field=True),
+                }
+            except Exception as fallback_exc:
+                symbol_result["D1"] = {
+                    "source": "MOEX ISS TQBR history; Finam daily fallback",
+                    "status": "ERROR",
+                    "error": f"MOEX ISS: {moex_error}; Finam D1: {type(fallback_exc).__name__}: {fallback_exc}",
+                    "moex_iss_error": moex_error,
+                }
         results[ticker] = symbol_result
 
     summary = {}
