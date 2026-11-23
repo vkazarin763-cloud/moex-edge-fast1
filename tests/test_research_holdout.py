@@ -42,6 +42,19 @@ class ProspectiveHoldoutTests(unittest.TestCase):
         self.assertGreater(donchian["block_bootstrap_mean_ci_95"]["lower"], 0)
         self.assertEqual(donchian["status"], "AWAITING_MULTIPLE_TEST_CORRECTION")
 
+    def test_default_holm_family_is_ticker_times_frozen_strategies_not_directions(self):
+        results = {
+            "AAA": {"prospective_holdout": {"strategies": {}}},
+            "BBB": {"prospective_holdout": {"strategies": {}}},
+        }
+        summary = apply_holm_correction(results)
+        self.assertEqual(summary["family_size"], 2 * 5)
+        self.assertEqual(summary["minimum_family_size_for_holdout_design"], 2 * 5)
+        self.assertEqual(summary["ticker_count"], 2)
+        self.assertEqual(summary["frozen_strategy_count_per_ticker"], 5)
+        self.assertFalse(summary["directions_separately_tested"])
+        self.assertEqual(summary["family_scope"], "prospective_holdout_only")
+
     def test_hac_mean_test_returns_one_sided_probability(self):
         result = _newey_west_mean_test([0.01 + i * 0.0001 for i in range(40)])
         self.assertIsNotNone(result["pvalue"])
@@ -67,6 +80,11 @@ class ProspectiveHoldoutTests(unittest.TestCase):
         summary = apply_holm_correction(results, family_size=220)
         detail = results["AAA"]["prospective_holdout"]["strategies"]["Donchian20"]
         self.assertEqual(summary["family_size"], 220)
+        self.assertEqual(summary["family_scope"], "prospective_holdout_only")
+        self.assertEqual(summary["hypothesis_unit"], "ticker x frozen entry strategy")
+        self.assertFalse(summary["directions_separately_tested"])
+        self.assertTrue(summary["development_directional_registry_is_separate"])
+        self.assertEqual(summary["minimum_family_size_for_holdout_design"], 5)
         self.assertAlmostEqual(detail["holm_adjusted_pvalue"], 0.22)
         self.assertEqual(detail["status"], "NOT_CONFIRMED_BY_CORRECTED_TEST")
 
