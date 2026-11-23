@@ -281,6 +281,12 @@ class AITeamTests(unittest.TestCase):
             compact["cost_model_by_ticker"]["GAZP"]["double_cost_execution_config"]["slippage_per_side"],
             0.001,
         )
+        self.assertEqual(
+            compact["strategy_registry"]["reason_codes"][
+                compact["strategy_registry"]["strategies"][0]["reason_codes"][0]
+            ],
+            "Only 17 closed trades; minimum is 30",
+        )
         self.assertIn("authoritative", compact["strategy_registry"]["authority_note"])
 
     def test_extract_text_requires_choice_text(self):

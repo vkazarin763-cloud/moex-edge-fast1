@@ -158,9 +158,24 @@ def _compact_report(report: Any, registry: Any = None) -> str:
                 "s": status_code(session_mapping.get("status")),
                 "trading_days_reconciled": session_mapping.get("trading_days_reconciled"),
                 "trading_days_mismatched": session_mapping.get("trading_days_mismatched"),
-                "mismatch_field_counts": _bounded(session_mapping.get("mismatch_field_counts", {})),
+                "mismatch_field_counts": {
+                    key: value
+                    for key, value in (session_mapping.get("mismatch_field_counts") or {}).items()
+                    if isinstance(value, (int, float)) and value
+                } if isinstance(session_mapping.get("mismatch_field_counts"), dict) else {},
                 "mismatch_examples": [
-                    _bounded(item) for item in session_mapping.get("mismatch_examples", [])[:3]
+                    {
+                        "date": item.get("trade_date"),
+                        "differences": {
+                            field: {
+                                "aggregated": values.get("aggregated"),
+                                "history": values.get("history"),
+                            }
+                            for field, values in item.get("differences", {}).items()
+                            if isinstance(values, dict)
+                        },
+                    }
+                    for item in session_mapping.get("mismatch_examples", [])[:3]
                     if isinstance(item, dict)
                 ] if isinstance(session_mapping.get("mismatch_examples"), list) else [],
                 "unassigned_raw_candles": session_mapping.get("unassigned_raw_candles"),
@@ -202,6 +217,13 @@ def _compact_report(report: Any, registry: Any = None) -> str:
     if registry is not None:
         if not isinstance(registry, dict) or not isinstance(registry.get("strategies"), list):
             raise ValueError("Strategy registry must contain a strategies list.")
+        reason_text_to_code: dict[str, str] = {}
+        def reason_code(value: Any) -> str | None:
+            if not isinstance(value, str):
+                return None
+            if value not in reason_text_to_code:
+                reason_text_to_code[value] = f"R{len(reason_text_to_code) + 1}"
+            return reason_text_to_code[value]
         compact_registry = {
             "registry_version": registry.get("registry_version"),
             "stage": registry.get("stage"),
@@ -212,13 +234,18 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             "selection_policy": _bounded(registry.get("selection_policy", {})),
             "summary": _bounded(registry.get("summary", {})),
             "scanner_contract": _bounded(registry.get("scanner_contract", {})),
+            "reason_codes": reason_text_to_code,
             "strategies": [
                 {
                     "ticker": item.get("ticker"),
                     "direction": item.get("direction"),
                     "strategy": item.get("strategy"),
                     "status": item.get("status"),
-                    "reasons": _bounded(item.get("reasons", [])),
+                    "reason_codes": [
+                        reason_code(reason)
+                        for reason in item.get("reasons", [])
+                        if isinstance(item.get("reasons", []), list) and isinstance(reason, str)
+                    ],
                     "closed_trades": item.get("closed_trades"),
                     "average_net_return": item.get("average_net_return"),
                     "profit_factor": item.get("profit_factor"),
@@ -233,7 +260,7 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             ],
             "authority_note": (
                 "This direction-specific registry is authoritative for selection and "
-                "scanner eligibility. Never infer a PASS from source-report aggregates."
+                "scanner eligibility. Decode each row's reason_codes using reason_codes. Never infer a PASS from source-report aggregates."
             ),
         }
 
