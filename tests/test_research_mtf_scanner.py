@@ -103,6 +103,7 @@ class MTFScannerTests(unittest.TestCase):
         }
         result = scan_multi_timeframe_report(candles_report, validation)
         self.assertTrue(result["signals"])
+        self.assertEqual(result["universe"], ["TEST"])
         registry = {
             "registry_version": "test-v1",
             "generated_at_utc": snapshot,
