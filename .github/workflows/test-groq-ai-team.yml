@@ -1,0 +1,31 @@
+name: Groq Research Agent Unit Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "research_agent/**"
+      - "tests/test_research_ai_team.py"
+      - ".github/workflows/test-groq-ai-team.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile research agent and tests
+        run: python -m compileall -q research_agent tests
+
+      - name: Run offline Groq agent tests
+        run: python -m unittest tests.test_research_ai_team -v
