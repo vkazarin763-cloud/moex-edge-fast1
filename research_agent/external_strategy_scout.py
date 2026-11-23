@@ -10,10 +10,13 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Current research scope is equities only. Futures/options remain documented
+# architectural extensions but are intentionally not queried in this phase.
 MARKET_QUERIES = {
-    "equities": "stock trading strategy in:readme",
-    "futures": "futures trading strategy in:readme",
-    "options": "options trading strategy in:readme",
+    "equities": {
+        "github": "stock trading strategy in:readme",
+        "crossref": "stock trading strategy backtest equities",
+    },
 }
 USER_AGENT = "MOEX-EDGE-External-Strategy-Research/0.2 (public metadata discovery)"
 
@@ -115,7 +118,8 @@ def discover(*, limit: int = 5, fetcher=fetch_json, pause_seconds: float = 1.0):
     for query_market, query in MARKET_QUERIES.items():
         for source_name, collector in (("github", _github_items), ("crossref", _crossref_items)):
             try:
-                candidates.extend(collector(query, limit, fetcher, query_market))
+                source_query = query[source_name]
+                candidates.extend(collector(source_query, limit, fetcher, query_market))
             except (OSError, RuntimeError, ValueError, KeyError, TypeError) as exc:
                 errors.append({"market_query": query_market, "source": source_name, "error": str(exc)[:300]})
             if pause_seconds:
@@ -137,7 +141,8 @@ def discover(*, limit: int = 5, fetcher=fetch_json, pause_seconds: float = 1.0):
         "errors": errors,
         "limitations": [
             "query_market records the search that found a result; it is not an asset-class label.",
-            "market_tags require explicit instrument or asset-class evidence in returned title/description; missing evidence remains untagged.",
+            "Current discovery scope is equities only; futures and options are not queried in this phase.",
+            "market_tags require explicit instrument or asset-class evidence in returned title/description/topics; missing evidence remains untagged.",
             "Repository metadata is not a README/code review; candidate_type is preliminary and may contain false positives.",
             "Exact entry, exit, invalidation, timeframe, parameters and execution assumptions have not been extracted.",
             "Source-reported performance is not independently reproduced and is never MOEX performance evidence.",
