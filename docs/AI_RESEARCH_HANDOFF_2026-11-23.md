@@ -124,3 +124,15 @@ The three `session_date_mapping` mismatches were queried directly from MOEX ISS.
 - Current branch HEAD at this handoff update: `f183eacc95f933bd9e6645ff0d8ccb463675c8c7`. PR #163 remains open and unmerged.
 - The research workflow now includes a branch-push trigger for relevant research code/tests, retains manual dispatch, and runs all three offline test modules before any market-data/AI work. Push-trigger behavior still needs verification: the connector-created workflow-file commit did not produce a new research run at the time checked. Do not claim a fresh full research run has tested the latest code.
 - Required next verification: confirm the push trigger works on a subsequent qualifying branch push; otherwise dispatch `Manual AI Research Team` manually once. Use the latest commit and check the new artifact's `tqbr_history_crosscheck`, `session_date_mapping`, 50-row registry, AI roles and costs.
+
+
+### Deeper volume-field diagnosis (MOEX ISS cross-check)
+A further independent cross-check was performed on the same three mismatch dates:
+- The 18 hourly TQBR candle volumes sum exactly to the daily candle VOLUME for each security/date. Hourly VALUE sums also match the daily candle VALUE. Thus daily and hourly candle endpoints share the same volume series on these dates.
+- However, the candle VALUE / candle VOLUME implied average price is outside the daily OHLC range, which is mathematically inconsistent if VOLUME is share quantity:
+  - SBER: candle implied average 222.75 RUB vs daily low/high 302.89–307.50; history implied average 305.30 RUB.
+  - GAZP: candle implied average 121.94 RUB vs low/high 115.10–116.98; history implied average 115.80 RUB.
+  - MOEX: candle implied average 176.70 RUB vs low/high 161.27–166.50; history implied average 162.87 RUB.
+- The history VOLUME is therefore internally consistent with turnover VALUE and OHLC on all three mismatched dates; the candle VOLUME is the field that fails this basic consistency check. This points toward an anomaly in the candle volume series rather than the TQBR history volume, but the official field semantics/root cause have not been fully certified.
+- Practical rule: keep TQBR history as the current model-input source for volume; do not replace it with candle/hourly volume on these dates. Add an automated turnover-implied-average-price check before any source substitution. Because strategies use relative volume, any future volume-source change requires a fresh backtest/sensitivity comparison; do not patch three bars silently.
+- Hourly cross-check endpoints were queried for SBER 2025-08-01, GAZP 2025-10-27, MOEX 2025-10-27 with `interval=60`; each returned 18 hourly candles. Example URL pattern: `https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/{TICKER}/candles.json?from={DATE}&till={DATE}&interval=60&iss.meta=off`.
