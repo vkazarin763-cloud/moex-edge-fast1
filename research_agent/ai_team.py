@@ -239,10 +239,39 @@ def _compact_report(report: Any, registry: Any = None) -> str:
         ),
     }
     encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    # Preserve decision-critical evidence (all ticker rows, all directional registry
+    # rows, costs and audit status). If the prompt is still too large, progressively
+    # reduce descriptive metadata rather than failing the entire AI commentary run.
+    if len(encoded) > MAX_INPUT_CHARS and "experiment_lab" in compact:
+        lab = compact["experiment_lab"]
+        lab_status = lab.get("status") if isinstance(lab, dict) else None
+        compact["experiment_lab"] = {
+            "status": lab_status,
+            "detail": "Detailed experiment-lab metadata omitted to fit the AI input budget."
+        }
+        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(encoded) > MAX_INPUT_CHARS and "cross_sectional_direction_summary" in compact:
+        compact["cross_sectional_direction_summary"] = {
+            "detail": "Descriptive cross-sectional breakdown omitted to fit the AI input budget; "
+                      "direction-specific registry remains authoritative."
+        }
+        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(encoded) > MAX_INPUT_CHARS:
+        # Keep the audit outcome and counts, but drop verbose warning payloads.
+        audit = compact.get("independent_validation")
+        if isinstance(audit, dict):
+            compact["independent_validation"] = {
+                key: audit.get(key)
+                for key in ("status", "checks", "errors", "warnings_count")
+                if key in audit
+            }
+            if "warnings_count" not in compact["independent_validation"] and isinstance(audit.get("warnings"), list):
+                compact["independent_validation"]["warnings_count"] = len(audit["warnings"])
+            encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded) > MAX_INPUT_CHARS:
         raise ValueError(
-            f"Compacted research summary is {len(encoded)} characters; "
-            f"limit is {MAX_INPUT_CHARS}. Reduce report metadata before AI review."
+            f"Decision-critical research evidence is {len(encoded)} characters; "
+            f"limit is {MAX_INPUT_CHARS}. Core registry and ticker evidence were not truncated."
         )
     return encoded
 
