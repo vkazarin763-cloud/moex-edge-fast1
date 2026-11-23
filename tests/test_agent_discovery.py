@@ -1,5 +1,7 @@
+import io
 import json
 import unittest
+import urllib.error
 
 from research_agent.agent_discovery import call_groq_discovery, run_discovery
 
