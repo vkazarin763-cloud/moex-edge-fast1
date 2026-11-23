@@ -1,4 +1,4 @@
-name: Manual Groq Research Team
+name: Manual AI Research Team
 
 on:
   workflow_dispatch:
@@ -12,16 +12,26 @@ on:
         required: false
         type: string
       model:
-        description: "Groq model ID"
+        description: "Primary OpenRouter model ID"
         required: false
         type: string
-        default: "openai/gpt-oss-20b"
+        default: "openrouter/free"
+      fallback_model:
+        description: "Free NVIDIA backup model on OpenRouter"
+        required: false
+        type: string
+        default: "nvidia/nemotron-3-ultra-550b-a55b:free"
+      tickers:
+        description: "Comma-separated MOEX tickers for the small pilot"
+        required: true
+        type: string
+        default: "SBER,GAZP,LKOH,NVTK,MOEX"
 
 permissions:
   contents: read
 
 concurrency:
-  group: manual-groq-research-${{ github.ref }}
+  group: manual-ai-research-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -68,11 +78,13 @@ jobs:
         env:
           DATE_FROM: ${{ steps.dates.outputs.date_from }}
           DATE_TILL: ${{ steps.dates.outputs.date_till }}
+          TICKERS: ${{ inputs.tickers }}
         run: |
           set +e
           python -m research_agent.cli \
             --from "$DATE_FROM" \
             --till "$DATE_TILL" \
+            --tickers "$TICKERS" \
             --output research_report.json
           research_exit=$?
           set -e
@@ -98,31 +110,31 @@ jobs:
           print(f"Validated source report: {len(report['results'])} instruments; audit={audit.get('status')}")
           PY
 
-      - name: Check Groq secret is available (without displaying it)
+      - name: Check OpenRouter key (without displaying secrets)
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           python - <<'PY'
           import os
-          if not os.environ.get("GROQ_API_KEY", "").strip():
-              raise SystemExit("GROQ_API_KEY is missing from repository Actions secrets.")
-          print("GROQ_API_KEY is configured.")
+          if not os.environ.get("OPENROUTER_API_KEY", "").strip():
+              raise SystemExit("OPENROUTER_API_KEY is missing from repository Actions secrets.")
+          print("OpenRouter API key is configured.")
           PY
 
       - name: Run four-agent research commentary
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: ${{ inputs.model }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ inputs.model }}
+          OPENROUTER_BACKUP_MODEL: ${{ inputs.fallback_model }}
+          AI_PROVIDER: "openrouter"
         run: |
-          python -m research_agent.ai_team \
-            --input research_report.json \
-            --output ai_commentary.json
+          python -m research_agent.ai_team --input research_report.json --output ai_commentary.json
 
-      - name: Upload source report and AI commentary (also when Groq fails)
+      - name: Upload source report and AI commentary (also when AI provider fails)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: groq-research-report-${{ github.run_id }}
+          name: ai-research-report-${{ github.run_id }}
           path: |
             research_report.json
             strategy_registry.json
