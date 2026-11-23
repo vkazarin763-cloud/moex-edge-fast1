@@ -1,18 +1,38 @@
 import unittest
-from research_agent.external_strategy_scout import discover
+from research_agent.external_strategy_scout import discover, _market_evidence, _candidate_type
 
 class ScoutTests(unittest.TestCase):
-    def test_collects_and_deduplicates_public_source_metadata(self):
+    def test_market_tags_come_from_result_evidence_not_query(self):
+        self.assertEqual(_market_evidence("A strategy for crude oil futures"), ["futures"])
+        self.assertEqual(_market_evidence("A stock screener and equity strategy"), ["equities"])
+        self.assertEqual(_market_evidence("Generic backtesting toolkit"), [])
+        self.assertEqual(_market_evidence("ETH perpetual futures options"), ["futures", "options"])
+
+    def test_infrastructure_is_not_mislabeled_as_strategy(self):
+        self.assertEqual(_candidate_type("Backtesting engine for systematic research", "github_repository"), "INFRASTRUCTURE_OR_EDUCATION")
+        self.assertEqual(_candidate_type("Daily momentum trading strategy", "github_repository"), "POSSIBLE_STRATEGY_IMPLEMENTATION")
+
+    def test_collects_provenance_and_deduplicates(self):
         calls = []
         def fake_fetch(url):
             calls.append(url)
             if "api.github.com/search/repositories" in url:
-                return {"items": [{"full_name": "demo/strategy", "html_url": "https://github.com/demo/strategy", "owner": {"login": "demo"}, "license": {"spdx_id": "MIT"}, "stargazers_count": 12}] }
-            return {"message": {"items": [{"title": ["A paper"], "URL": "https://doi.org/10.0000/demo", "DOI": "10.0000/demo", "author": [{"given": "A", "family": "Author"}], "published": {"date-parts": [[2024]]}}]}}
+                return {"items": [
+                    {"full_name": "demo/equity-strategy", "html_url": "https://github.com/demo/equity-strategy", "owner": {"login": "demo"}, "description": "Daily stock momentum strategy", "license": {"spdx_id": "MIT"}, "stargazers_count": 12, "pushed_at": "2026-01-01T00:00:00Z"}
+                ]}
+            return {"message": {"items": [
+                {"title": ["Oil futures trading strategy"], "URL": "https://doi.org/10.0000/demo", "DOI": "10.0000/demo", "author": [{"given": "A", "family": "Author"}], "published": {"date-parts": [[2024]]}}
+            ]}}
         report = discover(limit=2, fetcher=fake_fetch, pause_seconds=0)
         self.assertEqual(report["candidate_count"], 2)
         self.assertEqual(len(calls), 6)
+        self.assertEqual(report["schema_version"], "1.1")
         self.assertEqual(report["mode"], "METADATA_ONLY_NO_MARKET_DATA_NO_SIGNALS_NO_BACKTEST")
+        by_title = {x["title"]: x for x in report["candidates"]}
+        self.assertEqual(by_title["demo/equity-strategy"]["market_tags"], ["equities"])
+        self.assertEqual(by_title["Oil futures trading strategy"]["market_tags"], ["futures"])
+        self.assertEqual(by_title["demo/equity-strategy"]["query_market"], "equities")
+        self.assertIsNotNone(by_title["demo/equity-strategy"]["candidate_id"])
         self.assertTrue(all(x["evidence_status"] == "SOURCE_LEAD_ONLY_RULES_NOT_REVIEWED" for x in report["candidates"]))
 
     def test_invalid_limit_rejected(self):
