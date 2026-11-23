@@ -156,7 +156,7 @@ def call_groq_discovery(
     if not api_key or not api_key.strip():
         raise ValueError("GROQ_API_KEY is required")
     if not model or any(ch.isspace() for ch in model):
-        raise ValueError("Invalid Groq model identifier")
+        raise ValueError("Invalid OpenRouter model identifier")
     body = {
         "model": model,
         "messages": [
