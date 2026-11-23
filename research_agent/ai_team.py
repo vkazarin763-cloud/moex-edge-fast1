@@ -248,7 +248,7 @@ def call_groq(
         "max_completion_tokens": MAX_OUTPUT_TOKENS,
         # GPT-OSS returns reasoning separately by default. Exclude it so the
         # agent receives ordinary assistant content in message.content.
-        "include_reasoning": False,
+        "reasoning_format": "hidden",
         "reasoning_effort": "low",
         "response_format": EVIDENCE_RESPONSE_FORMAT,
     }
