@@ -196,3 +196,8 @@
 - CI #45110952751 passed compile + 56 tests across AI team, holdout, quality and session mapping.
 - Automatic full research run #45110952761 was triggered on the same code SHA; offline tests and date resolution passed; MOEX research generation was in progress at the last check. Inspect its artifact and AI commentary before marking end-to-end success.
 - Previous run #45110189920 generated data but AI commentary failed: primary OpenRouter returned empty output after 4,347 reasoning tokens; Nemotron fallback through OpenRouter timed out at 60 seconds. Artifact was still uploaded and inspected.
+
+## 2026-11-23 — raw-volume and exchange-calendar diagnostics
+- Direct MOEX ISS cross-check found three raw `candles.json` volume mismatches versus total-session history; OHLC and VALUE matched. Research input volume is sourced from TQBR history, so raw mismatch remains separately disclosed.
+- Added targeted official-calendar annotations for all nine observed date gaps (2024–2026), preserving global calendar verification as false.
+- Expanded CI to include research-quality tests and official-calendar classification regressions.
