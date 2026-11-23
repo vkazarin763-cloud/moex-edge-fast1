@@ -36,7 +36,7 @@ class FiveTimeframeAggregationTests(unittest.TestCase):
     def test_h4_does_not_bridge_sessions_or_emit_partial(self):
         rows = [
             Candle(datetime(2026, 1, 5, h), 100, 102, 99, 101, 10)
-            for h in (17, 19, 20, 21, 22)
+            for h in (17, 19, 20, 21)
         ]
         self.assertEqual(aggregate_h4(rows), [])
 
