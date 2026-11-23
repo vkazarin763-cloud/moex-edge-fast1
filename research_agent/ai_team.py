@@ -337,6 +337,7 @@ def run_team(
     provider: str = DEFAULT_PROVIDER,
     groq_api_key: str | None = None,
     groq_model: str = DEFAULT_GROQ_MODEL,
+    fallback_model: str | None = None,
     caller: Callable[..., str] = call_provider,
 ) -> dict[str, Any]:
     """Run three specialists and a coordinator; four calls total with per-call fallback."""
@@ -352,6 +353,50 @@ def run_team(
             return answer
         except Exception as primary_error:
             primary_detail = str(primary_error)[:600]
+            # Prefer a second free model on the same OpenRouter endpoint. This
+            # tests model-level resilience, not independent-provider resilience.
+            if provider == "openrouter" and fallback_model and fallback_model != model:
+                try:
+                    answer = caller(
+                        prompt, api_key=api_key, provider="openrouter", model=fallback_model
+                    )
+                except Exception as fallback_error:
+                    fallback_detail = str(fallback_error)[:600]
+                    provider_diagnostics.append({
+                        "primary_provider": provider,
+                        "primary_model": model,
+                        "primary_error": primary_detail,
+                        "fallback_provider": "openrouter",
+                        "fallback_model": fallback_model,
+                        "fallback_error": fallback_detail,
+                    })
+                    if groq_api_key and groq_api_key.strip():
+                        try:
+                            answer = caller(
+                                prompt, api_key=groq_api_key, provider="groq", model=groq_model
+                            )
+                        except Exception as groq_error:
+                            raise RuntimeError(
+                                f"Primary OpenRouter model failed: {primary_detail}; "
+                                f"OpenRouter fallback model failed: {fallback_detail}; "
+                                f"Groq fallback failed: {str(groq_error)[:600]}"
+                            ) from None
+                        providers_used.append("groq_fallback")
+                        return answer
+                    raise RuntimeError(
+                        f"Primary OpenRouter model failed: {primary_detail}; "
+                        f"OpenRouter fallback model failed: {fallback_detail}"
+                    ) from None
+                provider_diagnostics.append({
+                    "primary_provider": provider,
+                    "primary_model": model,
+                    "primary_error": primary_detail,
+                    "fallback_provider": "openrouter",
+                    "fallback_model": fallback_model,
+                    "fallback_status": "SUCCEEDED",
+                })
+                providers_used.append("openrouter_model_fallback")
+                return answer
             if provider == "openrouter" and groq_api_key and groq_api_key.strip():
                 try:
                     answer = caller(
@@ -424,6 +469,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--provider", default=os.getenv("AI_PROVIDER", DEFAULT_PROVIDER))
     parser.add_argument("--model", default=os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL))
     parser.add_argument("--groq-model", default=os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL))
+    parser.add_argument("--fallback-model", default=os.getenv("OPENROUTER_BACKUP_MODEL", ""))
     args = parser.parse_args(argv)
 
     if args.provider == "openrouter":
@@ -445,6 +491,7 @@ def main(argv: list[str] | None = None) -> int:
         provider=args.provider,
         groq_api_key=os.getenv("GROQ_API_KEY"),
         groq_model=args.groq_model,
+        fallback_model=args.fallback_model or None,
     )
     Path(args.output).write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n",
