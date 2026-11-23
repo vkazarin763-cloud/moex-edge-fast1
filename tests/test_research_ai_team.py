@@ -276,5 +276,29 @@ class AITeamTests(unittest.TestCase):
             )
 
 
+    def test_openrouter_model_fallback_uses_same_provider_and_records_diagnostics(self):
+        calls = []
+
+        def fake_caller(prompt, *, api_key, provider, model):
+            calls.append((provider, model))
+            if model == "primary-model":
+                raise RuntimeError("primary model unavailable")
+            return "backup-note"
+
+        result = run_team(
+            {"ticker": "SYNTHETIC_ONLY"},
+            api_key="openrouter-key",
+            model="primary-model",
+            fallback_model="backup-model",
+            caller=fake_caller,
+        )
+        self.assertEqual(len(calls), 8)
+        self.assertEqual(calls[:2], [("openrouter", "primary-model"), ("openrouter", "backup-model")])
+        self.assertEqual(result["providers_used"], ["openrouter_model_fallback"] * 4)
+        self.assertEqual(result["coordinator"], "backup-note")
+        self.assertEqual(result["provider_diagnostics"][0]["fallback_model"], "backup-model")
+        self.assertEqual(result["provider_diagnostics"][0]["fallback_status"], "SUCCEEDED")
+
+
 if __name__ == "__main__":
     unittest.main()
