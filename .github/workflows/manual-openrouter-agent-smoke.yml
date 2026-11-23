@@ -1,0 +1,101 @@
+name: Manual OpenRouter Agent Smoke Test (Synthetic Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "OpenRouter model ID"
+        required: false
+        type: string
+        default: "openrouter/free"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openrouter-agent-smoke
+  cancel-in-progress: false
+
+jobs:
+  synthetic-agent-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check OpenRouter secret without displaying it
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          if not os.environ.get("OPENROUTER_API_KEY", "").strip():
+              raise SystemExit("OPENROUTER_API_KEY is missing from repository Actions secrets.")
+          print("OpenRouter key is configured (value hidden).")
+          PY
+
+      - name: Run three agents against synthetic empty scan (no MOEX data)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ inputs.model || 'openrouter/free' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from research_agent.agent_discovery import run_discovery
+
+          scan = {
+              "status": "READ_ONLY_LATEST_SIGNAL_SCAN",
+              "generated_at_utc": "synthetic-smoke-test",
+              "as_of_utc": "synthetic-smoke-test",
+              "universe": ["SYNTHETIC_ONLY"],
+              "signals": [],
+          }
+          registry = {
+              "registry_version": "synthetic-smoke-test",
+              "summary": {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 0},
+              "strategies": [],
+          }
+          _, diagnostics = run_discovery(
+              scan,
+              registry,
+              openrouter_api_key=os.environ["OPENROUTER_API_KEY"],
+              model=os.environ.get("OPENROUTER_MODEL", "openrouter/free"),
+          )
+          assert diagnostics["agent_count"] == 3
+          assert diagnostics["providers_used"] == ["openrouter"] * 3, diagnostics["providers_used"]
+          assert diagnostics["consensus_proposal_count"] == 0
+          assert diagnostics["candidate_count_seen"] == 0
+          result = {
+              "status": "PASS",
+              "purpose": "synthetic OpenRouter connectivity and three-agent response check",
+              "market_data_used": False,
+              "signals_generated": False,
+              "providers_used": diagnostics["providers_used"],
+              "agent_count": diagnostics["agent_count"],
+              "model": diagnostics["model"],
+          }
+          Path("openrouter_agent_smoke.json").write_text(
+              json.dumps(result, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print("PASS: all three agents responded through OpenRouter; no market data or signals were used.")
+          PY
+
+      - name: Upload sanitized smoke-test result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openrouter-agent-smoke-${{ github.run_id }}
+          path: openrouter_agent_smoke.json
+          if-no-files-found: warn
+          retention-days: 7
