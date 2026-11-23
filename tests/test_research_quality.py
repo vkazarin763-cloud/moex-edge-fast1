@@ -117,6 +117,40 @@ class TQBRHistoryAuditTests(unittest.TestCase):
         self.assertEqual(report["status"], "CROSSCHECK_INCONCLUSIVE")
         self.assertIn("No row is not proof", report["coverage_scope"])
 
+    def test_fully_mapped_weekend_fragments_are_not_false_same_date_mismatches(self):
+        candles = make_bars([3, 5])
+        records = [HistoryRecord(date(2025, 1, 6), 12)]
+        mapping = {
+            "raw_weekend_candles": 1,
+            "raw_weekend_candles_mapped": 1,
+            "raw_weekend_candles_unmapped": 0,
+        }
+        report = audit_tqbr_history(
+            candles, records, "2025-01-04", "2025-01-06",
+            session_mapping_diagnostics=mapping,
+        )
+        self.assertEqual(report["status"], "NO_MISSING_CANDLE_DETECTED_ON_RECORDED_TRADE_DATES")
+        self.assertEqual(report["candles_without_history_record"], [])
+        self.assertEqual(report["mapped_weekend_fragments_without_same_date_history"], 1)
+        self.assertTrue(report["weekend_fragments_excluded_from_same_date_crosscheck"])
+        self.assertFalse(report["exchange_calendar_verified"])
+
+    def test_unmapped_weekend_fragment_remains_inconclusive(self):
+        candles = make_bars([3, 5])
+        records = [HistoryRecord(date(2025, 1, 6), 12)]
+        mapping = {
+            "raw_weekend_candles": 1,
+            "raw_weekend_candles_mapped": 0,
+            "raw_weekend_candles_unmapped": 1,
+        }
+        report = audit_tqbr_history(
+            candles, records, "2025-01-04", "2025-01-06",
+            session_mapping_diagnostics=mapping,
+        )
+        self.assertEqual(report["status"], "CROSSCHECK_INCONCLUSIVE")
+        self.assertEqual(report["candles_without_history_record"], ["2025-01-04"])
+        self.assertFalse(report["weekend_fragments_excluded_from_same_date_crosscheck"])
+
     def test_zero_trade_row_with_candle_is_reported_as_anomaly(self):
         report = audit_tqbr_history(
             make_bars([0]), [HistoryRecord(date(2025, 1, 1), 0)],
