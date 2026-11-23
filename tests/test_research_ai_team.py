@@ -114,8 +114,16 @@ class AITeamTests(unittest.TestCase):
         )
         with self.assertRaises(RuntimeError):
             _extract_text({"choices": []})
-        with self.assertRaises(RuntimeError):
-            _extract_text({"choices": [{"message": {"content": ""}}]})
+        with self.assertRaisesRegex(RuntimeError, "finish_reason=length") as caught:
+            _extract_text({
+                "choices": [{
+                    "finish_reason": "length",
+                    "message": {"content": "", "reasoning": "private reasoning"},
+                }],
+                "usage": {"completion_tokens": 1200, "prompt_tokens": 800},
+            })
+        self.assertIn("reasoning_present=True", str(caught.exception))
+        self.assertNotIn("private reasoning", str(caught.exception))
 
     def test_call_groq_uses_bearer_header_and_extracts_text(self):
         seen = {}
@@ -142,6 +150,8 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["body"]["model"], DEFAULT_MODEL)
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
         self.assertEqual(seen["body"]["max_completion_tokens"], 1200)
+        self.assertIs(seen["body"]["include_reasoning"], False)
+        self.assertEqual(seen["body"]["reasoning_effort"], "low")
 
 
     def test_http_error_exposes_safe_provider_message_without_api_key(self):
