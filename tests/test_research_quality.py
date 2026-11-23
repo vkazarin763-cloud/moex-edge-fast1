@@ -31,6 +31,43 @@ class CandleQualityReportTests(unittest.TestCase):
                          "UNVERIFIED_CALENDAR_GAP")
         self.assertFalse(report["exchange_calendar_verified"])
 
+    def test_known_2024_holiday_gap_is_annotated_from_official_moex_calendar(self):
+        bars = make_bars([0, 5])
+        report = candle_quality_report(bars)
+        gap = report["calendar_gap_candidates"][0]
+        self.assertEqual(gap["from"], "2025-01-01")
+        self.assertIsNone(gap["calendar_review"])
+
+    def test_observed_moex_holiday_gap_has_official_calendar_evidence(self):
+        bars = [
+            Candle(datetime(2024, 2, 22), 100, 102, 98, 101, 100),
+            Candle(datetime(2024, 2, 26), 100, 102, 98, 101, 100),
+        ]
+        report = candle_quality_report(bars)
+        gap = report["calendar_gap_candidates"][0]
+        self.assertEqual(gap["classification"], "OFFICIAL_NON_TRADING_DATES_CONFIRMED")
+        self.assertEqual(gap["calendar_review"]["non_trading_dates"], ["2024-02-23"])
+        self.assertIn("https://www.moex.com/n64121", gap["calendar_review"]["sources"])
+        self.assertFalse(report["exchange_calendar_verified"])
+
+    def test_observed_2026_additional_session_gap_is_mapped_to_next_trade_date(self):
+        bars = [
+            Candle(datetime(2026, 2, 20), 100, 102, 98, 101, 100),
+            Candle(datetime(2026, 2, 24), 100, 102, 98, 101, 100),
+        ]
+        report = candle_quality_report(bars)
+        gap = report["calendar_gap_candidates"][0]
+        self.assertEqual(
+            gap["classification"],
+            "ADDITIONAL_SESSIONS_CARRIED_TO_NEXT_TRADEDATE",
+        )
+        self.assertEqual(gap["calendar_review"]["mapped_to_trade_date"], "2026-02-24")
+        self.assertEqual(
+            gap["calendar_review"]["additional_session_dates"],
+            ["2026-02-21", "2026-02-22", "2026-02-23"],
+        )
+        self.assertFalse(report["exchange_calendar_verified"])
+
     def test_reports_short_history_and_zero_volume(self):
         report = candle_quality_report(make_bars([0, 1, 2], [100, 0, 100]))
         self.assertEqual(report["history_status"], "BELOW_WARMUP")
