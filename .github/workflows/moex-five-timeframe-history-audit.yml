@@ -18,6 +18,10 @@ on:
         description: "Inclusive end date (YYYY-MM-DD)"
         required: true
         default: "2026-11-23"
+      configs:
+        description: "Configurations to audit; stage 1 defaults to A-D. Add E only when M15 is selected."
+        required: true
+        default: "A,B,C,D"
 
 permissions:
   contents: read
