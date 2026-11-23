@@ -158,3 +158,26 @@ A further independent cross-check was performed on the same three mismatch dates
   - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45111581132
 - Automatic full research run #45111581019 is now running on the same commit. Offline tests and date resolution passed; MOEX research generation was in progress at the time of this note. The next check is whether compact evidence is below 30,000 and whether all four AI roles finish.
   - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45111581019
+
+## 2026-11-23 follow-up: raw volume discrepancies and calendar-gap audit
+- Retrieved the original MOEX ISS `candles.json` rows and `/history/...json?tradingsession=3` total-session rows directly for the flagged dates.
+- Three discrepancies are confined to the raw daily-candle `volume` field; OHLC and `value` match the total-session history:
+  - SBER 2025-08-01: candles volume 25,320,049 vs total-history VOLUME 18,473,506; both VALUE 5,640,029,361.96; OHLC matches.
+  - GAZP 2025-10-27: candles volume 44,070,553 vs total-history VOLUME 46,407,070; both VALUE 5,374,154,168.40; OHLC matches.
+  - MOEX 2025-10-27: candles volume 5,370,130 vs total-history VOLUME 5,826,160; both VALUE 948,900,010.30; OHLC matches.
+- The deterministic research D1 input is built from per-security TQBR history records (`build_trading_day_candles(bounded_history_records,...)`), not the raw `candles.json` volume. Thus the strategy's volume input is history VOLUME; raw candle volume mismatch remains an independent source-reconciliation caveat and must not be silently overwritten.
+- The artifact from run #45108741043 predates the current CLI fix that passes `session_date_mapping_diagnostics` into `audit_tqbr_history`. Its `candles_without_history_record` list incorrectly included 134–138 mapped weekend fragments. Current branch CLI now passes the mapping diagnostics; tests already cover mapped/unmapped weekend and weekday additional-session behavior. A new real-data rerun is still needed to confirm the corrected report.
+- Official MOEX calendar review of all 9 observed D1 gap candidates:
+  - 2023-12-29 → 2024-01-03: 2024-01-01/02 official no-trade days.
+  - 2024-02-22 → 2024-02-26: 2024-02-23 official no-trade day.
+  - 2024-03-07 → 2024-03-11: 2024-03-08 official no-trade day.
+  - 2024-12-30 → 2025-01-03: 2024-12-31 and 2025-01-01/02 no-trade days.
+  - 2025-05-08 → 2025-05-12: 2025-05-09 no-trade; 10–11 May weekend sessions carried into the next trading day.
+  - 2025-12-30 → 2026-01-05: 2025-12-31 and 2026-01-01..04 no-trade.
+  - 2026-02-20 → 2026-02-24: Feb 21–23 additional sessions carried to Feb 24.
+  - 2026-04-30 → 2026-05-04: May 1–3 additional sessions carried to May 4.
+  - 2026-06-11 → 2026-06-15: June 12–14 additional sessions carried to June 15.
+- Code now annotates these exact gap pairs in `research_agent/quality.py` with official MOEX source URLs, while keeping the global `exchange_calendar_verified=false`: this is a targeted review of observed candidates, not certification of every date in the full sample.
+- CI expanded to run AI-team, holdout, and research-quality tests. Latest run #45196020929 is in progress and must be checked before claiming success.
+- Official source pages: https://www.moex.com/n64121 (2024 holidays); https://www.moex.com/n73701 (2025 holidays); https://www.moex.com/n77967 (2025 weekend sessions); https://www.moex.com/n89969 (May 2025); https://www.moex.com/n94172 (2026 holidays); https://www.moex.com/n95564 (2026 weekend sessions); https://www.moex.com/n96571 (2026 Feb/May/June holiday sessions).
+
