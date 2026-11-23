@@ -290,7 +290,7 @@ def call_groq(
                         except (TypeError, ValueError):
                             retry_after = None
                 if retry_after is None:
-                    match = re.search(r"try again in\s+([0-9]+(?:\\.[0-9]+)?)s", detail, re.IGNORECASE)
+                    match = re.search(r"try again in\s+([0-9]+(?:\.[0-9]+)?)s", detail, re.IGNORECASE)
                     if match:
                         retry_after = float(match.group(1))
                 if retry_after is None:
