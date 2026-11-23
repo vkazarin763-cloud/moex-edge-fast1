@@ -34,6 +34,38 @@ class AITeamTests(unittest.TestCase):
         self.assertIn("does not split LONG/SHORT", SYSTEM_PROMPT)
         self.assertIn("never compare its row count directly", SYSTEM_PROMPT)
 
+    def test_calendar_evidence_uses_named_fields_and_keeps_booleans_distinct(self):
+        source = {
+            "results": {
+                "SBER": {
+                    "status": "ANALYZED",
+                    "data_quality": {
+                        "status": "VALID_WITH_CAVEATS",
+                        "out_of_range_bars": 0,
+                        "calendar_gap_count": 9,
+                        "calendar_gap_candidates": [
+                            {"classification": "OFFICIAL_NON_TRADING_DATES_CONFIRMED"},
+                            {"classification": "ADDITIONAL_SESSIONS_CARRIED_TO_NEXT_TRADEDATE"},
+                        ],
+                        "exchange_calendar_verified": False,
+                        "session_date_mapping_complete": True,
+                        "calendar_caveat": "A complete session mapping is not an exchange-wide calendar verification.",
+                    },
+                }
+            }
+        }
+        compact = json.loads(_compact_report(source))
+        quality = compact["results"]["SBER"]["q"]
+        self.assertEqual(quality["calendar_gap_count"], 9)
+        self.assertEqual(quality["calendar_gap_classifications"], {
+            "OFFICIAL_NON_TRADING_DATES_CONFIRMED": 1,
+            "ADDITIONAL_SESSIONS_CARRIED_TO_NEXT_TRADEDATE": 1,
+        })
+        self.assertIs(quality["exchange_calendar_verified"], False)
+        self.assertIs(quality["session_date_mapping_complete"], True)
+        self.assertIn("does not mean the exchange calendar is verified", SYSTEM_PROMPT)
+        self.assertIn('"exchange_calendar_verified": "boolean', compact["schema"]["ticker_fields"]["q"].__str__())
+
     def test_compact_report_preserves_session_reconciliation_and_history_crosscheck(self):
         source = {
             "results": {
