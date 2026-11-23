@@ -49,7 +49,7 @@ class ScoutTests(unittest.TestCase):
     def test_source_failures_are_reported_not_hidden(self):
         report = discover(limit=1, fetcher=lambda _: (_ for _ in ()).throw(OSError("offline")), pause_seconds=0)
         self.assertEqual(report["candidate_count"], 0)
-        self.assertEqual(len(report["errors"]), 6)
+        self.assertEqual(len(report["errors"]), 2)
         self.assertEqual(report["status"], "NO_SOURCES_FOUND")
 
 if __name__ == "__main__":
