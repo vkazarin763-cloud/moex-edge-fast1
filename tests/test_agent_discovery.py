@@ -71,6 +71,21 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(report["proposals"], [])
         self.assertEqual(diagnostics["unmatched_or_invalid_proposals"]["signal_hunter"], 1)
 
+
+    def test_duplicate_rows_from_one_agent_do_not_fake_consensus(self):
+        candidate = {
+            "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
+            "d1_bar_end_utc": "2026-11-20T21:00:00+00:00", "rationale": "candidate",
+        }
+        calls = 0
+        def fake(prompt, *, api_key, model):
+            nonlocal calls
+            calls += 1
+            return {"proposals": [candidate, candidate] if calls == 1 else [], "strategy_hypotheses": []}
+        report, diagnostics = run_discovery(self.scan, self.registry, api_key="fake", caller=fake)
+        self.assertEqual(report["proposals"], [])
+        self.assertEqual(diagnostics["consensus_proposal_count"], 0)
+
     def test_no_consensus_means_no_signal_proposal(self):
         candidate = {
             "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
