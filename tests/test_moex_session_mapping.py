@@ -171,6 +171,16 @@ class SessionCompatibleReconciliationTests(unittest.TestCase):
         self.assertEqual(audit["trading_days_reconciled"], 1)
         self.assertEqual(audit["mapped_weekend_fragments_excluded_from_comparison"], 1)
 
+    def test_official_weekday_additional_session_dates_are_reported_and_mapped(self):
+        raw = [Candle(datetime(2026, 2, 23), 100.0, 102.0, 99.0, 101.0, 1000.0)]
+        history = [HistoryRecord(date(2026, 2, 24), 12, 100.0, 102.0, 99.0, 101.0, 1000.0)]
+        audit = reconcile_session_candles(raw, history)
+        self.assertEqual(audit["raw_weekday_additional_session_candles"], 1)
+        self.assertEqual(audit["raw_weekday_additional_session_candles_mapped"], 1)
+        self.assertEqual(audit["raw_weekday_additional_session_candles_unmapped"], 0)
+        self.assertEqual(audit["weekday_additional_session_dates"], ["2026-02-23"])
+        self.assertEqual(audit["mapped_weekday_additional_session_dates"], ["2026-02-24"])
+
     def test_total_history_remains_default_without_session_comparison(self):
         day = date(2025, 4, 10)
         total = [HistoryRecord(day, 52406, 14.738, 15.201, 14.146, 14.518, 204849700)]

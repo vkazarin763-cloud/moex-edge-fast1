@@ -61,6 +61,8 @@ class AITeamTests(unittest.TestCase):
                         "candles_without_history_record": [],
                         "mapped_weekend_fragments_without_same_date_history": 138,
                         "weekend_fragments_excluded_from_same_date_crosscheck": True,
+                        "mapped_weekday_additional_session_fragments_without_same_date_history": 4,
+                        "weekday_additional_session_fragments_excluded_from_same_date_crosscheck": True,
                     },
                 }
             }
@@ -73,6 +75,8 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(compact["schema"]["status_codes"][row["h"]["s"]], "NO_MISSING_CANDLE_DETECTED_ON_RECORDED_TRADE_DATES")
         self.assertEqual(row["h"]["mapped_weekend_fragments_without_same_date_history"], 138)
         self.assertTrue(row["h"]["weekend_fragments_excluded_from_same_date_crosscheck"])
+        self.assertEqual(row["h"]["mapped_weekday_additional_session_fragments_without_same_date_history"], 4)
+        self.assertTrue(row["h"]["weekday_additional_session_fragments_excluded_from_same_date_crosscheck"])
         self.assertEqual(row["h"]["candles_without_history_record"], 0)
 
     def test_compact_report_drops_raw_history_and_trade_ledgers(self):

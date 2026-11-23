@@ -539,6 +539,14 @@ def reconcile_session_candles(
         "raw_weekday_additional_session_candles": len(weekday_additional_rows),
         "raw_weekday_additional_session_candles_mapped": mapped_weekday_additional_candles,
         "raw_weekday_additional_session_candles_unmapped": len(weekday_additional_rows) - mapped_weekday_additional_candles,
+        "weekday_additional_session_dates": sorted({
+            item.timestamp.date().isoformat() for item in weekday_additional_rows
+        }),
+        "mapped_weekday_additional_session_dates": sorted({
+            target.isoformat()
+            for target, fragments in grouped.items()
+            if any(item.timestamp.date() in OFFICIAL_WEEKDAY_ADDITIONAL_SESSIONS for item in fragments)
+        }),
         "weekday_additional_session_calendar_source": "https://www.moex.com/n96571",
         "positive_trade_history_dates": len(positive_history_dates),
         "history_dates_with_raw_fragments": len(positive_history_dates & raw_fragment_history_dates),

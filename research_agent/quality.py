@@ -216,13 +216,35 @@ def audit_tqbr_history(
             == session_mapping_diagnostics.get("raw_weekend_candles")
         and session_mapping_diagnostics.get("raw_weekend_candles_unmapped") == 0
     )
+    weekday_additional_mapping_verified = bool(
+        isinstance(session_mapping_diagnostics, dict)
+        and isinstance(session_mapping_diagnostics.get("raw_weekday_additional_session_candles"), int)
+        and session_mapping_diagnostics.get("raw_weekday_additional_session_candles_mapped")
+            == session_mapping_diagnostics.get("raw_weekday_additional_session_candles")
+        and session_mapping_diagnostics.get("raw_weekday_additional_session_candles_unmapped") == 0
+    )
+    weekday_additional_dates_without_same_date_history = set()
+    if weekday_additional_mapping_verified:
+        raw_additional_dates = session_mapping_diagnostics.get("weekday_additional_session_dates", [])
+        if isinstance(raw_additional_dates, list):
+            for raw_date in raw_additional_dates:
+                if isinstance(raw_date, str):
+                    try:
+                        parsed_date = date.fromisoformat(raw_date)
+                    except ValueError:
+                        continue
+                    if parsed_date not in records_by_date:
+                        weekday_additional_dates_without_same_date_history.add(parsed_date)
     expected_mapped_weekend_dates = (
         weekend_dates_without_same_date_history if weekend_mapping_verified else set()
+    )
+    expected_mapped_session_dates = (
+        expected_mapped_weekend_dates | weekday_additional_dates_without_same_date_history
     )
     candles_without_history = sorted(
         trade_date.isoformat() for trade_date in candle_dates
         if trade_date not in records_by_date
-        and trade_date not in expected_mapped_weekend_dates
+        and trade_date not in expected_mapped_session_dates
     )
     if not records_by_date:
         status = "NO_HISTORY_RECORDS"
@@ -248,13 +270,18 @@ def audit_tqbr_history(
         "candles_without_history_record": candles_without_history,
         "mapped_weekend_fragments_without_same_date_history": len(expected_mapped_weekend_dates),
         "weekend_fragments_excluded_from_same_date_crosscheck": weekend_mapping_verified,
+        "mapped_weekday_additional_session_fragments_without_same_date_history": len(
+            weekday_additional_dates_without_same_date_history
+        ),
+        "weekday_additional_session_fragments_excluded_from_same_date_crosscheck": weekday_additional_mapping_verified,
         "coverage_scope": (
             "Only dates explicitly returned for this security on TQBR are checked. "
-            "Weekend calendar-date fragments are excluded from same-date mismatch "
-            "classification only when the independent session mapper confirms every "
-            "weekend fragment is mapped to a positive-trade TQBR date with zero unmapped "
-            "raw candles. This does not independently verify the exchange-wide calendar. "
-            "No row is not proof of a holiday, suspension, or listing boundary."
+            "Weekend and official weekday additional-session calendar-date fragments are "
+            "excluded from same-date mismatch classification only when the independent "
+            "session mapper confirms every such fragment is mapped to a positive-trade "
+            "TQBR date with zero unmapped fragments. This does not independently verify "
+            "the exchange-wide calendar. No row is not proof of a holiday, suspension, "
+            "or listing boundary."
         ),
         "exchange_calendar_verified": False,
     }

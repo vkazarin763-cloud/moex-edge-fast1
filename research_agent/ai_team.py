@@ -184,6 +184,12 @@ def _compact_report(report: Any, registry: Any = None) -> str:
                 "weekend_fragments_excluded_from_same_date_crosscheck": history_crosscheck.get(
                     "weekend_fragments_excluded_from_same_date_crosscheck"
                 ),
+                "mapped_weekday_additional_session_fragments_without_same_date_history": history_crosscheck.get(
+                    "mapped_weekday_additional_session_fragments_without_same_date_history"
+                ),
+                "weekday_additional_session_fragments_excluded_from_same_date_crosscheck": history_crosscheck.get(
+                    "weekday_additional_session_fragments_excluded_from_same_date_crosscheck"
+                ),
             }
         if strategy_rows:
             row["w"] = strategy_rows
