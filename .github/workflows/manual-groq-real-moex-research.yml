@@ -65,8 +65,8 @@ jobs:
           if start > end:
               raise SystemExit("date_from must not be after date_till")
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
-              output.write(f"date_from={start.isoformat()}\\n")
-              output.write(f"date_till={end.isoformat()}\\n")
+              output.write("date_from=" + start.isoformat() + chr(10))
+              output.write("date_till=" + end.isoformat() + chr(10))
           print(f"Requested research range: {start} through {end} (Europe/Moscow)")
           PY
 
@@ -88,11 +88,7 @@ jobs:
           TICKERS: ${{ inputs.tickers }}
         run: |
           set +e
-          python -m research_agent.cli \\
-            --from "$DATE_FROM" \\
-            --till "$DATE_TILL" \\
-            --tickers "$TICKERS" \\
-            --output research_report.json
+          python -m research_agent.cli --from "$DATE_FROM" --till "$DATE_TILL" --tickers "$TICKERS" --output research_report.json
           research_exit=$?
           set -e
           if [ "$research_exit" -eq 3 ] && [ -s research_report.json ] && [ -s strategy_registry.json ]; then
@@ -125,10 +121,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ inputs.model }}
         run: |
-          python -m research_agent.ai_team \\
-            --input research_report.json \\
-            --output ai_commentary.json \\
-            --model "$GROQ_MODEL"
+          python -m research_agent.ai_team --input research_report.json --output ai_commentary.json --model "$GROQ_MODEL"
           python - <<'PY'
           import json
           from pathlib import Path
