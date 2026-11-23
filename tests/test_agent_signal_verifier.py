@@ -34,7 +34,7 @@ class AgentSignalVerifierTests(unittest.TestCase):
             "agent_run_id": "test-run-1",
             "proposals": [{
                 "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
-                "d1_signal_timestamp": "2026-11-20T00:00:00+03:00",
+                "d1_bar_end_utc": "2026-11-20T21:00:00+00:00",
                 "timeframes": ["D1", "H1"], "rationale": "Breakout candidate.",
             }],
         }
