@@ -34,6 +34,47 @@ class AITeamTests(unittest.TestCase):
         self.assertIn("does not split LONG/SHORT", SYSTEM_PROMPT)
         self.assertIn("never compare its row count directly", SYSTEM_PROMPT)
 
+    def test_compact_report_preserves_session_reconciliation_and_history_crosscheck(self):
+        source = {
+            "results": {
+                "SBER": {
+                    "status": "ANALYZED",
+                    "session_date_mapping": {
+                        "status": "RECONCILIATION_WITH_CAVEATS",
+                        "trading_days_reconciled": 764,
+                        "trading_days_mismatched": 1,
+                        "mismatch_field_counts": {"volume": 1},
+                        "mismatch_examples": [{
+                            "trade_date": "2025-08-01",
+                            "differences": {"volume": {"aggregated": 25320049, "history": 18473506}},
+                        }],
+                        "unassigned_raw_candles": 0,
+                        "raw_history_coverage_status": "COMPLETE_DATE_COVERAGE",
+                        "raw_history_date_coverage_ratio": 1.0,
+                    },
+                    "tqbr_history_crosscheck": {
+                        "status": "NO_MISSING_CANDLE_DETECTED_ON_RECORDED_TRADE_DATES",
+                        "missing_candles_on_trade_dates": [],
+                        "zero_trade_sessions_without_candles": [],
+                        "candles_present_on_zero_trade_dates": [],
+                        "history_rows_unknown_trade_count": [],
+                        "candles_without_history_record": [],
+                        "mapped_weekend_fragments_without_same_date_history": 138,
+                        "weekend_fragments_excluded_from_same_date_crosscheck": True,
+                    },
+                }
+            }
+        }
+        compact = json.loads(_compact_report(source))
+        row = compact["results"]["SBER"]
+        self.assertEqual(compact["schema"]["status_codes"][row["m"]["s"]], "RECONCILIATION_WITH_CAVEATS")
+        self.assertEqual(row["m"]["trading_days_mismatched"], 1)
+        self.assertEqual(row["m"]["mismatch_examples"][0]["differences"]["volume"]["aggregated"], 25320049)
+        self.assertEqual(compact["schema"]["status_codes"][row["h"]["s"]], "NO_MISSING_CANDLE_DETECTED_ON_RECORDED_TRADE_DATES")
+        self.assertEqual(row["h"]["mapped_weekend_fragments_without_same_date_history"], 138)
+        self.assertTrue(row["h"]["weekend_fragments_excluded_from_same_date_crosscheck"])
+        self.assertEqual(row["h"]["candles_without_history_record"], 0)
+
     def test_compact_report_drops_raw_history_and_trade_ledgers(self):
         source = {
             "date_from": "2023-01-01",

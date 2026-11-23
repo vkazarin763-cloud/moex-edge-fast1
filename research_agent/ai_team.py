@@ -30,6 +30,10 @@ SYSTEM_PROMPT = (
     "is INSUFFICIENT_DATA, do not describe that candidate as passed, approved or eligible. "
     "Cross-sectional summaries are descriptive only, not selection decisions. The prospective ""Holm family covers ticker x frozen strategy hypotheses and does not split LONG/SHORT; ""the development registry does split directions, so never compare its row count directly ""with prospective holdout family_size. Follow explicit family_scope metadata. Report "
     "cost assumptions exactly as supplied; do not say they are undisclosed when present. "
+    "Treat session_date_mapping and tqbr_history_crosscheck as data-quality evidence. "
+    "Report volume-only mismatches and affected dates exactly; do not infer root cause or "
+    "switch the model-input volume source without a validated policy. Weekend fragments "
+    "are expected in the same-date crosscheck only when the report says all were mapped. "
     "This is research commentary, not a trade instruction. Never recommend broker actions."
 )
 
@@ -148,6 +152,39 @@ def _compact_report(report: Any, registry: Any = None) -> str:
         }
         if quality_row is not None:
             row["q"] = quality_row
+        session_mapping = result.get("session_date_mapping")
+        if isinstance(session_mapping, dict):
+            row["m"] = {
+                "s": status_code(session_mapping.get("status")),
+                "trading_days_reconciled": session_mapping.get("trading_days_reconciled"),
+                "trading_days_mismatched": session_mapping.get("trading_days_mismatched"),
+                "mismatch_field_counts": _bounded(session_mapping.get("mismatch_field_counts", {})),
+                "mismatch_examples": _bounded(session_mapping.get("mismatch_examples", [])),
+                "unassigned_raw_candles": session_mapping.get("unassigned_raw_candles"),
+                "raw_history_coverage_status": session_mapping.get("raw_history_coverage_status"),
+                "raw_history_date_coverage_ratio": session_mapping.get("raw_history_date_coverage_ratio"),
+            }
+        history_crosscheck = result.get("tqbr_history_crosscheck")
+        if isinstance(history_crosscheck, dict):
+            row["h"] = {
+                "s": status_code(history_crosscheck.get("status")),
+                "missing_candles_on_trade_dates": len(history_crosscheck.get("missing_candles_on_trade_dates", []))
+                if isinstance(history_crosscheck.get("missing_candles_on_trade_dates"), list) else None,
+                "zero_trade_sessions_without_candles": len(history_crosscheck.get("zero_trade_sessions_without_candles", []))
+                if isinstance(history_crosscheck.get("zero_trade_sessions_without_candles"), list) else None,
+                "candles_present_on_zero_trade_dates": len(history_crosscheck.get("candles_present_on_zero_trade_dates", []))
+                if isinstance(history_crosscheck.get("candles_present_on_zero_trade_dates"), list) else None,
+                "history_rows_unknown_trade_count": len(history_crosscheck.get("history_rows_unknown_trade_count", []))
+                if isinstance(history_crosscheck.get("history_rows_unknown_trade_count"), list) else None,
+                "candles_without_history_record": len(history_crosscheck.get("candles_without_history_record", []))
+                if isinstance(history_crosscheck.get("candles_without_history_record"), list) else None,
+                "mapped_weekend_fragments_without_same_date_history": history_crosscheck.get(
+                    "mapped_weekend_fragments_without_same_date_history"
+                ),
+                "weekend_fragments_excluded_from_same_date_crosscheck": history_crosscheck.get(
+                    "weekend_fragments_excluded_from_same_date_crosscheck"
+                ),
+            }
         if strategy_rows:
             row["w"] = strategy_rows
         compact_results[ticker] = row
@@ -226,6 +263,8 @@ def _compact_report(report: Any, registry: Any = None) -> str:
                 "s": "ticker status code",
                 "b": "research input bars (fallback: candle count)",
                 "q": "[data-quality status code, out-of-range bars, calendar-gap candidates, exchange calendar verified, session-date mapping complete]",
+                "m": "raw session reconciliation status, matched/mismatched days, field counts/examples, unassigned count and date coverage",
+                "h": "TQBR history crosscheck status and counts, including weekend fragments excluded only after complete session mapping",
                 "w": "walk-forward candidates keyed by strategy code; each value is [status code, closed trades, average net return]",
             },
             "strategy_codes": {value: key for key, value in strategy_codes.items()},
@@ -238,8 +277,9 @@ def _compact_report(report: Any, registry: Any = None) -> str:
         "safety": _bounded(report.get("safety", {})),
         "compaction_note": (
             "Raw OHLCV, detailed folds, trade ledgers and development portfolio replay are excluded. "
-            "All ticker statuses, compact data-quality checks and per-strategy status/trade-count/"
-            "average-net-return metrics are retained where present. Decode status codes using schema. "
+            "All ticker statuses, compact data-quality checks, session-reconciliation evidence, "
+            "TQBR history crosscheck counts and per-strategy status/trade-count/average-net-return "
+            "metrics are retained where present. Decode status codes using schema. "
             "The directional strategy_registry, when supplied, is authoritative for eligibility. "
             "Per-ticker baseline and doubled-cost execution assumptions are included where present."
         ),
