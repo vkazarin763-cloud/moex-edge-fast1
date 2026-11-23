@@ -1,3 +1,11 @@
+# CURRENT PRIORITY — 2026-11-23 AI research-team pilot
+
+Latest detailed handoff: [docs/AI_RESEARCH_HANDOFF_2026-11-23.md](docs/AI_RESEARCH_HANDOFF_2026-11-23.md).
+
+Key state: real-data four-agent run #45108741043 succeeded; 50 directional development registry rows are all INSUFFICIENT_DATA; 0 candidates are shadow-scanner eligible. The prospective Holm family size of 25 is a separate family (5 tickers × 5 frozen strategies, no LONG/SHORT split), not a conflict with the 50-row directional registry. A code/prompt/test correction is in progress; verify CI run #45109696114 before claiming it passed. PR #163 remains open/unmerged; production repo `moex-edge` untouched. Next research blockers: resolve raw/TQBR reconciliation mismatches for SBER/GAZP/MOEX and verify calendar gaps against an authoritative MOEX calendar.
+
+---
+
 # MOEX EDGE — handoff for another AI
 Updated: 2026-11-21 (UTC)
 Repository: https://github.com/vkazarin763-cloud/moex-edge-fast1
