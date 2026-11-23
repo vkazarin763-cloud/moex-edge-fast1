@@ -218,7 +218,7 @@ def call_groq_discovery(
             except (ValueError, OSError, AttributeError):
                 pass
             # Never include request headers or credentials in diagnostics.
-            detail = re.sub(r"(?i)bearer\\s+\\S+", "Bearer [redacted]", detail)[:400]
+            detail = re.sub(r"(?i)bearer\s+\S+", "Bearer [redacted]", detail)[:400]
             suffix = f" [type={error_type}, code={error_code}]" if error_type or error_code else ""
             raise RuntimeError(
                 f"Groq discovery API HTTP {exc.code}{suffix}: {detail or 'provider returned no readable error detail'}"
