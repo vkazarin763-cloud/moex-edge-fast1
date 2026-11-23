@@ -538,10 +538,22 @@ def apply_holm_correction(results: dict[str, dict[str, Any]], family_size: int |
         )
     return {
         "method": "Holm-Bonferroni step-down family-wise error correction",
+        "family_scope": "prospective_holdout_only",
+        "hypothesis_unit": "ticker x frozen entry strategy",
+        "ticker_count": len(results),
+        "frozen_strategy_count_per_ticker": len(REGISTERED_CANDIDATES),
+        "directions_separately_tested": False,
+        "development_directional_registry_is_separate": True,
+        "minimum_family_size_for_holdout_design": len(results) * len(REGISTERED_CANDIDATES),
         "family_size": total,
         "eligible_tests": len(ordered),
         "family_alpha": 0.05,
         "pvalue_test": "one-sided Newey-West HAC normal approximation for mean net trade return",
         "confidence_interval": "95% moving-block bootstrap percentile CI for mean net trade return",
-        "note": "Unsampled hypotheses remain in the family-size denominator. Passing is only a research result.",
+        "note": (
+            "This family covers prospective holdout ticker x frozen-strategy hypotheses only; "
+            "prospective holdout does not split LONG/SHORT. The separate development registry "
+            "does split directions, so its row count must not be compared directly with this "
+            "family_size. Unsampled holdout hypotheses remain in the denominator."
+        ),
     }
