@@ -1,9 +1,11 @@
-name: Equities Research Pilot (Metadata + Offline Donchian Replay)
+name: Equities Research Agent (Source Inspection + Offline Donchian Replay)
 
 on:
   push:
     branches:
       - feature/external-strategy-research-v1
+  schedule:
+    - cron: '17 5 * * 1-5'
   workflow_dispatch:
     inputs:
       limit:
@@ -34,7 +36,7 @@ jobs:
       - name: Compile and run offline tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_external_strategy_scout tests.test_moex_equities_donchian_replay -v
+          python -m unittest tests.test_external_strategy_scout tests.test_equities_strategy_research_agent tests.test_moex_equities_donchian_replay -v
       - name: Download frozen MOEX 44 historical snapshot
         uses: actions/download-artifact@v4
         with:
@@ -46,23 +48,23 @@ jobs:
       - name: Run split-adjusted Donchian 20/10 research replay
         run: |
           python -m research_agent.moex_equities_donchian_replay --input moex_data/moex_edge_multi_timeframe_candles.json --output moex_donchian_20_10_replay.json
-      - name: Discover public source metadata only
+      - name: Discover, read and extract public equities strategy sources
         run: |
-          python -m research_agent.external_strategy_scout --limit "${{ inputs.limit || 5 }}" --output external_strategy_sources.json
+          python -m research_agent.equities_strategy_research_agent --limit "${{ inputs.limit || 5 }}" --output equities_strategy_research.json
       - name: Publish safe summary
         if: always()
         run: |
           python - <<'PY'
           import json, os
           from pathlib import Path
-          path = Path('external_strategy_sources.json')
-          lines = ['# External strategy source scout — metadata only', '']
+          path = Path('equities_strategy_research.json')
+          lines = ['# MOEX EDGE equities strategy research agent', '']
           if path.exists():
               data = json.loads(path.read_text(encoding='utf-8'))
-              lines += [f"- Status: {data.get('status')}", f"- Unique source leads: {data.get('candidate_count')}", f"- Source errors: {len(data.get('errors', []))}", f"- Mode: {data.get('mode')}", '', '## Sources']
+              lines += [f"- Status: {data.get('status')}", f"- Unique source leads: {data.get('candidate_count')}", f"- Source errors: {len(data.get('errors', []))}", f"- Status counts: {data.get('status_counts')}", '', '## Sources']
               for item in data.get('candidates', []):
-                  lines.append(f"- [{item.get('title')}]({item.get('url')}) — {', '.join(item.get('market_tags', []))}; {item.get('source_type')}; license: {item.get('license_status')}")
-              lines += ['', 'Source-discovery results are unverified leads, not tested strategies. The separate MOEX replay uses only the frozen historical artifact and is a trade-level diagnostic; no live signals, broker accounts or orders are accessed.']
+                  lines.append(f"- [{item.get('title')}]({item.get('url')}) — {item.get('inspection_status')}; missing: {', '.join(item.get('missing_rule_fields', [])) or 'none'}; files: {', '.join(item.get('inspected_files', []))}")
+              lines += ['', 'Source inspection is evidence collection, not AI validation or profitability evidence. All candidates remain NOT_ELIGIBLE until independent MOEX testing. The separate MOEX replay uses only the frozen historical artifact and is a trade-level diagnostic; no live signals, broker accounts or orders are accessed.']
           else:
               lines.append('No source report was produced; inspect the failed step logs.')
           replay_path = Path('moex_donchian_20_10_replay.json')
@@ -85,7 +87,7 @@ jobs:
         with:
           name: equities-research-pilot-${{ github.run_id }}
           path: |
-            external_strategy_sources.json
+            equities_strategy_research.json
             moex_donchian_20_10_replay.json
           if-no-files-found: warn
           retention-days: 14
