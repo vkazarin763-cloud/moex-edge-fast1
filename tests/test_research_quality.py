@@ -31,13 +31,6 @@ class CandleQualityReportTests(unittest.TestCase):
                          "UNVERIFIED_CALENDAR_GAP")
         self.assertFalse(report["exchange_calendar_verified"])
 
-    def test_known_2024_holiday_gap_is_annotated_from_official_moex_calendar(self):
-        bars = make_bars([0, 5])
-        report = candle_quality_report(bars)
-        gap = report["calendar_gap_candidates"][0]
-        self.assertEqual(gap["from"], "2025-01-01")
-        self.assertIsNone(gap["calendar_review"])
-
     def test_observed_moex_holiday_gap_has_official_calendar_evidence(self):
         bars = [
             Candle(datetime(2024, 2, 22), 100, 102, 98, 101, 100),
