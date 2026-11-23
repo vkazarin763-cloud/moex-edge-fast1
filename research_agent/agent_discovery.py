@@ -230,6 +230,8 @@ def run_discovery(
     hypothesis_votes: dict[tuple, list[dict[str, Any]]] = defaultdict(list)
 
     for role, instruction in ROLES.items():
+        seen_proposals_this_agent = set()
+        seen_hypotheses_this_agent = set()
         prompt = (
             f"ROLE: {role}. {instruction}\n"
             "Return the required JSON object. Proposals must copy an exact candidate row's "
@@ -248,8 +250,11 @@ def run_discovery(
                 invalid += 1
                 continue
             key = (item.get("symbol"), item.get("direction"), item.get("strategy"), item.get("d1_bar_end_utc"))
-            if key in candidate_keys and all(isinstance(item.get(field), str) for field in ("symbol", "direction", "strategy", "d1_bar_end_utc", "rationale")):
+            if (key in candidate_keys
+                    and all(isinstance(item.get(field), str) for field in ("symbol", "direction", "strategy", "d1_bar_end_utc", "rationale"))
+                    and key not in seen_proposals_this_agent):
                 proposal_votes[key] += 1
+                seen_proposals_this_agent.add(key)
                 accepted.append(key)
             else:
                 invalid += 1
@@ -259,8 +264,10 @@ def run_discovery(
             key = (idea.get("strategy"), idea.get("direction"), idea.get("timeframe_config"))
             if (key[0] in STRATEGIES and key[1] in DIRECTIONS and key[2] in TIMEFRAME_CONFIGS
                     and isinstance(idea.get("hypothesis"), str)
-                    and isinstance(idea.get("research_question"), str)):
-                hypothesis_votes[key].append(idea)
+                    and isinstance(idea.get("research_question"), str)
+                    and key not in seen_hypotheses_this_agent):
+                hypothesis_votes[key].append({"role": role, **idea})
+                seen_hypotheses_this_agent.add(key)
         outputs[role] = {
             "proposals_returned": len(response["proposals"]),
             "exact_candidates_selected": len(accepted),
@@ -280,6 +287,7 @@ def run_discovery(
                 "symbol": key[0], "direction": key[1], "strategy": key[2],
                 "d1_bar_end_utc": key[3], "timeframes": ["D1", "H1"],
                 "rationale": "Selected independently by at least two research agents; source details are copied from the deterministic scan.",
+                "agent_votes": votes,
             })
     consensus.sort(key=lambda row: (row["symbol"], row["direction"], row["strategy"]))
 
@@ -290,6 +298,7 @@ def run_discovery(
                 "strategy": key[0], "direction": key[1], "timeframe_config": key[2],
                 "timeframes": TIMEFRAME_CONFIGS[key[2]],
                 "agent_votes": len(ideas),
+                "supporting_agents": sorted({idea["role"] for idea in ideas}),
                 "hypothesis": ideas[0]["hypothesis"][:1000],
                 "research_question": ideas[0]["research_question"][:1000],
                 "status": "UNTESTED_RESEARCH_HYPOTHESIS",
