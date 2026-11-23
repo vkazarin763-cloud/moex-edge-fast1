@@ -8,8 +8,10 @@ on:
       - "research_agent/ai_team.py"
       - "research_agent/validation.py"
       - "research_agent/cli.py"
+      - "research_agent/quality.py"
       - "tests/test_research_ai_team.py"
       - "tests/test_research_holdout.py"
+      - "tests/test_research_quality.py"
       - ".github/workflows/ai-team-registry-ci.yml"
   pull_request:
     paths:
@@ -32,4 +34,4 @@ jobs:
       - name: Compile and run AI team unit tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_research_ai_team tests.test_research_holdout -v
+          python -m unittest tests.test_research_ai_team tests.test_research_holdout tests.test_research_quality -v
