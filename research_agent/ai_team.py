@@ -15,6 +15,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
+from research_agent.evidence_guard import EVIDENCE_RESPONSE_FORMAT, validate_commentary
+
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 MAX_INPUT_CHARS = 30_000
@@ -248,6 +250,7 @@ def call_groq(
         # agent receives ordinary assistant content in message.content.
         "include_reasoning": False,
         "reasoning_effort": "low",
+        "response_format": EVIDENCE_RESPONSE_FORMAT,
     }
     request = urllib.request.Request(
         API_URL,
@@ -327,35 +330,61 @@ def run_team(
 ) -> dict[str, Any]:
     """Run three specialist agents and a coordinator; four model calls total."""
     report_json = _compact_report(report)
-    specialist_results: dict[str, str] = {}
+    compact_report = json.loads(report_json)
+    specialist_results: dict[str, dict[str, Any]] = {}
     for role, instruction in ROLES:
-        specialist_results[role] = caller(
-            f"{instruction}\n\nValidated research report (JSON):\n{report_json}",
-            api_key=api_key,
-            model=model,
+        prompt = (
+            f"{instruction}\n\n"
+            "Return ONLY JSON matching this structure: "
+            '{"hypotheses":[{"hypothesis":"short qualitative hypothesis without digits",'
+            '"evidence":[{"path":"dot.separated.source.path","value_json":"exact compact JSON value"}]}],'
+            '"questions":["qualitative research question"]}. '
+            "Every hypothesis must cite one or more exact scalar paths and their canonical JSON values "
+            "from the supplied report. Do not write facts, metrics, dates, percentages, counts, ticker "
+            "symbols or strategy names in free text. Numeric/source facts belong only in evidence refs. "
+            "All hypotheses remain unverified interpretations, never verified findings or trading signals. "
+            "If evidence is insufficient, return no hypotheses and ask questions.\n\n"
+            f"Compact validated report (JSON):\n{report_json}"
         )
+        raw_note = caller(prompt, api_key=api_key, model=model)
+        specialist_results[role] = validate_commentary(raw_note, compact_report)
 
+    specialist_json = json.dumps(specialist_results, ensure_ascii=False, sort_keys=True)
     coordinator_prompt = (
-        "You are the lead coordinator of a MOEX research team. Reconcile the three "
-        "independent notes below. Return a concise report with: verified facts, "
-        "disagreements, unresolved questions, data-quality caveats, and next research "
-        "checks. Never invent evidence or turn commentary into a trading signal. "
-        "The supplied deterministic report is the sole quantitative source.\n\n"
-        f"Validated report (JSON):\n{report_json}\n\n"
-        "Specialist notes:\n"
-        + "\n\n".join(f"[{name}]\n{note}" for name, note in specialist_results.items())
+        "You are the lead coordinator of a read-only MOEX research team. Reconcile the "
+        "hypotheses and questions from the three specialists. Return ONLY the same JSON "
+        "structure: hypotheses (each with a short qualitative hypothesis and exact evidence "
+        "references) and questions. Do not promote hypotheses into facts. Do not include "
+        "digits, dates, percentages, counts, ticker symbols or strategy names in free text. "
+        "Every hypothesis must cite exact scalar paths and canonical JSON values from the "
+        "compact deterministic report. The deterministic report is the sole source of facts.\n\n"
+        f"Compact validated report (JSON):\n{report_json}\n\n"
+        f"Validated specialist hypotheses and questions (JSON):\n{specialist_json}"
     )
-    synthesis = caller(coordinator_prompt, api_key=api_key, model=model)
+    raw_synthesis = caller(coordinator_prompt, api_key=api_key, model=model)
+    synthesis = validate_commentary(raw_synthesis, compact_report)
+    all_hypotheses = sum(len(item["hypotheses"]) for item in specialist_results.values()) + len(synthesis["hypotheses"])
+    all_evidence_refs = sum(item["evidence_reference_count"] for item in specialist_results.values()) + synthesis["evidence_reference_count"]
     return {
-        "status": "AI_COMMENTARY_ONLY",
+        "status": "AI_COMMENTARY_EVIDENCE_CHECKED",
         "provider": "groq_api",
         "model": model,
         "calls": len(ROLES) + 1,
         "specialists": specialist_results,
         "coordinator": synthesis,
+        "fact_check": {
+            "status": "PASS",
+            "hypotheses_are_unverified": True,
+            "numeric_claims_in_free_text": 0,
+            "validated_evidence_references": all_evidence_refs,
+            "unverified_hypotheses": all_hypotheses,
+            "verified_facts_source": "deterministic research_report.json only",
+        },
         "limitations": [
-            "LLM commentary is not a calculation, backtest, independent validation or trade signal.",
-            "Quantitative claims must be checked against the source report.",
+            "AI text contains hypotheses and questions only; it is not promoted to verified fact.",
+            "Every hypothesis must cite exact scalar values from the compact deterministic report.",
+            "Numeric facts must be read from the deterministic report, not AI prose.",
+            "Evidence-path validation cannot prove that an interpretation is logically correct.",
             "No broker, account, order, Telegram or production-scanner integration exists.",
         ],
     }
