@@ -20,9 +20,10 @@ class AgentSignalVerifierTests(unittest.TestCase):
         }
         self.registry = {
             "registry_version": "test-registry",
+            "source_report_date_till": "2026-11-20",
             "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
             "holdout_used_for_selection": False,
-            "scanner_contract": {"live_trading_authorized": False},
+            "scanner_contract": {"consume_only_status": "PASS", "live_trading_authorized": False},
             "strategies": [{
                 "ticker": "SBER", "direction": "LONG", "strategy": "Donchian20",
                 "status": "PASS", "eligible_for_shadow_scanner": True,
@@ -78,6 +79,12 @@ class AgentSignalVerifierTests(unittest.TestCase):
         }]}
         with self.assertRaises(AgentContractError):
             verify_agent_proposals(agent, self.scan, self.registry)
+
+
+    def test_stale_registry_cannot_confirm_agent_signal(self):
+        registry = {**self.registry, "source_report_date_till": "2026-11-01"}
+        with self.assertRaisesRegex(AgentContractError, "older than 14 days"):
+            verify_agent_proposals(self.agent, self.scan, registry)
 
     def test_registry_cannot_authorize_live_trading(self):
         registry = {**self.registry, "scanner_contract": {"live_trading_authorized": True}}
