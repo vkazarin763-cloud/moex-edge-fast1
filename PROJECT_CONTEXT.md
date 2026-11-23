@@ -224,3 +224,13 @@
 ## 2026-11-21 — Finam mode observation
 - Finam Executor Safety Tests run 44864354084 reported derived `FINAM_DRY_RUN=live` (repository variable resolves to false at that time). No order was sent by this check or by the research session.
 - Scheduled `moex-edge-fast.yml` and `finam-executor.yml` currently hardcode DRY_RUN=true and live flag=false. Manual workflows `finam-one-shot-test.yml` and `finam-direct-t-sltp-test.yml` can submit a live order only with explicit confirmation inputs. Do not dispatch them during research; do not change variables/secrets.
+
+## 2026-11-23 — AI research-team pilot (research branch only)
+- Исследовательский репозиторий: `moex-edge-fast1`, ветка `feature/openrouter-primary-groq-fallback`; PR #163 открыт, не объединён. Боевой `moex-edge` не менялся.
+- Успешный реальный исследовательский запуск: Actions run #45108741043, 5 тикеров SBER/GAZP/LKOH/NVTK/MOEX, TQBR D1, 2023-11-20—2026-11-20.
+- Четыре AI-роли завершили комментарии. Primary OpenRouter free дважды вернул пустой ответ из-за reasoning token limit; fallback Nemotron через тот же OpenRouter сработал. Это model fallback, не независимый provider failover. Прямой Groq ранее завершался HTTP 403/code 1010.
+- Авторитетный directional registry: 50 строк (5 тикеров × 5 стратегий × LONG/SHORT), 0 PASS / 0 REJECT / 50 INSUFFICIENT_DATA; shadow eligibility=false для всех.
+- Independent validation: INCOMPLETE, 55 checks, 0 errors; остаются 1-day raw/TQBR mismatch у SBER/GAZP/MOEX, 9 calendar-gap candidates на тикер, exchange calendar не подтверждён. Experiment lab skipped. Holdout имеет только одну свечу и 0 закрытых сделок на тикер.
+- Уточнена методология: Holm family_size=25 относится к prospective holdout (ticker × 5 frozen strategies, без directional split); 50 строк registry — отдельное development LONG/SHORT family. Эти количества напрямую не сравнивать.
+- Детальный handoff: `docs/AI_RESEARCH_HANDOFF_2026-11-23.md`. Следующий шаг — проверить CI #45109696114, затем исследовать raw/TQBR расхождения и биржевой календарь.
+- Только бесплатные сервисы; без брокерских запросов, заявок, Telegram и production writes.
