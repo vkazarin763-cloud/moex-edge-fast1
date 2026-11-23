@@ -1,0 +1,46 @@
+name: Manual Groq Fallback Routing Check (Offline)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: groq-fallback-routing-check
+  cancel-in-progress: false
+
+jobs:
+  verify-fallback-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile agent and run offline fallback-routing test
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest \
+            tests.test_agent_discovery.AgentDiscoveryTests.test_openrouter_failure_falls_back_to_groq_and_preserves_provider_label \
+            -v
+
+      - name: Record safe test summary
+        if: always()
+        run: |
+          {
+            echo "## Groq fallback routing check"
+            echo "- Test mode: offline mocked provider responses"
+            echo "- OpenRouter request: simulated HTTP 429"
+            echo "- Groq fallback: simulated successful response"
+            echo "- API keys/secrets: not required or accessed"
+            echo "- Market data/signals: not used"
+            echo "- Broker/orders: not accessed"
+          } >> "$GITHUB_STEP_SUMMARY"
