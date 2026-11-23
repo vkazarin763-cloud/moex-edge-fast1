@@ -187,3 +187,12 @@
 - Follow-up: all 9 D1 calendar-gap windows were manually explained by official MOEX 2024–2026 holiday and additional-session schedules; code still needs a reproducible calendar audit. Three raw/TQBR mismatches are VOLUME-only (OHLC and VALUE match exactly); root cause unknown. Added session-aware audit handling for fully mapped weekend fragments, without setting exchange_calendar_verified=true.
 - Remaining blockers: raw VOLUME mismatches unresolved; automated official-calendar audit not yet implemented; experiment lab skipped; prospective holdout currently has 0 closed trades.
 - PR #163 remains open/unmerged; production repository untouched; no broker/Telegram/production actions.
+
+
+## 2026-11-23 — weekday additional-session reconciliation and AI evidence transfer
+- Artifact run #45110189920 showed four same-date TQBR crosscheck warnings per ticker on 2026-02-23, 2026-05-01, 2026-06-12 and 2026-11-04. The session mapper already confirmed all 4/4 official weekday additional-session candles mapped to the next positive-trade TQBR date.
+- Session mapping now exports raw and mapped weekday additional-session dates. The TQBR crosscheck excludes these dates from same-date missing-row warnings only when every additional-session fragment is mapped and none is unassigned. Exchange-wide calendar verification remains false.
+- AI compact report now retains structured per-ticker session reconciliation mismatches and TQBR crosscheck statuses/counts, including weekend and weekday additional-session handling. Structured mismatch examples are bounded to a few small objects rather than being silently omitted.
+- CI #45110952751 passed compile + 56 tests across AI team, holdout, quality and session mapping.
+- Automatic full research run #45110952761 was triggered on the same code SHA; offline tests and date resolution passed; MOEX research generation was in progress at the last check. Inspect its artifact and AI commentary before marking end-to-end success.
+- Previous run #45110189920 generated data but AI commentary failed: primary OpenRouter returned empty output after 4,347 reasoning tokens; Nemotron fallback through OpenRouter timed out at 60 seconds. Artifact was still uploaded and inspected.
