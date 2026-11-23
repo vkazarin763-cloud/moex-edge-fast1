@@ -16,11 +16,12 @@ def main() -> int:
     )
     checks = []
     providers = (
-        ("openrouter", os.getenv("OPENROUTER_API_KEY", ""), os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL)),
-        ("groq", os.getenv("GROQ_API_KEY", ""), os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL)),
+        ("openrouter_primary", "openrouter", os.getenv("OPENROUTER_API_KEY", ""), os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL)),
+        ("openrouter_nvidia_backup", "openrouter", os.getenv("OPENROUTER_API_KEY", ""), os.getenv("OPENROUTER_BACKUP_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")),
+        ("groq", "groq", os.getenv("GROQ_API_KEY", ""), os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL)),
     )
-    for provider, api_key, model in providers:
-        item = {"provider": provider, "model": model}
+    for check_name, provider, api_key, model in providers:
+        item = {"provider": check_name, "api_endpoint": provider, "model": model}
         if not api_key.strip():
             item.update({"status": "NOT_CONFIGURED", "error": "API key secret is not configured"})
         else:
@@ -39,7 +40,7 @@ def main() -> int:
             except Exception as exc:
                 item.update({"status": "FAIL", "error": str(exc)[:700]})
         checks.append(item)
-        print(f"{provider}: {item['status']}" + (f" — {item['error']}" if item.get("error") else ""))
+        print(f"{check_name}: {item['status']}" + (f" — {item['error']}" if item.get("error") else ""))
 
     result = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
