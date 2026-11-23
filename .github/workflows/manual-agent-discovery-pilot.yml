@@ -1,0 +1,175 @@
+name: MOEX EDGE Autonomous Agent Discovery Pilot (Read Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Groq free-tier model"
+        required: false
+        type: string
+        default: "openai/gpt-oss-20b"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: moex-edge-autonomous-agent-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout isolated experiment
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile and run offline safety tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery -v
+
+      - name: Verify read-only market data and Groq secrets are configured
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          for name in ("FINAM_API_TOKEN", "GROQ_API_KEY"):
+              if not os.environ.get(name, "").strip():
+                  raise SystemExit(f"{name} is missing; secret values are never printed.")
+          print("Finam market-data and Groq AI credentials are configured.")
+          PY
+
+      - name: Resolve latest successful deterministic research registry
+        id: research
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "research-agent-run.yml",
+              branch: "main",
+              status: "completed",
+              per_page: 20
+            });
+            const run = response.data.workflow_runs.find(item => item.conclusion === "success");
+            if (!run) {
+              core.setFailed("No successful deterministic research run exists; refusing agent discovery.");
+              return;
+            }
+            core.setOutput("run_id", String(run.id));
+            core.info(`Using research run ${run.id}, updated ${run.updated_at}`);
+
+      - name: Download deterministic strategy registry
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-research-report
+          path: research-data
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.research.outputs.run_id }}
+
+      - name: Collect latest closed D1 and H1 candles for the frozen 44-stock universe
+        id: collect
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
+        run: |
+          START=$(date +%s)
+          python -m research_agent.multi_timeframe --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
+          END=$(date +%s)
+          echo "seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+
+      - name: Validate OHLCV, chronology and closed-bar boundary
+        run: |
+          python -m research_agent.multi_timeframe_validation \
+            --input moex_edge_multi_timeframe_candles.json \
+            --output moex_edge_multi_timeframe_validation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("moex_edge_multi_timeframe_validation.json").read_text())
+          if report.get("status") != "PASS" or report.get("issue_count") != 0:
+              raise SystemExit(f"Market data validation failed: {report.get('issue_count')} issues")
+          print("PASS: deterministic market-data validation has zero issues.")
+          PY
+
+      - name: Generate all deterministic D1/H1 candidates (no research-registry filtering)
+        run: |
+          python -m research_agent.mtf_scanner \
+            --candles moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --output moex_edge_mtf_signals.json
+
+      - name: Run three free-tier agents and independently verify consensus
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ inputs.model }}
+        run: |
+          python -m research_agent.agent_discovery \
+            --scan moex_edge_mtf_signals.json \
+            --registry research-data/strategy_registry.json \
+            --proposals agent_proposals.json \
+            --diagnostics agent_discovery_diagnostics.json \
+            --verification agent_signal_verification.json
+
+      - name: Publish concise pilot summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          lines = ["# MOEX EDGE autonomous agent discovery pilot", ""]
+          for filename, title in [
+              ("moex_edge_multi_timeframe_candles.json", "Market data"),
+              ("moex_edge_multi_timeframe_validation.json", "Validation"),
+              ("moex_edge_mtf_signals.json", "Deterministic scan"),
+              ("agent_discovery_diagnostics.json", "AI discovery"),
+              ("agent_signal_verification.json", "Independent verification"),
+          ]:
+              path = Path(filename)
+              if not path.exists():
+                  continue
+              data = json.loads(path.read_text(encoding="utf-8"))
+              lines += ["", f"## {title}"]
+              if "timeframes" in data:
+                  for frame, item in data["timeframes"].items():
+                      lines.append(f"- {frame}: {item.get('ok')}/{item.get('symbols')} symbols; {item.get('errors')} errors")
+              for key in ("status", "issue_count", "signals_count", "candidate_count_seen",
+                          "consensus_proposal_count", "hypothesis_count", "confirmed_signals_count",
+                          "proposal_count"):
+                  if key in data:
+                      lines.append(f"- {key}: {data[key]}")
+              if isinstance(data.get("counts"), dict):
+                  lines.append(f"- statuses: {data['counts']}")
+              if isinstance(data.get("policy"), dict):
+                  lines.append(f"- live trading authorized: {data['policy'].get('live_trading_authorized', False)}")
+          lines += ["", "Read-only pilot. AI outputs are proposals only; strategy hypotheses are untested. No broker accounts, orders or executions are accessed."]
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload sanitized discovery outputs and audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-agent-discovery-${{ github.run_id }}
+          path: |
+            moex_edge_multi_timeframe_validation.json
+            moex_edge_mtf_signals.json
+            agent_proposals.json
+            agent_discovery_diagnostics.json
+            agent_signal_verification.json
+          if-no-files-found: warn
+          retention-days: 14
