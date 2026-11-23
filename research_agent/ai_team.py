@@ -159,7 +159,10 @@ def _compact_report(report: Any, registry: Any = None) -> str:
                 "trading_days_reconciled": session_mapping.get("trading_days_reconciled"),
                 "trading_days_mismatched": session_mapping.get("trading_days_mismatched"),
                 "mismatch_field_counts": _bounded(session_mapping.get("mismatch_field_counts", {})),
-                "mismatch_examples": _bounded(session_mapping.get("mismatch_examples", [])),
+                "mismatch_examples": [
+                    _bounded(item) for item in session_mapping.get("mismatch_examples", [])[:3]
+                    if isinstance(item, dict)
+                ] if isinstance(session_mapping.get("mismatch_examples"), list) else [],
                 "unassigned_raw_candles": session_mapping.get("unassigned_raw_candles"),
                 "raw_history_coverage_status": session_mapping.get("raw_history_coverage_status"),
                 "raw_history_date_coverage_ratio": session_mapping.get("raw_history_date_coverage_ratio"),
