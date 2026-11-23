@@ -114,3 +114,13 @@ The three `session_date_mapping` mismatches were queried directly from MOEX ISS.
 - CLI passes `session_date_mapping_diagnostics` into this crosscheck.
 - Added tests for fully mapped and unmapped weekend fragments. Latest CI run for these changes: check https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45110066248 (was in progress at the time of this update).
 - This change addresses the false same-date weekend-fragment warning only. It does NOT clear the three raw VOLUME mismatches or certify the official calendar in code.
+
+
+## Verification after the latest code changes
+- CI run #45110066248 completed SUCCESS on commit `e77e82bae0802af6e359844c9cbd6a1045fd3060`: compile passed; 40 tests passed across `tests.test_research_ai_team`, `tests.test_research_holdout`, and `tests.test_research_quality`. New tests for Holm family scope and mapped/unmapped weekend fragments passed.
+  - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45110066248
+- CI run #45110078016 completed SUCCESS on commit `c7df6202c40ae1a07901ed18fcf2235e63e88b27`, validating the aligned path filters.
+  - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45110078016
+- Current branch HEAD at this handoff update: `f183eacc95f933bd9e6645ff0d8ccb463675c8c7`. PR #163 remains open and unmerged.
+- The research workflow now includes a branch-push trigger for relevant research code/tests, retains manual dispatch, and runs all three offline test modules before any market-data/AI work. Push-trigger behavior still needs verification: the connector-created workflow-file commit did not produce a new research run at the time checked. Do not claim a fresh full research run has tested the latest code.
+- Required next verification: confirm the push trigger works on a subsequent qualifying branch push; otherwise dispatch `Manual AI Research Team` manually once. Use the latest commit and check the new artifact's `tqbr_history_crosscheck`, `session_date_mapping`, 50-row registry, AI roles and costs.
