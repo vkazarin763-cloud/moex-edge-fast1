@@ -236,7 +236,7 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(len(compact["strategy_registry"]["strategies"]), 50)
         self.assertEqual(len(compact["results"]), 25)
         self.assertEqual(compact["strategy_registry"]["summary"]["INSUFFICIENT_DATA"], 50)
-        self.assertFalse(compact["strategy_registry"]["strategies"][0]["eligible_for_shadow_scanner"])
+        self.assertFalse(compact["strategy_registry"]["strategies"][0]["e"])
         cost_profile_code = compact["cost_model_by_ticker"]["T00"]
         cost_profile = compact["cost_model_profiles"][cost_profile_code]
         self.assertEqual(cost_profile["double_cost_execution_config"]["fee_per_side"], 0.002)
@@ -301,11 +301,11 @@ class AITeamTests(unittest.TestCase):
         compact = json.loads(_compact_report(report, registry=registry))
         self.assertEqual(len(compact["strategy_registry"]["strategies"]), 2)
         self.assertEqual(
-            compact["strategy_registry"]["strategies"][0]["status"],
+            compact["strategy_registry"]["strategies"][0]["s"],
             "INSUFFICIENT_DATA",
         )
         self.assertFalse(
-            compact["strategy_registry"]["strategies"][0]["eligible_for_shadow_scanner"]
+            compact["strategy_registry"]["strategies"][0]["e"]
         )
         cost_profile_code = compact["cost_model_by_ticker"]["GAZP"]
         cost_profile = compact["cost_model_profiles"][cost_profile_code]
@@ -313,7 +313,7 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(cost_profile["double_cost_execution_config"]["slippage_per_side"], 0.001)
         self.assertEqual(
             compact["strategy_registry"]["reason_codes"][
-                compact["strategy_registry"]["strategies"][0]["reason_codes"][0]
+                compact["strategy_registry"]["strategies"][0]["r"][0]
             ],
             "Only 17 closed trades; minimum is 30",
         )
@@ -544,18 +544,20 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(len(compact["strategy_registry"]["strategies"]), 50)
         row = compact["strategy_registry"]["strategies"][0]
         fields = compact["schema"]["registry_fields"]
-        self.assertEqual(row[fields["t"]], "T0")
-        self.assertEqual(row[fields["d"]], "LONG")
-        self.assertEqual(row[fields["s"]], "INSUFFICIENT_DATA")
-        self.assertEqual(row[fields["n"]], 17)
-        self.assertAlmostEqual(row[fields["a"]], 0.01)
-        self.assertAlmostEqual(row[fields["p"]], 1.2)
-        self.assertEqual(row[fields["pf"]], 3)
-        self.assertEqual(row[fields["af"]], 2)
-        self.assertEqual(row[fields["f"]], 4)
-        self.assertAlmostEqual(row[fields["dc"]], 0.005)
-        self.assertIs(row[fields["e"]], False)
-        reason_code = row[fields["r"]][0]
+        self.assertEqual(fields["t"], "ticker")
+        self.assertEqual(fields["d"], "direction")
+        self.assertEqual(row["t"], "T0")
+        self.assertEqual(row["d"], "LONG")
+        self.assertEqual(row["s"], "INSUFFICIENT_DATA")
+        self.assertEqual(row["n"], 17)
+        self.assertAlmostEqual(row["a"], 0.01)
+        self.assertAlmostEqual(row["p"], 1.2)
+        self.assertEqual(row["pf"], 3)
+        self.assertEqual(row["af"], 2)
+        self.assertEqual(row["f"], 4)
+        self.assertAlmostEqual(row["dc"], 0.005)
+        self.assertIs(row["e"], False)
+        reason_code = row["r"][0]
         self.assertIn(reason_code, compact["strategy_registry"]["reason_codes"])
 
     def test_oversized_calendar_and_reconciliation_details_are_compacted_safely(self):
