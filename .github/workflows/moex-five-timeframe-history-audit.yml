@@ -1,6 +1,13 @@
 name: MOEX five-timeframe history audit (isolated)
 
 on:
+  push:
+    branches:
+      - experiment/moex-five-timeframe-history-audit
+    paths:
+      - "research_agent/moex_five_timeframe_audit.py"
+      - "tests/test_moex_five_timeframe_audit.py"
+      - ".github/workflows/moex-five-timeframe-history-audit.yml"
   workflow_dispatch:
     inputs:
       from_date:
@@ -20,9 +27,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  audit:
+  tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
       - name: Checkout isolated experiment
         uses: actions/checkout@v4
@@ -32,6 +39,19 @@ jobs:
           python-version: "3.12"
       - name: Run aggregation unit tests
         run: python -m unittest tests.test_moex_five_timeframe_audit -v
+
+  audit:
+    if: github.event_name == 'workflow_dispatch'
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout isolated experiment
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Collect public MOEX ISS candles
         run: |
           python -m research_agent.moex_five_timeframe_audit \
