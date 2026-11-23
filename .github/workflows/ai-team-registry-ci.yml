@@ -1,0 +1,32 @@
+name: AI Team Registry Evidence Tests
+
+on:
+  push:
+    branches:
+      - feature/openrouter-primary-groq-fallback
+    paths:
+      - "research_agent/ai_team.py"
+      - "tests/test_research_ai_team.py"
+      - ".github/workflows/ai-team-registry-ci.yml"
+  pull_request:
+    paths:
+      - "research_agent/ai_team.py"
+      - "tests/test_research_ai_team.py"
+      - ".github/workflows/ai-team-registry-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile and run AI team unit tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
