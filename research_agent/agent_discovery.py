@@ -199,12 +199,30 @@ def call_groq_discovery(
                 sleeper(retry)
                 continue
             detail = ""
+            error_code = ""
+            error_type = ""
             try:
-                error = json.loads(exc.read().decode("utf-8", errors="replace")).get("error", {})
-                detail = str(error.get("message", ""))[:300] if isinstance(error, dict) else ""
-            except (ValueError, OSError):
+                raw_body = exc.read().decode("utf-8", errors="replace").strip()
+                payload = json.loads(raw_body) if raw_body else {}
+                error = payload.get("error", {}) if isinstance(payload, dict) else {}
+                if isinstance(error, dict):
+                    detail = str(error.get("message") or payload.get("message") or "")
+                    error_code = str(error.get("code") or "")
+                    error_type = str(error.get("type") or "")
+                elif isinstance(error, str):
+                    detail = error
+                elif isinstance(payload, dict):
+                    detail = str(payload.get("message") or "")
+                if not detail and raw_body and not raw_body.lstrip().startswith("<"):
+                    detail = raw_body[:300]
+            except (ValueError, OSError, AttributeError):
                 pass
-            raise RuntimeError(f"Groq discovery API HTTP {exc.code}: {detail or 'provider error'}") from None
+            # Never include request headers or credentials in diagnostics.
+            detail = re.sub(r"(?i)bearer\\s+\\S+", "Bearer [redacted]", detail)[:400]
+            suffix = f" [type={error_type}, code={error_code}]" if error_type or error_code else ""
+            raise RuntimeError(
+                f"Groq discovery API HTTP {exc.code}{suffix}: {detail or 'provider returned no readable error detail'}"
+            ) from None
         except urllib.error.URLError:
             raise RuntimeError("Groq discovery API connection failed") from None
     raise RuntimeError("Groq discovery API rate-limit retries exhausted")
