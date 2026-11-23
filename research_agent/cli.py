@@ -197,7 +197,8 @@ def run_universe(
                 raise ValueError("No positive-trade TQBR daily OHLCV rows remain")
             try:
                 history_crosscheck = audit_tqbr_history(
-                    raw_candles, reconciliation_history_records, fetch_from, effective_till
+                    raw_candles, reconciliation_history_records, fetch_from, effective_till,
+                    session_mapping_diagnostics=session_date_mapping_diagnostics,
                 )
             except Exception as history_exc:
                 history_crosscheck = {
