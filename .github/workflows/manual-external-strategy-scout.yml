@@ -1,6 +1,9 @@
 name: Manual External Strategy Source Scout (Metadata Only)
 
 on:
+  push:
+    branches:
+      - feature/external-strategy-research-v1
   workflow_dispatch:
     inputs:
       limit:
@@ -33,7 +36,7 @@ jobs:
           python -m unittest tests.test_external_strategy_scout -v
       - name: Discover public source metadata only
         run: |
-          python -m research_agent.external_strategy_scout --limit "${{ inputs.limit }}" --output external_strategy_sources.json
+          python -m research_agent.external_strategy_scout --limit "${{ inputs.limit || 5 }}" --output external_strategy_sources.json
       - name: Publish safe summary
         if: always()
         run: |
