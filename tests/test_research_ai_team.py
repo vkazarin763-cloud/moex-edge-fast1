@@ -273,14 +273,10 @@ class AITeamTests(unittest.TestCase):
         self.assertFalse(
             compact["strategy_registry"]["strategies"][0]["eligible_for_shadow_scanner"]
         )
-        self.assertEqual(
-            compact["cost_model_by_ticker"]["GAZP"]["baseline_execution_config"]["fee_per_side"],
-            0.001,
-        )
-        self.assertEqual(
-            compact["cost_model_by_ticker"]["GAZP"]["double_cost_execution_config"]["slippage_per_side"],
-            0.001,
-        )
+        cost_profile_code = compact["cost_model_by_ticker"]["GAZP"]
+        cost_profile = compact["cost_model_profiles"][cost_profile_code]
+        self.assertEqual(cost_profile["baseline_execution_config"]["fee_per_side"], 0.001)
+        self.assertEqual(cost_profile["double_cost_execution_config"]["slippage_per_side"], 0.001)
         self.assertEqual(
             compact["strategy_registry"]["reason_codes"][
                 compact["strategy_registry"]["strategies"][0]["reason_codes"][0]

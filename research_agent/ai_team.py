@@ -267,16 +267,25 @@ def _compact_report(report: Any, registry: Any = None) -> str:
         }
 
     compact_costs = {}
+    compact_cost_profiles: dict[str, dict[str, Any]] = {}
+    cost_profile_keys: dict[str, str] = {}
     for ticker, result in sorted(raw_results.items()):
         if not isinstance(result, dict):
             continue
         adversarial = result.get("adversarial_cost_check")
         if isinstance(adversarial, dict):
-            compact_costs[ticker] = {
+            profile = {
                 "stress": adversarial.get("stress"),
                 "baseline_execution_config": _bounded(adversarial.get("baseline_execution_config", {})),
                 "double_cost_execution_config": _bounded(adversarial.get("double_cost_execution_config", {})),
             }
+            profile_key = json.dumps(profile, sort_keys=True, separators=(",", ":"))
+            profile_code = cost_profile_keys.get(profile_key)
+            if profile_code is None:
+                profile_code = f"C{len(cost_profile_keys) + 1}"
+                cost_profile_keys[profile_key] = profile_code
+                compact_cost_profiles[profile_code] = profile
+            compact_costs[ticker] = profile_code
 
     compact = {
         "generated_at_utc": report.get("generated_at_utc"),
@@ -294,6 +303,7 @@ def _compact_report(report: Any, registry: Any = None) -> str:
         ),
         "independent_validation": _bounded(report.get("independent_validation", {})),
         "cost_model_by_ticker": compact_costs,
+        "cost_model_profiles": compact_cost_profiles,
         "strategy_registry": compact_registry,
         "results": compact_results,
         "schema": {
@@ -302,9 +312,11 @@ def _compact_report(report: Any, registry: Any = None) -> str:
                 "b": "research input bars (fallback: candle count)",
                 "q": "[data-quality status code, out-of-range bars, calendar-gap candidates, exchange calendar verified, session-date mapping complete]",
                 "m": "raw session reconciliation status, matched/mismatched days, field counts/examples, unassigned count and date coverage",
-                "h": "TQBR history crosscheck status and counts, including weekend fragments excluded only after complete session mapping",
+                "h": "TQBR history crosscheck status and counts, including weekend and weekday additional-session fragments excluded only after complete session mapping",
                 "w": "walk-forward candidates keyed by strategy code; each value is [status code, closed trades, average net return]",
             },
+            "cost_model_by_ticker": "ticker -> cost profile code",
+            "cost_model_profiles": "cost profile code -> exact stress, baseline and doubled-cost assumptions",
             "strategy_codes": {value: key for key, value in strategy_codes.items()},
             "status_codes": {code: value for value, code in status_codes.items()},
         },
