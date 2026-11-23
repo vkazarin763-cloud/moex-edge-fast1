@@ -11,9 +11,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 MARKET_QUERIES = {
-    "equities": '("equity trading" OR "stock trading") strategy backtest',
-    "futures": '("futures trading" OR "commodity futures" OR "index futures") strategy backtest',
-    "options": '("options trading" OR "option strategy" OR "option spreads") backtest',
+    "equities": "stock trading strategy in:readme",
+    "futures": "futures trading strategy in:readme",
+    "options": "options trading strategy in:readme",
 }
 USER_AGENT = "MOEX-EDGE-External-Strategy-Research/0.2 (public metadata discovery)"
 
@@ -45,7 +45,7 @@ def _candidate_type(text: str, source_type: str) -> str:
     return "UNCLASSIFIED_SOURCE"
 
 def _base_record(source_type: str, title: str, url: str, description: str = "", **extra):
-    evidence_text = f"{title} {description}"
+    evidence_text = f"{title} {description} {' '.join(extra.get('topics') or [])}"
     markets = _market_evidence(evidence_text)
     candidate_type = _candidate_type(evidence_text, source_type)
     stable = hashlib.sha256(url.rstrip("/").lower().encode("utf-8")).hexdigest()[:16]
