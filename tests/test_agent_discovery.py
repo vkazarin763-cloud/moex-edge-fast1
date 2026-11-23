@@ -3,7 +3,12 @@ import json
 import unittest
 import urllib.error
 
-from research_agent.agent_discovery import call_groq_discovery, run_discovery
+from research_agent.agent_discovery import (
+    call_discovery_with_fallback,
+    call_groq_discovery,
+    call_openrouter_discovery,
+    run_discovery,
+)
 
 
 class AgentDiscoveryTests(unittest.TestCase):
@@ -133,6 +138,74 @@ class AgentDiscoveryTests(unittest.TestCase):
         report, diagnostics = run_discovery(self.scan, self.registry, api_key="fake", caller=fake)
         self.assertEqual(report["proposals"], [])
         self.assertEqual(diagnostics["consensus_proposal_count"], 0)
+
+
+    def test_openrouter_uses_compatible_endpoint_and_parses_json(self):
+        seen = {}
+        payload = {"proposals": [], "strategy_hypotheses": []}
+
+        class Response:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode()
+
+        def opener(request, timeout):
+            seen["url"] = request.full_url
+            seen["authorization"] = request.get_header("Authorization")
+            seen["model"] = json.loads(request.data)["model"]
+            return Response()
+
+        result = call_openrouter_discovery(
+            "probe", api_key="test-key", model="openrouter/free", opener=opener
+        )
+        self.assertEqual(result, payload)
+        self.assertEqual(seen["url"], "https://openrouter.ai/api/v1/chat/completions")
+        self.assertEqual(seen["authorization"], "Bearer test-key")
+        self.assertEqual(seen["model"], "openrouter/free")
+
+    def test_openrouter_failure_falls_back_to_groq_and_preserves_provider_label(self):
+        calls = []
+
+        def openrouter(prompt, *, api_key, model):
+            calls.append("openrouter")
+            raise RuntimeError("OpenRouter HTTP 429: rate limited")
+
+        def groq(prompt, *, api_key, model):
+            calls.append("groq")
+            return {"proposals": [], "strategy_hypotheses": []}
+
+        result, provider = call_discovery_with_fallback(
+            "probe",
+            openrouter_api_key="openrouter-key",
+            groq_api_key="groq-key",
+            openrouter_caller=openrouter,
+            groq_caller=groq,
+        )
+        self.assertEqual(calls, ["openrouter", "groq"])
+        self.assertEqual(provider, "groq_fallback")
+        self.assertEqual(result["proposals"], [])
+
+    def test_both_provider_errors_are_preserved(self):
+        def openrouter(prompt, *, api_key, model):
+            raise RuntimeError("OpenRouter HTTP 401: invalid key")
+
+        def groq(prompt, *, api_key, model):
+            raise RuntimeError("Groq HTTP 403: model access denied")
+
+        with self.assertRaisesRegex(
+            RuntimeError, "OpenRouter HTTP 401.*Groq HTTP 403"
+        ):
+            call_discovery_with_fallback(
+                "probe",
+                openrouter_api_key="openrouter-key",
+                groq_api_key="groq-key",
+                openrouter_caller=openrouter,
+                groq_caller=groq,
+            )
+
 
 
 if __name__ == "__main__":
