@@ -1,0 +1,153 @@
+name: Manual Groq Real MOEX Research Pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      date_from:
+        description: "Start date YYYY-MM-DD (blank = rolling 3 years)"
+        required: false
+        type: string
+      date_till:
+        description: "End date YYYY-MM-DD (blank = latest completed MOEX session)"
+        required: false
+        type: string
+      tickers:
+        description: "Small real-data pilot universe"
+        required: true
+        type: string
+        default: "SBER,GAZP,LKOH,NVTK,MOEX"
+      model:
+        description: "Groq model ID"
+        required: true
+        type: string
+        default: "openai/gpt-oss-20b"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: groq-real-moex-research-pilot
+  cancel-in-progress: false
+
+jobs:
+  real-data-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile isolated research module and run offline tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
+
+      - name: Resolve research dates in Moscow timezone
+        id: dates
+        env:
+          INPUT_FROM: ${{ inputs.date_from }}
+          INPUT_TILL: ${{ inputs.date_till }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import date, datetime, timedelta
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          today = datetime.now(ZoneInfo("Europe/Moscow")).date()
+          start = date.fromisoformat(os.environ["INPUT_FROM"]) if os.environ["INPUT_FROM"].strip() else today - timedelta(days=3 * 365)
+          end = date.fromisoformat(os.environ["INPUT_TILL"]) if os.environ["INPUT_TILL"].strip() else today
+          if start > end:
+              raise SystemExit("date_from must not be after date_till")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write("date_from=" + start.isoformat() + chr(10))
+              output.write("date_till=" + end.isoformat() + chr(10))
+          print(f"Requested research range: {start} through {end} (Europe/Moscow)")
+          PY
+
+      - name: Verify Groq secret is configured
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          if not os.environ.get("GROQ_API_KEY", "").strip():
+              raise SystemExit("GROQ_API_KEY is missing from repository Actions secrets.")
+          print("GROQ_API_KEY is configured; secret value is not displayed.")
+          PY
+
+      - name: Generate deterministic research report from real MOEX ISS data
+        env:
+          DATE_FROM: ${{ steps.dates.outputs.date_from }}
+          DATE_TILL: ${{ steps.dates.outputs.date_till }}
+          TICKERS: ${{ inputs.tickers }}
+        run: |
+          set +e
+          python -m research_agent.cli --from "$DATE_FROM" --till "$DATE_TILL" --tickers "$TICKERS" --output research_report.json
+          research_exit=$?
+          set -e
+          if [ "$research_exit" -eq 3 ] && [ -s research_report.json ] && [ -s strategy_registry.json ]; then
+            echo "::warning::Structural audit is INCOMPLETE; AI commentary will explicitly treat missing evidence as unknown."
+          elif [ "$research_exit" -ne 0 ]; then
+            exit "$research_exit"
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("research_report.json").read_text(encoding="utf-8"))
+          if not isinstance(report, dict) or not isinstance(report.get("results"), dict):
+              raise SystemExit("Unexpected MOEX research report structure.")
+          if not report["results"]:
+              raise SystemExit("MOEX report contains no instrument results.")
+          audit = report.get("independent_validation", {})
+          if audit.get("status") not in {"INDEPENDENT_VALIDATION_PASS", "INDEPENDENT_VALIDATION_INCOMPLETE"}:
+              raise SystemExit("Independent structural validation failed or is missing.")
+          if audit.get("errors"):
+              raise SystemExit("Independent structural validation contains errors; refusing AI commentary.")
+          analyzed = sum(item.get("status") == "ANALYZED" for item in report["results"].values() if isinstance(item, dict))
+          if analyzed == 0:
+              raise SystemExit("No ticker has usable analyzed data; refusing AI commentary.")
+          print(f"Validated real MOEX ISS report: {analyzed}/{len(report['results'])} tickers analyzed; audit={audit.get('status')}; end={report.get('date_till')}")
+          PY
+
+      - name: Run three Groq specialists and coordinator on validated real-data report
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ inputs.model }}
+        run: |
+          python -m research_agent.ai_team --input research_report.json --output ai_commentary.json --model "$GROQ_MODEL"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path("ai_commentary.json").read_text(encoding="utf-8"))
+          expected = {"market_analyst", "strategy_researcher", "skeptical_reviewer"}
+          if result.get("status") != "AI_COMMENTARY_ONLY" or result.get("provider") != "groq_api":
+              raise SystemExit("Unexpected AI team status or provider.")
+          if result.get("calls") != 4 or set(result.get("specialists", {})) != expected:
+              raise SystemExit("Expected three specialist responses and one coordinator response.")
+          if not all(str(value).strip() for value in result["specialists"].values()):
+              raise SystemExit("One or more specialists returned empty commentary.")
+          if not str(result.get("coordinator", "")).strip():
+              raise SystemExit("Coordinator returned empty synthesis.")
+          print("PASS: three specialists and coordinator completed four Groq calls.")
+          print("PASS: quantitative source is the validated MOEX ISS report; AI output is commentary only.")
+          PY
+
+      - name: Upload deterministic report, registry and AI commentary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: groq-real-moex-research-${{ github.run_id }}
+          path: |
+            research_report.json
+            strategy_registry.json
+            ai_commentary.json
+          if-no-files-found: warn
+          retention-days: 14
