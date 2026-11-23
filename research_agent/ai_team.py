@@ -8,6 +8,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -16,7 +18,8 @@ from typing import Any, Callable
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 MAX_INPUT_CHARS = 30_000
-MAX_OUTPUT_TOKENS = 1_200
+MAX_OUTPUT_TOKENS = 700
+MAX_RATE_LIMIT_RETRIES = 4
 
 SYSTEM_PROMPT = (
     "You are part of a read-only MOEX research team. Never fabricate facts, prices, "
@@ -225,6 +228,8 @@ def call_groq(
     model: str = DEFAULT_MODEL,
     timeout: int = 60,
     opener: Callable[..., Any] = urllib.request.urlopen,
+    sleeper: Callable[[float], None] = time.sleep,
+    max_retries: int = MAX_RATE_LIMIT_RETRIES,
 ) -> str:
     """Call Groq's OpenAI-compatible Chat Completions API without extra dependencies."""
     if not api_key.strip():
@@ -254,32 +259,62 @@ def call_groq(
         },
         method="POST",
     )
-    try:
-        with opener(request, timeout=timeout) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        # Groq's error body usually identifies invalid keys, model access or account
-        # restrictions. Log only the provider's bounded error message; never headers.
-        detail = ""
+    for attempt in range(max_retries + 1):
         try:
-            error_payload = json.loads(exc.read().decode("utf-8", errors="replace"))
-            error_obj = error_payload.get("error", {}) if isinstance(error_payload, dict) else {}
-            if isinstance(error_obj, dict):
-                message = error_obj.get("message")
-                if isinstance(message, str):
-                    detail = " ".join(message.split())[:400]
-        except (ValueError, OSError):
-            pass
-        if detail:
-            detail = detail.replace(api_key, "[REDACTED]") if api_key else detail
-            detail = detail.replace("Bearer ", "[REDACTED] ") if "Bearer " in detail else detail
-            raise RuntimeError(f"Groq API HTTP {exc.code}: {detail}") from None
-        raise RuntimeError(
-            f"Groq API HTTP {exc.code}; provider returned no readable error message. "
-            "Check key validity, model access and account restrictions."
-        ) from None
-    except urllib.error.URLError as exc:
-        raise RuntimeError(f"Groq API connection failed: {exc.reason}") from None
+            with opener(request, timeout=timeout) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            break
+        except urllib.error.HTTPError as exc:
+            # Groq's 429 response includes either Retry-After or a human-readable
+            # "Please try again in Ns" hint. Wait for the provider's window to reset
+            # instead of failing the whole four-agent workflow immediately.
+            detail = ""
+            try:
+                error_payload = json.loads(exc.read().decode("utf-8", errors="replace"))
+                error_obj = error_payload.get("error", {}) if isinstance(error_payload, dict) else {}
+                if isinstance(error_obj, dict):
+                    message = error_obj.get("message")
+                    if isinstance(message, str):
+                        detail = " ".join(message.split())[:400]
+            except (ValueError, OSError):
+                pass
+
+            if exc.code == 429 and attempt < max_retries:
+                retry_after = None
+                headers = exc.headers
+                if headers is not None:
+                    raw_retry_after = headers.get("Retry-After")
+                    if raw_retry_after:
+                        try:
+                            retry_after = float(raw_retry_after)
+                        except (TypeError, ValueError):
+                            retry_after = None
+                if retry_after is None:
+                    match = re.search(r"try again in\\s+([0-9]+(?:\\.[0-9]+)?)s", detail, re.IGNORECASE)
+                    if match:
+                        retry_after = float(match.group(1))
+                if retry_after is None:
+                    retry_after = min(2 ** attempt, 30)
+                wait_seconds = max(1.0, min(retry_after + 0.75, 90.0))
+                print(
+                    f"Groq rate limit (HTTP 429); retry {attempt + 1}/{max_retries} "
+                    f"after {wait_seconds:.2f}s."
+                )
+                sleeper(wait_seconds)
+                continue
+
+            if detail:
+                detail = detail.replace(api_key, "[REDACTED]") if api_key else detail
+                detail = detail.replace("Bearer ", "[REDACTED] ") if "Bearer " in detail else detail
+                raise RuntimeError(f"Groq API HTTP {exc.code}: {detail}") from None
+            raise RuntimeError(
+                f"Groq API HTTP {exc.code}; provider returned no readable error message. "
+                "Check key validity, model access and account restrictions."
+            ) from None
+        except urllib.error.URLError as exc:
+            raise RuntimeError(f"Groq API connection failed: {exc.reason}") from None
+    else:
+        raise RuntimeError("Groq request exhausted its retry budget.")
     return _extract_text(payload)
 
 
