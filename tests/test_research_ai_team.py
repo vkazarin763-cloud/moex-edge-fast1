@@ -346,6 +346,10 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["url"], "https://api.groq.com/openai/v1/chat/completions")
         self.assertNotIn("secret-test", seen["url"])
         self.assertEqual(seen["headers"]["Authorization"], "Bearer secret-test")
+        self.assertEqual(
+            seen["headers"]["User-agent"],
+            "MOEX-EDGE-Research/1.0 (+https://github.com/vkazarin763-cloud/moex-edge-fast1)",
+        )
         self.assertEqual(seen["timeout"], 60)
         self.assertEqual(seen["body"]["model"], DEFAULT_GROQ_MODEL)
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
