@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Check out selected branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/openrouter-primary-groq-fallback
 
       - name: Set up Python
         uses: actions/setup-python@v5
