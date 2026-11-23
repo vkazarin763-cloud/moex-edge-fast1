@@ -56,6 +56,7 @@ jobs:
           python -m research_agent.moex_five_timeframe_audit \
             --from-date "2025-11-20" \
             --till-date "2026-11-23" \
+            --configs "A,B,C,D" \
             --output artifacts/moex_five_timeframe_history
       - name: Upload candle data and coverage report
         uses: actions/upload-artifact@v4
