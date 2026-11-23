@@ -1,0 +1,89 @@
+name: Manual Live Groq Fallback Smoke Test (Synthetic Only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-groq-fallback-smoke
+  cancel-in-progress: false
+
+jobs:
+  live-groq-fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify real Groq fallback with one synthetic request
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from research_agent.agent_discovery import call_discovery_with_fallback, call_groq_discovery
+
+          key = os.environ.get("GROQ_API_KEY", "").strip()
+          if not key:
+              raise SystemExit("GROQ_API_KEY is missing in repository secrets")
+
+          def simulated_openrouter(prompt, *, api_key, model):
+              raise RuntimeError("OpenRouter HTTP 429: simulated quota exhaustion")
+
+          prompt = (
+              "This is a provider connectivity smoke test, not market research. "
+              "Do not discuss securities or invent facts. Return exactly an empty "
+              "JSON result with proposals=[] and strategy_hypotheses=[]."
+          )
+
+          result, provider = call_discovery_with_fallback(
+              prompt,
+              openrouter_api_key="synthetic-openrouter-key",
+              groq_api_key=key,
+              model="openrouter/free",
+              groq_model="openai/gpt-oss-20b",
+              openrouter_caller=simulated_openrouter,
+              groq_caller=call_groq_discovery,
+          )
+
+          if provider != "groq_fallback":
+              raise SystemExit(f"Unexpected provider route: {provider}")
+          if set(result) != {"proposals", "strategy_hypotheses"}:
+              raise SystemExit("Groq response outer schema mismatch")
+          if not isinstance(result["proposals"], list) or not isinstance(result["strategy_hypotheses"], list):
+              raise SystemExit("Groq response arrays malformed")
+
+          print(json.dumps({
+              "status": "PASS",
+              "provider": provider,
+              "model": "openai/gpt-oss-20b",
+              "openrouter": "simulated HTTP 429; no OpenRouter request sent",
+              "groq_request": "one live synthetic request",
+              "proposals_count": len(result["proposals"]),
+              "strategy_hypotheses_count": len(result["strategy_hypotheses"]),
+              "market_data_used": False,
+              "broker_accessed": False,
+          }, ensure_ascii=False))
+          PY
+
+      - name: Record test safety summary
+        if: always()
+        run: |
+          {
+            echo "## Live Groq fallback smoke test"
+            echo "- One real Groq API request with synthetic prompt only"
+            echo "- OpenRouter failure simulated locally; no OpenRouter quota consumed"
+            echo "- No market data, signals, broker accounts, or orders accessed"
+            echo "- Only the GROQ_API_KEY secret is used"
+          } >> "$GITHUB_STEP_SUMMARY"
