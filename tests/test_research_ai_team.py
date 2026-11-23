@@ -109,6 +109,59 @@ class AITeamTests(unittest.TestCase):
         self.assertNotIn("trade_ledger", compact_text)
         self.assertNotIn("continuous_development_replay", compact_text)
 
+    def test_oversized_descriptive_metadata_is_reduced_without_dropping_registry(self):
+        registry_rows = [
+            {
+                "ticker": f"T{i:02d}", "direction": direction, "strategy": "Donchian20",
+                "status": "INSUFFICIENT_DATA", "reasons": ["sample below threshold"],
+                "closed_trades": 12, "average_net_return": 0.01,
+                "profit_factor": 1.2, "positive_folds": 1,
+                "adequately_sampled_folds": 1, "folds": 4,
+                "double_cost_average_net_return": 0.005,
+                "eligible_for_shadow_scanner": False,
+            }
+            for i in range(25) for direction in ("LONG", "SHORT")
+        ]
+        report = {
+            "generated_at_utc": "2026-11-23T00:00:00Z",
+            "date_till": "2026-11-20",
+            "results": {
+                f"T{i:02d}": {
+                    "status": "ANALYZED",
+                    "adversarial_cost_check": {
+                        "baseline_execution_config": {"fee_per_side": 0.001},
+                        "double_cost_execution_config": {"fee_per_side": 0.002},
+                    },
+                }
+                for i in range(25)
+            },
+            "cross_sectional_direction_summary": {f"verbose_metric_{i}": i for i in range(1200)},
+            "experiment_lab": {f"verbose_experiment_{i}": i for i in range(1200)},
+            "independent_validation": {"status": "INDEPENDENT_VALIDATION_INCOMPLETE", "checks": 55, "errors": 0},
+        }
+        registry = {
+            "registry_version": "development-registry-v1",
+            "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
+            "summary": {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 50},
+            "strategies": registry_rows,
+        }
+        compact_text = _compact_report(report, registry=registry)
+        compact = json.loads(compact_text)
+        self.assertLessEqual(len(compact_text), MAX_INPUT_CHARS)
+        self.assertEqual(len(compact["strategy_registry"]["strategies"]), 50)
+        self.assertEqual(len(compact["results"]), 25)
+        self.assertEqual(compact["strategy_registry"]["summary"]["INSUFFICIENT_DATA"], 50)
+        self.assertFalse(compact["strategy_registry"]["strategies"][0]["eligible_for_shadow_scanner"])
+        self.assertEqual(
+            compact["cost_model_by_ticker"]["T00"]["double_cost_execution_config"]["fee_per_side"],
+            0.002,
+        )
+        self.assertEqual(
+            compact["independent_validation"]["status"],
+            "INDEPENDENT_VALIDATION_INCOMPLETE",
+        )
+        self.assertIn("omitted", compact["experiment_lab"]["detail"].lower())
+
     def test_compact_report_includes_authoritative_directional_registry_and_costs(self):
         report = {
             "generated_at_utc": "2026-11-23T00:00:00Z",
