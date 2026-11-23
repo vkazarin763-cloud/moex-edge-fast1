@@ -1,0 +1,57 @@
+name: Manual AI Provider Diagnostic
+
+on:
+  workflow_dispatch:
+    inputs:
+      openrouter_model:
+        description: "OpenRouter model ID"
+        required: true
+        type: string
+        default: "openrouter/free"
+      groq_model:
+        description: "Groq model ID"
+        required: true
+        type: string
+        default: "openai/gpt-oss-20b"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-provider-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  provider-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run offline unit tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_research_ai_team -v
+
+      - name: Test OpenRouter and Groq independently
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_MODEL: ${{ inputs.openrouter_model }}
+          GROQ_MODEL: ${{ inputs.groq_model }}
+        run: python -m research_agent.provider_diagnostic
+
+      - name: Upload sanitized diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-provider-diagnostic-${{ github.run_id }}
+          path: provider_diagnostic.json
+          if-no-files-found: warn
+          retention-days: 14
