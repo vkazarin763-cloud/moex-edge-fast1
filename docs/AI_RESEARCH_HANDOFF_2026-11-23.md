@@ -147,3 +147,14 @@ A further independent cross-check was performed on the same three mismatch dates
 - Automatic full research run #45110952761 started on the same code commit. At the time of this note, offline tests and date resolution passed; MOEX data generation was in progress. Inspect the final artifact before concluding the weekday crosscheck is clean or the AI commentary completed.
   - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45110952761
 - The preceding run #45110189920 failed only at AI commentary: primary OpenRouter returned empty content after 4,347 reasoning tokens; Nemotron fallback via OpenRouter timed out at 60 seconds. Its deterministic MOEX report and registry were successfully generated and uploaded. The artifact contains 50 registry rows (0 PASS, 0 REJECT, 50 INSUFFICIENT_DATA). This is a model availability/timeout failure, not a deterministic data-generation failure.
+
+
+## 2026-11-23 — final compact-evidence optimization in progress
+- Run #45110952761 generated the corrected research report, including clean `tqbr_history_crosscheck` statuses for all five tickers, but AI commentary stopped before provider calls because compact evidence measured 33,146 characters (30,000 limit).
+- First optimization deduplicated the 25 unique registry reason strings into a code map (R1…Rn), while each of the 50 strategy rows retains its reason-code list. The exact original reason text remains available in `strategy_registry.reason_codes`; metrics/statuses/eligibility remain intact.
+- Second optimization stores identical per-ticker execution assumptions once in `cost_model_profiles` (C1…Cn), while `cost_model_by_ticker` maps each ticker to its profile. Baseline and doubled fee/slippage/stop/target/max-bars values are retained exactly.
+- Per-ticker session mismatch examples are compacted to date plus mismatched field values; structured session and history crosscheck evidence remains included.
+- The AI-team CI run #45111581132 passed compile + 56 tests on commit `b88304485aba330d49c1e8a7978ac5c04105ef3c`.
+  - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45111581132
+- Automatic full research run #45111581019 is now running on the same commit. Offline tests and date resolution passed; MOEX research generation was in progress at the time of this note. The next check is whether compact evidence is below 30,000 and whether all four AI roles finish.
+  - https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45111581019
