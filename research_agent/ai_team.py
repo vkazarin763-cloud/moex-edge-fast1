@@ -234,9 +234,6 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             "selection_policy": _bounded(registry.get("selection_policy", {})),
             "summary": _bounded(registry.get("summary", {})),
             "scanner_contract": _bounded(registry.get("scanner_contract", {})),
-            "reason_codes": {
-                code: reason for reason, code in reason_text_to_code.items()
-            },
             "strategies": [
                 {
                     "ticker": item.get("ticker"),
@@ -260,6 +257,9 @@ def _compact_report(report: Any, registry: Any = None) -> str:
                 for item in registry["strategies"]
                 if isinstance(item, dict)
             ],
+            "reason_codes": {
+                code: reason for reason, code in reason_text_to_code.items()
+            },
             "authority_note": (
                 "This direction-specific registry is authoritative for selection and "
                 "scanner eligibility. Decode each row's reason_codes using reason_codes. Never infer a PASS from source-report aggregates."
