@@ -6,6 +6,7 @@ from research_agent.ai_team import (
     DEFAULT_MODEL,
     DEFAULT_GROQ_MODEL,
     MAX_INPUT_CHARS,
+    SYSTEM_PROMPT,
     _compact_report,
     _extract_text,
     call_groq,
@@ -29,6 +30,10 @@ class FakeResponse:
 
 
 class AITeamTests(unittest.TestCase):
+    def test_ai_instructions_distinguish_holdout_family_from_directional_registry(self):
+        self.assertIn("does not split LONG/SHORT", SYSTEM_PROMPT)
+        self.assertIn("never compare its row count directly", SYSTEM_PROMPT)
+
     def test_compact_report_drops_raw_history_and_trade_ledgers(self):
         source = {
             "date_from": "2023-01-01",
