@@ -357,7 +357,10 @@ def run_team(
     for role, instruction in ROLES:
         prompt = (
             f"{instruction}\n\n"
-            "Return ONLY JSON matching this structure: "
+            "MANDATORY: Return ONLY one JSON object with BOTH top-level keys "
+            "'hypotheses' and 'questions' on every response. Never omit either key; "
+            "use an empty array when there is nothing to report. Exact minimal shape: "
+            '{"hypotheses":[],"questions":[]}. Full shape example: '
             '{"hypotheses":[{"hypothesis":"short qualitative hypothesis without digits",'
             '"evidence":[{"path":"dot.separated.source.path","value_json":"exact compact JSON value"}]}],'
             '"questions":["qualitative research question"]}. '
