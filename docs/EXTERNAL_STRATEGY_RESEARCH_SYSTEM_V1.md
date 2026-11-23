@@ -91,3 +91,17 @@ Connect only approved registry entries to the relevant market-specific scanner. 
 ## First acceptance criteria
 
 The first smoke test passes only if it uses free/public sources and the existing free-tier provider; completes without downloading/processing market candles; records source URL and provenance for every candidate; rejects/quarantines malformed, duplicate and unsupported candidates; never treats LLM output as a backtest, validation result or signal; and invokes no broker/execution workflow or production repository.
+
+## Current implementation scope (2026-11-23)
+
+The architecture remains extensible to equities, futures and options, but the active research phase is **equities only**. The source scout currently queries stock/equity strategy leads only. Futures and options are paused and must not consume discovery or implementation effort until the equities phase is reviewed.
+
+The current equities universe is the fixed 44-stock MOEX list already defined by the project. No universe expansion is implied by public-source discovery.
+
+A source lead is not a strategy approval. In particular:
+- `INCOMPLETE` means one or more of entry, exit, invalidation, timeframe, parameters or execution assumptions are missing.
+- `SOURCE_REVIEWED` means source code/rules were inspected and immutable source version recorded; it does not mean profitability.
+- Only an independently validated and explicitly approved strategy may be considered by the signal scanner.
+
+The first equities-only source review is recorded in `docs/EQUITIES_ONLY_SOURCE_REVIEW_2026-11-23.md`.
+
