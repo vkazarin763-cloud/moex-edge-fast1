@@ -57,6 +57,40 @@ class AgentDiscoveryTests(unittest.TestCase):
         ):
             call_groq_discovery("probe", api_key="fake", opener=denied)
 
+    def test_groq_discovery_uses_compatible_request_profile(self):
+        seen = {}
+        payload = {"proposals": [], "strategy_hypotheses": []}
+
+        class Response:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode()
+
+        def opener(request, timeout):
+            seen["url"] = request.full_url
+            seen["authorization"] = request.get_header("Authorization")
+            seen["user_agent"] = request.get_header("User-agent")
+            seen["body"] = json.loads(request.data.decode("utf-8"))
+            return Response()
+
+        result = call_groq_discovery("synthetic probe", api_key="test-key", opener=opener)
+        self.assertEqual(result, payload)
+        self.assertEqual(seen["url"], "https://api.groq.com/openai/v1/chat/completions")
+        self.assertEqual(seen["authorization"], "Bearer test-key")
+        self.assertEqual(
+            seen["user_agent"],
+            "MOEX-EDGE-Research/1.0 (+https://github.com/vkazarin763-cloud/moex-edge-fast1)",
+        )
+        self.assertEqual(seen["body"]["reasoning_format"], "hidden")
+        self.assertEqual(seen["body"]["reasoning_effort"], "low")
+        self.assertEqual(seen["body"]["model"], "openai/gpt-oss-20b")
+        self.assertEqual(seen["body"]["response_format"], __import__(
+            "research_agent.agent_discovery", fromlist=["OUTPUT_SCHEMA"]
+        ).OUTPUT_SCHEMA)
+
     def test_two_of_three_consensus_and_experimental_verification(self):
         candidate = {
             "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
