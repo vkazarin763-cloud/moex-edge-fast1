@@ -73,6 +73,39 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ steps.research.outputs.run_id }}
+ 
+      - name: Resolve previous successful hourly scan
+        id: previous
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "finam-hourly-fast-scan.yml",
+              branch: "main",
+              status: "completed",
+              per_page: 20
+            });
+            const previous = response.data.workflow_runs.find(
+              run => run.id !== context.runId && run.conclusion === "success"
+            );
+            if (previous) {
+              core.setOutput("run_id", String(previous.id));
+              core.info(`Comparing with previous successful scan ${previous.id}`);
+            } else {
+              core.info("No previous successful scan; all eligible signals will be new.");
+            }
+
+      - name: Download previous successful signal report
+        if: steps.previous.outputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-hourly-scan-${{ steps.previous.outputs.run_id }}
+          path: previous-data
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.previous.outputs.run_id }}
 
       - name: Collect closed D1 and H1 candles for 44 symbols
         id: collect
@@ -106,6 +139,56 @@ jobs:
             --output moex_edge_mtf_signals.json
           END=$(date +%s)
           echo "seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+ 
+      - name: Suppress already observed signal events
+        id: dedup
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from research_agent.signal_ledger import append_signal_report, _event_id
+
+          current = json.loads(Path("moex_edge_mtf_signals.json").read_text(encoding="utf-8"))
+          previous_path = Path("previous-data/moex_edge_mtf_signals.json")
+          ledger = Path("/tmp/moex_edge_signal_dedup.jsonl")
+
+          if previous_path.exists():
+              previous = json.loads(previous_path.read_text(encoding="utf-8"))
+              append_signal_report(previous, ledger)
+
+          before = set()
+          if ledger.exists():
+              before = {
+                  json.loads(line)["event_id"]
+                  for line in ledger.read_text(encoding="utf-8").splitlines()
+                  if line.strip()
+              }
+
+          append_signal_report(current, ledger)
+          after = {
+              json.loads(line)["event_id"]
+              for line in ledger.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          } if ledger.exists() else set()
+          new_ids = after - before
+          new_signals = [
+              signal for signal in current.get("signals", [])
+              if _event_id(current["strategy_cohort_version"], signal) in new_ids
+          ]
+
+          output = dict(current)
+          output["total_signals_count"] = len(current.get("signals", []))
+          output["duplicates_suppressed"] = len(current.get("signals", [])) - len(new_signals)
+          output["signals"] = new_signals
+          output["signals_count"] = len(new_signals)
+          Path("moex_edge_mtf_new_signals.json").write_text(
+              json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8"
+          )
+          print(
+              f"New signal events: {len(new_signals)}; "
+              f"repeats suppressed: {output['duplicates_suppressed']}"
+          )
+          PY
 
       - name: Publish timing, coverage and signal summary
         if: always()
@@ -128,7 +211,8 @@ jobs:
           ]
           for filename in ("moex_edge_multi_timeframe_candles.json",
                            "moex_edge_multi_timeframe_validation.json",
-                           "moex_edge_mtf_signals.json"):
+                           "moex_edge_mtf_signals.json",
+                           "moex_edge_mtf_new_signals.json"):
               if not Path(filename).exists():
                   continue
               data = json.loads(Path(filename).read_text(encoding="utf-8"))
@@ -143,9 +227,14 @@ jobs:
                   lines += ["", "## Data validation",
                             f"- Status: {data.get('status')}",
                             f"- Issues: {data.get('issue_count')}"]
+              elif filename.endswith("new_signals.json"):
+                  lines += ["", "## New signal events",
+                            f"- New signals: {data.get('signals_count', 0)}",
+                            f"- Repeats suppressed: {data.get('duplicates_suppressed', 0)}",
+                            f"- Total candidates: {data.get('total_signals_count', 0)}"]
               else:
-                  lines += ["", "## Signals",
-                            f"- Signals: {data.get('signals_count', 0)}",
+                  lines += ["", "## Scanner",
+                            f"- Total signals: {data.get('signals_count', 0)}",
                             f"- Symbols with D1/H1 data: {data.get('symbols_with_d1_h1_data')}/{data.get('universe_size')}",
                             f"- Skipped symbols: {len(data.get('skipped_symbols', []))}",
                             f"- Registry: {data.get('strategy_registry_version')}"]
@@ -163,5 +252,6 @@ jobs:
             moex_edge_multi_timeframe_candles.json
             moex_edge_multi_timeframe_validation.json
             moex_edge_mtf_signals.json
+            moex_edge_mtf_new_signals.json
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 30
