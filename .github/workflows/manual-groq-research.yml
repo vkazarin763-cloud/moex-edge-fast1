@@ -1,6 +1,20 @@
 name: Manual AI Research Team
 
 on:
+  push:
+    branches:
+      - feature/openrouter-primary-groq-fallback
+    paths:
+      - "research_agent/ai_team.py"
+      - "research_agent/cli.py"
+      - "research_agent/validation.py"
+      - "research_agent/quality.py"
+      - "research_agent/session_mapping.py"
+      - "research_agent/strategy_registry.py"
+      - "tests/test_research_ai_team.py"
+      - "tests/test_research_holdout.py"
+      - "tests/test_research_quality.py"
+      - ".github/workflows/manual-groq-research.yml"
   workflow_dispatch:
     inputs:
       date_from:
@@ -50,7 +64,7 @@ jobs:
       - name: Compile isolated module and run offline tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_research_ai_team -v
+          python -m unittest tests.test_research_ai_team tests.test_research_holdout tests.test_research_quality -v
 
       - name: Resolve research dates
         id: dates
@@ -59,7 +73,11 @@ jobs:
           INPUT_TILL: ${{ inputs.date_till }}
         run: |
           END="${INPUT_TILL:-$(date -u +%F)}"
-          START="${INPUT_FROM:-$(date -u -d '3 years ago' +%F)}"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            START="${INPUT_FROM:-2023-11-20}"
+          else
+            START="${INPUT_FROM:-$(date -u -d '3 years ago' +%F)}"
+          fi
           export START END
           python - <<'PY'
           import os
@@ -78,7 +96,7 @@ jobs:
         env:
           DATE_FROM: ${{ steps.dates.outputs.date_from }}
           DATE_TILL: ${{ steps.dates.outputs.date_till }}
-          TICKERS: ${{ inputs.tickers }}
+          TICKERS: ${{ inputs.tickers || 'SBER,GAZP,LKOH,NVTK,MOEX' }}
         run: |
           set +e
           python -m research_agent.cli \
@@ -135,8 +153,8 @@ jobs:
       - name: Run four-agent research commentary
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_MODEL: ${{ inputs.model }}
-          OPENROUTER_BACKUP_MODEL: ${{ inputs.fallback_model }}
+          OPENROUTER_MODEL: ${{ inputs.model || 'openrouter/free' }}
+          OPENROUTER_BACKUP_MODEL: ${{ inputs.fallback_model || 'nvidia/nemotron-3-ultra-550b-a55b:free' }}
           AI_PROVIDER: "openrouter"
         run: |
           python -m research_agent.ai_team --input research_report.json --registry strategy_registry.json --output ai_commentary.json
