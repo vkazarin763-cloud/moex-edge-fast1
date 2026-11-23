@@ -2,10 +2,20 @@ import unittest
 from datetime import datetime
 
 from research_agent.core import Candle
-from research_agent.moex_five_timeframe_audit import aggregate_h4, aggregate_m15
+from research_agent.moex_five_timeframe_audit import aggregate_h4, aggregate_m15, resolve_native_frames
 
 
 class FiveTimeframeAggregationTests(unittest.TestCase):
+    def test_stage_one_configs_do_not_request_m1(self):
+        self.assertEqual(resolve_native_frames(["A", "B", "C", "D"]), {"W1", "D1", "H1"})
+
+    def test_config_e_adds_m1_only_for_m15(self):
+        self.assertEqual(resolve_native_frames(["E"]), {"W1", "D1", "H1", "M1"})
+
+    def test_unknown_config_is_rejected(self):
+        with self.assertRaises(ValueError):
+            resolve_native_frames(["Z"])
+
     def test_m15_only_emits_complete_session_local_groups(self):
         rows = [
             Candle(datetime(2026, 1, 5, 10, m), 100, 102, 99, 101, 10)
