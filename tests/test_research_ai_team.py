@@ -213,7 +213,7 @@ class AITeamTests(unittest.TestCase):
             return json.dumps({
                 "hypotheses": [{
                     "hypothesis": "A qualitative possibility worth checking",
-                    "evidence": [{"path": "evidence.status", "value_json": "\\"UNKNOWN\\""}],
+                    "evidence": [{"path": "evidence.status", "value_json": '"UNKNOWN"'}],
                 }],
                 "questions": ["What additional evidence is needed?"],
             })
