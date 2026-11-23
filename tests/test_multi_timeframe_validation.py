@@ -20,6 +20,10 @@ class MultiTimeframeValidationTests(unittest.TestCase):
             candle_end_utc("2026-11-19T00:00:00", "MOEX ISS TQBR history", "D1"),
             datetime(2026, 11, 19, 21, 0, tzinfo=timezone.utc),
         )
+        self.assertEqual(
+            candle_end_utc("2026-11-20T00:00:00+00:00", "Finam daily fallback", "D1"),
+            datetime(2026, 11, 21, 0, 0, tzinfo=timezone.utc),
+        )
 
     def test_asof_snapshot_never_selects_unclosed_bar(self):
         report = {
