@@ -84,7 +84,7 @@ def verify_agent_proposals(
     """Reproduce agent candidates against deterministic signals and registry.
 
     Only candidates that exactly match symbol, direction, strategy and closed D1
-    signal timestamp can proceed. H1 confirmation and research approval are
+    bar-end timestamp can proceed. H1 confirmation and research approval are
     independently checked. No agent-supplied price, indicator or performance
     metric is used.
     """
@@ -100,7 +100,7 @@ def verify_agent_proposals(
     universe = deterministic_scan.get("universe") or []
     validate_agent_proposals(agent_report, universe)
     reproduced = {
-        (row.get("symbol"), row.get("direction"), row.get("strategy"), row.get("d1_signal_timestamp")): row
+        (row.get("symbol"), row.get("direction"), row.get("strategy"), row.get("d1_bar_end_utc")): row
         for row in deterministic_scan["signals"]
     }
     registry = {
@@ -117,7 +117,7 @@ def verify_agent_proposals(
         "REJECTED_NOT_REPRODUCED": 0,
     }
     for proposal in agent_report["proposals"]:
-        key = (proposal["symbol"], proposal["direction"], proposal["strategy"], proposal["d1_signal_timestamp"])
+        key = (proposal["symbol"], proposal["direction"], proposal["strategy"], proposal["d1_bar_end_utc"])
         actual = reproduced.get(key)
         if actual is None:
             status = "REJECTED_NOT_REPRODUCED"
