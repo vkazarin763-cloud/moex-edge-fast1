@@ -252,6 +252,28 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(calls, ["openrouter", "groq"] * 4)
         self.assertEqual(result["providers_used"], ["groq_fallback"] * 4)
         self.assertEqual(result["coordinator"], "fallback-note")
+        self.assertEqual(len(result["provider_diagnostics"]), 4)
+        self.assertEqual(
+            result["provider_diagnostics"][0]["primary_error"],
+            "OpenRouter unavailable",
+        )
+
+    def test_both_provider_failures_are_preserved_in_error(self):
+        def fake_caller(prompt, *, api_key, provider, model):
+            if provider == "openrouter":
+                raise RuntimeError("OpenRouter HTTP 429: rate limited")
+            raise RuntimeError("Groq HTTP 403: model access denied")
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"OpenRouter HTTP 429.*Groq HTTP 403",
+        ):
+            run_team(
+                {"ticker": "SBER"},
+                api_key="openrouter-key",
+                groq_api_key="groq-key",
+                caller=fake_caller,
+            )
 
 
 if __name__ == "__main__":
