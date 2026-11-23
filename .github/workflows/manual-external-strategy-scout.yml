@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: "Maximum source leads per market and source (1–10)"
+        description: "Maximum source leads per source; equities only (1–10)"
         required: true
         type: number
         default: 5
@@ -33,7 +33,7 @@ jobs:
       - name: Compile and run offline tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_external_strategy_scout -v
+          python -m unittest tests.test_external_strategy_scout tests.test_moex_equities_donchian_replay -v
       - name: Discover public source metadata only
         run: |
           python -m research_agent.external_strategy_scout --limit "${{ inputs.limit || 5 }}" --output external_strategy_sources.json
