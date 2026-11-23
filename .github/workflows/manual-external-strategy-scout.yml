@@ -61,7 +61,7 @@ jobs:
           lines = ['# MOEX EDGE equities strategy research agent', '']
           if path.exists():
               data = json.loads(path.read_text(encoding='utf-8'))
-              lines += [f"- Status: {data.get('status')}", f"- Unique source leads: {data.get('candidate_count')}", f"- Source errors: {len(data.get('errors', []))}", f"- Status counts: {data.get('status_counts')}", '', '## Sources']
+              lines += [f"- Status: {data.get('status')}", f"- Unique source leads: {data.get('candidate_count')}", f"- Source errors: {len(data.get('discovery_errors', []))}", f"- Status counts: {data.get('status_counts')}", '', '## Sources']
               for item in data.get('candidates', []):
                   lines.append(f"- [{item.get('title')}]({item.get('url')}) — {item.get('inspection_status')}; missing: {', '.join(item.get('missing_rule_fields', [])) or 'none'}; files: {', '.join(item.get('inspected_files', []))}")
               lines += ['', 'Source inspection is evidence collection, not AI validation or profitability evidence. All candidates remain NOT_ELIGIBLE until independent MOEX testing. The separate MOEX replay uses only the frozen historical artifact and is a trade-level diagnostic; no live signals, broker accounts or orders are accessed.']
