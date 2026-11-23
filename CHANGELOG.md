@@ -177,3 +177,12 @@
 
 ## 2026-11-21 — Finam mode safety observation
 - Safety CI run 44864354084 reported derived `FINAM_DRY_RUN=live`. No order was sent. Scheduled and standard manual executor workflows hardcode DRY_RUN; two separate manual workflows remain live-capable behind explicit confirmations. Recorded in handoff; no configuration was changed.
+
+## 2026-11-23 — AI research team pilot and methodology clarification
+- Успешный real-data AI research run #45108741043: 5 TQBR daily instruments, 2023-11-20—2026-11-20; четыре роли завершили read-only commentary.
+- В AI input включены все 50 direction-specific registry rows; summary 0 PASS / 0 REJECT / 50 INSUFFICIENT_DATA. No candidate eligible for shadow scanner.
+- Documented provider behavior: OpenRouter free primary had two empty responses due to reasoning-token limit; Nemotron free model fallback via same OpenRouter succeeded. This is not independent provider failover; Groq direct route had previously returned HTTP 403/code 1010.
+- Clarified that Holm family_size=25 is prospective holdout-only (5 tickers × 5 frozen strategies, no LONG/SHORT split), separate from the 50-row development directional registry.
+- Added explicit family-scope metadata, removed hard-coded CLI family multiplier, strengthened AI prompts, and added regression tests. CI run #45109696114 must be checked before considering the change verified.
+- Remaining warnings: raw/TQBR one-day mismatches for SBER/GAZP/MOEX; 9 calendar-gap candidates per ticker; exchange calendar unverified; experiment lab skipped; prospective holdout currently has 0 closed trades.
+- PR #163 remains open/unmerged; production repository untouched; no broker/Telegram/production actions.
