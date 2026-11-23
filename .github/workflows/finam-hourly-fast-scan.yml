@@ -74,38 +74,15 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ steps.research.outputs.run_id }}
  
-      - name: Resolve previous successful hourly scan
-        id: previous
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const response = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: "finam-hourly-fast-scan.yml",
-              branch: "main",
-              status: "completed",
-              per_page: 20
-            });
-            const previous = response.data.workflow_runs.find(
-              run => run.id !== context.runId && run.conclusion === "success"
-            );
-            if (previous) {
-              core.setOutput("run_id", String(previous.id));
-              core.info(`Comparing with previous successful scan ${previous.id}`);
-            } else {
-              core.info("No previous successful scan; all eligible signals will be new.");
-            }
-
-      - name: Download previous successful signal report
-        if: steps.previous.outputs.run_id != ''
-        uses: actions/download-artifact@v4
-        with:
-          name: moex-edge-hourly-scan-${{ steps.previous.outputs.run_id }}
-          path: previous-data
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          run-id: ${{ steps.previous.outputs.run_id }}
+      - name: Load persistent signal ledger snapshot
+        run: |
+          git fetch origin "refs/heads/moex-edge-signal-ledger:refs/remotes/origin/moex-edge-signal-ledger"
+          mkdir -p signal-ledger
+          if git cat-file -e "origin/moex-edge-signal-ledger:signal-ledger/events.jsonl" 2>/dev/null; then
+            git show "origin/moex-edge-signal-ledger:signal-ledger/events.jsonl" > signal-ledger/events.jsonl
+          else
+            : > signal-ledger/events.jsonl
+          fi
 
       - name: Collect closed D1 and H1 candles for 44 symbols
         id: collect
@@ -140,7 +117,7 @@ jobs:
           END=$(date +%s)
           echo "seconds=$((END-START))" >> "$GITHUB_OUTPUT"
  
-      - name: Suppress already observed signal events
+      - name: Suppress previously recorded signal events
         id: dedup
         run: |
           python - <<'PY'
@@ -149,20 +126,16 @@ jobs:
           from research_agent.signal_ledger import append_signal_report, _event_id
 
           current = json.loads(Path("moex_edge_mtf_signals.json").read_text(encoding="utf-8"))
-          previous_path = Path("previous-data/moex_edge_mtf_signals.json")
           ledger = Path("/tmp/moex_edge_signal_dedup.jsonl")
+          source_ledger = Path("signal-ledger/events.jsonl")
+          if source_ledger.exists():
+              ledger.write_text(source_ledger.read_text(encoding="utf-8"), encoding="utf-8")
 
-          if previous_path.exists():
-              previous = json.loads(previous_path.read_text(encoding="utf-8"))
-              append_signal_report(previous, ledger)
-
-          before = set()
-          if ledger.exists():
-              before = {
-                  json.loads(line)["event_id"]
-                  for line in ledger.read_text(encoding="utf-8").splitlines()
-                  if line.strip()
-              }
+          before = {
+              json.loads(line)["event_id"]
+              for line in ledger.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          } if ledger.exists() else set()
 
           append_signal_report(current, ledger)
           after = {
@@ -243,15 +216,24 @@ jobs:
               out.write("\n".join(lines) + "\n")
           PY
 
-      - name: Upload scan evidence
+      - name: Upload scanner report for persistent ledger
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: moex-edge-hourly-scan-${{ github.run_id }}
+          name: moex-edge-mtf-signals-${{ github.run_id }}
+          path: |
+            moex_edge_mtf_signals.json
+            moex_edge_mtf_new_signals.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload candle artifact for persistent outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-multi-timeframe-candles
           path: |
             moex_edge_multi_timeframe_candles.json
             moex_edge_multi_timeframe_validation.json
-            moex_edge_mtf_signals.json
-            moex_edge_mtf_new_signals.json
           if-no-files-found: warn
           retention-days: 30
