@@ -34,10 +34,10 @@ class MultiTimeframeValidationTests(unittest.TestCase):
                     "H1": {
                         "source": "Finam", "status": "OK",
                         "candles": [
-                            {"timestamp": "2026-11-20T11:00:00+00:00",
+                            {"timestamp": "2026-11-20T19:00:00+00:00",
                              "open": 100, "high": 102, "low": 99, "close": 101,
                              "volume": 1000},
-                            {"timestamp": "2026-11-20T12:30:00+00:00",
+                            {"timestamp": "2026-11-20T20:30:00+00:00",
                              "open": 101, "high": 103, "low": 100, "close": 102,
                              "volume": 900},
                         ],
@@ -56,7 +56,7 @@ class MultiTimeframeValidationTests(unittest.TestCase):
         result = validate_multi_timeframe_report(report)
         self.assertEqual(result["status"], "FAIL")
         self.assertEqual(result["latest_closed_bars"]["SBER"]["H1"]["timestamp"],
-                         "2026-11-20T11:00:00+00:00")
+                         "2026-11-20T19:00:00+00:00")
         self.assertEqual(result["latest_closed_bars"]["SBER"]["M10"]["end_utc"],
                          "2026-11-20T20:50:00+00:00")
         self.assertEqual(result["issue_count"], 1)
