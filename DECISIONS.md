@@ -174,4 +174,6 @@
 - 50 development registry rows = ticker × strategy × LONG/SHORT. Holm family_size=25 = prospective holdout ticker × frozen strategy; prospective holdout currently does not split directions. These are separate hypothesis families, not a direct count mismatch.
 - Ни одна из 50 комбинаций не прошла пороги выборки; ничего не допускать к shadow scanner/production.
 - Не объединять PR #163 без отдельного разрешения; не изменять production repo `moex-edge`.
-- Следующие блокеры: reconcile raw/TQBR mismatches for SBER/GAZP/MOEX and validate calendar gaps against authoritative MOEX trading calendar.
+- Календарные gaps 2023-12-29—2026-06-15 вручную сопоставлены с официальными расписаниями MOEX: это закрытые дни и/или дополнительные сессии, учитываемые в следующей обычной торговой дате. Автоматическую проверку календаря в коде всё ещё требуется сделать.
+- Три расхождения raw candle vs TQBR history относятся только к VOLUME; OHLC и VALUE совпадают. Причина неизвестна, поэтому reconciliation остаётся incomplete.
+- Weekend raw fragments можно исключать из same-date crosscheck только при подтверждённом полном session mapping; это не означает, что официальный календарь полностью проверен.
