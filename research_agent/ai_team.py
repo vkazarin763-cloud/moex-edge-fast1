@@ -324,6 +324,9 @@ def call_groq(
                     '{"hypotheses": [], "questions": []}. Do not omit either key. '
                     "For every hypothesis include its evidence array."
                 )
+                # urllib's Request keeps the original serialized body; refresh it
+                # so the retry actually sends the strengthened prompt.
+                request.data = json.dumps(body).encode("utf-8")
                 print(
                     f"Groq structured-output schema mismatch (HTTP 400); "
                     f"retry {schema_retries}/{MAX_SCHEMA_RETRIES} with explicit required-key reminder."
