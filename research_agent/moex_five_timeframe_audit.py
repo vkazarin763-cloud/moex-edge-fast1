@@ -57,8 +57,7 @@ def aggregate_m15(m1: list[Candle]) -> list[Candle]:
     buckets: dict[datetime, dict[int, Candle]] = defaultdict(dict)
     for c in rows:
         ts = c.timestamp
-        if ts.weekday() >= 5:
-            continue
+        # Keep any actual exchange session present in the ISS response.
         if (10 <= ts.hour < 18) or (ts.hour == 18 and ts.minute < 50):
             anchor = ts.replace(hour=10, minute=0, second=0, microsecond=0)
             elapsed = int((ts - anchor).total_seconds() // 60)
@@ -90,7 +89,8 @@ def aggregate_h4(h1: list[Candle]) -> list[Candle]:
     buckets: dict[datetime, dict[datetime, Candle]] = defaultdict(dict)
     for c in rows:
         ts = c.timestamp
-        if ts.weekday() >= 5 or ts.minute != 0:
+        # Keep actual exchange sessions; only require on-the-hour H1 bars.
+        if ts.minute != 0:
             continue
         if ts.hour in range(10, 14):
             start = ts.replace(hour=10, minute=0, second=0, microsecond=0)
