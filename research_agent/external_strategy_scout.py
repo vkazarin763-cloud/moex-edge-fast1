@@ -18,12 +18,12 @@ MARKET_QUERIES = {
 USER_AGENT = "MOEX-EDGE-External-Strategy-Research/0.2 (public metadata discovery)"
 
 MARKET_EVIDENCE = {
-    "equities": re.compile(r"\\b(equit(y|ies)|stock(s)?|share(s)?|equity index|ticker|NYSE|NASDAQ|S&P ?500|SPY|QQQ)\\b", re.I),
-    "futures": re.compile(r"\\b(future(s)?|FORTS|CME|E-mini|ES1!?|NQ1!?|CL1!?|GC1!?)\\b", re.I),
-    "options": re.compile(r"\\b(option(s)?|call(s)?|put(s)?|strike(s)?|expiry|expir(y|ation)|implied volatility|option chain)\\b", re.I),
+    "equities": re.compile(r"\b(equit(y|ies)|stock(s)?|share(s)?|equity index|ticker|NYSE|NASDAQ|S&P ?500|SPY|QQQ)\b", re.I),
+    "futures": re.compile(r"\b(future(s)?|FORTS|CME|E-mini|ES1!?|NQ1!?|CL1!?|GC1!?)\b", re.I),
+    "options": re.compile(r"\b(option(s)?|call(s)?|put(s)?|strike(s)?|expiry|expir(y|ation)|implied volatility|option chain)\b", re.I),
 }
-INFRA_TERMS = re.compile(r"\\b(framework|backtesting engine|backtest engine|API|SDK|screener|scanner|data provider|library|platform|toolkit|tutorial|course|textbook|chapter)\\b", re.I)
-STRATEGY_TERMS = re.compile(r"\\b(strategy|trading system|entry signal|exit signal|mean.reversion|momentum|breakout|reversal|trend.following)\\b", re.I)
+INFRA_TERMS = re.compile(r"\b(framework|backtesting engine|backtest engine|API|SDK|screener|scanner|data provider|library|platform|toolkit|tutorial|course|textbook|chapter)\b", re.I)
+STRATEGY_TERMS = re.compile(r"\b(strategy|trading system|entry signal|exit signal|mean.reversion|momentum|breakout|reversal|trend.following)\b", re.I)
 
 def fetch_json(url: str, *, timeout: int = 15, opener=urllib.request.urlopen):
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json, application/json"})
@@ -152,7 +152,7 @@ def main(argv=None):
     parser.add_argument("--output", default="external_strategy_sources.json")
     args = parser.parse_args(argv)
     report = discover(limit=args.limit)
-    Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"{report['status']}: {report['candidate_count']} unique public source leads; {len(report['errors'])} source errors")
     return 0 if report["candidate_count"] else 2
 
