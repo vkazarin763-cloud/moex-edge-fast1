@@ -401,8 +401,8 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             quality = row.get("q")
             if isinstance(quality, dict):
                 caveat = quality.get("calendar_caveat")
-                if isinstance(caveat, str) and len(caveat) > 180:
-                    quality["calendar_caveat"] = caveat[:177] + "..."
+                if isinstance(caveat, str) and len(caveat) > 120:
+                    quality["calendar_caveat"] = caveat[:117] + "..."
         encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(encoded) > MAX_INPUT_CHARS:
         # Keep the complete directional registry and decision metrics. Reason text
