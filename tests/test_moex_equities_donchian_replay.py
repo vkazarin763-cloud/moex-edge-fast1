@@ -4,6 +4,7 @@ from research_agent.moex_equities_donchian_replay import (
     adjust_candle,
     _simulate_symbol,
     _trade_metrics,
+    _validate_rows,
 )
 
 
@@ -53,6 +54,14 @@ class DonchianReplayTests(unittest.TestCase):
         self.assertEqual(trades[0]["exit"], 11.0)
         self.assertEqual(trades[0]["entry_date"], "2024-01-22")
         self.assertEqual(trades[0]["exit_date"], "2024-01-23")
+
+    def test_source_order_validation_detects_non_monotonic_rows(self):
+        rows = [
+            {"timestamp": "2024-01-02T00:00:00", "open": 10, "high": 11, "low": 9, "close": 10},
+            {"timestamp": "2024-01-01T00:00:00", "open": 10, "high": 11, "low": 9, "close": 10},
+        ]
+        result = _validate_rows("TEST", rows)
+        self.assertEqual(result["non_monotonic"], 1)
 
     def test_cost_scenario_is_applied_on_both_sides(self):
         trade = {"entry": 100.0, "exit": 110.0, "holding_bars": 5}
