@@ -224,15 +224,17 @@ def run(date_from: str, date_till: str, output: Path, tickers: list[str], config
 
     for frame in ("M1", "M15", "H1", "H4", "D1", "W1"):
         report["totals"][frame] = int(report["totals"][frame])
+    selected_frames = set().union(*(CONFIGS[x.upper()] for x in configs))
+    report["selected_frames"] = sorted(selected_frames)
     report["coverage"] = {
         tf: sum(s.get(tf, {}).get("status") == "OK" and s.get(tf, {}).get("bars", 0) > 0
                 for s in report["symbols"].values())
-        for tf in ("W1", "D1", "H4", "H1", "M15")
+        for tf in sorted(selected_frames)
     }
-    report["all_44_have_all_frames"] = all(
+    report["all_44_have_selected_frames"] = all(
         all(report["symbols"][t].get(tf, {}).get("status") == "OK"
             and report["symbols"][t].get(tf, {}).get("bars", 0) > 0
-            for tf in ("W1", "D1", "H4", "H1", "M15"))
+            for tf in selected_frames)
         for t in tickers
     )
     (output / "history_audit.json").write_text(
@@ -259,7 +261,8 @@ def main() -> None:
                  [x.strip().upper() for x in args.configs.split(",") if x.strip()])
     print(json.dumps({
         "coverage": report["coverage"], "totals": report["totals"],
-        "all_44_have_all_frames": report["all_44_have_all_frames"],
+        "all_44_have_selected_frames": report["all_44_have_selected_frames"],
+        "selected_frames": report["selected_frames"],
         "selected_configurations": report["selected_configurations"],
         "required_native_intervals": report["required_native_intervals"],
     }, ensure_ascii=False))
