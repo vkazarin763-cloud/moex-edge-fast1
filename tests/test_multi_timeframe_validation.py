@@ -27,7 +27,7 @@ class MultiTimeframeValidationTests(unittest.TestCase):
 
     def test_asof_snapshot_never_selects_unclosed_bar(self):
         report = {
-            "generated_at_utc": "2026-11-20T13:00:00+00:00",
+            "generated_at_utc": "2026-11-20T21:00:00+00:00",
             "timeframes": {"H1": {}, "M10": {}},
             "results": {
                 "SBER": {
