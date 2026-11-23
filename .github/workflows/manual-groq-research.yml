@@ -154,6 +154,7 @@ jobs:
       - name: Run four-agent research commentary
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_MODEL: ${{ inputs.model || 'openrouter/free' }}
           OPENROUTER_BACKUP_MODEL: ${{ inputs.fallback_model || 'nvidia/nemotron-3-ultra-550b-a55b:free' }}
           AI_PROVIDER: "openrouter"
