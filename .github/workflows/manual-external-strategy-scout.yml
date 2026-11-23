@@ -1,4 +1,4 @@
-name: Manual External Strategy Source Scout (Metadata Only)
+name: Equities Research Pilot (Metadata + Offline Donchian Replay)
 
 on:
   push:
@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: external-strategy-source-scout
@@ -22,7 +23,7 @@ concurrency:
 jobs:
   source-scout:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout selected development branch
         uses: actions/checkout@v4
@@ -34,6 +35,17 @@ jobs:
         run: |
           python -m compileall -q research_agent tests
           python -m unittest tests.test_external_strategy_scout tests.test_moex_equities_donchian_replay -v
+      - name: Download frozen MOEX 44 historical snapshot
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-multi-timeframe-candles
+          path: moex_data
+          repository: ${{ github.repository }}
+          run-id: 44861047844
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run split-adjusted Donchian 20/10 research replay
+        run: |
+          python -m research_agent.moex_equities_donchian_replay --input moex_data/moex_edge_multi_timeframe_candles.json --output moex_donchian_20_10_replay.json
       - name: Discover public source metadata only
         run: |
           python -m research_agent.external_strategy_scout --limit "${{ inputs.limit || 5 }}" --output external_strategy_sources.json
@@ -52,7 +64,18 @@ jobs:
                   lines.append(f"- [{item.get('title')}]({item.get('url')}) — {', '.join(item.get('market_tags', []))}; {item.get('source_type')}; license: {item.get('license_status')}")
               lines += ['', 'Search results are unverified leads, not tested strategies. No market data, signals, backtests, broker accounts or orders were accessed.']
           else:
-              lines.append('No report was produced; inspect the failed step logs.')
+              lines.append('No source report was produced; inspect the failed step logs.')
+          replay_path = Path('moex_donchian_20_10_replay.json')
+          if replay_path.exists():
+              replay = json.loads(replay_path.read_text(encoding='utf-8'))
+              lines += ['', '## MOEX Donchian 20/10 — trade-level diagnostic',
+                        f"- Closed trades: {replay['summary']['closed_trades']}",
+                        f"- Open positions at cutoff: {replay['summary']['open_positions_at_cutoff']}",
+                        f"- D1 bars before holdout: {replay['data_validation']['total_d1_bars_before_holdout']}",
+                        f"- Data validation errors: duplicates={replay['data_validation']['duplicates']}, non_monotonic={replay['data_validation']['non_monotonic']}, invalid_ohlc={replay['data_validation']['invalid_ohlc']}"]
+              for item in replay['summary']['trade_metrics_by_cost_scenario']:
+                  lines.append(f"- {item['cost_bps_per_side']} bps/side: avg={item.get('average_net_trade_return', 0):.4%}; PF={item.get('profit_factor')}; win={item.get('win_rate', 0):.1%}")
+              lines.append('Trade-level diagnostic only; not portfolio returns, not scanner approval. Holdout bars remain excluded.')
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as out:
               out.write('\n'.join(lines) + '\n')
           PY
@@ -60,7 +83,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: external-strategy-source-leads-${{ github.run_id }}
-          path: external_strategy_sources.json
+          name: equities-research-pilot-${{ github.run_id }}
+          path: |
+            external_strategy_sources.json
+            moex_donchian_20_10_replay.json
           if-no-files-found: warn
           retention-days: 14
