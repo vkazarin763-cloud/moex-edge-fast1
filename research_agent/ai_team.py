@@ -23,8 +23,14 @@ MAX_OUTPUT_TOKENS = 4_096
 
 SYSTEM_PROMPT = (
     "You are part of a read-only MOEX research team. Never fabricate facts, prices, "
-    "dates, metrics or citations. If evidence is absent, say UNKNOWN. This is research "
-    "commentary, not a trade instruction. Never recommend broker actions."
+    "dates, metrics or citations. If evidence is absent, say UNKNOWN. The directional "
+    "strategy_registry is the sole authority for per-ticker LONG/SHORT eligibility, "
+    "status, trade counts, fold adequacy and shadow-scanner eligibility. Never promote "
+    "an aggregate or legacy walk-forward result over the registry. If registry status "
+    "is INSUFFICIENT_DATA, do not describe that candidate as passed, approved or eligible. "
+    "Cross-sectional summaries are descriptive only, not selection decisions. Report "
+    "cost assumptions exactly as supplied; do not say they are undisclosed when present. "
+    "This is research commentary, not a trade instruction. Never recommend broker actions."
 )
 
 ROLES: tuple[tuple[str, str], ...] = (
@@ -36,16 +42,20 @@ ROLES: tuple[tuple[str, str], ...] = (
     ),
     (
         "strategy_researcher",
-        "You are the systematic-strategy research analyst. Compare only the "
-        "pre-registered strategy results and validation fields present in the report. "
-        "Highlight sample size, costs, stability, out-of-sample status and caveats. "
-        "Do not propose fitted parameters or claim profitability without evidence.",
+        "You are the systematic-strategy research analyst. Use strategy_registry.strategies "
+        "as the authoritative, direction-specific selection table. Report counts and status "
+        "exactly. Cross-sectional summaries from the source report are descriptive diagnostics "
+        "only and cannot override registry status. Highlight sample size, per-fold adequacy, "
+        "baseline and doubled costs, holdout status and caveats. Do not propose fitted "
+        "parameters or claim profitability without evidence.",
     ),
     (
         "skeptical_reviewer",
         "You are an independent skeptical reviewer. Look for leakage, stale or "
         "incomplete data, multiple-testing risks, weak samples, contradictory fields "
-        "and unsupported conclusions. Distinguish verified facts from hypotheses.",
+        "and unsupported conclusions. Cross-check every claimed pass against the directional "
+        "strategy registry; flag any conflict and treat the registry as authoritative for "
+        "eligibility. Distinguish verified facts from hypotheses.",
     ),
 )
 
@@ -76,7 +86,7 @@ def _bounded(value: Any, *, depth: int = 0) -> Any:
     return value
 
 
-def _compact_report(report: Any) -> str:
+def _compact_report(report: Any, registry: Any = None) -> str:
     """Build a strict, compact evidence projection under the AI input budget."""
     if not isinstance(report, dict):
         raise ValueError("Research report must be a JSON object.")
@@ -142,6 +152,57 @@ def _compact_report(report: Any) -> str:
             row["w"] = strategy_rows
         compact_results[ticker] = row
 
+    compact_registry = None
+    if registry is not None:
+        if not isinstance(registry, dict) or not isinstance(registry.get("strategies"), list):
+            raise ValueError("Strategy registry must contain a strategies list.")
+        compact_registry = {
+            "registry_version": registry.get("registry_version"),
+            "stage": registry.get("stage"),
+            "source_report_generated_at_utc": registry.get("source_report_generated_at_utc"),
+            "source_report_date_till": registry.get("source_report_date_till"),
+            "holdout_start": registry.get("holdout_start"),
+            "holdout_used_for_selection": registry.get("holdout_used_for_selection"),
+            "selection_policy": _bounded(registry.get("selection_policy", {})),
+            "summary": _bounded(registry.get("summary", {})),
+            "scanner_contract": _bounded(registry.get("scanner_contract", {})),
+            "strategies": [
+                {
+                    "ticker": item.get("ticker"),
+                    "direction": item.get("direction"),
+                    "strategy": item.get("strategy"),
+                    "status": item.get("status"),
+                    "reasons": _bounded(item.get("reasons", [])),
+                    "closed_trades": item.get("closed_trades"),
+                    "average_net_return": item.get("average_net_return"),
+                    "profit_factor": item.get("profit_factor"),
+                    "positive_folds": item.get("positive_folds"),
+                    "adequately_sampled_folds": item.get("adequately_sampled_folds"),
+                    "folds": item.get("folds"),
+                    "double_cost_average_net_return": item.get("double_cost_average_net_return"),
+                    "eligible_for_shadow_scanner": item.get("eligible_for_shadow_scanner"),
+                }
+                for item in registry["strategies"]
+                if isinstance(item, dict)
+            ],
+            "authority_note": (
+                "This direction-specific registry is authoritative for selection and "
+                "scanner eligibility. Never infer a PASS from source-report aggregates."
+            ),
+        }
+
+    compact_costs = {}
+    for ticker, result in sorted(raw_results.items()):
+        if not isinstance(result, dict):
+            continue
+        adversarial = result.get("adversarial_cost_check")
+        if isinstance(adversarial, dict):
+            compact_costs[ticker] = {
+                "stress": adversarial.get("stress"),
+                "baseline_execution_config": _bounded(adversarial.get("baseline_execution_config", {})),
+                "double_cost_execution_config": _bounded(adversarial.get("double_cost_execution_config", {})),
+            }
+
     compact = {
         "generated_at_utc": report.get("generated_at_utc"),
         "source": _bounded(report.get("source")),
@@ -151,6 +212,8 @@ def _compact_report(report: Any) -> str:
         "universe": _bounded(report.get("universe")),
         "development_holdout_policy": _bounded(report.get("development_holdout_policy", {})),
         "independent_validation": _bounded(report.get("independent_validation", {})),
+        "cost_model_by_ticker": compact_costs,
+        "strategy_registry": compact_registry,
         "results": compact_results,
         "schema": {
             "ticker_fields": {
@@ -170,7 +233,9 @@ def _compact_report(report: Any) -> str:
         "compaction_note": (
             "Raw OHLCV, detailed folds, trade ledgers and development portfolio replay are excluded. "
             "All ticker statuses, compact data-quality checks and per-strategy status/trade-count/"
-            "average-net-return metrics are retained where present. Decode status codes using schema."
+            "average-net-return metrics are retained where present. Decode status codes using schema. "
+            "The directional strategy_registry, when supplied, is authoritative for eligibility. "
+            "Per-ticker baseline and doubled-cost execution assumptions are included where present."
         ),
     }
     encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -332,6 +397,7 @@ def call_groq(
 def run_team(
     report: Any,
     *,
+    registry: Any = None,
     api_key: str,
     model: str = DEFAULT_MODEL,
     provider: str = DEFAULT_PROVIDER,
@@ -341,7 +407,7 @@ def run_team(
     caller: Callable[..., str] = call_provider,
 ) -> dict[str, Any]:
     """Run three specialists and a coordinator; four calls total with per-call fallback."""
-    report_json = _compact_report(report)
+    report_json = _compact_report(report, registry=registry)
     specialist_results: dict[str, str] = {}
     providers_used: list[str] = []
     provider_diagnostics: list[dict[str, str]] = []
@@ -437,7 +503,10 @@ def run_team(
         "independent notes below. Return a concise report with: verified facts, "
         "disagreements, unresolved questions, data-quality caveats, and next research "
         "checks. Never invent evidence or turn commentary into a trading signal. "
-        "The supplied deterministic report is the sole quantitative source.\n\n"
+        "The supplied deterministic report is the sole quantitative source. The directional "
+        "strategy_registry inside it is authoritative for all candidate statuses and "
+        "scanner eligibility; source-report cross-sectional summaries must never override it. "
+        "Explicitly identify any legacy aggregate that conflicts with the registry.\n\n"
         f"Validated report (JSON):\n{report_json}\n\n"
         "Specialist notes:\n"
         + "\n\n".join(f"[{name}]\n{note}" for name, note in specialist_results.items())
@@ -445,6 +514,8 @@ def run_team(
     synthesis = ask(coordinator_prompt)
     return {
         "status": "AI_COMMENTARY_ONLY",
+        "registry_included": registry is not None,
+        "registry_summary": _bounded(registry.get("summary", {})) if isinstance(registry, dict) else None,
         "provider": provider,
         "providers_used": providers_used,
         "provider_diagnostics": provider_diagnostics,
@@ -464,7 +535,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run optional read-only multi-provider AI commentary on a validated JSON report."
     )
-    parser.add_argument("--input", required=True, help="Path to a compact validated research JSON report.")
+    parser.add_argument("--input", required=True, help="Path to a validated research JSON report.")
+    parser.add_argument("--registry", default="", help="Path to the direction-specific strategy registry JSON.")
     parser.add_argument("--output", required=True, help="Path for the AI commentary JSON output.")
     parser.add_argument("--provider", default=os.getenv("AI_PROVIDER", DEFAULT_PROVIDER))
     parser.add_argument("--model", default=os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL))
@@ -484,8 +556,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("AI_PROVIDER must be 'openrouter' or 'groq'.")
 
     report = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    registry = json.loads(Path(args.registry).read_text(encoding="utf-8")) if args.registry else None
+    if args.registry and not isinstance(registry.get("strategies"), list):
+        parser.error("The supplied strategy registry has no strategies list.")
     result = run_team(
         report,
+        registry=registry,
         api_key=api_key,
         model=args.model,
         provider=args.provider,
