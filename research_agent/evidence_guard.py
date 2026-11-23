@@ -51,9 +51,12 @@ def _resolve_path(source: Any, path: str) -> Any:
         raise ValueError("Evidence path is empty or malformed.")
     current = source
     for part in path.split("."):
-        if not isinstance(current, dict) or part not in current:
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+        elif isinstance(current, list) and part.isdigit() and int(part) < len(current):
+            current = current[int(part)]
+        else:
             raise ValueError(f"Evidence path does not exist: {path}")
-        current = current[part]
     if isinstance(current, (dict, list)):
         raise ValueError(f"Evidence path must identify a scalar value: {path}")
     return current
