@@ -510,5 +510,49 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(result["provider_diagnostics"][0]["fallback_status"], "SUCCEEDED")
 
 
+    def test_oversized_calendar_and_reconciliation_details_are_compacted_safely(self):
+        source = {
+            "results": {
+                f"T{i:02d}": {
+                    "status": "ANALYZED",
+                    "data_quality": {
+                        "status": "VALID_WITH_CAVEATS",
+                        "out_of_range_bars": 0,
+                        "calendar_gap_count": 9,
+                        "calendar_gap_candidates": [
+                            {"classification": "OFFICIAL_NON_TRADING_DATES_CONFIRMED"}
+                        ],
+                        "exchange_calendar_verified": False,
+                        "session_date_mapping_complete": True,
+                        "calendar_caveat": "calendar limitation " * 100,
+                    },
+                    "session_date_mapping": {
+                        "status": "RECONCILIATION_WITH_CAVEATS",
+                        "trading_days_reconciled": 764,
+                        "trading_days_mismatched": 1,
+                        "mismatch_field_counts": {"volume": 1},
+                        "mismatch_examples": [
+                            {"trade_date": "2025-08-01", "differences": {
+                                "volume": {"aggregated": 25320049, "history": 18473506}
+                            }}
+                        ],
+                    },
+                }
+                for i in range(44)
+            }
+        }
+        compact_text = _compact_report(source)
+        compact = json.loads(compact_text)
+        self.assertLessEqual(len(compact_text), MAX_INPUT_CHARS)
+        self.assertEqual(len(compact["results"]), 44)
+        for row in compact["results"].values():
+            self.assertIs(row["q"]["exchange_calendar_verified"], False)
+            self.assertIs(row["q"]["session_date_mapping_complete"], True)
+            self.assertEqual(row["q"]["calendar_gap_count"], 9)
+            self.assertEqual(row["m"]["trading_days_mismatched"], 1)
+            self.assertEqual(row["m"]["mismatch_field_counts"], {"volume": 1})
+            self.assertNotIn("mismatch_examples", row["m"])
+
+
 if __name__ == "__main__":
     unittest.main()
