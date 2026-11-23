@@ -510,6 +510,54 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(result["provider_diagnostics"][0]["fallback_status"], "SUCCEEDED")
 
 
+    def test_compact_registry_preserves_all_decision_fields_with_schema(self):
+        registry = {
+            "registry_version": "1",
+            "stage": "DEVELOPMENT",
+            "source_report_generated_at_utc": "2026-11-23T00:00:00Z",
+            "source_report_date_till": "2026-11-20",
+            "holdout_start": "2026-11-20",
+            "holdout_used_for_selection": False,
+            "selection_policy": {},
+            "summary": {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 50},
+            "scanner_contract": {},
+            "strategies": [
+                {
+                    "ticker": f"T{i % 5}",
+                    "direction": "LONG" if i % 2 == 0 else "SHORT",
+                    "strategy": "Donchian20",
+                    "status": "INSUFFICIENT_DATA",
+                    "reasons": ["Only 17 closed trades; minimum is 30"],
+                    "closed_trades": 17,
+                    "average_net_return": 0.01,
+                    "profit_factor": 1.2,
+                    "positive_folds": 3,
+                    "adequately_sampled_folds": 2,
+                    "folds": 4,
+                    "double_cost_average_net_return": 0.005,
+                    "eligible_for_shadow_scanner": False,
+                }
+                for i in range(50)
+            ],
+        }
+        compact = json.loads(_compact_report({"results": {}}, registry=registry))
+        self.assertEqual(len(compact["strategy_registry"]["strategies"]), 50)
+        row = compact["strategy_registry"]["strategies"][0]
+        fields = compact["schema"]["registry_fields"]
+        self.assertEqual(row[fields["t"]], "T0")
+        self.assertEqual(row[fields["d"]], "LONG")
+        self.assertEqual(row[fields["s"]], "INSUFFICIENT_DATA")
+        self.assertEqual(row[fields["n"]], 17)
+        self.assertAlmostEqual(row[fields["a"]], 0.01)
+        self.assertAlmostEqual(row[fields["p"]], 1.2)
+        self.assertEqual(row[fields["pf"]], 3)
+        self.assertEqual(row[fields["af"]], 2)
+        self.assertEqual(row[fields["f"]], 4)
+        self.assertAlmostEqual(row[fields["dc"]], 0.005)
+        self.assertIs(row[fields["e"]], False)
+        reason_code = row[fields["r"]][0]
+        self.assertIn(reason_code, compact["strategy_registry"]["reason_codes"])
+
     def test_oversized_calendar_and_reconciliation_details_are_compacted_safely(self):
         source = {
             "results": {
