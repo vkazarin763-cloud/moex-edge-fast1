@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 REPORT_STATUS = "AGENT_SIGNAL_PROPOSALS"
 SCAN_STATUS = "READ_ONLY_LATEST_SIGNAL_SCAN"
@@ -17,6 +18,7 @@ ALLOWED_STRATEGIES = {
     "Donchian20", "EMA20x50", "RSI14Trend50", "MACD12x26", "Keltner20x2ATR"
 }
 ALLOWED_TIMEFRAMES = {"D1", "W1", "H1", "H4", "M15"}
+MOSCOW = ZoneInfo("Europe/Moscow")
 
 
 class AgentContractError(ValueError):
@@ -95,8 +97,20 @@ def verify_agent_proposals(
         raise AgentContractError("Deterministic scan signals must be a list")
     if (strategy_registry.get("stage") != REGISTRY_STAGE or
             strategy_registry.get("holdout_used_for_selection") is not False or
+            (strategy_registry.get("scanner_contract") or {}).get("consume_only_status") != "PASS" or
             (strategy_registry.get("scanner_contract") or {}).get("live_trading_authorized") is not False):
         raise AgentContractError("Strategy registry is not a valid development-only registry")
+    try:
+        scan_cutoff = _aware_utc(deterministic_scan.get("as_of_utc"), "deterministic_scan.as_of_utc")
+        registry_source_date = datetime.fromisoformat(
+            strategy_registry.get("source_report_date_till")
+        ).date()
+    except (TypeError, ValueError) as exc:
+        raise AgentContractError("Strategy registry or scan is missing a valid source date") from exc
+    snapshot_date = scan_cutoff.astimezone(MOSCOW).date()
+    registry_age_days = (snapshot_date - registry_source_date).days
+    if registry_age_days < 0 or registry_age_days > 14:
+        raise AgentContractError("Strategy registry source data is future-dated or older than 14 days")
 
     universe = deterministic_scan.get("universe") or []
     if not isinstance(universe, list) or any(not isinstance(item, str) for item in universe):
