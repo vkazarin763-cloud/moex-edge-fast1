@@ -28,7 +28,7 @@ SYSTEM_PROMPT = (
     "status, trade counts, fold adequacy and shadow-scanner eligibility. Never promote "
     "an aggregate or legacy walk-forward result over the registry. If registry status "
     "is INSUFFICIENT_DATA, do not describe that candidate as passed, approved or eligible. "
-    "Cross-sectional summaries are descriptive only, not selection decisions. Report "
+    "Cross-sectional summaries are descriptive only, not selection decisions. The prospective ""Holm family covers ticker x frozen strategy hypotheses and does not split LONG/SHORT; ""the development registry does split directions, so never compare its row count directly ""with prospective holdout family_size. Follow explicit family_scope metadata. Report "
     "cost assumptions exactly as supplied; do not say they are undisclosed when present. "
     "This is research commentary, not a trade instruction. Never recommend broker actions."
 )
@@ -211,6 +211,12 @@ def _compact_report(report: Any, registry: Any = None) -> str:
         "date_range": [report.get("date_from"), report.get("date_till")],
         "universe": _bounded(report.get("universe")),
         "development_holdout_policy": _bounded(report.get("development_holdout_policy", {})),
+        "multiple_testing_scope_note": (
+            "The Holm family applies only to prospective holdout hypotheses: one per "
+            "ticker x frozen entry strategy; prospective holdout does not split LONG/SHORT. "
+            "The separate development registry does split LONG/SHORT. Do not compare "
+            "Holm family_size directly with the development registry row count."
+        ),
         "independent_validation": _bounded(report.get("independent_validation", {})),
         "cost_model_by_ticker": compact_costs,
         "strategy_registry": compact_registry,
@@ -535,7 +541,9 @@ def run_team(
         "The supplied deterministic report is the sole quantitative source. The directional "
         "strategy_registry inside it is authoritative for all candidate statuses and "
         "scanner eligibility; source-report cross-sectional summaries must never override it. "
-        "Explicitly identify any legacy aggregate that conflicts with the registry.\n\n"
+        "Explicitly identify any legacy aggregate that conflicts with the registry. Do not "
+        "mislabel the different prospective-holdout and directional-development hypothesis "
+        "families as a multiple-testing discrepancy; use the supplied family_scope metadata.\n\n"
         f"Validated report (JSON):\n{report_json}\n\n"
         "Specialist notes:\n"
         + "\n\n".join(f"[{name}]\n{note}" for name, note in specialist_results.items())
