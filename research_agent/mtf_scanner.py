@@ -286,6 +286,7 @@ def scan_multi_timeframe_report(
         "status": "READ_ONLY_LATEST_SIGNAL_SCAN",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "as_of_utc": cutoff.isoformat(),
+        "universe": list(candles_report.get("universe", [])),
         "universe_size": len(candles_report.get("universe", [])),
         "symbols_with_d1_h1_data": len(candles_report.get("universe", [])) - len(skipped),
         "signals_count": len(signals),
@@ -314,13 +315,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only MOEX EDGE D1/H1 latest signal scanner")
     parser.add_argument("--candles", default="moex_edge_multi_timeframe_candles.json")
     parser.add_argument("--validation", default="moex_edge_multi_timeframe_validation.json")
-    parser.add_argument("--registry", required=True,
-                        help="Research-generated strategy_registry.json; only PASS entries are scanned")
+    parser.add_argument("--registry", default=None,
+                        help="Optional strategy_registry.json; when omitted, emit unapproved candidates for independent agent verification")
     parser.add_argument("--output", default="moex_edge_mtf_signals.json")
     args = parser.parse_args()
     candles = json.loads(Path(args.candles).read_text(encoding="utf-8"))
     validation = json.loads(Path(args.validation).read_text(encoding="utf-8"))
-    registry = json.loads(Path(args.registry).read_text(encoding="utf-8"))
+    registry = (
+        json.loads(Path(args.registry).read_text(encoding="utf-8"))
+        if args.registry else None
+    )
     result = scan_multi_timeframe_report(candles, validation, registry)
     Path(args.output).write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
