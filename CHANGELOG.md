@@ -184,5 +184,6 @@
 - Documented provider behavior: OpenRouter free primary had two empty responses due to reasoning-token limit; Nemotron free model fallback via same OpenRouter succeeded. This is not independent provider failover; Groq direct route had previously returned HTTP 403/code 1010.
 - Clarified that Holm family_size=25 is prospective holdout-only (5 tickers × 5 frozen strategies, no LONG/SHORT split), separate from the 50-row development directional registry.
 - Added explicit family-scope metadata, removed hard-coded CLI family multiplier, strengthened AI prompts, and added regression tests. CI run #45109696114 must be checked before considering the change verified.
-- Remaining warnings: raw/TQBR one-day mismatches for SBER/GAZP/MOEX; 9 calendar-gap candidates per ticker; exchange calendar unverified; experiment lab skipped; prospective holdout currently has 0 closed trades.
+- Follow-up: all 9 D1 calendar-gap windows were manually explained by official MOEX 2024–2026 holiday and additional-session schedules; code still needs a reproducible calendar audit. Three raw/TQBR mismatches are VOLUME-only (OHLC and VALUE match exactly); root cause unknown. Added session-aware audit handling for fully mapped weekend fragments, without setting exchange_calendar_verified=true.
+- Remaining blockers: raw VOLUME mismatches unresolved; automated official-calendar audit not yet implemented; experiment lab skipped; prospective holdout currently has 0 closed trades.
 - PR #163 remains open/unmerged; production repository untouched; no broker/Telegram/production actions.
