@@ -72,6 +72,18 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(diagnostics["unmatched_or_invalid_proposals"]["signal_hunter"], 1)
 
 
+
+    def test_numeric_claims_in_unverified_hypotheses_are_dropped(self):
+        idea = {
+            "strategy": "Donchian20", "direction": "LONG", "timeframe_config": "A",
+            "hypothesis": "This setup has a 90 percent win rate.",
+            "research_question": "Should it be tested?",
+        }
+        def fake(prompt, *, api_key, model):
+            return {"proposals": [], "strategy_hypotheses": [idea]}
+        report, diagnostics = run_discovery(self.scan, self.registry, api_key="fake", caller=fake)
+        self.assertEqual(diagnostics["hypothesis_count"], 0)
+
     def test_duplicate_rows_from_one_agent_do_not_fake_consensus(self):
         candidate = {
             "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
