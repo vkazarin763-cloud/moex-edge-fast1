@@ -22,7 +22,9 @@ from typing import Any, Callable
 from .agent_signal_verifier import verify_agent_proposals
 
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
+DEFAULT_OPENROUTER_MODEL = "openrouter/free"
 STRATEGIES = ["Donchian20", "EMA20x50", "RSI14Trend50", "MACD12x26", "Keltner20x2ATR"]
 DIRECTIONS = ["LONG", "SHORT"]
 TIMEFRAME_CONFIGS = {
@@ -228,12 +230,128 @@ def call_groq_discovery(
     raise RuntimeError("Groq discovery API rate-limit retries exhausted")
 
 
+def call_openrouter_discovery(
+    prompt: str,
+    *,
+    api_key: str,
+    model: str = DEFAULT_OPENROUTER_MODEL,
+    opener: Callable[..., Any] = urllib.request.urlopen,
+    sleeper: Callable[[float], None] = time.sleep,
+) -> dict[str, Any]:
+    if not api_key or not api_key.strip():
+        raise ValueError("OPENROUTER_API_KEY is required")
+    if not model or any(ch.isspace() for ch in model):
+        raise ValueError("Invalid OpenRouter model identifier")
+    body = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": (
+                "You are a read-only MOEX quantitative research agent. "
+                "Do not fabricate market data, prices, performance, dates or signals. "
+                "Use only the supplied deterministic snapshot."
+            )},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.1,
+        "max_completion_tokens": 1400,
+        "response_format": OUTPUT_SCHEMA,
+    }
+    request = urllib.request.Request(
+        OPENROUTER_API_URL,
+        data=json.dumps(body).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+        method="POST",
+    )
+    for attempt in range(3):
+        try:
+            with opener(request, timeout=50) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            choices = payload.get("choices") or []
+            content = choices[0].get("message", {}).get("content") if choices else None
+            if not isinstance(content, str) or not content.strip():
+                raise RuntimeError("OpenRouter discovery response contained no JSON message content")
+            result = json.loads(content)
+            if not isinstance(result, dict) or set(result) != {"proposals", "strategy_hypotheses"}:
+                raise RuntimeError("OpenRouter discovery response does not match the required outer schema")
+            if not isinstance(result["proposals"], list) or not isinstance(result["strategy_hypotheses"], list):
+                raise RuntimeError("OpenRouter discovery response arrays are malformed")
+            return result
+        except urllib.error.HTTPError as exc:
+            if exc.code == 429 and attempt < 2:
+                retry = 2 ** attempt
+                try:
+                    retry = min(60, max(1, int(float(exc.headers.get("Retry-After", retry)))))
+                except (TypeError, ValueError, AttributeError):
+                    pass
+                sleeper(retry)
+                continue
+            detail = ""
+            error_code = ""
+            error_type = ""
+            try:
+                raw_body = exc.read().decode("utf-8", errors="replace").strip()
+                payload = json.loads(raw_body) if raw_body else {}
+                error = payload.get("error", {}) if isinstance(payload, dict) else {}
+                if isinstance(error, dict):
+                    detail = str(error.get("message") or payload.get("message") or "")
+                    error_code = str(error.get("code") or "")
+                    error_type = str(error.get("type") or "")
+                elif isinstance(error, str):
+                    detail = error
+                elif isinstance(payload, dict):
+                    detail = str(payload.get("message") or "")
+                if not detail and raw_body and not raw_body.lstrip().startswith("<"):
+                    detail = raw_body[:300]
+            except (ValueError, OSError, AttributeError):
+                pass
+            # Never include request headers or credentials in diagnostics.
+            detail = re.sub(r"(?i)bearer\s+\S+", "Bearer [redacted]", detail)[:400]
+            suffix = f" [type={error_type}, code={error_code}]" if error_type or error_code else ""
+            raise RuntimeError(
+                f"OpenRouter discovery API HTTP {exc.code}{suffix}: {detail or 'provider returned no readable error detail'}"
+            ) from None
+        except urllib.error.URLError:
+            raise RuntimeError("OpenRouter discovery API connection failed") from None
+    raise RuntimeError("OpenRouter discovery API rate-limit retries exhausted")
+
+
+def call_discovery_with_fallback(
+    prompt: str,
+    *,
+    openrouter_api_key: str = "",
+    groq_api_key: str = "",
+    model: str = DEFAULT_OPENROUTER_MODEL,
+    groq_model: str = DEFAULT_MODEL,
+    openrouter_caller: Callable[..., dict[str, Any]] = call_openrouter_discovery,
+    groq_caller: Callable[..., dict[str, Any]] = call_groq_discovery,
+) -> tuple[dict[str, Any], str]:
+    """Try OpenRouter first, then Groq; retain both sanitized failure reasons."""
+    errors = []
+    if openrouter_api_key.strip():
+        try:
+            return openrouter_caller(prompt, api_key=openrouter_api_key, model=model), "openrouter"
+        except Exception as exc:
+            errors.append(f"OpenRouter: {str(exc)[:500]}")
+    else:
+        errors.append("OpenRouter: OPENROUTER_API_KEY is not configured")
+    if groq_api_key.strip():
+        try:
+            return groq_caller(prompt, api_key=groq_api_key, model=groq_model), "groq_fallback"
+        except Exception as exc:
+            errors.append(f"Groq: {str(exc)[:500]}")
+    else:
+        errors.append("Groq fallback: GROQ_API_KEY is not configured")
+    raise RuntimeError("All configured AI providers failed. " + " | ".join(errors))
+
+
 def run_discovery(
     scan: dict[str, Any],
     registry: dict[str, Any],
     *,
-    api_key: str,
-    model: str = DEFAULT_MODEL,
+    api_key: str = "",
+    model: str = DEFAULT_OPENROUTER_MODEL,
+    openrouter_api_key: str = "",
+    groq_api_key: str = "",
     caller: Callable[..., dict[str, Any]] = call_groq_discovery,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     context = _compact_context(scan, registry)
@@ -245,6 +363,7 @@ def run_discovery(
     }
     outputs = {}
     invalid_counts = {}
+    providers_used = []
     proposal_votes: Counter = Counter()
     hypothesis_votes: dict[tuple, list[dict[str, Any]]] = defaultdict(list)
 
@@ -261,7 +380,17 @@ def run_discovery(
             "Do not propose a strategy family outside the supplied catalog.\n"
             f"DETERMINISTIC SNAPSHOT: {context_json}"
         )
-        response = caller(prompt, api_key=api_key, model=model)
+        if caller is call_groq_discovery:
+            response, provider_used = call_discovery_with_fallback(
+                prompt,
+                openrouter_api_key=openrouter_api_key,
+                groq_api_key=groq_api_key or api_key,
+                model=model,
+            )
+        else:
+            response = caller(prompt, api_key=api_key, model=model)
+            provider_used = "custom_test_caller"
+        providers_used.append(provider_used)
         accepted = []
         invalid = 0
         for item in response["proposals"]:
@@ -333,8 +462,9 @@ def run_discovery(
     }
     diagnostics = {
         "status": "AGENT_DISCOVERY_COMPLETE",
-        "provider": "groq_api",
+        "provider": "openrouter_primary_groq_fallback",
         "model": model,
+        "providers_used": providers_used,
         "agent_count": len(ROLES),
         "agent_roles": outputs,
         "candidate_count_seen": len(candidate_keys),
@@ -361,12 +491,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--proposals", default="agent_proposals.json")
     parser.add_argument("--diagnostics", default="agent_discovery_diagnostics.json")
     parser.add_argument("--verification", default="agent_signal_verification.json")
-    parser.add_argument("--model", default=os.getenv("GROQ_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--model", default=os.getenv("OPENROUTER_MODEL", DEFAULT_OPENROUTER_MODEL))
     args = parser.parse_args(argv)
-    api_key = os.getenv("GROQ_API_KEY", "")
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY", "")
+    groq_api_key = os.getenv("GROQ_API_KEY", "")
     scan = json.loads(Path(args.scan).read_text(encoding="utf-8"))
     registry = json.loads(Path(args.registry).read_text(encoding="utf-8"))
-    report, diagnostics = run_discovery(scan, registry, api_key=api_key, model=args.model)
+    report, diagnostics = run_discovery(
+        scan, registry, model=args.model,
+        openrouter_api_key=openrouter_api_key, groq_api_key=groq_api_key,
+    )
     verified = verify_agent_proposals(report, scan, registry)
     Path(args.proposals).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     Path(args.diagnostics).write_text(json.dumps(diagnostics, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
