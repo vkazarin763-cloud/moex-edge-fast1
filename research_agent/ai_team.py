@@ -30,6 +30,12 @@ SYSTEM_PROMPT = (
     "is INSUFFICIENT_DATA, do not describe that candidate as passed, approved or eligible. "
     "Cross-sectional summaries are descriptive only, not selection decisions. The prospective ""Holm family covers ticker x frozen strategy hypotheses and does not split LONG/SHORT; ""the development registry does split directions, so never compare its row count directly ""with prospective holdout family_size. Follow explicit family_scope metadata. Report "
     "cost assumptions exactly as supplied; do not say they are undisclosed when present. "
+    "Read data-quality field q by its explicit JSON keys, never by positional inference. " 
+    "exchange_calendar_verified and session_date_mapping_complete are separate booleans: " 
+    "do not swap or conflate them. If exchange_calendar_verified is false, state that the " 
+    "full exchange-wide calendar is NOT independently verified, even when individual " 
+    "calendar-gap candidates have official MOEX classifications. A complete session-date " 
+    "mapping does not mean the exchange calendar is verified. " 
     "Treat session_date_mapping and tqbr_history_crosscheck as data-quality evidence. "
     "Report volume-only mismatches and affected dates exactly; do not infer root cause or "
     "switch the model-input volume source without a validated policy. Weekend fragments "
@@ -125,13 +131,23 @@ def _compact_report(report: Any, registry: Any = None) -> str:
         quality = result.get("data_quality")
         quality_row = None
         if isinstance(quality, dict):
-            quality_row = [
-                status_code(quality.get("status")),
-                quality.get("out_of_range_bars"),
-                quality.get("calendar_gap_count"),
-                quality.get("exchange_calendar_verified"),
-                quality.get("session_date_mapping_complete"),
-            ]
+            gap_rows = quality.get("calendar_gap_candidates")
+            gap_classifications: dict[str, int] = {}
+            if isinstance(gap_rows, list):
+                for gap in gap_rows:
+                    if isinstance(gap, dict):
+                        classification = gap.get("classification", "UNKNOWN")
+                        if isinstance(classification, str):
+                            gap_classifications[classification] = gap_classifications.get(classification, 0) + 1
+            quality_row = {
+                "status": status_code(quality.get("status")),
+                "out_of_range_bars": quality.get("out_of_range_bars"),
+                "calendar_gap_count": quality.get("calendar_gap_count"),
+                "calendar_gap_classifications": gap_classifications,
+                "exchange_calendar_verified": quality.get("exchange_calendar_verified"),
+                "session_date_mapping_complete": quality.get("session_date_mapping_complete"),
+                "calendar_caveat": quality.get("calendar_caveat"),
+            }
         walk_forward = result.get("walk_forward")
         candidates = walk_forward.get("candidates") if isinstance(walk_forward, dict) else None
         strategy_rows = {}
@@ -310,7 +326,15 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             "ticker_fields": {
                 "s": "ticker status code",
                 "b": "research input bars (fallback: candle count)",
-                "q": "[data-quality status code, out-of-range bars, calendar-gap candidates, exchange calendar verified, session-date mapping complete]",
+                "q": {
+                    "status": "data-quality status code",
+                    "out_of_range_bars": "integer",
+                    "calendar_gap_count": "integer",
+                    "calendar_gap_classifications": "counts by explicit classification",
+                    "exchange_calendar_verified": "boolean: full exchange-wide calendar independently verified",
+                    "session_date_mapping_complete": "boolean: raw session fragments mapped to TQBR trade dates",
+                    "calendar_caveat": "scope/limitations text"
+                },
                 "m": "raw session reconciliation status, matched/mismatched days, field counts/examples, unassigned count and date coverage",
                 "h": "TQBR history crosscheck status and counts, including weekend and weekday additional-session fragments excluded only after complete session mapping",
                 "w": "walk-forward candidates keyed by strategy code; each value is [status code, closed trades, average net return]",
