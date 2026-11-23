@@ -186,7 +186,7 @@ def run_replay(
                 excluded_holdout_bars += 1
                 continue
             rows.append(adjust_candle(symbol, raw))
-        rows.sort(key=lambda row: str(row["timestamp"]))
+        # Validate original source ordering before any normalization or sorting.
         check = _validate_rows(symbol, rows)
         validation[symbol] = check
         if check["duplicates"] or check["non_monotonic"] or check["invalid_ohlc"] or check["invalid_volume"]:
