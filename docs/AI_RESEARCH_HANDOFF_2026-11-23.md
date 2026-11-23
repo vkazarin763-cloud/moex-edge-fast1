@@ -63,14 +63,14 @@ The AI reviewer/coordinator flagged family_size=25 versus 50 registry rows as a 
   - `b29a33af564be97e767a5cf2eeeafda142c0ebea` — holdout family tests.
   - `039cb1134fb78954d76309e13f2eccb380a2dec4` — AI prompt test.
   - `2289d57c9d6125bcae1840120cb485ad04ec9cda` — CI now runs both AI-team and holdout tests.
-- Latest CI workflow run observed at handoff preparation: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45109696114 (in progress on SHA `2289d57...`). Another intermediate run `45109691481` was also in progress. Check the latest run and do not assume it passed until completed.
+- Latest CI workflow run: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45196047412 — success, 58 tests, including official-calendar annotations and session mapping audit tests. SHA `7ff991bacacd4df942ffb95de506a906f1f42eb6`.
 
 ## Next actions (continue autonomously in this order)
-1. Verify run `45109696114` and the newest branch CI. Confirm compile plus both `tests.test_research_ai_team` and `tests.test_research_holdout` pass. Fix failures on this feature branch only.
-2. Inspect the exact raw-candle/TQBR reconciliation mismatch dates and session mapping for SBER, GAZP and MOEX. Trace source rows, board/session timestamps and aggregation logic. Do not label them harmless without evidence.
-3. Investigate the 9 calendar-gap candidates per ticker against an authoritative MOEX trading calendar. Do not assume weekends/holidays explain every gap; distinguish expected non-trading days from missing data.
-4. Add focused tests and improve the report's calendar/reconciliation diagnostics. Keep `INDEPENDENT_VALIDATION_INCOMPLETE` until the warnings are genuinely resolved.
-5. Rerun the real-data workflow only after fixes; verify artifacts and all 50 registry rows again.
+1. CI is now green: run `45196047412`, 58 tests. Do not reopen the same completed check unless code changes.
+2. The three raw volume mismatches are now traced to the raw `candles.json` volume field; OHLC and VALUE match total-session history. Research D1 input uses TQBR history VOLUME. Keep this as a disclosed raw-source caveat.
+3. All 9 observed calendar gaps have official MOEX schedule annotations in `research_agent/quality.py`; global calendar verification remains false. Current code passes session mapping diagnostics into `audit_tqbr_history`, fixing the old false classification of mapped weekend fragments.
+4. Next required verification: rerun Manual AI Research Team on branch `feature/openrouter-primary-groq-fallback` with the same date/ticker/provider parameters. This must be manually dispatched by the user through GitHub Actions; no workflow-dispatch connector action is available here. Inspect new artifact to confirm mapped weekend fragments are excluded from same-date missing-history list and the three volume mismatches remain isolated.
+5. Keep `INDEPENDENT_VALIDATION_INCOMPLETE` until the new real-data artifact confirms all warnings and the remaining data-provenance caveats are understood.
 6. Keep PR #163 open/unmerged. Do not touch production repository, broker integration, live trading, Telegram, or paid services.
 
 ## User working preferences
