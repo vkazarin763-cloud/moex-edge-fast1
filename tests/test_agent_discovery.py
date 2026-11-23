@@ -1,7 +1,9 @@
+import io
 import json
 import unittest
+import urllib.error
 
-from research_agent.agent_discovery import run_discovery
+from research_agent.agent_discovery import call_groq_discovery, run_discovery
 
 
 class AgentDiscoveryTests(unittest.TestCase):
@@ -29,6 +31,26 @@ class AgentDiscoveryTests(unittest.TestCase):
             "holdout_used_for_selection": False,
             "scanner_contract": {"consume_only_status": "PASS", "live_trading_authorized": False},
         }
+
+    def test_http_permission_error_preserves_provider_diagnostic(self):
+        body = json.dumps({
+            "error": {
+                "message": "The model is blocked at the organization level.",
+                "type": "permissions_error",
+                "code": "model_permission_blocked_org",
+            }
+        }).encode("utf-8")
+
+        def denied(*args, **kwargs):
+            raise urllib.error.HTTPError(
+                "https://api.groq.com/openai/v1/chat/completions",
+                403, "Forbidden", {}, io.BytesIO(body),
+            )
+
+        with self.assertRaisesRegex(
+            RuntimeError, "HTTP 403.*model_permission_blocked_org.*blocked at the organization level"
+        ):
+            call_groq_discovery("probe", api_key="fake", opener=denied)
 
     def test_two_of_three_consensus_and_experimental_verification(self):
         candidate = {
