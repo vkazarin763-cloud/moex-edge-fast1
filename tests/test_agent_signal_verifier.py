@@ -13,7 +13,7 @@ class AgentSignalVerifierTests(unittest.TestCase):
             "universe": ["SBER", "LKOH"],
             "signals": [{
                 "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
-                "d1_signal_timestamp": "2026-11-20T00:00:00+03:00",
+                "d1_bar_end_utc": "2026-11-20T21:00:00+00:00",
                 "d1_close": 250.0, "h1_confirmation": "CONFIRMED",
                 "h1": {"status": "CONFIRMED"},
             }],
@@ -57,7 +57,7 @@ class AgentSignalVerifierTests(unittest.TestCase):
 
     def test_non_reproduced_agent_signal_is_rejected(self):
         agent = {**self.agent, "proposals": [{
-            **self.agent["proposals"][0], "d1_signal_timestamp": "2026-11-19T00:00:00+03:00"
+            **self.agent["proposals"][0], "d1_bar_end_utc": "2026-11-19T21:00:00+00:00"
         }]}
         result = verify_agent_proposals(agent, self.scan, self.registry)
         self.assertEqual(result["results"][0]["status"], "REJECTED_NOT_REPRODUCED")
