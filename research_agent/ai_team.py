@@ -22,6 +22,7 @@ DEFAULT_MODEL = "openai/gpt-oss-20b"
 MAX_INPUT_CHARS = 30_000
 MAX_OUTPUT_TOKENS = 700
 MAX_RATE_LIMIT_RETRIES = 4
+MAX_SCHEMA_RETRIES = 2
 
 SYSTEM_PROMPT = (
     "You are part of a read-only MOEX research team. Never fabricate facts, prices, "
@@ -262,7 +263,9 @@ def call_groq(
         },
         method="POST",
     )
-    for attempt in range(max_retries + 1):
+    rate_limit_retries = 0
+    schema_retries = 0
+    while True:
         try:
             with opener(request, timeout=timeout) as response:
                 payload = json.loads(response.read().decode("utf-8"))
@@ -282,7 +285,7 @@ def call_groq(
             except (ValueError, OSError):
                 pass
 
-            if exc.code == 429 and attempt < max_retries:
+            if exc.code == 429 and rate_limit_retries < max_retries:
                 retry_after = None
                 headers = exc.headers
                 if headers is not None:
@@ -297,13 +300,37 @@ def call_groq(
                     if match:
                         retry_after = float(match.group(1))
                 if retry_after is None:
-                    retry_after = min(2 ** attempt, 30)
+                    retry_after = min(2 ** rate_limit_retries, 30)
                 wait_seconds = max(1.0, min(retry_after + 0.75, 90.0))
+                rate_limit_retries += 1
                 print(
-                    f"Groq rate limit (HTTP 429); retry {attempt + 1}/{max_retries} "
+                    f"Groq rate limit (HTTP 429); retry {rate_limit_retries}/{max_retries} "
                     f"after {wait_seconds:.2f}s."
                 )
                 sleeper(wait_seconds)
+                continue
+
+            if (
+                exc.code == 400
+                and "generated json does not match the expected schema" in detail.lower()
+                and schema_retries < MAX_SCHEMA_RETRIES
+            ):
+                schema_retries += 1
+                body["messages"][1]["content"] += (
+                    "\\n\\nCRITICAL FORMAT CORRECTION: Your previous generation was rejected "
+                    "because the required top-level property 'questions' was missing. "
+                    "Return one JSON object with BOTH required keys every time, even when "
+                    "either array is empty. The exact outer shape is "
+                    '{"hypotheses": [], "questions": []}. Do not omit either key. '
+                    "For every hypothesis include its evidence array."
+                )
+                # urllib's Request keeps the original serialized body; refresh it
+                # so the retry actually sends the strengthened prompt.
+                request.data = json.dumps(body).encode("utf-8")
+                print(
+                    f"Groq structured-output schema mismatch (HTTP 400); "
+                    f"retry {schema_retries}/{MAX_SCHEMA_RETRIES} with explicit required-key reminder."
+                )
                 continue
 
             if detail:
@@ -316,8 +343,6 @@ def call_groq(
             ) from None
         except urllib.error.URLError as exc:
             raise RuntimeError(f"Groq API connection failed: {exc.reason}") from None
-    else:
-        raise RuntimeError("Groq request exhausted its retry budget.")
     return _extract_text(payload)
 
 
@@ -335,7 +360,10 @@ def run_team(
     for role, instruction in ROLES:
         prompt = (
             f"{instruction}\n\n"
-            "Return ONLY JSON matching this structure: "
+            "MANDATORY: Return ONLY one JSON object with BOTH top-level keys "
+            "'hypotheses' and 'questions' on every response. Never omit either key; "
+            "use an empty array when there is nothing to report. Exact minimal shape: "
+            '{"hypotheses":[],"questions":[]}. Full shape example: '
             '{"hypotheses":[{"hypothesis":"short qualitative hypothesis without digits",'
             '"evidence":[{"path":"dot.separated.source.path","value_json":"exact compact JSON value"}]}],'
             '"questions":["qualitative research question"]}. '

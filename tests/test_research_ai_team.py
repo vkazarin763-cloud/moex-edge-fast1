@@ -175,6 +175,62 @@ class AITeamTests(unittest.TestCase):
         self.assertNotIn(key, str(caught.exception))
 
 
+    def test_http_400_missing_required_questions_retries_with_format_reminder(self):
+        import io
+        import urllib.error
+
+        attempts = []
+        prompts = []
+
+        def opener(request, timeout):
+            attempts.append(1)
+            body = json.loads(request.data)
+            prompts.append(body["messages"][1]["content"])
+            if len(attempts) == 1:
+                error_body = json.dumps({
+                    "error": {
+                        "message": "Generated JSON does not match the expected schema. "
+                                   "Error: jsonschema: missing properties: 'questions'"
+                    }
+                }).encode("utf-8")
+                raise urllib.error.HTTPError(
+                    request.full_url, 400, "Bad Request", {}, io.BytesIO(error_body)
+                )
+            return FakeResponse({
+                "choices": [{
+                    "message": {
+                        "content": json.dumps({"hypotheses": [], "questions": []})
+                    }
+                }]
+            })
+
+        answer = call_groq("original prompt", api_key="secret-test", opener=opener)
+        self.assertEqual(json.loads(answer), {"hypotheses": [], "questions": []})
+        self.assertEqual(len(attempts), 2)
+        self.assertIn("original prompt", prompts[1])
+        self.assertIn("BOTH required keys", prompts[1])
+        self.assertIn('"hypotheses": [], "questions": []', prompts[1])
+
+    def test_http_400_non_schema_error_is_not_retried(self):
+        import io
+        import urllib.error
+
+        attempts = []
+
+        def opener(request, timeout):
+            attempts.append(1)
+            error_body = json.dumps({
+                "error": {"message": "Invalid API Key"}
+            }).encode("utf-8")
+            raise urllib.error.HTTPError(
+                request.full_url, 400, "Bad Request", {}, io.BytesIO(error_body)
+            )
+
+        with self.assertRaisesRegex(RuntimeError, "HTTP 400: Invalid API Key"):
+            call_groq("test", api_key="secret-test", opener=opener)
+        self.assertEqual(len(attempts), 1)
+
+
     def test_http_429_waits_for_provider_retry_hint_then_succeeds(self):
         import io
         import urllib.error
