@@ -29,7 +29,10 @@ class ScoutTests(unittest.TestCase):
             ]}}
         report = discover(limit=2, fetcher=fake_fetch, pause_seconds=0)
         self.assertEqual(report["candidate_count"], 2)
-        self.assertEqual(len(calls), 6)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(report['markets'], ['equities'])
+        self.assertIn('in%3Areadme', calls[0])
+        self.assertNotIn('in%3Areadme', calls[1])
         self.assertEqual(report["schema_version"], "1.1")
         self.assertEqual(report["mode"], "METADATA_ONLY_NO_MARKET_DATA_NO_SIGNALS_NO_BACKTEST")
         by_title = {x["title"]: x for x in report["candidates"]}
