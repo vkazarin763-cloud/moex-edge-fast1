@@ -98,3 +98,18 @@ Why it does not pass:
 ## Reproducible implementation
 
 The isolated research implementation is `research_agent/moex_equities_donchian_replay.py`; offline unit tests are in `tests/test_moex_equities_donchian_replay.py`. It reads the MOEX multi-timeframe JSON/ZIP artifact and writes a JSON trade-level report. It is not imported by the active signal scanner and does not connect to a broker.
+
+## Automated replay verification
+
+- GitHub Actions run: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45256770020
+- Branch commit: `8cddbef2f97516586eafa3ae6c632af61666032b`
+- Result: SUCCESS.
+- Compile step: PASS.
+- Offline unit tests: 11/11 PASS.
+- Frozen MOEX snapshot download: PASS.
+- Split-adjusted replay: `REPLAY_COMPLETED`.
+- Equities-only source discovery: 10 metadata leads, 0 fetch errors.
+- Combined artifact: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45256770020/artifacts/14858761919
+
+The automated run executed the repository implementation against the downloaded frozen MOEX snapshot. Its generated JSON reproduces the trade counts, validation totals and cost-scenario metrics reported above.
+
