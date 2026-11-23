@@ -149,7 +149,7 @@ class AITeamTests(unittest.TestCase):
         self.assertEqual(seen["timeout"], 60)
         self.assertEqual(seen["body"]["model"], DEFAULT_MODEL)
         self.assertEqual(seen["body"]["messages"][0]["role"], "system")
-        self.assertEqual(seen["body"]["max_completion_tokens"], 1200)
+        self.assertEqual(seen["body"]["max_completion_tokens"], 700)
         self.assertIs(seen["body"]["include_reasoning"], False)
         self.assertEqual(seen["body"]["reasoning_effort"], "low")
 
@@ -171,6 +171,37 @@ class AITeamTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "HTTP 403: Invalid API Key") as caught:
             call_groq("test", api_key=key, opener=opener)
         self.assertNotIn(key, str(caught.exception))
+
+
+    def test_http_429_waits_for_provider_retry_hint_then_succeeds(self):
+        import io
+        import urllib.error
+
+        attempts = []
+        waits = []
+
+        def opener(request, timeout):
+            attempts.append(1)
+            if len(attempts) == 1:
+                body = json.dumps({
+                    "error": {"message": "Rate limit reached. Please try again in 17.34s."}
+                }).encode("utf-8")
+                raise urllib.error.HTTPError(
+                    request.full_url, 429, "Too Many Requests", {}, io.BytesIO(body)
+                )
+            return FakeResponse({
+                "choices": [{"message": {"content": "recovered"}}]
+            })
+
+        answer = call_groq(
+            "test",
+            api_key="secret-test",
+            opener=opener,
+            sleeper=waits.append,
+        )
+        self.assertEqual(answer, "recovered")
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(waits, [18.09])
 
     def test_run_team_calls_three_specialists_then_coordinator(self):
         calls = []
