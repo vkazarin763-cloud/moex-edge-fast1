@@ -1,4 +1,4 @@
-name: AI Team Registry Evidence Tests
+name: AI Research Evidence Tests
 
 on:
   push:
@@ -16,7 +16,12 @@ on:
   pull_request:
     paths:
       - "research_agent/ai_team.py"
+      - "research_agent/validation.py"
+      - "research_agent/cli.py"
+      - "research_agent/quality.py"
       - "tests/test_research_ai_team.py"
+      - "tests/test_research_holdout.py"
+      - "tests/test_research_quality.py"
       - ".github/workflows/ai-team-registry-ci.yml"
 
 permissions:
