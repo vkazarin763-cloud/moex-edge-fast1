@@ -63,8 +63,9 @@ def validate_agent_proposals(report: dict[str, Any], universe: list[str]) -> Non
             raise AgentContractError(f"Proposal {index} uses an unsupported strategy")
         _aware_utc(proposal["d1_bar_end_utc"], f"proposal[{index}].d1_bar_end_utc")
         frames = proposal["timeframes"]
-        if (not isinstance(frames, list) or not {"D1", "H1"}.issubset(frames) or
-                any(frame not in ALLOWED_TIMEFRAMES for frame in frames) or
+        if (not isinstance(frames, list) or
+                any(not isinstance(frame, str) or frame not in ALLOWED_TIMEFRAMES for frame in frames) or
+                not {"D1", "H1"}.issubset(frames) or
                 len(set(frames)) != len(frames)):
             raise AgentContractError(f"Proposal {index} has invalid timeframes")
         key = (symbol, proposal["direction"], proposal["strategy"], proposal["d1_bar_end_utc"])
