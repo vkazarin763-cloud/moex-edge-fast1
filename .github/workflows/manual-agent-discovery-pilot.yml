@@ -102,7 +102,14 @@ jobs:
           report = json.loads(Path("moex_edge_multi_timeframe_validation.json").read_text())
           if report.get("status") != "PASS" or report.get("issue_count") != 0:
               raise SystemExit(f"Market data validation failed: {report.get('issue_count')} issues")
-          print("PASS: deterministic market-data validation has zero issues.")
+          candles = json.loads(Path("moex_edge_multi_timeframe_candles.json").read_text())
+          if len(candles.get("universe", [])) != 44:
+              raise SystemExit("Expected the frozen 44-stock universe.")
+          for frame in ("D1", "H1"):
+              coverage = candles.get("timeframes", {}).get(frame, {})
+              if coverage.get("ok") != 44 or coverage.get("errors") != 0 or coverage.get("no_completed_bars") != 0:
+                  raise SystemExit(f"{frame} coverage is incomplete: {coverage}")
+          print("PASS: deterministic market-data validation has zero issues; D1/H1 coverage is 44/44.")
           PY
 
       - name: Generate all deterministic D1/H1 candidates (no research-registry filtering)
