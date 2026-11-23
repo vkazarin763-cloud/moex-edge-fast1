@@ -78,3 +78,39 @@ The AI reviewer/coordinator flagged family_size=25 versus 50 registry rows as a 
 - Explain results in plain Russian.
 - User expects independent verification and honest limitations.
 - The goal is to prove whether the free agent workflow is useful before paying for faster models.
+
+
+## 2026-11-23 — follow-up audit of calendar gaps and raw-volume mismatches
+
+### Official MOEX calendar review
+The 9 daily-history gap windows were checked against official MOEX schedules. They are explained by published market closures and/or additional weekend/holiday sessions that are part of the next ordinary trading date; they should not be treated as evidence of missing TQBR D1 bars:
+- 2023-12-29 → 2024-01-03: 1–2 Jan 2024 were closed. MOEX 2024 holiday schedule: https://www.moex.com/n64121
+- 2024-02-22 → 2024-02-26: 23 Feb 2024 was closed. Same official 2024 schedule.
+- 2024-03-07 → 2024-03-11: 8 Mar 2024 was closed. Same official 2024 schedule.
+- 2024-12-30 → 2025-01-03: 31 Dec 2024 and 1–2 Jan 2025 were closed; 3 Jan was an open holiday session. MOEX schedules: https://www.moex.com/n75066 and https://www.moex.com/n73701
+- 2025-05-08 → 2025-05-12: 9 May was closed; 10–11 May were additional weekend sessions. Weekend sessions from 2025-03-01 are rolled into the next ordinary trading day: https://www.moex.com/n77967 and https://www.moex.com/n77931
+- 2025-12-30 → 2026-01-05: 31 Dec 2025 and 1–4 Jan 2026 were closed; 5 Jan 2026 was an open holiday session. Sources: https://www.moex.com/n73701 and https://www.moex.com/n94207
+- 2026-02-20 → 2026-02-24: 21–22 Feb weekend sessions and 23 Feb special session are part of the next ordinary trading date. Sources: https://www.moex.com/n95564 and https://www.moex.com/n96571
+- 2026-04-30 → 2026-05-04: 1 May special session and 2–3 May weekend sessions are rolled into the next ordinary trading date. Same 2026 sources.
+- 2026-06-11 → 2026-06-15: 12 June special session and 13–14 June weekend sessions are rolled into the next ordinary trading date. Same 2026 sources.
+- Therefore, these 9 gap windows are manually explained by official schedules. The current pipeline still reports `exchange_calendar_verified=false` because this manual research has not yet been encoded as a reproducible in-pipeline calendar audit. Do not silently flip that flag or claim the code now verifies the calendar.
+
+### Exact raw-candle vs TQBR history checks
+The three `session_date_mapping` mismatches were queried directly from MOEX ISS. For each, daily candle OHLC and turnover VALUE match the TQBR total-history row exactly; only VOLUME differs. This narrows the discrepancy but does not explain it:
+- SBER 2025-08-01: candle VOLUME 25,320,049 vs history VOLUME 18,473,506 (difference +6,846,543; +37.06% vs history). OHLC and VALUE match. TQBR history sessions 0/1/2 volumes were 3,311,286 + 11,681,020 + 3,481,200 = 18,473,506.
+  - Candle: https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER/candles.json?from=2025-08-01&till=2025-08-01&interval=24&iss.meta=off
+  - History total: https://iss.moex.com/iss/history/engines/stock/markets/shares/boards/TQBR/securities/SBER.json?from=2025-08-01&till=2025-08-01&tradingsession=3&iss.meta=off
+- GAZP 2025-10-27: candle VOLUME 44,070,553 vs history VOLUME 46,407,070 (difference -2,336,517; -5.03%). OHLC and VALUE match.
+  - Candle: https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/GAZP/candles.json?from=2025-10-27&till=2025-10-27&interval=24&iss.meta=off
+  - History total: https://iss.moex.com/iss/history/engines/stock/markets/shares/boards/TQBR/securities/GAZP.json?from=2025-10-27&till=2025-10-27&tradingsession=3&iss.meta=off
+- MOEX 2025-10-27: candle VOLUME 5,370,130 vs history VOLUME 5,826,160 (difference -456,030; -7.83%). OHLC and VALUE match.
+  - Candle: https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/MOEX/candles.json?from=2025-10-27&till=2025-10-27&interval=24&iss.meta=off
+  - History total: https://iss.moex.com/iss/history/engines/stock/markets/shares/boards/TQBR/securities/MOEX.json?from=2025-10-27&till=2025-10-27&tradingsession=3&iss.meta=off
+- Root cause is UNKNOWN. Do not classify these as harmless. Strategy inputs are built from per-security TQBR history, not the raw candle volume field, but raw-to-history provenance remains incomplete until this field discrepancy is explained or explicitly handled with evidence.
+
+### Session-aware crosscheck code change
+- `research_agent/quality.py` now accepts the session-mapping diagnostic in `audit_tqbr_history()`. It excludes weekend calendar-date fragments from same-date “no history row” warnings only if the session mapper confirms every weekend fragment mapped and zero weekend fragments remained unmapped.
+- The audit records `mapped_weekend_fragments_without_same_date_history` and `weekend_fragments_excluded_from_same_date_crosscheck`. It deliberately keeps `exchange_calendar_verified=false`; mapping is not proof of an exchange-wide calendar.
+- CLI passes `session_date_mapping_diagnostics` into this crosscheck.
+- Added tests for fully mapped and unmapped weekend fragments. Latest CI run for these changes: check https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45110066248 (was in progress at the time of this update).
+- This change addresses the false same-date weekend-fragment warning only. It does NOT clear the three raw VOLUME mismatches or certify the official calendar in code.
