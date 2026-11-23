@@ -170,11 +170,11 @@ class AgentDiscoveryTests(unittest.TestCase):
         calls = []
 
         def openrouter(prompt, *, api_key, model):
-            calls.append("openrouter")
+            calls.append(("openrouter", api_key, model))
             raise RuntimeError("OpenRouter HTTP 429: rate limited")
 
         def groq(prompt, *, api_key, model):
-            calls.append("groq")
+            calls.append(("groq", api_key, model))
             return {"proposals": [], "strategy_hypotheses": []}
 
         result, provider = call_discovery_with_fallback(
@@ -184,7 +184,9 @@ class AgentDiscoveryTests(unittest.TestCase):
             openrouter_caller=openrouter,
             groq_caller=groq,
         )
-        self.assertEqual(calls, ["openrouter", "groq"])
+        self.assertEqual([item[0] for item in calls], ["openrouter", "groq"])
+        self.assertEqual(calls[0], ("openrouter", "openrouter-key", "openrouter/free"))
+        self.assertEqual(calls[1], ("groq", "groq-key", "openai/gpt-oss-20b"))
         self.assertEqual(provider, "groq_fallback")
         self.assertEqual(result["proposals"], [])
 
