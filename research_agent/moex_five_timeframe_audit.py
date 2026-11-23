@@ -59,7 +59,7 @@ def aggregate_m15(m1: list[Candle]) -> list[Candle]:
         ts = c.timestamp
         if ts.weekday() >= 5:
             continue
-        if 10 <= ts.hour < 18 and not (ts.hour == 18 and ts.minute >= 50):
+        if (10 <= ts.hour < 18) or (ts.hour == 18 and ts.minute < 50):
             anchor = ts.replace(hour=10, minute=0, second=0, microsecond=0)
             elapsed = int((ts - anchor).total_seconds() // 60)
         elif 19 <= ts.hour < 24:
