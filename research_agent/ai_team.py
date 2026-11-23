@@ -234,7 +234,9 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             "selection_policy": _bounded(registry.get("selection_policy", {})),
             "summary": _bounded(registry.get("summary", {})),
             "scanner_contract": _bounded(registry.get("scanner_contract", {})),
-            "reason_codes": reason_text_to_code,
+            "reason_codes": {
+                code: reason for reason, code in reason_text_to_code.items()
+            },
             "strategies": [
                 {
                     "ticker": item.get("ticker"),
