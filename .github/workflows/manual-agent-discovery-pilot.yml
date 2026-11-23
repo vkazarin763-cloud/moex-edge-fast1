@@ -35,7 +35,7 @@ jobs:
       - name: Compile and run offline safety tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery -v
+          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback -v
 
       - name: Verify read-only market data and Groq secrets are configured
         env:
