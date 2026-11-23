@@ -14,8 +14,8 @@ from pathlib import Path
 # architectural extensions but are intentionally not queried in this phase.
 MARKET_QUERIES = {
     "equities": {
-        "github": "stock trading strategy in:readme",
-        "crossref": "stock trading strategy backtest equities",
+        "github": "equity trading strategy backtest language:Python",
+        "crossref": "stock trading strategy backtest momentum mean reversion",
     },
 }
 USER_AGENT = "MOEX-EDGE-External-Strategy-Research/0.2 (public metadata discovery)"
@@ -124,8 +124,14 @@ def discover(*, limit: int = 5, fetcher=fetch_json, pause_seconds: float = 1.0):
                 errors.append({"market_query": query_market, "source": source_name, "error": str(exc)[:300]})
             if pause_seconds:
                 time.sleep(pause_seconds)
+    # Keep only sources whose returned metadata itself identifies equities/stocks.
+    # The search query is not treated as evidence of asset class.
     seen, unique = set(), []
     for candidate in candidates:
+        if "equities" not in candidate.get("market_tags", []):
+            continue
+        if candidate.get("candidate_type") == "INFRASTRUCTURE_OR_EDUCATION":
+            continue
         key = candidate["url"].rstrip("/").lower()
         if key not in seen:
             seen.add(key)
@@ -143,7 +149,7 @@ def discover(*, limit: int = 5, fetcher=fetch_json, pause_seconds: float = 1.0):
             "query_market records the search that found a result; it is not an asset-class label.",
             "Current discovery scope is equities only; futures and options are not queried in this phase.",
             "market_tags require explicit instrument or asset-class evidence in returned title/description/topics; missing evidence remains untagged.",
-            "Repository metadata is not a README/code review; candidate_type is preliminary and may contain false positives.",
+            "Only sources with explicit equity/stock evidence in returned metadata survive discovery; metadata remains a lead, not a verified strategy.",
             "Exact entry, exit, invalidation, timeframe, parameters and execution assumptions have not been extracted.",
             "Source-reported performance is not independently reproduced and is never MOEX performance evidence.",
             "Source version and license require review before any code reuse.",
