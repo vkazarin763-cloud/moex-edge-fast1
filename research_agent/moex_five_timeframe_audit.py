@@ -117,10 +117,18 @@ def audit_rows(rows: list[Candle], timeframe: str) -> dict:
     validate_candles(rows)
     stamps = [c.timestamp for c in rows]
     gaps = []
+    expected = {"M1": 1, "M15": 15, "H1": 60, "H4": 240, "D1": None, "W1": None}[timeframe]
+    def session_key(ts: datetime):
+        if timeframe in ("M1", "M15", "H1"):
+            return (ts.date(), "day" if ts.hour < 19 else "evening")
+        if timeframe == "H4":
+            return (ts.date(), "day" if ts.hour in (10, 14) else "evening")
+        return None
     for a, b in zip(stamps, stamps[1:]):
         delta = b - a
-        expected = {"M1": 1, "M15": 15, "H1": 60, "H4": 240, "D1": None, "W1": None}[timeframe]
-        if expected and delta > timedelta(minutes=expected):
+        # Overnight, weekend, and the 18:50-19:00 session break are not
+        # missing bars. Only count gaps inside the same continuous session.
+        if expected and session_key(a) == session_key(b) and delta > timedelta(minutes=expected):
             gaps.append({"from": a.isoformat(), "to": b.isoformat(),
                          "minutes": int(delta.total_seconds() // 60)})
     return {
