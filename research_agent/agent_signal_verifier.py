@@ -6,8 +6,7 @@ labels it using the independently generated strategy registry and H1 result.
 """
 from __future__ import annotations
 
-from datetime import datetime
-import math
+from datetime import datetime, timezone
 from typing import Any
 
 REPORT_STATUS = "AGENT_SIGNAL_PROPOSALS"
@@ -51,7 +50,7 @@ def validate_agent_proposals(report: dict[str, Any], universe: list[str]) -> Non
     for index, proposal in enumerate(proposals):
         if not isinstance(proposal, dict):
             raise AgentContractError(f"Proposal {index} must be an object")
-        required = ("symbol", "direction", "strategy", "d1_signal_timestamp", "timeframes")
+        required = ("symbol", "direction", "strategy", "d1_bar_end_utc", "timeframes")
         missing = [key for key in required if key not in proposal]
         if missing:
             raise AgentContractError(f"Proposal {index} missing: {', '.join(missing)}")
@@ -62,13 +61,13 @@ def validate_agent_proposals(report: dict[str, Any], universe: list[str]) -> Non
             raise AgentContractError(f"Proposal {index} has invalid direction")
         if proposal["strategy"] not in ALLOWED_STRATEGIES:
             raise AgentContractError(f"Proposal {index} uses an unsupported strategy")
-        _aware_utc(proposal["d1_signal_timestamp"], f"proposal[{index}].d1_signal_timestamp")
+        _aware_utc(proposal["d1_bar_end_utc"], f"proposal[{index}].d1_bar_end_utc")
         frames = proposal["timeframes"]
-        if (not isinstance(frames, list) or not frames or
+        if (not isinstance(frames, list) or not {"D1", "H1"}.issubset(frames) or
                 any(frame not in ALLOWED_TIMEFRAMES for frame in frames) or
                 len(set(frames)) != len(frames)):
             raise AgentContractError(f"Proposal {index} has invalid timeframes")
-        key = (symbol, proposal["direction"], proposal["strategy"], proposal["d1_signal_timestamp"])
+        key = (symbol, proposal["direction"], proposal["strategy"], proposal["d1_bar_end_utc"])
         if key in seen:
             raise AgentContractError(f"Duplicate proposal identity at index {index}")
         seen.add(key)
@@ -141,7 +140,7 @@ def verify_agent_proposals(
             "symbol": proposal["symbol"],
             "direction": proposal["direction"],
             "strategy": proposal["strategy"],
-            "d1_signal_timestamp": proposal["d1_signal_timestamp"],
+            "d1_signal_timestamp": proposal["d1_bar_end_utc"],
             "status": status,
             "reason": reason,
             "verified_signal": actual if actual is not None else None,
@@ -150,7 +149,7 @@ def verify_agent_proposals(
     confirmed = [item for item in results if item["status"] == "CONFIRMED"]
     return {
         "status": "AGENT_SIGNAL_VERIFICATION_COMPLETE",
-        "generated_at_utc": datetime.now().astimezone().isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "agent_run_id": agent_report["agent_run_id"],
         "deterministic_scan_as_of_utc": deterministic_scan.get("as_of_utc"),
         "strategy_registry_version": strategy_registry.get("registry_version"),
