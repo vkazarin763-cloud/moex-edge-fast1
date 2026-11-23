@@ -24,7 +24,7 @@ MAX_OUTPUT_TOKENS = 4_096
 SYSTEM_PROMPT = (
     "You are part of a read-only MOEX research team. Never fabricate facts, prices, "
     "dates, metrics or citations. If evidence is absent, say UNKNOWN. The directional "
-    "strategy_registry is the sole authority for per-ticker LONG/SHORT eligibility, "
+    "strategy_registry is the sole authority for per-ticker LONG/SHORT eligibility; decode its compact row fields using schema.registry_fields, "
     "status, trade counts, fold adequacy and shadow-scanner eligibility. Never promote "
     "an aggregate or legacy walk-forward result over the registry. If registry status "
     "is INSUFFICIENT_DATA, do not describe that candidate as passed, approved or eligible. "
@@ -250,25 +250,27 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             "selection_policy": _bounded(registry.get("selection_policy", {})),
             "summary": _bounded(registry.get("summary", {})),
             "scanner_contract": _bounded(registry.get("scanner_contract", {})),
+            # Compact field names reduce repeated JSON overhead across the full
+            # directional registry while preserving every decision-critical value.
             "strategies": [
                 {
-                    "ticker": item.get("ticker"),
-                    "direction": item.get("direction"),
-                    "strategy": item.get("strategy"),
-                    "status": item.get("status"),
-                    "reason_codes": [
+                    "t": item.get("ticker"),
+                    "d": item.get("direction"),
+                    "y": item.get("strategy"),
+                    "s": item.get("status"),
+                    "r": [
                         reason_code(reason)
                         for reason in item.get("reasons", [])
                         if isinstance(item.get("reasons", []), list) and isinstance(reason, str)
                     ],
-                    "closed_trades": item.get("closed_trades"),
-                    "average_net_return": item.get("average_net_return"),
-                    "profit_factor": item.get("profit_factor"),
-                    "positive_folds": item.get("positive_folds"),
-                    "adequately_sampled_folds": item.get("adequately_sampled_folds"),
-                    "folds": item.get("folds"),
-                    "double_cost_average_net_return": item.get("double_cost_average_net_return"),
-                    "eligible_for_shadow_scanner": item.get("eligible_for_shadow_scanner"),
+                    "n": item.get("closed_trades"),
+                    "a": item.get("average_net_return"),
+                    "p": item.get("profit_factor"),
+                    "pf": item.get("positive_folds"),
+                    "af": item.get("adequately_sampled_folds"),
+                    "f": item.get("folds"),
+                    "dc": item.get("double_cost_average_net_return"),
+                    "e": item.get("eligible_for_shadow_scanner"),
                 }
                 for item in registry["strategies"]
                 if isinstance(item, dict)
@@ -343,6 +345,14 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             "cost_model_profiles": "cost profile code -> exact stress, baseline and doubled-cost assumptions",
             "strategy_codes": {value: key for key, value in strategy_codes.items()},
             "status_codes": {code: value for value, code in status_codes.items()},
+            "registry_fields": {
+                "t": "ticker", "d": "direction", "y": "strategy", "s": "status",
+                "r": "reason_codes", "n": "closed_trades", "a": "average_net_return",
+                "p": "profit_factor", "pf": "positive_folds",
+                "af": "adequately_sampled_folds", "f": "folds",
+                "dc": "double_cost_average_net_return",
+                "e": "eligible_for_shadow_scanner"
+            },
         },
         "cross_sectional_direction_summary": _bounded(
             report.get("cross_sectional_direction_summary", {})
@@ -355,6 +365,7 @@ def _compact_report(report: Any, registry: Any = None) -> str:
             "TQBR history crosscheck counts and per-strategy status/trade-count/average-net-return "
             "metrics are retained where present. Decode status codes using schema. "
             "The directional strategy_registry, when supplied, is authoritative for eligibility. "
+            "Decode compact strategy_registry.strategies row keys using schema.registry_fields. "
             "Per-ticker baseline and doubled-cost execution assumptions are included where present."
         ),
     }
