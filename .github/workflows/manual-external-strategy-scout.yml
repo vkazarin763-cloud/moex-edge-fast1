@@ -62,7 +62,7 @@ jobs:
               lines += [f"- Status: {data.get('status')}", f"- Unique source leads: {data.get('candidate_count')}", f"- Source errors: {len(data.get('errors', []))}", f"- Mode: {data.get('mode')}", '', '## Sources']
               for item in data.get('candidates', []):
                   lines.append(f"- [{item.get('title')}]({item.get('url')}) — {', '.join(item.get('market_tags', []))}; {item.get('source_type')}; license: {item.get('license_status')}")
-              lines += ['', 'Search results are unverified leads, not tested strategies. No market data, signals, backtests, broker accounts or orders were accessed.']
+              lines += ['', 'Source-discovery results are unverified leads, not tested strategies. The separate MOEX replay uses only the frozen historical artifact and is a trade-level diagnostic; no live signals, broker accounts or orders are accessed.']
           else:
               lines.append('No source report was produced; inspect the failed step logs.')
           replay_path = Path('moex_donchian_20_10_replay.json')
@@ -79,7 +79,7 @@ jobs:
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as out:
               out.write('\n'.join(lines) + '\n')
           PY
-      - name: Upload source catalog
+      - name: Upload equities research artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
