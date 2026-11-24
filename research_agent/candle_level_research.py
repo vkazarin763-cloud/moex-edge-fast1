@@ -354,7 +354,7 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
             "recent_30d_h1_confirmed": merge_stats(item["h1_confirmed_trades"], len(item["h1_confirmed_tickers"])),
         }
 
-    return {
+    report = {
         "report_version": "moex-candle-level-d1-3y-v1",
         "status": (
             "COMPLETE"
@@ -402,6 +402,9 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         "interpretation": "Exploratory research only. Three-year D1 pattern/level results and a separate pre-holdout 30-day H1 confirmation diagnostic. No strategy is approved for live signals or trading.",
         "safety": "Read-only public market-data calls; no broker accounts, orders, positions, or execution endpoints. The 2026-11-20+ holdout is excluded.",
     }
+    from .direction_forecast import run_direction_forecast
+    report["direction_forecast_research"] = run_direction_forecast(data, audit)
+    return report
 
 
 def main() -> int:
