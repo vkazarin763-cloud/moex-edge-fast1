@@ -100,7 +100,18 @@ class OperationalForecastTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exact frozen 44-symbol"):
             build_operational_forecast(candles, validation)
 
-    def test_rejects_mixed_or_snapshot_only_d1_feed(self):
+    def test_ignores_snapshot_rows_when_completed_d1_bars_are_present(self):
+        candles, validation = _fixture()
+        for ticker in TICKERS:
+            original = candles["results"][ticker]["D1"]["candles"]
+            candles["results"][ticker]["D1"]["candles"] = [
+                {**original[0], "is_data_snapshot": True}, *original
+            ]
+        report = build_operational_forecast(candles, validation)
+        self.assertEqual(report["status"], "COMPLETE")
+        self.assertEqual(report["symbols_with_valid_d1_history"], len(TICKERS))
+
+    def test_rejects_snapshot_only_d1_feed(self):
         candles, validation = _fixture()
         for ticker in TICKERS:
             candles["results"][ticker]["D1"]["candles"] = [
