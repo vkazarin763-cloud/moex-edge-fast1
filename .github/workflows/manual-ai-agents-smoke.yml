@@ -31,38 +31,84 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Compile module and run offline tests
+      - name: Compile and run offline agent safety tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_research_ai_team -v
+          python -m unittest tests.test_research_ai_team tests.test_agent_discovery tests.test_agent_signal_verifier tests.test_operational_agent_integration -v
 
-      - name: Create tiny synthetic diagnostic input (no MOEX data or signals)
+      - name: Create synthetic no-market-data agent input
         run: |
           python - <<'PY'
           import json
+          from datetime import datetime, timezone
           from pathlib import Path
-          fixture = {
-              "report_type": "SYNTHETIC_AGENT_SMOKE_TEST",
-              "notice": "Synthetic fixture only. Not market data, not a backtest, not a trading signal.",
-              "generated_at_utc": "workflow-runtime",
-              "source": {"kind": "synthetic", "market_data_loaded": False},
-              "universe": {"count": 1, "instruments": ["DEMO_ONLY"]},
-              "independent_validation": {
-                  "status": "NOT_RUN",
-                  "reason": "Agent connectivity smoke test skips quantitative research."
-              },
-              "results": {},
-              "expected_agent_behavior": [
-                  "state that all evidence is synthetic",
-                  "do not infer profitability",
-                  "do not produce a LONG or SHORT signal",
-                  "identify missing real-market evidence"
-              ]
+          from zoneinfo import ZoneInfo
+
+          now = datetime.now(timezone.utc)
+          snapshot = now.isoformat()
+          today_moscow = now.astimezone(ZoneInfo("Europe/Moscow")).date().isoformat()
+          scan = {
+              "status": "READ_ONLY_LATEST_SIGNAL_SCAN",
+              "generated_at_utc": snapshot,
+              "as_of_utc": snapshot,
+              "universe": ["DEMO_ONLY"],
+              "signals_count": 0,
+              "signals": [],
+              "methodology": "Synthetic connectivity test; no market candles or real instruments.",
           }
-          Path("smoke_input.json").write_text(
-              json.dumps(fixture, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8"
-          )
+          registry = {
+              "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
+              "source_report_date_till": today_moscow,
+              "holdout_used_for_selection": False,
+              "scanner_contract": {
+                  "consume_only_status": "PASS",
+                  "live_trading_authorized": False,
+              },
+              "summary": {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 0},
+              "strategies": [],
+          }
+          model_version = "SYNTHETIC_SMOKE_ONLY_NOT_A_REAL_MODEL"
+          forecast = {
+              "report_type": "MOEX_EDGE_OPERATIONAL_DIRECTION_FORECAST_V1",
+              "status": "COMPLETE",
+              "model_version": model_version,
+              "as_of_date": today_moscow,
+              "generated_at_utc": snapshot,
+              "universe": ["DEMO_ONLY"],
+              "forecasts": [
+                  {
+                      "ticker": "DEMO_ONLY",
+                      "horizon_sessions": horizon,
+                      "status": "EXPERIMENTAL_NOT_CALIBRATED",
+                      "model_version": model_version,
+                      "post_holdout_outcomes_used": False,
+                      "predicted_class": "SIDEWAYS",
+                      "probability_down": 0.2,
+                      "probability_sideways": 0.6,
+                      "probability_up": 0.2,
+                  }
+                  for horizon in (1, 5, 20)
+              ],
+              "holdout_policy": {
+                  "holdout_start": "2026-11-20",
+                  "post_holdout_outcomes_used_for_training": 0,
+                  "post_holdout_outcomes_used_for_model_selection": 0,
+                  "post_holdout_outcomes_used_for_calibration": 0,
+                  "post_holdout_outcomes_used_for_performance_metrics": 0,
+                  "inference_parameters_frozen_before_holdout": True,
+              },
+              "notice": "Synthetic fixture only. Probabilities are placeholders, not market forecasts.",
+          }
+          for filename, data in (
+              ("smoke_scan.json", scan),
+              ("smoke_registry.json", registry),
+              ("smoke_forecast.json", forecast),
+          ):
+              Path(filename).write_text(
+                  json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                  encoding="utf-8",
+              )
+          print("Created one synthetic symbol, three placeholder horizons, zero market candles, zero signal candidates.")
           PY
 
       - name: Check Groq secret (without displaying it)
@@ -76,45 +122,58 @@ jobs:
           print("Groq secret is configured.")
           PY
 
-      - name: Run three specialists and coordinator (4 live Groq API calls)
+      - name: Run the three MOEX EDGE discovery roles (3 live Groq API calls)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ inputs.model }}
         run: |
-          python -m research_agent.ai_team --input smoke_input.json --output smoke_result.json
+          python -m research_agent.agent_discovery \
+            --scan smoke_scan.json \
+            --registry smoke_registry.json \
+            --forecast smoke_forecast.json \
+            --groq-model "$GROQ_MODEL" \
+            --proposals smoke_agent_proposals.json \
+            --diagnostics smoke_agent_diagnostics.json \
+            --verification smoke_agent_verification.json
 
-      - name: Validate agent output
+      - name: Validate agent connectivity and no-signal behavior
         if: success()
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          result = json.loads(Path("smoke_result.json").read_text(encoding="utf-8"))
-          expected_roles = {"market_analyst", "strategy_researcher", "skeptical_reviewer"}
-          assert result.get("status") == "AI_COMMENTARY_EVIDENCE_CHECKED", result.get("status")
-          assert result.get("provider") == "groq_api", result.get("provider")
-          assert result.get("model") == "${{ inputs.model }}"
-          assert result.get("calls") == 4, result.get("calls")
-          specialists = result.get("specialists")
-          assert isinstance(specialists, dict) and set(specialists) == expected_roles
-          assert all(isinstance(item, dict) for item in specialists.values())
-          coordinator = result.get("coordinator")
-          assert isinstance(coordinator, dict)
-          assert result.get("fact_check", {}).get("status") == "PASS"
-          assert result["fact_check"].get("numeric_claims_in_free_text") == 0
-          print("PASS: three specialists and coordinator returned validated Groq responses.")
+          proposals = json.loads(Path("smoke_agent_proposals.json").read_text(encoding="utf-8"))
+          diagnostics = json.loads(Path("smoke_agent_diagnostics.json").read_text(encoding="utf-8"))
+          verification = json.loads(Path("smoke_agent_verification.json").read_text(encoding="utf-8"))
+          assert proposals.get("status") == "AGENT_SIGNAL_PROPOSALS"
+          assert proposals.get("proposals") == [], "Synthetic smoke test must not create a signal."
+          assert proposals.get("forecast_reviews") == [], "No synthetic candidate exists to review."
+          assert diagnostics.get("status") == "AGENT_DISCOVERY_COMPLETE"
+          assert diagnostics.get("agent_count") == 3
+          assert diagnostics.get("providers_used") == ["groq_fallback"] * 3
+          assert diagnostics.get("forecast_model_version") == "SYNTHETIC_SMOKE_ONLY_NOT_A_REAL_MODEL"
+          assert diagnostics.get("agents_can_modify_probabilities") is False
+          assert diagnostics.get("consensus_proposal_count") == 0
+          assert verification.get("status") == "AGENT_SIGNAL_VERIFICATION_COMPLETE"
+          assert verification.get("proposal_count") == 0
+          assert verification.get("results") == []
+          print("PASS: all three MOEX EDGE discovery roles completed; zero market data, zero candidates, zero signals.")
           print("Provider: Groq")
-          print("Model: " + result["model"])
-          print("Live API calls: " + str(result["calls"]))
+          print("Model: " + str(diagnostics.get("model")))
+          print("Live API calls: " + str(len(diagnostics.get("providers_used", []))))
           PY
 
-      - name: Upload smoke-test report
+      - name: Upload synthetic smoke-test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ai-agents-smoke-${{ github.run_id }}
+          name: moex-edge-agent-smoke-${{ github.run_id }}
           path: |
-            smoke_input.json
-            smoke_result.json
+            smoke_scan.json
+            smoke_registry.json
+            smoke_forecast.json
+            smoke_agent_proposals.json
+            smoke_agent_diagnostics.json
+            smoke_agent_verification.json
           if-no-files-found: warn
           retention-days: 14
