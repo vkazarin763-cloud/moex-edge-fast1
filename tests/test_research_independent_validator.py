@@ -23,6 +23,8 @@ def _report():
                     "raw_history_coverage_status": "COMPLETE_DATE_COVERAGE",
                     "trading_days_reconciled": 2,
                     "trading_days_mismatched": 0,
+                    "documented_corporate_action_mismatch_dates": 0,
+                    "unexplained_mismatch_dates": 0,
                     "unassigned_raw_candles": 0,
                     "raw_candles": 2,
                     "mapped_raw_candles": 2,
