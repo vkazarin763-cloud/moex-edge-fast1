@@ -9,7 +9,6 @@ import csv
 import hashlib
 import json
 import sys
-import zipfile
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -123,7 +122,8 @@ def main() -> int:
     (OUT / "features.json").write_text(json.dumps({
         "source_run_id": 44861047844,
         "source_artifact_id": 14690518588,
-        "source_candles_json_sha256": data_digest,\n        "source_validation_json_sha256": validation_digest,
+        "source_candles_json_sha256": data_digest,
+        "source_validation_json_sha256": validation_digest,
         "generated_from_frozen_data_at": payload.get("generated_at_utc"),
         "holdout_cutoff_exclusive": CUTOFF.isoformat(),
         "holdout_bars_excluded": excluded_holdout_bars,
