@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import time
@@ -155,7 +156,8 @@ def _compact_context(\n    scan: dict[str, Any], registry: dict[str, Any],\n    
                 raise ValueError("Forecast row has an invalid or duplicate ticker/horizon")
             if (row.get("status") != "EXPERIMENTAL_NOT_CALIBRATED"
                     or row.get("model_version") != model_version
-                    or row.get("post_holdout_outcomes_used") is not False):
+                    or row.get("post_holdout_outcomes_used") is not False
+                    or row.get("predicted_class") not in ("DOWN", "SIDEWAYS", "UP")):
                 raise ValueError("Forecast row has an invalid model or holdout status")
             probabilities = {
                 "DOWN": row.get("probability_down"),
@@ -425,6 +427,7 @@ def run_discovery(
     forecast_report: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     context = _compact_context(scan, registry, forecast_report)
+    forecast_context = context.get("direction_forecast")
     context_json = json.dumps(context, ensure_ascii=False, separators=(",", ":"))
     candidate_keys = {
         (row["symbol"], row["direction"], row["strategy"], row["d1_bar_end_utc"])
