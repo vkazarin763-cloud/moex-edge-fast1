@@ -59,7 +59,7 @@ class AgentDiscoveryTests(unittest.TestCase):
 
     def test_groq_discovery_uses_compatible_request_profile(self):
         seen = {}
-        payload = {"proposals": [], "strategy_hypotheses": []}
+        payload = {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": []}
 
         class Response:
             def __enter__(self):
@@ -176,7 +176,7 @@ class AgentDiscoveryTests(unittest.TestCase):
 
     def test_openrouter_uses_compatible_endpoint_and_parses_json(self):
         seen = {}
-        payload = {"proposals": [], "strategy_hypotheses": []}
+        payload = {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": []}
 
         class Response:
             def __enter__(self):
