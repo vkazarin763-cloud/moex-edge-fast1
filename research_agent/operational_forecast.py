@@ -22,7 +22,7 @@ from .direction_forecast import (
 MODEL_VERSION = "gaussian-nb-pre-holdout-v1-2026-11-19"
 
 
-def _parse_fin am_candles(items: list[dict[str, Any]]) -> list[Candle]:
+def _parse_finam_candles(items: list[dict[str, Any]]) -> list[Candle]:
     rows = []
     for item in items:
         if item.get("is_data_snapshot") is True:
