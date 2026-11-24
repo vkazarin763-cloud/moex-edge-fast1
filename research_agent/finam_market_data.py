@@ -243,7 +243,20 @@ class FinamMarketDataClient:
                 validate_candles([bar.as_candle() for bar in result])
             except ValueError as exc:
                 raise FinamAPIError(f"Invalid Finam OHLCV series: {exc}") from None
-            outside = next((bar for bar in result if bar.timestamp < start_utc or bar.timestamp >= end_utc), None)
+            # Finam D1 timestamps are session-start stamps (typically 05:00 UTC),
+            # while a strict rolling 365-day request can start later on that same
+            # UTC date. Treat the lower D1 boundary as date-inclusive, but keep
+            # the exclusive upper timestamp boundary and the exact 365-day limit.
+            if timeframe == "TIME_FRAME_D":
+                outside = next((
+                    bar for bar in result
+                    if bar.timestamp.date() < start_utc.date() or bar.timestamp >= end_utc
+                ), None)
+            else:
+                outside = next((
+                    bar for bar in result
+                    if bar.timestamp < start_utc or bar.timestamp >= end_utc
+                ), None)
             if outside is not None:
                 raise FinamAPIError(
                     "Finam returned a bar outside the requested interval: "
