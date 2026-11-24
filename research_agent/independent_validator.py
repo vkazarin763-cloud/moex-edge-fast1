@@ -286,6 +286,8 @@ def _audit_raw_session_provenance(
         "trading_days_mismatched",
         "documented_corporate_action_mismatch_dates",
         "unexplained_mismatch_dates",
+        "morning_main_volume_disambiguated_dates",
+        "total_session_volume_disambiguated_dates",
         "unassigned_raw_candles",
         "raw_candles",
         "mapped_raw_candles",
