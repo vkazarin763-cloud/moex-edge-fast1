@@ -4,7 +4,8 @@ on:
   # Bounded historical optimizer pilot on the already validated frozen artifact.
   # Push runs only when the commit message includes the explicit marker.
   push:
-    branches: [feat/autonomous-strategy-discovery-v1, feat/evolutionary-discovery-v2, feat/discovery-logic-v3, feat/discovery-logic-v4, feat/strategy-archetype-discovery-v1]
+    branches: [feat/autonomous-strategy-discovery-v1, feat/evolutionary-discovery-v2, feat/discovery-logic-v3, feat/discovery-logic-v4, feat/strategy-archetype-discovery-v1, feat/multifold-walk-forward-v1, feat/cross-fold-strategy-repeatability-v1]
+  workflow_dispatch:
   workflow_run:
     workflows: ["MOEX EDGE Multi-Timeframe Candles (Read Only)"]
     types: [completed]
@@ -20,14 +21,14 @@ concurrency:
 
 jobs:
   research:
-    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[run-moex-pilot]'))
+    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[run-moex-pilot]')) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
       - name: Checkout isolated research branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'push' && github.ref_name || 'feat/autonomous-strategy-discovery-v1' }}
+          ref: ${{ github.event_name == 'push' && github.ref_name || 'feat/cross-fold-strategy-repeatability-v1' }}
 
       - name: Set up Python
         uses: actions/setup-python@v5

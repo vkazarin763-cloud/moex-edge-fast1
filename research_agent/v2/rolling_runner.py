@@ -126,6 +126,18 @@ def run_rolling_moex_d1_research(
     adjusted = {x["hypothesis_id"]: x for x in correction["results"]}
     candidates = []
     tested = 0
+    # Exact signatures only: no fuzzy threshold matching.
+    import json
+    def canonical(value: Any) -> str:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    signatures: dict[str, dict[str, Any]] = {}
+    for key, row in pooled_rows.items():
+        payload = {"symbol": row["symbol"], "direction": row["direction"], "entry_combination": row["entry_combination"], "entry_rule": row["entry_rule"], "exit_combination": row["exit_combination"], "exit_rule": row["exit_rule"]}
+        signature = canonical(payload)
+        item = signatures.setdefault(signature, {**payload, "fold_ids": [], "hypothesis_ids": []})
+        if row["fold_id"] not in item["fold_ids"]:
+            item["fold_ids"].append(row["fold_id"])
+        item["hypothesis_ids"].append(key)
     for key, row in pooled_rows.items():
         adj = adjusted[key]
         inf = row["inference"]
@@ -153,6 +165,9 @@ def run_rolling_moex_d1_research(
                 "global_adjusted_p_value": adj["holm_adjusted_p_value"],
             })
 
+    repeatability = [{**item, "distinct_fold_count": len(item["fold_ids"]), "classification": "EXACT_RULE_REPEATED" if len(item["fold_ids"]) >= 2 else "SINGLE_FOLD_ONLY", "warning": "Repeated discovery is not independent confirmation; formation prefixes overlap and prior experiment families are not included."} for item in signatures.values()]
+    repeatability.sort(key=lambda item: (-item["distinct_fold_count"], item["symbol"], item["direction"]))
+
     return {
         "status": "COMPLETED",
         "data": {
@@ -177,6 +192,9 @@ def run_rolling_moex_d1_research(
             "single_extended_validation_window": len(folds) == 1,
             "fold_specific_candidate_generation": True,
             "fold_p_values_pooled_before_holm": True,
+            "cross_fold_repeatability": "exact rule signature only; no fuzzy threshold matching",
+            "repeatability_is_independent_confirmation": False,
+            "multiple_testing_family_scope": "current run only; prior experiment runs are not included",
             "this_is_not_an_untouched_final_holdout": True,
             "strategy_approval": "NOT_APPROVED",
         },
@@ -190,6 +208,7 @@ def run_rolling_moex_d1_research(
             "candidates_for_walk_forward": len(candidates),
         },
         "candidates_for_walk_forward": candidates,
+        "cross_fold_repeatability": {"method": "exact canonical signature across symbol, direction, entry and exit rules", "exact_repeated_rule_count": sum(x["distinct_fold_count"] >= 2 for x in repeatability), "single_fold_rule_count": sum(x["distinct_fold_count"] == 1 for x in repeatability), "rules": repeatability, "not_a_strategy_approval": True},
         "results": pooled_rows,
         "safety": {
             "lookahead_used": False,
