@@ -180,6 +180,8 @@ def analyze_ohlcv(
     pivot_right: int = 3,
     channel_window: int = 60,
     level_tolerance_atr: float = 0.5,
+    level_lookback: int = 250,
+    max_zones_per_kind: int = 8,
 ) -> dict[str, Any]:
     """Calculate descriptive TA features from completed OHLCV bars only."""
     frame = _normalise_and_validate(candles)
@@ -187,6 +189,11 @@ def analyze_ohlcv(
         raise RuntimeError(
             "pandas-ta-classic is required; install requirements-ta-research.txt"
         ) from _TA_IMPORT_ERROR
+
+    if level_lookback < pivot_left + pivot_right + 1:
+        raise ValueError("level_lookback must cover both pivot windows")
+    if max_zones_per_kind < 1:
+        raise ValueError("max_zones_per_kind must be >= 1")
 
     # The library operates on the same OHLCV columns after strict validation.
     ta_frame = frame[["open", "high", "low", "close", "volume"]].copy()
@@ -214,8 +221,19 @@ def analyze_ohlcv(
     if not np.isfinite(atr) or atr <= 0:
         atr = float((frame["high"] - frame["low"]).tail(14).mean())
     tolerance = max(atr * level_tolerance_atr, float(last["close"]) * 0.001)
-    pivots = _confirmed_pivots(frame, pivot_left, pivot_right)
-    levels = _cluster_levels(pivots, tolerance=tolerance, last_close=float(last["close"]))
+    # Keep levels local to a recent, completed-bar window; then retain only the
+    # nearest zones of each type so old, distant pivots cannot flood the output.
+    pivot_frame = frame.tail(level_lookback).reset_index(drop=True)
+    pivots = _confirmed_pivots(pivot_frame, pivot_left, pivot_right)
+    candidate_levels = _cluster_levels(pivots, tolerance=tolerance, last_close=float(last["close"]))
+    levels = []
+    for kind in ("support", "resistance"):
+        nearest = sorted(
+            (item for item in candidate_levels if item["kind"] == kind),
+            key=lambda item: abs(item["distance_pct_from_close"]),
+        )[:max_zones_per_kind]
+        levels.extend(nearest)
+    levels.sort(key=lambda item: (abs(item["distance_pct_from_close"]), item["kind"]))
     vol_mean = float(last.get("VOL_SMA_20", np.nan))
     relative_volume = float(last["volume"] / vol_mean) if np.isfinite(vol_mean) and vol_mean > 0 else None
 
@@ -249,6 +267,10 @@ def analyze_ohlcv(
             "right_side_confirmation_required": True,
             "cluster_tolerance": tolerance,
             "confirmed_pivot_count": len(pivots),
+            "pivot_lookback_bars": min(level_lookback, len(frame)),
+            "candidate_zone_count": len(candidate_levels),
+            "max_zones_per_kind": max_zones_per_kind,
+            "zones_truncated": len(levels) < len(candidate_levels),
             "zones": levels,
         },
         "channel": _regression_channel(frame, channel_window),
