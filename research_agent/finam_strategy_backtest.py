@@ -273,7 +273,11 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         "safety": "Read-only market-data calls; no broker accounts, orders, positions, or execution endpoints.",
     }
     # Reuse the exact validated Finam D1 candles; never fetch a second data source.
-    # Import lazily: direction_forecast imports candle_level_research, which imports\n    # this module for _chandelier_backtest. A top-level import creates a cycle.\n    from .direction_forecast import run_direction_forecast\n\n    report["direction_forecast_research"] = run_direction_forecast(rows_by_ticker, data_audit)
+    # Import lazily: direction_forecast imports candle_level_research, which imports
+    # this module for _chandelier_backtest. A top-level import creates a cycle.
+    from .direction_forecast import run_direction_forecast
+
+    report["direction_forecast_research"] = run_direction_forecast(rows_by_ticker, data_audit)
     return report
 
 
