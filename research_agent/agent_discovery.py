@@ -546,20 +546,37 @@ def run_discovery(
             strategy = review.get("strategy")
             d1_bar_end_utc = review.get("d1_bar_end_utc")
             horizon = review.get("horizon_sessions")
-            assessment = review.get("assessment")
+            reported_assessment = review.get("assessment")
             rationale = review.get("rationale")
             candidate_key = (symbol, direction, strategy, d1_bar_end_utc)
             review_key = (*candidate_key, horizon)
+            forecast_row = (
+                forecast_context.get("by_symbol", {}).get(symbol, {}).get(str(horizon), {})
+                if forecast_context is not None else {}
+            )
+            predicted_class = forecast_row.get("predicted_class")
+            expected_assessment = {
+                ("LONG", "UP"): "AGREES",
+                ("SHORT", "DOWN"): "AGREES",
+                ("LONG", "DOWN"): "CONTRADICTS",
+                ("SHORT", "UP"): "CONTRADICTS",
+                ("LONG", "SIDEWAYS"): "NEUTRAL",
+                ("SHORT", "SIDEWAYS"): "NEUTRAL",
+            }.get((direction, predicted_class))
             if (forecast_context is not None and candidate_key in candidate_keys
                     and symbol in forecast_symbols and horizon in (1, 5, 20)
-                    and assessment in FORECAST_ASSESSMENTS
+                    and direction in DIRECTIONS and expected_assessment is not None
+                    and reported_assessment in FORECAST_ASSESSMENTS
                     and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400
                     and review_key not in seen_forecast_reviews_this_agent):
                 seen_forecast_reviews_this_agent.add(review_key)
                 forecast_reviews.append({
                     "role": role, "symbol": symbol, "direction": direction,
                     "strategy": strategy, "d1_bar_end_utc": d1_bar_end_utc,
-                    "horizon_sessions": horizon, "assessment": assessment,
+                    "horizon_sessions": horizon, "assessment": expected_assessment,
+                    "agent_reported_assessment": reported_assessment,
+                    "assessment_corrected": reported_assessment != expected_assessment,
+                    "predicted_class": predicted_class,
                     "rationale": rationale.strip(),
                 })
         for item in response["proposals"]:
