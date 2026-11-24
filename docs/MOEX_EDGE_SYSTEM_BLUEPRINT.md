@@ -87,3 +87,16 @@ Only after that assembly gate passes should we tune strategy parameters, model c
 - No invented market data, forecasts, or test metrics.
 - Historical pooled trade statistics are not portfolio returns and do not prove future profitability.
 - Keep changes in the development repository and Draft PR. Do not merge or modify production without separate explicit authorization.
+
+## Current integration checkpoint — 2026-11-24
+
+The development branch now contains an operational inference adapter and a forecast-aware agent handoff:
+
+- `research_agent/operational_forecast.py` consumes the same validated Finam D1 snapshot already collected for the D1/H1 pilot. It does not make another market-data request.
+- The model is refit only from labels whose target dates are strictly before 2026-11-20. Post-holdout completed bars may be used as current feature inputs for inference, but post-holdout outcomes are excluded from training, model selection, calibration, and performance metrics.
+- The operational artifact carries explicit `EXPERIMENTAL_NOT_CALIBRATED` status, model version, as-of date, probability normalization checks, per-symbol audit, and holdout-use counters. It is not an approved probability feed.
+- `research_agent/agent_discovery.py` can now receive the complete operational forecast artifact. It validates the full 44 × 3 ticker/horizon matrix and probability sums before passing a read-only copy to each agent. The agents can discuss qualitative agreement or disagreement but cannot modify the numeric probabilities.
+- The manual D1/H1 agent pilot now orders stages as: collect → validate → forecast → deterministic scan → independent agent review → independent signal verification → artifact publication.
+
+This checkpoint is **implementation in the Draft PR, not a verified end-to-end run**. The new integration tests and workflow must pass before this path can be considered assembled. The current probability engine remains uncalibrated, and no signal or profitability claim is approved by this integration.
+
