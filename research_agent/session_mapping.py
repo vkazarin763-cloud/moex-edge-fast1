@@ -462,8 +462,16 @@ def reconcile_session_candles(
         "COMPLETE_DATE_COVERAGE" if not history_dates_without_raw_fragments else
         "PARTIAL_DATE_COVERAGE"
     )
+    documented_corporate_action_mismatch_dates = sum(
+        1 for item in mismatches
+        if item.get("price_scale_audit", {}).get("classification")
+        == "MATCHES_KNOWN_PRE_EVENT_PRICE_BASIS"
+        and set(item.get("differences", {})).issubset({"open", "high", "low", "close"})
+        and "volume" not in item.get("differences", {})
+    )
+    unexplained_mismatch_dates = len(mismatches) - documented_corporate_action_mismatch_dates
     reconciliation_complete = (
-        bool(rows) and not mismatches and not unassigned
+        bool(rows) and unexplained_mismatch_dates == 0 and not unassigned
         and not history_dates_without_raw_fragments
     )
 
@@ -514,8 +522,12 @@ def reconcile_session_candles(
     )
     mapped_raw_candles = sum(len(fragments) for fragments in grouped.values())
     return {
-        "status": "RECONCILED" if reconciliation_complete else (
-            "NO_RAW_CANDLES" if not rows else "RECONCILIATION_WITH_CAVEATS"
+        "status": (
+            "RECONCILED_WITH_DOCUMENTED_CORPORATE_ACTIONS"
+            if reconciliation_complete and documented_corporate_action_mismatch_dates
+            else "RECONCILED" if reconciliation_complete
+            else "NO_RAW_CANDLES" if not rows
+            else "RECONCILIATION_WITH_CAVEATS"
         ),
         "raw_candles": len(rows),
         "session_scope_probe_dates": session_scope_probe_dates,
@@ -548,6 +560,8 @@ def reconcile_session_candles(
         "raw_history_coverage_status": raw_history_coverage_status,
         "trading_days_reconciled": len(matched),
         "trading_days_mismatched": len(mismatches),
+        "documented_corporate_action_mismatch_dates": documented_corporate_action_mismatch_dates,
+        "unexplained_mismatch_dates": unexplained_mismatch_dates,
         "price_scale_mismatch_dates": len(price_scale_mismatches),
         "price_scale_factor_counts": price_scale_factor_counts,
         "known_price_basis_match_count": known_price_basis_match_count,
