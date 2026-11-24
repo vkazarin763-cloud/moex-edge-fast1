@@ -53,7 +53,7 @@ class MultiTimeframeFinamD1Tests(unittest.TestCase):
             [(
                 "SBER@MISX",
                 "TIME_FRAME_D",
-                datetime(2025, 11, 24, 0, 0, tzinfo=timezone.utc),
+                datetime(2025, 11, 24, 12, 0, tzinfo=timezone.utc),
                 datetime(2026, 11, 24, 12, 0, tzinfo=timezone.utc),
             )],
         )
