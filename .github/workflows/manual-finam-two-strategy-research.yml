@@ -1,6 +1,7 @@
 name: MOEX EDGE Finam D1 Two-Strategy Historical Research (Read Only)
 
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
