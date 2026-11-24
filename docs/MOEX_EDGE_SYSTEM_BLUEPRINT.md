@@ -96,7 +96,8 @@ The development branch now contains an operational inference adapter and a forec
 - The model is refit only from labels whose target dates are strictly before 2026-11-20. Post-holdout completed bars may be used as current feature inputs for inference, but post-holdout outcomes are excluded from training, model selection, calibration, and performance metrics.
 - The operational artifact carries explicit `EXPERIMENTAL_NOT_CALIBRATED` status, model version, as-of date, probability normalization checks, per-symbol audit, and holdout-use counters. It is not an approved probability feed.
 - `research_agent/agent_discovery.py` can now receive the complete operational forecast artifact. It validates the full 44 × 3 ticker/horizon matrix and probability sums before passing a read-only copy to each agent. The agents can discuss qualitative agreement or disagreement but cannot modify the numeric probabilities.
-- The manual D1/H1 agent pilot now orders stages as: collect → validate → forecast → deterministic scan → independent agent review → independent signal verification → artifact publication.
+- `research_agent/integrated_report.py` now assembles all validated stages into one 44-symbol report with three horizon forecasts per ticker, D1/H1 freshness, deterministic candidates, agent consensus, and independent verification states. It preserves NO_SIGNAL and INCOMPLETE as valid outcomes rather than manufacturing a trade direction.
+- The manual D1/H1 agent pilot now orders stages as: collect → validate → forecast → deterministic scan → independent agent review → independent signal verification → integrated report → artifact publication.
 
 This checkpoint is **implementation in the Draft PR, not a verified end-to-end run**. The new integration tests and workflow must pass before this path can be considered assembled. The current probability engine remains uncalibrated, and no signal or profitability claim is approved by this integration.
 
