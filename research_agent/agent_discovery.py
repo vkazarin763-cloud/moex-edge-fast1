@@ -479,11 +479,12 @@ def run_discovery(
     hypothesis_votes: dict[tuple, list[dict[str, Any]]] = defaultdict(list)
     forecast_reviews: list[dict[str, Any]] = []
     forecast_symbols = set(forecast_context.get("by_symbol", {})) if forecast_context else set()
-    candidate_symbols = {row["symbol"] for row in context["candidate_signals"]}
+    candidate_symbols = {row.get("symbol") for row in context["candidate_signals"]}
 
     for role, instruction in ROLES.items():
         seen_proposals_this_agent = set()
         seen_hypotheses_this_agent = set()
+        seen_forecast_reviews_this_agent = set()
         prompt = (
             f"ROLE: {role}. {instruction}\n"
             "Return the required JSON object. Proposals must copy an exact candidate row's "
@@ -520,10 +521,13 @@ def run_discovery(
             horizon = review.get("horizon_sessions")
             assessment = review.get("assessment")
             rationale = review.get("rationale")
+            review_key = (symbol, horizon)
             if (forecast_context is not None and symbol in candidate_symbols
                     and symbol in forecast_symbols and horizon in (1, 5, 20)
                     and assessment in FORECAST_ASSESSMENTS
-                    and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400):
+                    and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400
+                    and review_key not in seen_forecast_reviews_this_agent):
+                seen_forecast_reviews_this_agent.add(review_key)
                 forecast_reviews.append({
                     "role": role, "symbol": symbol, "horizon_sessions": horizon,
                     "assessment": assessment, "rationale": rationale.strip(),
