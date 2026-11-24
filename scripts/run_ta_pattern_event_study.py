@@ -148,9 +148,9 @@ def main() -> int:
                     features[i].append(("candlestick_pattern", matched.upper(), direction))
 
             # EMA stack is a descriptive trend condition, not an optimized entry rule.
-            ema20 = ta["EMA_20"].to_numpy(dtype=float)
-            ema50 = ta["EMA_50"].to_numpy(dtype=float)
-            ema200 = ta["EMA_200"].to_numpy(dtype=float)
+            ema20 = ta.get("EMA_20", pd.Series(np.nan, index=ta.index)).to_numpy(dtype=float)
+            ema50 = ta.get("EMA_50", pd.Series(np.nan, index=ta.index)).to_numpy(dtype=float)
+            ema200 = ta.get("EMA_200", pd.Series(np.nan, index=ta.index)).to_numpy(dtype=float)
             for i in range(n):
                 if np.isfinite([ema20[i], ema50[i], ema200[i]]).all():
                     if ema20[i] > ema50[i] > ema200[i]:
