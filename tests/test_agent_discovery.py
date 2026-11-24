@@ -224,6 +224,24 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(provider, "groq_fallback")
         self.assertEqual(result["proposals"], [])
 
+    def test_groq_only_path_uses_selected_groq_model_without_openrouter(self):
+        calls = []
+
+        def groq(prompt, *, api_key, model):
+            calls.append((api_key, model))
+            return {"proposals": [], "strategy_hypotheses": []}
+
+        result, provider = call_discovery_with_fallback(
+            "probe",
+            openrouter_api_key="",
+            groq_api_key="groq-key",
+            groq_model="openai/gpt-oss-20b",
+            groq_caller=groq,
+        )
+        self.assertEqual(provider, "groq_fallback")
+        self.assertEqual(calls, [("groq-key", "openai/gpt-oss-20b")])
+        self.assertEqual(result["proposals"], [])
+
     def test_both_provider_errors_are_preserved(self):
         def openrouter(prompt, *, api_key, model):
             raise RuntimeError("OpenRouter HTTP 401: invalid key")
