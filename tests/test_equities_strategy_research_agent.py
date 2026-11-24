@@ -28,6 +28,22 @@ Execute at next open with commission and slippage."""
         self.assertEqual(result["status"], "NOT_CONFIGURED")
         self.assertIsNone(result["analysis"])
 
+    def test_llm_response_is_parsed_and_marked_as_draft_analysis(self):
+        class Response:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self):
+                return b'{"model":"provider/test-model","choices":[{"message":{"content":"{\\\"entry_rules\\\":[\\\"close above 20-day high\\\"],\\\"exit_rules\\\":[],\\\"missing_information\\\":[\\\"stop rule\\\"]}"}}],"usage":{"total_tokens":123}}'
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY":"test-key"}), \\
+             patch("research_agent.equities_strategy_research_agent.urllib.request.urlopen", return_value=Response()):
+            result = _llm_analyze({"title":"demo"}, "source text")
+        self.assertEqual(result["status"], "LLM_ANALYSIS_COMPLETED")
+        self.assertEqual(result["model"], "provider/test-model")
+        self.assertEqual(result["analysis"]["entry_rules"], ["close above 20-day high"])
+        self.assertEqual(result["usage"]["total_tokens"], 123)
+
     def test_github_source_is_pinned_to_commit_and_records_license(self):
         responses = [
             {"default_branch":"main", "license":{"spdx_id":"MIT","name":"MIT License"}},
