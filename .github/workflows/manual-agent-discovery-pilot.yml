@@ -35,7 +35,7 @@ jobs:
       - name: Compile and run offline safety tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback tests.test_operational_forecast tests.test_operational_agent_integration -v
+          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback tests.test_operational_forecast tests.test_operational_agent_integration tests.test_integrated_report -v
 
       - name: Verify read-only Finam and Groq credentials are configured
         env:
@@ -159,6 +159,18 @@ jobs:
             --diagnostics agent_discovery_diagnostics.json \
             --verification agent_signal_verification.json
 
+      - name: Assemble one auditable end-to-end report
+        run: |
+          python -m research_agent.integrated_report \
+            --candles moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --forecast moex_edge_direction_forecast.json \
+            --scan moex_edge_mtf_signals.json \
+            --proposals agent_proposals.json \
+            --diagnostics agent_discovery_diagnostics.json \
+            --verification agent_signal_verification.json \
+            --output moex_edge_integrated_report.json
+
       - name: Publish concise pilot summary
         if: always()
         run: |
@@ -173,6 +185,7 @@ jobs:
               ("moex_edge_direction_forecast.json", "1/5/20-session direction forecast"),
               ("agent_discovery_diagnostics.json", "AI discovery"),
               ("agent_signal_verification.json", "Independent verification"),
+              ("moex_edge_integrated_report.json", "Integrated system report"),
           ]:
               path = Path(filename)
               if not path.exists():
@@ -189,6 +202,8 @@ jobs:
                           "confirmed_signals_count", "proposal_count"):
                   if key in data:
                       lines.append(f"- {key}: {data[key]}")
+              if isinstance(data.get("summary"), dict):
+                  lines.append(f"- summary: {data['summary']}")
               if isinstance(data.get("providers_used"), list):
                   lines.append(f"- providers_used: {data['providers_used']}")
               if isinstance(data.get("agent_roles"), dict):
@@ -215,5 +230,6 @@ jobs:
             agent_proposals.json
             agent_discovery_diagnostics.json
             agent_signal_verification.json
+            moex_edge_integrated_report.json
           if-no-files-found: warn
           retention-days: 14
