@@ -20,7 +20,9 @@ from .core import (
 )
 from .finam_market_data import FinamBar
 from .finam_strategy_backtest import _chandelier_backtest
-from .moex_iss import fetch_candles
+from .moex_iss import fetch_history_records
+from .session_mapping import build_trading_day_candles
+from .corporate_actions import apply_post_event_price_basis
 from .multi_timeframe import RefreshingFinamClient
 
 TICKERS = (
@@ -176,6 +178,31 @@ def detect_signals(rows: list[Candle]) -> tuple[dict[str, list[Signal]], dict]:
     return found, level_audit
 
 
+def _fetch_d1_model_rows(ticker: str, start_text: str, end_text: str):
+    """Load history-backed TQBR trading-day bars and isolate share-price bases."""
+    history_records = fetch_history_records(
+        ticker, start_text, end_text, board="TQBR"
+    )
+    rows, session_audit = build_trading_day_candles(
+        history_records, DATA_START, HOLDOUT_START - timedelta(days=1)
+    )
+    rows, corporate_action_audit = apply_post_event_price_basis(
+        ticker, rows, minimum_development_bars=200
+    )
+    audit = {
+        "history_rows": len(history_records),
+        "session_mapping": session_audit,
+        "corporate_action_price_basis": corporate_action_audit,
+    }
+    if corporate_action_audit.get("status") == "INSUFFICIENT_POST_ACTION_HISTORY":
+        audit["status"] = "INSUFFICIENT_POST_ACTION_HISTORY"
+        return [], audit
+    if not rows:
+        raise ValueError("No eligible post-action TQBR D1 rows remain")
+    audit["status"] = "OK"
+    return rows, audit
+
+
 def _h1_daily_trend(bars: list[FinamBar]) -> dict[date, int]:
     """Map each Moscow session date to its last available completed H1 EMA trend."""
     usable = [
@@ -210,13 +237,20 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
 
     for ticker in TICKERS:
         try:
-            rows = fetch_candles(ticker, start_text, end_text, interval=24, board="TQBR")
-            rows = [row for row in rows if DATA_START <= row.timestamp.date() < HOLDOUT_START]
-            rows = validate_candles(rows)
+            rows, source_audit = _fetch_d1_model_rows(ticker, start_text, end_text)
             if not rows:
-                raise ValueError("No D1 candles in requested pre-holdout interval")
+                data[ticker] = []
+                audit[ticker] = {
+                    **source_audit,
+                    "bars": 0,
+                    "status": source_audit.get("status", "INSUFFICIENT_HISTORY"),
+                    "holdout_bars_used": 0,
+                }
+                continue
+            rows = validate_candles(rows)
             data[ticker] = rows
             audit[ticker] = {
+                **source_audit,
                 "status": "OK", "bars": len(rows),
                 "first_date": rows[0].timestamp.date().isoformat(),
                 "last_date": rows[-1].timestamp.date().isoformat(),
@@ -324,7 +358,7 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         "status": "COMPLETE" if not errors else "PARTIAL",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "universe": list(TICKERS), "universe_count": len(TICKERS),
-        "d1_source": "MOEX ISS TQBR native daily candles (interval=24)",
+        "d1_source": "MOEX ISS per-security TQBR total-session daily history (TRADEDATE); weekend sessions are included in the next ordinary trading day",
         "d1_period": {"start_inclusive": DATA_START.isoformat(),
                       "end_exclusive": HOLDOUT_START.isoformat(),
                       "holdout_start": HOLDOUT_START.isoformat()},
