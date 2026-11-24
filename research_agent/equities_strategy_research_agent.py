@@ -6,7 +6,7 @@ from pathlib import Path
 from research_agent.external_strategy_scout import discover, fetch_json, USER_AGENT
 
 MAX_FILE_BYTES = 180_000
-MAX_FILES_PER_REPO = 8
+MAX_FILES_PER_REPO = 4
 MAX_LLM_SOURCE_CHARS = 42_000
 CODE_EXTENSIONS = (".py", ".ipynb", ".md", ".txt", ".pine")
 RULE_PATTERNS = {
@@ -18,7 +18,7 @@ RULE_PATTERNS = {
 }
 INFRA = re.compile(r"(?i)\b(backtesting engine|framework|data provider|broker api|screener|scanner|sdk|toolkit)\b")
 
-def _request_text(url: str, timeout: int = 20) -> str:
+def _request_text(url: str, timeout: int = 12) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json, application/json, text/plain"})
     with urllib.request.urlopen(req, timeout=timeout) as response:
         raw = response.read(MAX_FILE_BYTES + 1)
@@ -184,7 +184,14 @@ def inspect_candidate(candidate: dict) -> dict:
 
 def run(limit: int = 5) -> dict:
     leads = discover(limit=limit)
-    reviewed = [inspect_candidate(item) for item in leads.get("candidates", [])]
+    candidates = leads.get("candidates", [])
+    github = [x for x in candidates if x.get("source_type") == "github_repository"]
+    papers = [x for x in candidates if x.get("source_type") == "crossref_publication"]
+    selected = github[:3] + papers[:2]
+    selected_ids = {x.get("candidate_id") for x in selected}
+    if len(selected) < 5:
+        selected.extend(x for x in candidates if x.get("candidate_id") not in selected_ids and len(selected) < 5)
+    reviewed = [inspect_candidate(item) for item in selected]
     counts = {}
     llm_counts = {}
     for item in reviewed:
