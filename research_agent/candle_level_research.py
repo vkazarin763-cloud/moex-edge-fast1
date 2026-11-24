@@ -152,10 +152,10 @@ def detect_signals(rows: list[Candle]) -> tuple[dict[str, list[Signal]], dict]:
 
         for item in pending_retests:
             level, direction = item["price"], item["direction"]
-            if direction == 1 and c.low <= level * 1.005 and c.close > level:
+            if i > item["index"] and direction == 1 and c.low <= level * 1.005 and c.close > level:
                 found["LevelRetest"].append(Signal(i, 1, "LevelRetest"))
                 item["done"] = True
-            elif direction == -1 and c.high >= level * 0.995 and c.close < level:
+            elif i > item["index"] and direction == -1 and c.high >= level * 0.995 and c.close < level:
                 found["LevelRetest"].append(Signal(i, -1, "LevelRetest"))
                 item["done"] = True
         pending_retests = [item for item in pending_retests if not item.get("done")]
@@ -196,9 +196,8 @@ def _h1_daily_trend(bars: list[FinamBar]) -> dict[date, int]:
     return result
 
 
-def _run_backtest(rows: list[Candle], signals: list[Signal]) -> dict:
-    trades = _chandelier_backtest(rows, signals, CONFIG)
-    return summarize(trades)
+def _run_backtest(rows: list[Candle], signals: list[Signal]):
+    return _chandelier_backtest(rows, signals, CONFIG)
 
 
 def run(api_token: str, source_app_id: str | None = None) -> dict:
