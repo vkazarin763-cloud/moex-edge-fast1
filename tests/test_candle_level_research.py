@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from research_agent.candle_level_research import (
     detect_signals, _h1_daily_trend, _fetch_d1_model_rows,
+    H1_START_UTC, H1_END_UTC,
 )
 from research_agent.core import Candle
 from research_agent.finam_market_data import FinamBar
@@ -70,6 +71,15 @@ class CandleLevelResearchTests(unittest.TestCase):
         breakout_indices = [s.index for s in signals["LevelBreakout"] if s.direction == 1]
         self.assertIn(8, breakout_indices)
         self.assertGreaterEqual(audit["confirmed_resistance_pivots"], 1)
+
+    def test_h1_request_is_exactly_30_days_and_stops_at_holdout_boundary(self):
+        self.assertEqual(H1_END_UTC - H1_START_UTC, timedelta(days=30))
+        self.assertEqual(
+            H1_END_UTC.astimezone(__import__("zoneinfo").ZoneInfo("Europe/Moscow")).date().isoformat(),
+            "2026-11-20",
+        )
+        self.assertEqual(H1_END_UTC.hour, 21)
+        self.assertEqual(H1_END_UTC.minute, 0)
 
     def test_h1_trend_excludes_frozen_holdout(self):
         start = datetime(2026, 10, 22, 6, tzinfo=timezone.utc)
