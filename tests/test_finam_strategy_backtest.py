@@ -23,7 +23,7 @@ class FinamStrategyBacktestTests(unittest.TestCase):
         start = datetime(2025, 11, 20, 5, tzinfo=timezone.utc)
         self.bars = []
         previous = 100.0
-        for index in range(90):
+        for index in range(250):
             close = 100 + index * 0.12 + ((-1) ** (index // 5)) * (index % 5) * 0.8
             open_price = previous
             self.bars.append(FinamBar(
@@ -70,6 +70,16 @@ class FinamStrategyBacktestTests(unittest.TestCase):
         self.assertEqual(forecast["holdout_bars_used"], 0)
         self.assertEqual(forecast["symbols_with_eligible_history"], 1)
         self.assertEqual(len(self.client.calls), 1)
+        forecasts = forecast["historical_latest_forecasts"]["forecasts"]
+        by_horizon = {item["horizon_sessions"]: item for item in forecasts if item.get("ticker") == "SBER"}
+        self.assertEqual(set(by_horizon), {1, 5, 20})
+        for item in by_horizon.values():
+            self.assertEqual(item["status"], "HISTORICAL_FORECAST_ONLY")
+            self.assertAlmostEqual(
+                item["probability_down"] + item["probability_sideways"] + item["probability_up"],
+                1.0, places=10,
+            )
+            self.assertFalse(item["probabilities_are_calibrated"])
 
     def test_snapshot_bars_are_excluded(self):
         snapshot = self.bars[-1]
