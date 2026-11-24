@@ -51,6 +51,8 @@ jobs:
           python scripts/run_ta_frozen_moex44.py
           python -m compileall -q scripts/run_ta_pattern_event_study.py
           python scripts/run_ta_pattern_event_study.py
+          python -m compileall -q scripts/run_ta_nonoverlap_robustness.py
+          python scripts/run_ta_nonoverlap_robustness.py
       - name: Upload chronological event-study report
         uses: actions/upload-artifact@v4
         with:
