@@ -179,6 +179,10 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
                 "raw_bars": len(raw_candles),
                 "retained_completed_bars": len(candles),
                 "snapshot_true_excluded": sum(bar.is_data_snapshot is True for bar in bars),
+                "holdout_date_bars_excluded": sum(
+                    bar.timestamp.astimezone(MOSCOW).date() >= HOLDOUT_START
+                    for bar in bars if bar.is_data_snapshot is not True
+                ),
                 "snapshot_unknown_retained": sum(bar.is_data_snapshot is None for bar in retained),
                 "first_bar": candles[0].timestamp.isoformat() if candles else None,
                 "last_bar": candles[-1].timestamp.isoformat() if candles else None,
@@ -231,7 +235,7 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         },
         "development_cutoff": "2026-11-19 inclusive",
         "holdout_start": HOLDOUT_START.isoformat(),
-        "holdout_policy": "No bar on or after 2026-11-20 is requested or used.",
+        "holdout_policy": "Any provider-returned D1 bar with Moscow session date on or after 2026-11-20 is excluded before signal generation, indicators, trades, and performance metrics; boundary bars may be validated as source data but are never used in research.",
         "strategies": list(STRATEGIES),
         "execution_policy": {
             "baseline": asdict(BASE_CONFIG),
