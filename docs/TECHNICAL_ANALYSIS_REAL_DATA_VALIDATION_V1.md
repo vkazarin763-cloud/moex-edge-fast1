@@ -45,3 +45,42 @@ These counts describe the adapter's output only. They are **not** trading signal
 ## Safety boundary
 
 This adapter and its report remain isolated in the development repository. The active scanner is unchanged. No broker connection, orders, capital allocation, position sizing, or LONG/SHORT recommendations are involved.
+
+
+## Chronological feature event study — version 2
+
+A separate exploratory event study was run on the same immutable source data after adding segmentation around five extreme price-scale discontinuities (GMKN, PLZL, T, TRNFP, VTBR). No forward return crosses one of these discontinuities.
+
+- Workflow run: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45317485746
+- Event-study artifact: `moex-ta-chronological-event-study` (events.csv, summary.csv, report.json; retained 30 days)
+- 132 symbol/timeframe series processed, 137 continuous segments, zero processing errors.
+- 781,996 event observations across D1/H1/W1 and 1/3/5/10-bar horizons.
+- Development period: before 2026-07-01. Validation period: 2026-07-01 through 2026-11-19.
+- Signal observed at completed close; entry at next bar open; exit at close after the selected horizon.
+- Assumed round-trip cost: 0.16% (0.08% per side).
+- All 792 bars dated 2026-11-20 onward were excluded.
+
+### Validation-period aggregate results
+
+Event-weighted descriptive averages; directional returns include the assumed round-trip cost. These aggregate different labels/horizons and are not a portfolio return.
+
+| Feature | Directional observations | Mean net event return | Matched baseline | Excess vs baseline | Event win rate |
+|---|---:|---:|---:|---:|---:|
+| Candlestick patterns | 18,565 | -0.1308% | -0.1537% | +0.0229 pp | 35.54% |
+| EMA stack | 37,358 | -0.5060% | -0.3209% | -0.1851 pp | 36.74% |
+| OLS channel | 74,952 | -0.3130% | -0.2354% | -0.0776 pp | 36.21% |
+| Confirmed pivot proximity | 69,413 | -0.1337% | -0.1504% | +0.0167 pp | 37.19% |
+
+Neutral Doji/Inside patterns and sideways-channel observations are measured by absolute price movement, not directional return, and are intentionally excluded from the table above.
+
+### Interpretation
+
+1. No tested feature demonstrated a positive average net directional return in the validation period. The slightly positive relative excess for candle patterns and pivot proximity does not change their negative mean net returns and low event win rates.
+2. EMA-stack and OLS-channel directions underperformed their matched baselines in the validation period.
+3. The most encouraging individual subsets (e.g. Morning Star and Shooting Star) are sparse: most timeframe/horizon groups are below 30 observations. They are hypotheses for further testing, not usable signals.
+4. Near-resistance SHORT observations were less negative than the matched baseline on average, but their mean net return remained negative. Near-support LONG observations underperformed their baseline.
+5. The validation period's aggregate event win rates (about 35–37% for directional feature families) do not support activation of these features as standalone trading entries.
+
+This is a simple, overlapping event study. It does not correct for multiple testing, dependence between repeated/overlapping observations, volatility regimes, or all market microstructure effects. The matched baseline is the same symbol/timeframe/period/horizon's unconditional directional return average, not a matched control portfolio. No statistical significance, risk-adjusted edge, portfolio performance, or profitability is established.
+
+**Decision:** keep the adapter descriptive and disabled as a signal source. The next useful research step is a narrower, pre-registered set of hypotheses with non-overlapping events, per-symbol robustness, regime controls, and costs/slippage sensitivity. Do not tune on or inspect the sealed period beginning 2026-11-20.
