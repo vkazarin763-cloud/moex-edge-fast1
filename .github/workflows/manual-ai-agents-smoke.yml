@@ -60,7 +60,7 @@ jobs:
               ]
           }
           Path("smoke_input.json").write_text(
-              json.dumps(fixture, ensure_ascii=False, indent=2) + "\\n",
+              json.dumps(fixture, ensure_ascii=False, indent=2) + "\n",
               encoding="utf-8"
           )
           PY
