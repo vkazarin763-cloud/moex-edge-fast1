@@ -39,21 +39,18 @@ jobs:
           test -n "$FINAM_API_TOKEN" || { echo "FINAM_API_TOKEN is missing"; exit 1; }
           echo "Finam credential is configured; secret value is not printed."
 
-      - name: Run full D1 technical-analysis, candle/level and direction-forecast research
+      - name: Run Finam-only D1 technical-analysis and direction-forecast research
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
         run: |
           python -m research_agent.finam_strategy_backtest --output finam_ta_research_report.json
-          python -m research_agent.candle_level_research --output moex_candle_level_research_report.json
 
       - name: Upload research report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: moex-edge-finam-ta-research-${{ github.run_id }}
-          path: |
-            finam_ta_research_report.json
-            moex_candle_level_research_report.json
+          name: moex-edge-finam-only-research-${{ github.run_id }}
+          path: finam_ta_research_report.json
           if-no-files-found: warn
           retention-days: 30
