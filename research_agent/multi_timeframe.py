@@ -22,6 +22,7 @@ FINAM_FRAMES = {
     "H2": ("TIME_FRAME_H2", 30),
     "H4": ("TIME_FRAME_H4", 30),
     "H8": ("TIME_FRAME_H8", 30),
+    "D1": ("TIME_FRAME_D", 365),
 }
 # Native MOEX ISS candle intervals: 10m, weekly, monthly, quarterly.
 MOEX_FRAMES = {"M10": 10, "W1": 7, "MN": 31, "QR": 4}
@@ -91,6 +92,8 @@ def _finam_bar_is_complete(timestamp, frame, now_utc):
     """Finam intraday timestamps mark bar starts; require the full interval to end."""
     if timestamp.tzinfo is None or timestamp.utcoffset() is None:
         return False
+    if frame == "D1":
+        return timestamp.astimezone(MOSCOW).date() < now_utc.astimezone(MOSCOW).date()
     duration = timedelta(minutes=FINAM_FRAME_MINUTES[frame])
     return timestamp.astimezone(timezone.utc) + duration <= now_utc
 
@@ -158,9 +161,13 @@ def collect_multi_timeframe(
         for frame, (api_frame, lookback) in FINAM_FRAMES.items():
             if frame not in requested_frames:
                 continue
-            start = current - timedelta(days=lookback)
+            if frame == "D1":
+                end = current.replace(hour=0, minute=0, second=0, microsecond=0)
+                start = end - timedelta(days=lookback)
+            else:
+                start, end = current - timedelta(days=lookback), current
             try:
-                raw = client.fetch_bars(f"{ticker}@MISX", api_frame, start, current)
+                raw = client.fetch_bars(f"{ticker}@MISX", api_frame, start, end)
                 snapshot_eligible = [bar for bar in raw if bar.is_data_snapshot is not True]
                 completed = [
                     bar for bar in snapshot_eligible
@@ -214,95 +221,7 @@ def collect_multi_timeframe(
                     "source": "MOEX ISS", "status": "ERROR",
                     "error": str(exc),
                 }
-        # D1 comes from the official per-security TQBR daily history endpoint,
-        # not from resampling intraday candles or MOEX candle interval=24.
-        # The latest-signal scanner needs a modest D1 warm-up, not the full
-        # five-year frozen-research history. Keep this collector lightweight;
-        # the frozen research dataset and its five-year history are untouched.
-        d1_lookback = 365
-        d1_start = (local_today - timedelta(days=d1_lookback)).isoformat()
-        try:
-            history_rows = moex_history_fetcher(
-                ticker, d1_start, local_today.isoformat(), board="TQBR"
-            )
-            d1_candles = []
-            excluded_zero_trade = 0
-            excluded_incomplete = 0
-            for row in history_rows:
-                if row.num_trades == 0:
-                    excluded_zero_trade += 1
-                    continue
-                values = (row.open, row.high, row.low, row.close, row.volume)
-                if row.num_trades is None or any(value is None for value in values):
-                    excluded_incomplete += 1
-                    continue
-                open_, high, low, close, volume = (float(value) for value in values)
-                if (not all(__import__("math").isfinite(value) for value in (open_, high, low, close, volume))
-                        or high < max(open_, close, low) or low > min(open_, close, high)
-                        or volume < 0):
-                    excluded_incomplete += 1
-                    continue
-                if row.trade_date >= local_today:
-                    excluded_incomplete += 1
-                    continue
-                d1_candles.append({
-                    "timestamp": f"{row.trade_date.isoformat()}T00:00:00",
-                    "open": open_, "high": high, "low": low,
-                    "close": close, "volume": volume,
-                })
-            symbol_result["D1"] = {
-                "source": "MOEX ISS TQBR history",
-                "status": "OK" if d1_candles else "NO_COMPLETED_BARS",
-                "lookback_calendar_days": d1_lookback,
-                "raw_bars": len(history_rows),
-                "completed_bars": len(d1_candles),
-                "zero_trade_rows_excluded": excluded_zero_trade,
-                "incomplete_or_invalid_rows_excluded": excluded_incomplete,
-                "candles": d1_candles,
-            }
-        except Exception as exc:
-            # MOEX ISS remains the preferred independent D1 source. If it is
-            # unavailable, use Finam's documented daily timeframe. Keep the
-            # provider failure visible; fallback candles are never mislabeled.
-            moex_error = f"{type(exc).__name__}: {exc}"
-            try:
-                # Finam D1 bars are timestamped at the start of the exchange
-                # session (e.g. 05:00 UTC), not at 00:00 UTC. A rolling
-                # current-time boundary can therefore reject the first bar
-                # inside the 365-calendar-day lookback by several hours.
-                # Use UTC-midnight boundaries spanning exactly 365 days.
-                # The current UTC date is excluded from the request; the
-                # completion filter below remains a second safety check.
-                daily_end = current.replace(hour=0, minute=0, second=0, microsecond=0)
-                daily_start = daily_end - timedelta(days=365)
-                raw_daily = client.fetch_bars(
-                    f"{ticker}@MISX", "TIME_FRAME_D", daily_start, daily_end
-                )
-                eligible_daily = [
-                    bar for bar in raw_daily if bar.is_data_snapshot is not True
-                ]
-                completed_daily = [
-                    bar for bar in eligible_daily
-                    if _finam_bar_is_complete(bar.timestamp, "D1", current)
-                ]
-                symbol_result["D1"] = {
-                    "source": "Finam daily fallback (MOEX ISS unavailable)",
-                    "status": "OK" if completed_daily else "NO_COMPLETED_BARS",
-                    "lookback_calendar_days": 365,
-                    "raw_bars": len(raw_daily),
-                    "completed_bars": len(completed_daily),
-                    "snapshot_true_excluded": len(raw_daily) - len(eligible_daily),
-                    "incomplete_bars_excluded": len(eligible_daily) - len(completed_daily),
-                    "moex_iss_error": moex_error,
-                    "candles": _serialize(completed_daily, snapshot_field=True),
-                }
-            except Exception as fallback_exc:
-                symbol_result["D1"] = {
-                    "source": "MOEX ISS TQBR history; Finam daily fallback",
-                    "status": "ERROR",
-                    "error": f"MOEX ISS: {moex_error}; Finam D1: {type(fallback_exc).__name__}: {fallback_exc}",
-                    "moex_iss_error": moex_error,
-                }
+        # D1 is collected directly from Finam above, alongside H1.
         results[ticker] = symbol_result
 
     summary = {}
@@ -310,7 +229,7 @@ def collect_multi_timeframe(
         items = [value[frame] for value in results.values()]
         summary[frame] = {
             "source": items[0]["source"] if items else (
-                "Finam" if frame in FINAM_FRAMES else ("MOEX ISS TQBR history" if frame == "D1" else "MOEX ISS")
+                "Finam" if frame in FINAM_FRAMES else ("Finam" if frame == "D1" else "MOEX ISS")
             ),
             "symbols": len(items),
             "ok": sum(item["status"] == "OK" for item in items),
@@ -326,8 +245,8 @@ def collect_multi_timeframe(
         "timeframes": summary,
         "results": results,
         "methodology": {
-            "source_policy": "Finam intraday and native MOEX ISS candle feeds remain separate. D1 is sourced independently from official per-security TQBR history records, not resampled from intraday candles.",
-            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. All Finam intraday bars are also required to have reached timestamp plus interval duration. MOEX M10 bars are included only after their 10-minute interval has ended; W1/MN/QR bars are included only after the corresponding calendar period has ended. D1 includes only prior-date TQBR history rows with positive trade count and complete valid OHLCV; zero-trade, incomplete, invalid, and current-date rows are excluded and counted.",
+            "source_policy": "D1 and H1 signal candles are fetched directly from Finam; no MOEX ISS fallback, resampling, or provider merging is used for these signal inputs. Optional non-signal intervals retain their explicitly labeled native MOEX ISS source.",
+            "completion_policy": "Finam bars explicitly marked is_data_snapshot=true are excluded; unknown flags are retained and counted. All Finam intraday bars are also required to have reached timestamp plus interval duration. MOEX M10 bars are included only after their 10-minute interval has ended; W1/MN/QR bars are included only after the corresponding calendar period has ended. Finam D1 bars are included only after their Moscow calendar date has fully passed; explicitly marked snapshots and incomplete/current-date bars are excluded and counted.",
             "aggregation_policy": "No resampling, filling, interpolation, provider merging, or strategy use.",
             "research_isolation": "This artifact does not modify the frozen D1 research dataset, candidate cohort, holdout, or trading configuration.",
         },
