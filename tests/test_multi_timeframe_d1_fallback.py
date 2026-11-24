@@ -15,7 +15,7 @@ class FakeFinamClient:
             return []
         return [
             FinamBar(
-                datetime(2025, 11, 23, 5, 0, tzinfo=timezone.utc),
+                datetime(2025, 11, 25, 5, 0, tzinfo=timezone.utc),
                 100.0, 103.0, 99.0, 102.0, 1000.0, False,
             ),
             FinamBar(
@@ -25,37 +25,46 @@ class FakeFinamClient:
         ]
 
 
-class MultiTimeframeD1FallbackTests(unittest.TestCase):
-    def test_falls_back_to_finam_daily_and_keeps_moex_error(self):
+class MultiTimeframeFinamD1Tests(unittest.TestCase):
+    def test_d1_uses_finam_directly_with_exchange_session_timestamp_bounds(self):
         client = FakeFinamClient()
-        now = datetime(2026, 11, 23, 12, 0, tzinfo=timezone.utc)
-
-        def moex_history_failure(*args, **kwargs):
-            raise RuntimeError("MOEX ISS HTTP 503")
-
         report = collect_multi_timeframe(
             ["SBER"],
             api_token="test-token",
-            now=now,
+            now=datetime(2026, 11, 24, 12, 0, tzinfo=timezone.utc),
             frames=["D1"],
             finam_client=client,
-            moex_history_fetcher=moex_history_failure,
         )
 
         daily = report["results"]["SBER"]["D1"]
         self.assertEqual(daily["status"], "OK")
-        self.assertEqual(daily["source"], "Finam daily fallback (MOEX ISS unavailable)")
-        self.assertIn("MOEX ISS HTTP 503", daily["moex_iss_error"])
+        self.assertEqual(daily["source"], "Finam")
         self.assertEqual(daily["completed_bars"], 2)
         self.assertEqual(
             client.calls,
             [(
                 "SBER@MISX",
                 "TIME_FRAME_D",
-                datetime(2025, 11, 23, 0, 0, tzinfo=timezone.utc),
-                datetime(2026, 11, 23, 0, 0, tzinfo=timezone.utc),
+                datetime(2025, 11, 24, 0, 0, tzinfo=timezone.utc),
+                datetime(2026, 11, 24, 0, 0, tzinfo=timezone.utc),
             )],
         )
+
+    def test_d1_does_not_call_moex_even_when_moex_fetcher_is_supplied(self):
+        client = FakeFinamClient()
+        def forbidden_moex(*args, **kwargs):
+            raise AssertionError("MOEX ISS must not be called for D1 signal candles")
+
+        report = collect_multi_timeframe(
+            ["SBER"],
+            api_token="test-token",
+            now=datetime(2026, 11, 24, 12, 0, tzinfo=timezone.utc),
+            frames=["D1"],
+            finam_client=client,
+            moex_history_fetcher=forbidden_moex,
+        )
+        self.assertEqual(report["timeframes"]["D1"]["source"], "Finam")
+        self.assertEqual(report["timeframes"]["D1"]["ok"], 1)
 
 
 if __name__ == "__main__":
