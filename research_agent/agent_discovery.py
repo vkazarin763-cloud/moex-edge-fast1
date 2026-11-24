@@ -452,14 +452,19 @@ def call_discovery_with_fallback(
     raise RuntimeError("All configured AI providers failed. " + " | ".join(errors))
 
 
-def _forecast_review_conflicts(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _forecast_review_conflicts(
+    reviews: list[dict[str, Any]], *, assessment_field: str = "assessment"
+) -> list[dict[str, Any]]:
     grouped: dict[tuple[str, str, str, str, int], dict[str, list[str]]] = defaultdict(
         lambda: {"AGREES": [], "CONTRADICTS": [], "NEUTRAL": [], "INSUFFICIENT_EVIDENCE": []}
     )
     for review in reviews:
+        assessment = review.get(assessment_field)
+        if assessment not in FORECAST_ASSESSMENTS:
+            continue
         key = (review["symbol"], review["direction"], review["strategy"],
                review["d1_bar_end_utc"], review["horizon_sessions"])
-        grouped[key][review["assessment"]].append(review["role"])
+        grouped[key][assessment].append(review["role"])
     conflicts = []
     for key, roles in sorted(grouped.items()):
         if roles["AGREES"] and roles["CONTRADICTS"]:
@@ -570,6 +575,11 @@ def run_discovery(
                     and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400
                     and review_key not in seen_forecast_reviews_this_agent):
                 seen_forecast_reviews_this_agent.add(review_key)
+                rationale_by_class = {
+                    "AGREES": f"Класс модели {predicted_class} согласуется с направлением {direction}.",
+                    "CONTRADICTS": f"Класс модели {predicted_class} противоречит направлению {direction}.",
+                    "NEUTRAL": "Класс SIDEWAYS не подтверждает ни LONG, ни SHORT.",
+                }
                 forecast_reviews.append({
                     "role": role, "symbol": symbol, "direction": direction,
                     "strategy": strategy, "d1_bar_end_utc": d1_bar_end_utc,
@@ -577,7 +587,8 @@ def run_discovery(
                     "agent_reported_assessment": reported_assessment,
                     "assessment_corrected": reported_assessment != expected_assessment,
                     "predicted_class": predicted_class,
-                    "rationale": rationale.strip(),
+                    "agent_rationale": rationale.strip(),
+                    "rationale": rationale_by_class[expected_assessment],
                 })
         for item in response["proposals"]:
             if not isinstance(item, dict):
@@ -674,6 +685,15 @@ def run_discovery(
         "agents_can_modify_probabilities": False,
         "forecast_reviews_count": len(forecast_reviews),
         "forecast_review_conflicts": _forecast_review_conflicts(forecast_reviews),
+        "forecast_review_agent_reported_conflicts": _forecast_review_conflicts(
+            forecast_reviews, assessment_field="agent_reported_assessment"
+        ),
+        "forecast_review_corrections_count": sum(
+            row["assessment_corrected"] for row in forecast_reviews
+        ),
+        "forecast_review_corrections_by_role": dict(Counter(
+            row["role"] for row in forecast_reviews if row["assessment_corrected"]
+        )),
         "consensus_proposal_count": len(consensus),
         "strategy_hypotheses": hypotheses,
         "hypothesis_count": len(hypotheses),
