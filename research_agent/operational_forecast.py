@@ -69,6 +69,16 @@ def build_operational_forecast(
     dates = []
 
     results = candles_report.get("results") or {}
+    # A snapshot-only payload is not a historical D1 feed. Reject it before
+    # per-symbol error handling can downgrade the condition to a PARTIAL report.
+    supplied_d1_rows = [
+        row
+        for ticker in TICKERS
+        for row in (((results.get(ticker) or {}).get("D1") or {}).get("candles") or [])
+    ]
+    if supplied_d1_rows and all(row.get("is_data_snapshot") is True for row in supplied_d1_rows):
+        raise ValueError("Only 0 completed D1 bars; snapshot-only D1 feed is not accepted")
+
     for ticker in TICKERS:
         item = (results.get(ticker) or {}).get("D1") or {}
         if item.get("status") != "OK" or item.get("source") != "Finam":
