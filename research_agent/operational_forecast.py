@@ -149,6 +149,8 @@ def build_operational_forecast(
         "report_type": "MOEX_EDGE_OPERATIONAL_DIRECTION_FORECAST_V1",
         "status": "COMPLETE" if len(candles_by_ticker) == len(TICKERS) and not data_errors else "PARTIAL",
         "model_version": MODEL_VERSION,
+        "calibration_status": "NOT_CALIBRATED",
+        "probabilities_are_calibrated": False,
         "model": {
             "name": "Diagonal Gaussian Naive Bayes",
             "classes": list(CLASS_NAMES),
