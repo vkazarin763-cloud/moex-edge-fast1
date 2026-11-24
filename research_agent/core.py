@@ -313,6 +313,26 @@ def generate_signals(candles: list[Candle]) -> list[Signal]:
                 signals.append(Signal(i, 1, "SqueezeBreakout"))
             elif prior_widths and width <= min(prior_widths) and c.close < prior_low:
                 signals.append(Signal(i, -1, "SqueezeBreakout"))
+        # Multi-group confirmations are evaluated as separate hypotheses.
+        if rsi[i] is not None and rsi[i-1] is not None and ema20[i] > ema50[i] and rsi[i] > 50 >= rsi[i-1] and macd[i] > macd_signal[i]:
+            signals.append(Signal(i, 1, "TrendMomentumConfirm"))
+        elif rsi[i] is not None and rsi[i-1] is not None and ema20[i] < ema50[i] and rsi[i] < 50 <= rsi[i-1] and macd[i] < macd_signal[i]:
+            signals.append(Signal(i, -1, "TrendMomentumConfirm"))
+        if avg_volume[i] and c.volume > 1.5 * avg_volume[i] and adx[i] is not None and adx[i] >= 20:
+            if c.close > prior_high and ema20[i] > ema50[i]:
+                signals.append(Signal(i, 1, "TrendVolumeBreakout"))
+            elif c.close < prior_low and ema20[i] < ema50[i]:
+                signals.append(Signal(i, -1, "TrendVolumeBreakout"))
+        if adx[i] is not None and adx[i] >= 25:
+            if c.close > prior_high and plus_di[i] is not None and minus_di[i] is not None and plus_di[i] > minus_di[i]:
+                signals.append(Signal(i, 1, "ADXDonchian"))
+            elif c.close < prior_low and plus_di[i] is not None and minus_di[i] is not None and minus_di[i] > plus_di[i]:
+                signals.append(Signal(i, -1, "ADXDonchian"))
+        if avg_volume[i] and c.volume > 1.5 * avg_volume[i] and body > 0 and prev_body > 0:
+            if p.close < p.open and c.close > c.open and c.open <= p.close and c.close >= p.open:
+                signals.append(Signal(i, 1, "CandleVolumeConfirm"))
+            elif p.close > p.open and c.close < c.open and c.open >= p.close and c.close <= p.open:
+                signals.append(Signal(i, -1, "CandleVolumeConfirm"))
     return signals
 
 def backtest(candles: list[Candle], signals: list[Signal],
