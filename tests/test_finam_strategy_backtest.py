@@ -57,6 +57,20 @@ class FinamStrategyBacktestTests(unittest.TestCase):
             ))
         self.assertEqual(report["data_summary"]["symbols_with_usable_history"], 1)
 
+    def test_direction_forecast_reuses_finam_d1_data_and_never_calls_moex_iss(self):
+        with patch.object(research, "TICKERS", ("SBER",)), patch.object(
+            research, "RefreshingFinamClient", return_value=self.client
+        ), patch("research_agent.direction_forecast.TICKERS", ("SBER",)), patch(
+            "research_agent.direction_forecast._fetch_d1_model_rows",
+            side_effect=AssertionError("Finam D1 candles must be reused; no MOEX ISS request"),
+        ):
+            report = research.run("test-token")
+        forecast = report["direction_forecast_research"]
+        self.assertEqual(forecast["source"], "Finam Trade API native D1 candles supplied by the caller")
+        self.assertEqual(forecast["holdout_bars_used"], 0)
+        self.assertEqual(forecast["symbols_with_eligible_history"], 1)
+        self.assertEqual(len(self.client.calls), 1)
+
     def test_snapshot_bars_are_excluded(self):
         snapshot = self.bars[-1]
         self.bars[-1] = FinamBar(
