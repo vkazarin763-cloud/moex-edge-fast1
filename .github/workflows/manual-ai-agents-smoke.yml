@@ -81,9 +81,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ inputs.model }}
         run: |
-          python -m research_agent.ai_team \\
-            --input smoke_input.json \\
-            --output smoke_result.json
+          python -m research_agent.ai_team --input smoke_input.json --output smoke_result.json
 
       - name: Validate agent output
         if: success()
