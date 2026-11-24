@@ -10,6 +10,7 @@ import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Callable
+from zoneinfo import ZoneInfo
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
@@ -17,6 +18,7 @@ from urllib.request import Request, urlopen
 from .core import Candle, validate_candles
 
 FINAM_BASE = "https://api.finam.ru"
+MOSCOW = ZoneInfo("Europe/Moscow")
 TIMEFRAME_MAX_DAYS = {
     "TIME_FRAME_M1": 7,
     "TIME_FRAME_M5": 30,
@@ -243,14 +245,17 @@ class FinamMarketDataClient:
                 validate_candles([bar.as_candle() for bar in result])
             except ValueError as exc:
                 raise FinamAPIError(f"Invalid Finam OHLCV series: {exc}") from None
-            # Finam D1 timestamps are session-start stamps (typically 05:00 UTC),
-            # while a strict rolling 365-day request can start later on that same
-            # UTC date. Treat the lower D1 boundary as date-inclusive, but keep
-            # the exclusive upper timestamp boundary and the exact 365-day limit.
+            # Finam D1 timestamps identify exchange-session dates, not exact
+            # instants: a daily candle may be stamped 05:00 UTC even when the
+            # caller's date boundary is 00:00 UTC. Apply inclusive/exclusive
+            # boundaries by Moscow calendar date for D1. The research runner
+            # separately filters out the frozen holdout date before analysis.
             if timeframe == "TIME_FRAME_D":
+                start_date = start_utc.astimezone(MOSCOW).date()
+                end_date = end_utc.astimezone(MOSCOW).date()
                 outside = next((
                     bar for bar in result
-                    if bar.timestamp.date() < start_utc.date() or bar.timestamp >= end_utc
+                    if not start_date <= bar.timestamp.astimezone(MOSCOW).date() <= end_date
                 ), None)
             else:
                 outside = next((
