@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from research_agent.cached_multi_timeframe import (
-    CachedFinamClient, load_cache, save_cache,
+    CachedFinamClient, load_cache, next_cache_run, save_cache,
 )
 from research_agent.finam_market_data import FinamBar
 
@@ -66,6 +66,12 @@ class CachedFinamClientTests(unittest.TestCase):
         self.assertEqual(rows[0].timestamp, bar(11, 101).timestamp)
         self.assertEqual(source.calls[0][2], start)
         self.assertEqual(client.stats["full_requests"], 1)
+
+    def test_full_reconciliation_runs_every_seventh_cache_cycle(self):
+        cache = {"run_count": 5, "bars": {}}
+        self.assertEqual(next_cache_run(cache), (6, False))
+        self.assertEqual(next_cache_run({"run_count": 6}), (7, True))
+        self.assertEqual(next_cache_run({"run_count": 7}, force_full_refresh=True), (8, True))
 
     def test_cache_round_trip_and_corrupt_cache_fallback(self):
         with tempfile.TemporaryDirectory() as directory:
