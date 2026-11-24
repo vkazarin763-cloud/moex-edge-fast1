@@ -214,16 +214,18 @@ def _predict_proba(model: dict[str, Any], features: list[float]) -> list[float]:
 
 def _metrics(
     predictions: list[tuple[int, list[float], int, int]],
-    train_counts: dict[str, int],
+    train_counts: dict[str, int] | None = None,
 ) -> dict[str, Any]:
     if not predictions:
         return {"status": "INSUFFICIENT_TEST_DATA", "test_samples": 0}
     actual = [item[0] for item in predictions]
     probabilities = [item[1] for item in predictions]
-    model_labels = [max(range(3), key=lambda label: probs[label]) for probs in probabilities]
     momentum_labels = [item[2] for item in predictions]
-    momentum_accuracy = sum(a == b for a, b in zip(actual, momentum_labels)) / len(actual)
+    majority_labels = [item[3] for item in predictions]
+    model_labels = [max(range(3), key=lambda label: probs[label]) for probs in probabilities]
     accuracy = sum(a == b for a, b in zip(actual, model_labels)) / len(actual)
+    majority_accuracy = sum(a == b for a, b in zip(actual, majority_labels)) / len(actual)
+    momentum_accuracy = sum(a == b for a, b in zip(actual, momentum_labels)) / len(actual)
     recalls = []
     for label in range(3):
         indexes = [i for i, value in enumerate(actual) if value == label]
