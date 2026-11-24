@@ -1,0 +1,53 @@
+name: Technical Analysis — Frozen MOEX 44 Data Validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: technical-analysis-frozen-real-data
+  cancel-in-progress: false
+
+jobs:
+  frozen-real-data-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout isolated research branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-ta-research.txt
+      - name: Install pinned analysis dependency
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ta-research.txt pandas
+      - name: Download frozen OHLCV artifact from source run
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-multi-timeframe-candles
+          repository: ${{ github.repository }}
+          run-id: 44861047844
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: frozen-data
+      - name: Verify immutable artifact and prepare archive
+        run: |
+          test -f frozen-data/moex-edge-multi-timeframe-candles.zip
+          echo "6a9ee767f37bec1f9fa9d40d0868ccc8f36b2271dd5ef4a1715f83e4a51af137  frozen-data/moex-edge-multi-timeframe-candles.zip" | sha256sum --check
+      - name: Run real-data analysis with sealed holdout excluded
+        run: |
+          python -m compileall -q research_agent/technical_analysis_ready.py scripts/run_ta_frozen_moex44.py
+          python scripts/run_ta_frozen_moex44.py
+      - name: Upload compact analysis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-ta-frozen-44-d1-h1-w1-report
+          path: ta-real-data-report/
+          if-no-files-found: error
+          retention-days: 30
