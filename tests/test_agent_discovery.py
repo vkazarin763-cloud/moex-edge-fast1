@@ -81,8 +81,22 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(diagnostics["full_universe_forecast_rows_validated"], 6)
         self.assertEqual(diagnostics["forecast_symbols_shared_with_agents"], 1)
         for prompt in prompts:
-            self.assertIn('"SBER"', prompt)
-            self.assertNotIn('"LKOH"', prompt)
+            marker = "DETERMINISTIC SNAPSHOT: "
+            self.assertIn(marker, prompt)
+            snapshot = json.loads(prompt.split(marker, 1)[1])
+            self.assertEqual(snapshot["universe"], ["SBER", "LKOH"])
+            self.assertEqual(
+                set(snapshot["direction_forecast"]["by_symbol"]),
+                {"SBER"},
+            )
+            self.assertEqual(
+                snapshot["direction_forecast"]["full_universe_forecast_rows_validated"],
+                6,
+            )
+            self.assertEqual(
+                snapshot["direction_forecast"]["candidate_symbols_shared_with_agents"],
+                1,
+            )
 
     def test_incomplete_full_universe_forecast_is_still_rejected(self):
         forecasts = []
