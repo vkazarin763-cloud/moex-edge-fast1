@@ -112,12 +112,18 @@ class IntegratedReportTests(unittest.TestCase):
         parts[3]["signals"] = [signal]
         parts[4]["proposals"] = [proposal]
         parts[4]["forecast_reviews"] = [
-            {"role": "signal_hunter", "symbol": "SBER", "horizon_sessions": 1,
-             "assessment": "AGREES", "rationale": "Candidate direction aligns qualitatively."},
-            {"role": "strategy_scout", "symbol": "SBER", "horizon_sessions": 1,
-             "assessment": "CONTRADICTS", "rationale": "Candidate has limited multi-horizon support."},
-            {"role": "skeptical_reviewer", "symbol": "SBER", "horizon_sessions": 5,
-             "assessment": "INSUFFICIENT_EVIDENCE", "rationale": "No robust supporting evidence."},
+            {"role": "signal_hunter", "symbol": "SBER", "direction": "LONG",
+             "strategy": "Donchian20", "d1_bar_end_utc": signal["d1_bar_end_utc"],
+             "horizon_sessions": 1, "assessment": "AGREES",
+             "rationale": "Candidate direction aligns qualitatively."},
+            {"role": "strategy_scout", "symbol": "SBER", "direction": "LONG",
+             "strategy": "Donchian20", "d1_bar_end_utc": signal["d1_bar_end_utc"],
+             "horizon_sessions": 1, "assessment": "CONTRADICTS",
+             "rationale": "Candidate has limited multi-horizon support."},
+            {"role": "skeptical_reviewer", "symbol": "SBER", "direction": "LONG",
+             "strategy": "Donchian20", "d1_bar_end_utc": signal["d1_bar_end_utc"],
+             "horizon_sessions": 5, "assessment": "INSUFFICIENT_EVIDENCE",
+             "rationale": "No robust supporting evidence."},
         ]
         parts[6]["results"] = [verified]
         parts[6]["confirmed_signals_count"] = 1
@@ -128,6 +134,7 @@ class IntegratedReportTests(unittest.TestCase):
         self.assertEqual(report["summary"]["state_counts"]["CONFIRMED"], 1)
         self.assertEqual(len(sber["agent_forecast_reviews"]["1"]), 2)
         self.assertEqual(sber["forecast_review_conflicts"][0]["status"], "CONTRADICTION")
+        self.assertEqual(sber["forecast_review_conflicts"][0]["strategy"], "Donchian20")
         self.assertEqual(report["summary"]["agent_forecast_review_count"], 3)
         self.assertEqual(report["summary"]["agent_forecast_contradiction_count"], 1)
 
