@@ -111,7 +111,7 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(calls, [(
             "SBER@MISX", "TIME_FRAME_D",
             datetime(2025, 11, 20, 0, tzinfo=timezone.utc),
-            datetime(2026, 11, 20, 0, tzinfo=timezone.utc),
+            datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
         )])
 
     def test_frame_filter_rejects_unknown_frames_and_requires_d1(self):
