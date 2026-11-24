@@ -65,6 +65,7 @@ def main() -> int:
     if df.empty:
         raise RuntimeError("Event CSV is empty")
 
+    input_event_count = len(df)
     for col in ("signal_timestamp", "entry_timestamp", "exit_timestamp"):
         df[col + "_dt"] = pd.to_datetime(df[col], format="mixed", utc=True, errors="raise")
 
@@ -78,8 +79,10 @@ def main() -> int:
     if ambiguous:
         idx = pd.MultiIndex.from_frame(df[same_bar_keys])
         df = df.loc[~idx.isin(ambiguous)].copy()
-
+    ambiguous_rows_excluded = input_event_count - len(df)
+    rows_before_deduplication = len(df)
     df = df.drop_duplicates(subset=same_bar_keys + ["direction"], keep="first")
+    same_bar_duplicates_collapsed = rows_before_deduplication - len(df)
     ordered = df.sort_values(
         family_keys + ["entry_timestamp_dt", "signal_timestamp_dt", "exit_timestamp_dt"],
         kind="mergesort",
@@ -155,9 +158,11 @@ def main() -> int:
                 label_positions.append(pos)
                 last_exit = row["exit_timestamp_dt"]
     label_nonoverlap = label_ordered.iloc[label_positions].copy()
-    label_nonoverlap["win_at_cost"] = (
-        label_nonoverlap["event_value"] > 0
-    ) & (label_nonoverlap["metric"] == "DIRECTIONAL_NET_RETURN")
+    label_nonoverlap["win_at_cost"] = np.where(
+        label_nonoverlap["metric"] == "DIRECTIONAL_NET_RETURN",
+        label_nonoverlap["event_value"] > 0,
+        np.nan,
+    )
     label_nonoverlap["value"] = label_nonoverlap["event_value"]
     label_nonoverlap["baseline"] = label_nonoverlap["matched_baseline"]
     label_summary = (
@@ -180,11 +185,13 @@ def main() -> int:
     report = {
         "status": "PASS",
         "source": str(SOURCE),
-        "input_event_count": int(len(df)),
+        "input_event_count": int(input_event_count),
+        "rows_after_ambiguous_exclusion_and_deduplication": int(len(df)),
         "family_nonoverlap_event_count": int(len(nonoverlap)),
         "family_nonoverlap_fraction": float(len(nonoverlap) / len(df)),
         "label_level_nonoverlap_event_count": int(len(label_nonoverlap)),
-        "ambiguous_conflicting_direction_rows_excluded": int(len(ordered) - len(df)),
+        "ambiguous_conflicting_direction_rows_excluded": int(ambiguous_rows_excluded),
+        "same_bar_duplicate_labels_collapsed": int(same_bar_duplicates_collapsed),
         "selection": "Greedy chronological intervals within symbol/timeframe/period/feature/metric/horizon; next entry must occur strictly after previous selected exit. Same-bar same-direction labels collapse; conflicting same-bar directions are excluded.",
         "equal_symbol_weighting": "Average event outcomes within each symbol, then average symbol means equally.",
         "base_round_trip_cost": BASE_ROUND_TRIP_COST,
