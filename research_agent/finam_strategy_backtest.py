@@ -14,7 +14,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from .core import BacktestConfig, Candle, Trade, _wilder_atr, generate_signals, summarize, validate_candles
+from .core import BacktestConfig, Candle, Trade, _wilder_atr, generate_expanded_signals, summarize, validate_candles
 from .multi_timeframe import RefreshingFinamClient
 
 TICKERS = (
@@ -90,7 +90,7 @@ def _trades_for_window(rows: list[Candle], strategy: str, config: BacktestConfig
         return []
     history = rows[:end_index]
     signals = [
-        signal for signal in generate_signals(history)
+        signal for signal in generate_expanded_signals(history)
         if signal.strategy == strategy and start_index <= signal.index < end_index - 1
     ]
     return _chandelier_backtest(history, signals, config)
