@@ -1,8 +1,9 @@
 """Three-year, read-only MOEX D1 candlestick/level research with a bounded Finam H1 check.
 
-D1 history is fetched from public MOEX ISS (interval=24). H1 confirmation is
-fetched from Finam for the final 30-day pre-holdout window only. The frozen
-2026-11-20 holdout is never requested or used. No broker/execution endpoints.
+D1 input uses public MOEX ISS per-security TQBR total-session daily history,
+not raw calendar-date candles. H1 confirmation is fetched from Finam for the
+exact 30-day window ending at the frozen holdout boundary. No broker/execution
+endpoints are used.
 """
 from __future__ import annotations
 
@@ -37,8 +38,8 @@ DATA_START = date(2023, 11, 20)
 HOLDOUT_START = date(2026, 11, 20)
 RECENT_START = date(2026, 10, 22)
 MOSCOW = ZoneInfo("Europe/Moscow")
-H1_START_UTC = datetime(2026, 10, 21, 21, tzinfo=timezone.utc)
-H1_END_UTC = datetime(2026, 11, 20, 21, tzinfo=timezone.utc)
+H1_START_UTC = datetime(2026, 10, 20, 21, tzinfo=timezone.utc)
+H1_END_UTC = datetime(2026, 11, 19, 21, tzinfo=timezone.utc)
 CONFIG = BacktestConfig(
     fee_per_side=0.001, slippage_per_side=0.0005,
     stop_pct=None, target_pct=None, max_bars=None,
@@ -355,7 +356,11 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
 
     return {
         "report_version": "moex-candle-level-d1-3y-v1",
-        "status": "COMPLETE" if not errors else "PARTIAL",
+        "status": (
+            "COMPLETE"
+            if not errors and all(bool(rows) for rows in data.values())
+            else "PARTIAL"
+        ),
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "universe": list(TICKERS), "universe_count": len(TICKERS),
         "d1_source": "MOEX ISS per-security TQBR total-session daily history (TRADEDATE); weekend sessions are included in the next ordinary trading day",
