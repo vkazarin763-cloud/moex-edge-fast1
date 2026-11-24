@@ -359,6 +359,11 @@ class AgentDiscoveryTests(unittest.TestCase):
 
 
     def test_forecast_review_assessment_is_canonical_for_both_directions(self):
+        self.scan["signals"].append({
+            "symbol": "LKOH", "direction": "SHORT", "strategy": "Donchian20",
+            "d1_bar_end_utc": "2026-11-20T21:00:00+00:00",
+            "h1_confirmation": "CONFIRMED", "cross_strategy_conflict": False,
+        })
         forecasts = []
         classes = {
             ("SBER", 1): "SIDEWAYS",
@@ -416,7 +421,7 @@ class AgentDiscoveryTests(unittest.TestCase):
             self.scan, self.registry, api_key="fake", caller=fake,
             forecast_report=forecast_report,
         )
-        self.assertEqual(len(report["forecast_reviews"]), 6)
+        self.assertEqual(len(report["forecast_reviews"]), 18)
         by_key = {
             (row["symbol"], row["horizon_sessions"]): row
             for row in report["forecast_reviews"]
