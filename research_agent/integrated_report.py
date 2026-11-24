@@ -200,33 +200,45 @@ def build_integrated_report(
     for review in agent_forecast_reviews:
         _require(isinstance(review, dict), "Agent forecast review must be an object")
         ticker = review.get("symbol")
+        direction = review.get("direction")
+        strategy = review.get("strategy")
+        d1_bar_end_utc = review.get("d1_bar_end_utc")
         horizon = review.get("horizon_sessions")
         role = review.get("role")
         assessment = review.get("assessment")
         rationale = review.get("rationale")
-        _require(ticker in candidate_symbols and ticker in reviews_by_symbol
-                 and horizon in HORIZONS and role in AGENT_ROLES
-                 and assessment in FORECAST_ASSESSMENTS
+        candidate_key = (ticker, direction, strategy, d1_bar_end_utc)
+        _require(candidate_key in scan_keys and ticker in candidate_symbols
+                 and ticker in reviews_by_symbol and horizon in HORIZONS
+                 and role in AGENT_ROLES and assessment in FORECAST_ASSESSMENTS
                  and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400,
                  "Agent forecast review violates its read-only structured contract")
-        review_key = (role, ticker, horizon)
-        _require(review_key not in review_keys, "Duplicate role/ticker/horizon forecast review")
+        review_key = (role, *candidate_key, horizon)
+        _require(review_key not in review_keys, "Duplicate role/candidate/horizon forecast review")
         review_keys.add(review_key)
         reviews_by_symbol[ticker][horizon].append({
-            "role": role, "assessment": assessment, "rationale": rationale,
+            "role": role, "direction": direction, "strategy": strategy,
+            "d1_bar_end_utc": d1_bar_end_utc,
+            "assessment": assessment, "rationale": rationale,
         })
 
     review_conflicts = []
     for ticker, horizon_map in reviews_by_symbol.items():
         for horizon, reviews in horizon_map.items():
-            agrees = sorted(item["role"] for item in reviews if item["assessment"] == "AGREES")
-            contradicts = sorted(item["role"] for item in reviews if item["assessment"] == "CONTRADICTS")
-            if agrees and contradicts:
-                review_conflicts.append({
-                    "symbol": ticker, "horizon_sessions": horizon,
-                    "status": "CONTRADICTION",
-                    "agreeing_roles": agrees, "contradicting_roles": contradicts,
-                })
+            candidate_groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+            for item in reviews:
+                key = (item["direction"], item["strategy"], item["d1_bar_end_utc"])
+                candidate_groups.setdefault(key, []).append(item)
+            for (direction, strategy, d1_end), candidate_reviews in candidate_groups.items():
+                agrees = sorted(item["role"] for item in candidate_reviews if item["assessment"] == "AGREES")
+                contradicts = sorted(item["role"] for item in candidate_reviews if item["assessment"] == "CONTRADICTS")
+                if agrees and contradicts:
+                    review_conflicts.append({
+                        "symbol": ticker, "direction": direction, "strategy": strategy,
+                        "d1_bar_end_utc": d1_end, "horizon_sessions": horizon,
+                        "status": "CONTRADICTION",
+                        "agreeing_roles": agrees, "contradicting_roles": contradicts,
+                    })
     confirmed_count = sum(row.get("status") == "CONFIRMED" for row in verification_rows)
     _require(verification_report.get("confirmed_signals_count") == confirmed_count,
              "Verification confirmed count does not match its result rows")
