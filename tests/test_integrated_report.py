@@ -140,6 +140,28 @@ class IntegratedReportTests(unittest.TestCase):
         self.assertEqual(sber["forecast"]["1"]["probabilities_percent"],
                          {"DOWN": 20.0, "SIDEWAYS": 30.0, "UP": 50.0})
 
+    def test_rejects_reviews_not_bound_to_exact_candidate_and_duplicate_reviews(self):
+        parts = list(_fixtures())
+        signal = {
+            "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
+            "d1_bar_end_utc": "2026-11-23T21:00:00+00:00",
+            "h1_confirmation": "NOT_CONFIRMED",
+        }
+        parts[3]["signals"] = [signal]
+        review = {
+            "role": "signal_hunter", "symbol": "SBER", "direction": "LONG",
+            "strategy": "EMA20x50", "d1_bar_end_utc": signal["d1_bar_end_utc"],
+            "horizon_sessions": 1, "assessment": "AGREES",
+            "rationale": "Candidate review.",
+        }
+        parts[4]["forecast_reviews"] = [review]
+        with self.assertRaisesRegex(ValueError, "read-only structured contract"):
+            _build(parts)
+        review["strategy"] = "Donchian20"
+        parts[4]["forecast_reviews"] = [review, dict(review)]
+        with self.assertRaisesRegex(ValueError, "Duplicate role/candidate/horizon"):
+            _build(parts)
+
     def test_rejects_missing_horizon_or_invalid_probability(self):
         parts = list(_fixtures())
         parts[2]["forecasts"].pop()
