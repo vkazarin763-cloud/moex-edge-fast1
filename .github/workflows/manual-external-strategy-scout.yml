@@ -48,7 +48,9 @@ jobs:
       - name: Run split-adjusted Donchian 20/10 research replay
         run: |
           python -m research_agent.moex_equities_donchian_replay --input moex_data/moex_edge_multi_timeframe_candles.json --output moex_donchian_20_10_replay.json
-      - name: Discover, read and extract public equities strategy sources
+      - name: Discover, read and analyze public equities strategy sources
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           python -m research_agent.equities_strategy_research_agent --limit "${{ inputs.limit || 5 }}" --output equities_strategy_research.json
       - name: Publish safe summary
@@ -61,10 +63,10 @@ jobs:
           lines = ['# MOEX EDGE equities strategy research agent', '']
           if path.exists():
               data = json.loads(path.read_text(encoding='utf-8'))
-              lines += [f"- Status: {data.get('status')}", f"- Unique source leads: {data.get('candidate_count')}", f"- Source errors: {len(data.get('discovery_errors', []))}", f"- Status counts: {data.get('status_counts')}", '', '## Sources']
+              lines += [f"- Status: {data.get('status')}", f"- Unique source leads: {data.get('candidate_count')}", f"- Source errors: {len(data.get('discovery_errors', []))}", f"- Status counts: {data.get('status_counts')}", f"- LLM status counts: {data.get('llm_status_counts')}", '', '## Sources']
               for item in data.get('candidates', []):
-                  lines.append(f"- [{item.get('title')}]({item.get('url')}) — {item.get('inspection_status')}; missing: {', '.join(item.get('missing_rule_fields', [])) or 'none'}; files: {', '.join(item.get('inspected_files', []))}")
-              lines += ['', 'Source inspection is evidence collection, not AI validation or profitability evidence. All candidates remain NOT_ELIGIBLE until independent MOEX testing. The separate MOEX replay uses only the frozen historical artifact and is a trade-level diagnostic; no live signals, broker accounts or orders are accessed.']
+                  lines.append(f"- [{item.get('title')}]({item.get('url')}) — {item.get('inspection_status')}; LLM: {item.get('llm_analysis', {}).get('status')}; version: {item.get('source_version') or 'unavailable'}; license: {item.get('source_license_spdx') or 'unknown'}; missing: {', '.join(item.get('missing_rule_fields', [])) or 'none'}")
+              lines += ['', 'LLM analysis is optional and runs only when OPENROUTER_API_KEY is configured. Its output is an untrusted draft requiring source verification. All candidates remain NOT_ELIGIBLE until independent MOEX testing. The separate MOEX replay uses only the frozen historical artifact and is a trade-level diagnostic; no live signals, broker accounts or orders are accessed.']
           else:
               lines.append('No source report was produced; inspect the failed step logs.')
           replay_path = Path('moex_donchian_20_10_replay.json')
