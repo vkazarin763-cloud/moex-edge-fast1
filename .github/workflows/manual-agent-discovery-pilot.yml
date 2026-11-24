@@ -35,7 +35,7 @@ jobs:
       - name: Compile and run offline safety tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback tests.test_operational_forecast tests.test_operational_agent_integration tests.test_integrated_report -v
+          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback tests.test_cached_multi_timeframe tests.test_operational_forecast tests.test_operational_agent_integration tests.test_integrated_report -v
 
       - name: Verify read-only Finam and Groq credentials are configured
         env:
@@ -80,6 +80,14 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ steps.research.outputs.run_id }}
 
+      - name: Restore incremental Finam candle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/moex-edge-finam-candles.json
+          key: moex-edge-finam-candles-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            moex-edge-finam-candles-${{ github.ref_name }}-
+
       - name: Collect latest closed D1 and H1 candles for the frozen 44-stock universe
         id: collect
         env:
@@ -87,9 +95,16 @@ jobs:
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
         run: |
           START=$(date +%s)
-          python -m research_agent.multi_timeframe --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
+          python -m research_agent.cached_multi_timeframe --frames "D1,H1" --cache .cache/moex-edge-finam-candles.json --output moex_edge_multi_timeframe_candles.json
           END=$(date +%s)
           echo "seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+
+      - name: Save updated incremental Finam candle cache
+        if: steps.collect.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/moex-edge-finam-candles.json
+          key: moex-edge-finam-candles-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Validate OHLCV, chronology and closed-bar boundary
         run: |
