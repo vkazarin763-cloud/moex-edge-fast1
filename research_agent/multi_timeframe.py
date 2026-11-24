@@ -162,8 +162,11 @@ def collect_multi_timeframe(
             if frame not in requested_frames:
                 continue
             if frame == "D1":
-                end = current.replace(hour=0, minute=0, second=0, microsecond=0)
-                start = end - timedelta(days=lookback)
+                # Finam may timestamp the current daily bar at the exchange
+                # session start (for example 05:00 UTC). Include it in the
+                # request, then exclude it below until its Moscow date closes.
+                request_start = current.replace(hour=0, minute=0, second=0, microsecond=0)
+                start, end = request_start - timedelta(days=lookback), current
             else:
                 start, end = current - timedelta(days=lookback), current
             try:
