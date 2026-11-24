@@ -138,11 +138,39 @@ class FinamMarketDataTests(unittest.TestCase):
         with self.assertRaises(FinamAPIError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
-    def test_fetch_bars_rejects_bars_outside_requested_interval(self):
+    def test_d1_accepts_session_start_bar_on_inclusive_start_date(self):
+        start = datetime(2026, 11, 18, 12, 0, tzinfo=timezone.utc)
+        end = datetime(2026, 11, 19, 12, 0, tzinfo=timezone.utc)
         client = FinamMarketDataClient(
-            "token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [bar("2026-11-19T00:00:00Z")]}
+            "token",
+            requester=lambda *a, **k: {
+                "symbol": "SBER@MISX",
+                "bars": [bar("2026-11-18T05:00:00Z")],
+            },
         )
-        with self.assertRaisesRegex(FinamAPIError, r"timestamp=2026-11-19T00:00:00\+00:00"):
+        rows = client.fetch_bars("SBER@MISX", "TIME_FRAME_D", start, end)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].timestamp, datetime(2026, 11, 18, 5, 0, tzinfo=timezone.utc))
+
+    def test_d1_accepts_session_start_stamp_on_end_utc_date(self):
+        client = FinamMarketDataClient(
+            "token",
+            requester=lambda *a, **k: {
+                "symbol": "SBER@MISX",
+                "bars": [bar("2026-11-19T05:00:00Z")],
+            },
+        )
+        rows = client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].timestamp, datetime(2026, 11, 19, 5, 0, tzinfo=timezone.utc))
+
+    def test_fetch_bars_rejects_d1_bars_after_end_moscow_date(self):
+        client = FinamMarketDataClient(
+            "token", requester=lambda *a, **k: {
+                "symbol": "SBER@MISX", "bars": [bar("2026-11-20T05:00:00Z")]
+            }
+        )
+        with self.assertRaisesRegex(FinamAPIError, r"timestamp=2026-11-20T05:00:00\+00:00"):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
     def test_fetch_bars_rejects_missing_response_symbol(self):

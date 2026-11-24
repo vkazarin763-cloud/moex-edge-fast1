@@ -300,7 +300,7 @@ def scan_multi_timeframe_report(
         "strategy_cohort_version": STRATEGY_COHORT_VERSION,
         "strategies": list(STRATEGIES),
         "methodology": {
-            "signal_source": "Latest fully closed native MOEX ISS TQBR D1 candle",
+            "signal_source": "Latest fully closed native Finam D1 candle",
             "confirmation_source": "Latest native Finam H1 candle closed no later than the D1 signal candle end",
             "h1_confirmation": "Informational alignment only: LONG requires H1 EMA20>EMA50 and close>EMA20; SHORT requires H1 EMA20<EMA50 and close<EMA20. It does not suppress or rank D1 signals.",
             "lookahead_policy": "Only bars whose native interval end is <= as_of are eligible; H1 is additionally bounded by the D1 signal bar end.",

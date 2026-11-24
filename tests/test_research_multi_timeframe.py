@@ -22,6 +22,8 @@ def fake_history_fetcher(ticker, start, end, *, board):
 class FakeFinam:
     def fetch_bars(self, symbol, timeframe, start, end):
         stamp = datetime(2026, 11, 20, 10, tzinfo=timezone.utc)
+        if timeframe == "TIME_FRAME_D":
+            return [FinamBar(datetime(2026, 11, 19, 5, tzinfo=timezone.utc), 100, 102, 99, 101, 1000, False)]
         return [
             FinamBar(stamp, 100, 102, 99, 101, 1000, False),
             FinamBar(stamp.replace(hour=11), 101, 103, 100, 102, 1200, True),
@@ -31,7 +33,7 @@ class FakeFinam:
 
 class MultiTimeframeTests(unittest.TestCase):
     def test_supported_frames_are_explicit_and_disjoint(self):
-        self.assertEqual(set(FINAM_FRAMES), {"M1", "M5", "M15", "M30", "H1", "H2", "H4", "H8"})
+        self.assertEqual(set(FINAM_FRAMES), {"M1", "M5", "M15", "M30", "H1", "H2", "H4", "H8", "D1"})
         self.assertEqual(set(MOEX_FRAMES), {"M10", "W1", "MN", "QR"})
         self.assertFalse(set(FINAM_FRAMES) & set(MOEX_FRAMES))
 
@@ -53,9 +55,8 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(sber["M15"]["snapshot_true_excluded"], 1)
         self.assertEqual(sber["M15"]["snapshot_unknown_retained"], 1)
         self.assertEqual(sber["M10"]["source"], "MOEX ISS")
-        self.assertEqual(sber["D1"]["source"], "MOEX ISS TQBR history")
+        self.assertEqual(sber["D1"]["source"], "Finam")
         self.assertEqual(sber["D1"]["completed_bars"], 1)
-        self.assertEqual(sber["D1"]["zero_trade_rows_excluded"], 1)
         self.assertEqual(len(sber["W1"]["candles"]), 1)
         self.assertEqual(len(calls), len(MOEX_FRAMES))
         self.assertEqual(result["timeframes"]["M15"]["ok"], 1)
@@ -68,7 +69,7 @@ class MultiTimeframeTests(unittest.TestCase):
         class RecordingFinam:
             def fetch_bars(self, symbol, timeframe, start, end):
                 finam_calls.append((symbol, timeframe))
-                stamp = datetime(2026, 11, 20, 12, tzinfo=timezone.utc)
+                stamp = datetime(2026, 11, 19, 5, tzinfo=timezone.utc) if timeframe == "TIME_FRAME_D" else datetime(2026, 11, 20, 12, tzinfo=timezone.utc)
                 return [FinamBar(stamp, 100, 102, 99, 101, 1000, False)]
 
         def moex_fetcher(ticker, start, end, *, interval, board):
@@ -87,27 +88,31 @@ class MultiTimeframeTests(unittest.TestCase):
         self.assertEqual(result["requested_frames"], ["H1", "D1"])
         self.assertEqual(set(result["timeframes"]), {"H1", "D1"})
         self.assertEqual(set(result["results"]["SBER"]), {"H1", "D1"})
-        self.assertEqual(finam_calls, [("SBER@MISX", "TIME_FRAME_H1")])
+        self.assertEqual(set(finam_calls), {("SBER@MISX", "TIME_FRAME_H1"), ("SBER@MISX", "TIME_FRAME_D")})
         self.assertEqual(moex_calls, [])
         self.assertEqual(result["results"]["SBER"]["H1"]["completed_bars"], 1)
         self.assertEqual(result["results"]["SBER"]["D1"]["completed_bars"], 1)
 
-    def test_latest_signal_d1_collection_uses_one_year_not_frozen_research_history(self):
+    def test_latest_signal_d1_collection_uses_finam_one_year_window(self):
         calls = []
 
-        def recording_history(ticker, start, end, *, board):
-            calls.append((ticker, start, end, board))
-            return fake_history_fetcher(ticker, start, end, board=board)
+        class RecordingFinam:
+            def fetch_bars(self, symbol, timeframe, start, end):
+                calls.append((symbol, timeframe, start, end))
+                return []
 
         collect_multi_timeframe(
             ["SBER"],
             api_token="not-used",
             now=datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
             frames=["D1"],
-            moex_history_fetcher=recording_history,
-            finam_client=FakeFinam(),
+            finam_client=RecordingFinam(),
         )
-        self.assertEqual(calls, [("SBER", "2025-11-20", "2026-11-20", "TQBR")])
+        self.assertEqual(calls, [(
+            "SBER@MISX", "TIME_FRAME_D",
+            datetime(2025, 11, 20, 13, tzinfo=timezone.utc),
+            datetime(2026, 11, 20, 13, tzinfo=timezone.utc),
+        )])
 
     def test_frame_filter_rejects_unknown_frames_and_requires_d1(self):
         common = {

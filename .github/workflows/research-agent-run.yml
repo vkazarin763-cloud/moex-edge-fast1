@@ -8,6 +8,14 @@ on:
       - ".github/workflows/research-agent-run.yml"
   workflow_dispatch:
     inputs:
+      research_mode:
+        description: "Research run mode"
+        required: true
+        type: choice
+        options:
+          - standard
+          - finam_two_strategy
+        default: standard
       date_from:
         description: "Start date YYYY-MM-DD (blank = rolling 3 years)"
         required: false
@@ -28,6 +36,7 @@ concurrency:
 
 jobs:
   research:
+    if: inputs.research_mode != 'finam_two_strategy'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -96,3 +105,8 @@ jobs:
             strategy_registry.json
           if-no-files-found: warn
           retention-days: 30
+
+  finam-two-strategy:
+    if: inputs.research_mode == 'finam_two_strategy'
+    uses: ./.github/workflows/manual-finam-two-strategy-research.yml
+    secrets: inherit

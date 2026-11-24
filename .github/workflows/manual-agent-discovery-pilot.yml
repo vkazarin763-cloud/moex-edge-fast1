@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       model:
-        description: "OpenRouter free router model"
+        description: "Groq model ID"
         required: false
         type: string
-        default: "openrouter/free"
+        default: "openai/gpt-oss-20b"
 
 permissions:
   actions: read
@@ -37,17 +37,17 @@ jobs:
           python -m compileall -q research_agent tests
           python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback -v
 
-      - name: Verify read-only market data and OpenRouter primary key are configured
+      - name: Verify read-only Finam and Groq credentials are configured
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python - <<'PY'
           import os
-          for name in ("FINAM_API_TOKEN", "OPENROUTER_API_KEY"):
+          for name in ("FINAM_API_TOKEN", "GROQ_API_KEY"):
               if not os.environ.get(name, "").strip():
                   raise SystemExit(f"{name} is missing; secret values are never printed.")
-          print("Finam and OpenRouter credentials are configured; Groq is an optional fallback.")
+          print("Finam market-data and Groq AI credentials are configured.")
           PY
 
       - name: Resolve latest successful deterministic research registry
@@ -119,15 +119,15 @@ jobs:
             --validation moex_edge_multi_timeframe_validation.json \
             --output moex_edge_mtf_signals.json
 
-      - name: Run three free-tier agents and independently verify consensus
+      - name: Run three Groq agents and independently verify consensus
         env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_MODEL: ${{ inputs.model || 'openrouter/free' }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ inputs.model || 'openai/gpt-oss-20b' }}
         run: |
           python -m research_agent.agent_discovery \
             --scan moex_edge_mtf_signals.json \
             --registry research-data/strategy_registry.json \
+            --groq-model "$GROQ_MODEL" \
             --proposals agent_proposals.json \
             --diagnostics agent_discovery_diagnostics.json \
             --verification agent_signal_verification.json
@@ -154,11 +154,15 @@ jobs:
               if "timeframes" in data:
                   for frame, item in data["timeframes"].items():
                       lines.append(f"- {frame}: {item.get('ok')}/{item.get('symbols')} symbols; {item.get('errors')} errors")
-              for key in ("status", "issue_count", "signals_count", "candidate_count_seen",
-                          "consensus_proposal_count", "hypothesis_count", "confirmed_signals_count",
-                          "proposal_count"):
+              for key in ("status", "provider", "model", "issue_count", "signals_count",
+                          "candidate_count_seen", "consensus_proposal_count", "hypothesis_count",
+                          "confirmed_signals_count", "proposal_count"):
                   if key in data:
                       lines.append(f"- {key}: {data[key]}")
+              if isinstance(data.get("providers_used"), list):
+                  lines.append(f"- providers_used: {data['providers_used']}")
+              if isinstance(data.get("agent_roles"), dict):
+                  lines.append(f"- agent_roles: {data['agent_roles']}")
               if isinstance(data.get("counts"), dict):
                   lines.append(f"- statuses: {data['counts']}")
               if isinstance(data.get("policy"), dict):
