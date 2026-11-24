@@ -35,6 +35,40 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install official Russian NCA certificates for MOEX
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://gu-st.ru/content/downloads/Russian_Trusted_Root_CA.cer \
+            --output /tmp/russian_trusted_root_ca.cer
+          curl --fail --silent --show-error --location \
+            https://gu-st.ru/content/downloads/Russian_Trusted_Sub_CA.cer \
+            --output /tmp/russian_trusted_sub_ca.cer
+
+          convert_cert() {
+            local source="$1"
+            local target="$2"
+            if openssl x509 -in "$source" -noout >/dev/null 2>&1; then
+              cp "$source" "$target"
+            else
+              openssl x509 -inform DER -in "$source" -out "$target"
+            fi
+          }
+          convert_cert /tmp/russian_trusted_root_ca.cer /tmp/russian_trusted_root_ca.crt
+          convert_cert /tmp/russian_trusted_sub_ca.cer /tmp/russian_trusted_sub_ca.crt
+
+          root_fp="$(openssl x509 -in /tmp/russian_trusted_root_ca.crt -noout -fingerprint -sha256 | cut -d= -f2)"
+          sub_fp="$(openssl x509 -in /tmp/russian_trusted_sub_ca.crt -noout -fingerprint -sha256 | cut -d= -f2)"
+          expected_root="D2:6D:2D:02:31:B7:C3:9F:92:CC:73:85:12:BA:54:10:35:19:E4:40:5D:68:B5:BD:70:3E:97:88:CA:8E:CF:31"
+          expected_sub="21:55:78:50:36:C9:00:DB:B5:F1:BB:2A:15:69:C8:0C:55:59:5B:D6:BF:94:86:7A:29:BB:DD:BC:7D:88:A3:F2"
+          echo "Russian Trusted Root CA SHA256: $root_fp"
+          echo "Russian Trusted Sub CA SHA256: $sub_fp"
+          test "$root_fp" = "$expected_root"
+          test "$sub_fp" = "$expected_sub"
+
+          sudo install -m 0644 /tmp/russian_trusted_root_ca.crt /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
+          sudo install -m 0644 /tmp/russian_trusted_sub_ca.crt /usr/local/share/ca-certificates/russian_trusted_sub_ca.crt
+          sudo update-ca-certificates
       - name: Diagnose MOEX ISS TLS trust chain
         continue-on-error: true
         run: |
@@ -89,8 +123,8 @@ jobs:
           if start > end:
               raise SystemExit("date_from must not be after date_till")
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
-              output.write(f"date_from={start.isoformat()}\n")
-              output.write(f"date_till={end.isoformat()}\n")
+              output.write(f"date_from={start.isoformat()}\\n")
+              output.write(f"date_till={end.isoformat()}\\n")
           PY
       - name: Run read-only research across MOEX first-listing universe
         env:
@@ -98,9 +132,9 @@ jobs:
           DATE_TILL: ${{ steps.dates.outputs.date_till }}
         run: |
           set +e
-          python -m research_agent.cli \
-            --from "$DATE_FROM" \
-            --till "$DATE_TILL" \
+          python -m research_agent.cli \\
+            --from "$DATE_FROM" \\
+            --till "$DATE_TILL" \\
             --output research_report.json
           research_exit=$?
           set -e
