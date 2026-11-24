@@ -486,7 +486,6 @@ def run_discovery(
     hypothesis_votes: dict[tuple, list[dict[str, Any]]] = defaultdict(list)
     forecast_reviews: list[dict[str, Any]] = []
     forecast_symbols = set(forecast_context.get("by_symbol", {})) if forecast_context else set()
-    candidate_symbols = {row.get("symbol") for row in context["candidate_signals"]}
 
     for role, instruction in ROLES.items():
         seen_proposals_this_agent = set()
