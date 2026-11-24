@@ -28,6 +28,7 @@ DEFAULT_MODEL = "openai/gpt-oss-20b"
 DEFAULT_OPENROUTER_MODEL = "openrouter/free"
 STRATEGIES = ["Donchian20", "EMA20x50", "RSI14Trend50", "MACD12x26", "Keltner20x2ATR"]
 DIRECTIONS = ["LONG", "SHORT"]
+FORECAST_ASSESSMENTS = ["AGREES", "CONTRADICTS", "NEUTRAL", "INSUFFICIENT_EVIDENCE"]
 TIMEFRAME_CONFIGS = {
     "A": ["D1", "H1"],
     "B": ["W1", "D1", "H1"],
@@ -75,6 +76,20 @@ OUTPUT_SCHEMA = {
                         "additionalProperties": False,
                     },
                 },
+                "forecast_reviews": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "symbol": {"type": "string"},
+                            "horizon_sessions": {"type": "integer", "enum": [1, 5, 20]},
+                            "assessment": {"type": "string", "enum": FORECAST_ASSESSMENTS},
+                            "rationale": {"type": "string"},
+                        },
+                        "required": ["symbol", "horizon_sessions", "assessment", "rationale"],
+                        "additionalProperties": False,
+                    },
+                },
                 "strategy_hypotheses": {
                     "type": "array",
                     "items": {
@@ -91,7 +106,7 @@ OUTPUT_SCHEMA = {
                     },
                 },
             },
-            "required": ["proposals", "strategy_hypotheses"],
+            "required": ["proposals", "strategy_hypotheses", "forecast_reviews"],
             "additionalProperties": False,
         },
     },
@@ -259,9 +274,10 @@ def call_groq_discovery(
             if not isinstance(content, str) or not content.strip():
                 raise RuntimeError("Groq discovery response contained no JSON message content")
             result = json.loads(content)
-            if not isinstance(result, dict) or set(result) != {"proposals", "strategy_hypotheses"}:
+            if not isinstance(result, dict) or not {"proposals", "strategy_hypotheses"}.issubset(result) or set(result) - {"proposals", "strategy_hypotheses", "forecast_reviews"}:
                 raise RuntimeError("Groq discovery response does not match the required outer schema")
-            if not isinstance(result["proposals"], list) or not isinstance(result["strategy_hypotheses"], list):
+            result.setdefault("forecast_reviews", [])
+            if not all(isinstance(result[key], list) for key in ("proposals", "strategy_hypotheses", "forecast_reviews")):
                 raise RuntimeError("Groq discovery response arrays are malformed")
             return result
         except urllib.error.HTTPError as exc:
@@ -344,9 +360,10 @@ def call_openrouter_discovery(
             if not isinstance(content, str) or not content.strip():
                 raise RuntimeError("OpenRouter discovery response contained no JSON message content")
             result = json.loads(content)
-            if not isinstance(result, dict) or set(result) != {"proposals", "strategy_hypotheses"}:
+            if not isinstance(result, dict) or not {"proposals", "strategy_hypotheses"}.issubset(result) or set(result) - {"proposals", "strategy_hypotheses", "forecast_reviews"}:
                 raise RuntimeError("OpenRouter discovery response does not match the required outer schema")
-            if not isinstance(result["proposals"], list) or not isinstance(result["strategy_hypotheses"], list):
+            result.setdefault("forecast_reviews", [])
+            if not all(isinstance(result[key], list) for key in ("proposals", "strategy_hypotheses", "forecast_reviews")):
                 raise RuntimeError("OpenRouter discovery response arrays are malformed")
             return result
         except urllib.error.HTTPError as exc:
@@ -417,6 +434,24 @@ def call_discovery_with_fallback(
     raise RuntimeError("All configured AI providers failed. " + " | ".join(errors))
 
 
+def _forecast_review_conflicts(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, int], dict[str, list[str]]] = defaultdict(
+        lambda: {"AGREES": [], "CONTRADICTS": [], "NEUTRAL": [], "INSUFFICIENT_EVIDENCE": []}
+    )
+    for review in reviews:
+        grouped[(review["symbol"], review["horizon_sessions"])][review["assessment"]].append(review["role"])
+    conflicts = []
+    for (symbol, horizon), roles in sorted(grouped.items()):
+        if roles["AGREES"] and roles["CONTRADICTS"]:
+            conflicts.append({
+                "symbol": symbol, "horizon_sessions": horizon,
+                "status": "CONTRADICTION",
+                "agreeing_roles": sorted(roles["AGREES"]),
+                "contradicting_roles": sorted(roles["CONTRADICTS"]),
+            })
+    return conflicts
+
+
 def run_discovery(
     scan: dict[str, Any],
     registry: dict[str, Any],
@@ -442,6 +477,9 @@ def run_discovery(
     providers_used = []
     proposal_votes: Counter = Counter()
     hypothesis_votes: dict[tuple, list[dict[str, Any]]] = defaultdict(list)
+    forecast_reviews: list[dict[str, Any]] = []
+    forecast_symbols = set(forecast_context.get("by_symbol", {})) if forecast_context else set()
+    candidate_symbols = {row["symbol"] for row in context["candidate_signals"]}
 
     for role, instruction in ROLES.items():
         seen_proposals_this_agent = set()
@@ -453,7 +491,12 @@ def run_discovery(
             "Every proposal must use D1 and H1 (the final verifier enforces both). "
             "Strategy hypotheses may only select a listed frozen strategy and timeframe config; "
             "they are unverified research questions, not signals or claims of profitability. "
-            "Do not propose a strategy family outside the supplied catalog.\n"
+            "Do not propose a strategy family outside the supplied catalog. "
+            "If direction_forecast is present, you may return forecast_reviews for symbols that "
+            "also appear in candidate_signals. Review horizons 1, 5 and 20 independently; use "
+            "AGREES, CONTRADICTS, NEUTRAL or INSUFFICIENT_EVIDENCE and give a brief evidence-based "
+            "rationale. Do not alter, recalculate or repeat numeric probabilities. If evidence is "
+            "insufficient or there are no candidate symbols, return an empty forecast_reviews array.\n"
             f"DETERMINISTIC SNAPSHOT: {context_json}"
         )
         if caller is call_groq_discovery:
@@ -470,6 +513,21 @@ def run_discovery(
         providers_used.append(provider_used)
         accepted = []
         invalid = 0
+        for review in response.get("forecast_reviews", []):
+            if not isinstance(review, dict):
+                continue
+            symbol = review.get("symbol")
+            horizon = review.get("horizon_sessions")
+            assessment = review.get("assessment")
+            rationale = review.get("rationale")
+            if (forecast_context is not None and symbol in candidate_symbols
+                    and symbol in forecast_symbols and horizon in (1, 5, 20)
+                    and assessment in FORECAST_ASSESSMENTS
+                    and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400):
+                forecast_reviews.append({
+                    "role": role, "symbol": symbol, "horizon_sessions": horizon,
+                    "assessment": assessment, "rationale": rationale.strip(),
+                })
         for item in response["proposals"]:
             if not isinstance(item, dict):
                 invalid += 1
@@ -499,6 +557,7 @@ def run_discovery(
             "exact_candidates_selected": len(accepted),
             "invalid_or_unmatched_proposals": invalid,
             "strategy_hypotheses_returned": len(response["strategy_hypotheses"]),
+            "forecast_reviews_returned": len(response.get("forecast_reviews", [])),
         }
         invalid_counts[role] = invalid
 
@@ -536,6 +595,7 @@ def run_discovery(
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "agent_run_id": os.getenv("GITHUB_RUN_ID", f"manual-{int(time.time())}"),
         "proposals": consensus,
+        "forecast_reviews": forecast_reviews,
     }
     provider_set = set(providers_used)
     actual_provider = (
@@ -555,6 +615,8 @@ def run_discovery(
         "forecast_model_version": (forecast_context.get("model_version") if forecast_context else None),
         "forecast_as_of_date": (forecast_context.get("as_of_date") if forecast_context else None),
         "agents_can_modify_probabilities": False,
+        "forecast_reviews_count": len(forecast_reviews),
+        "forecast_review_conflicts": _forecast_review_conflicts(forecast_reviews),
         "consensus_proposal_count": len(consensus),
         "strategy_hypotheses": hypotheses,
         "hypothesis_count": len(hypotheses),
