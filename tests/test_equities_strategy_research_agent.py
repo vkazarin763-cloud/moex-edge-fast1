@@ -36,7 +36,7 @@ Execute at next open with commission and slippage."""
                 return False
             def read(self):
                 return b'{"model":"provider/test-model","choices":[{"message":{"content":"{\\\"entry_rules\\\":[\\\"close above 20-day high\\\"],\\\"exit_rules\\\":[],\\\"missing_information\\\":[\\\"stop rule\\\"]}"}}],"usage":{"total_tokens":123}}'
-        with patch.dict(os.environ, {"OPENROUTER_API_KEY":"test-key"}), \\
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY":"test-key"}), \
              patch("research_agent.equities_strategy_research_agent.urllib.request.urlopen", return_value=Response()):
             result = _llm_analyze({"title":"demo"}, "source text")
         self.assertEqual(result["status"], "LLM_ANALYSIS_COMPLETED")
@@ -50,7 +50,7 @@ Execute at next open with commission and slippage."""
             {"sha":"abc123"},
             {"tree":[{"type":"blob","path":"README.md"},{"type":"blob","path":"strategy.py"}]},
         ]
-        with patch("research_agent.equities_strategy_research_agent.fetch_json", side_effect=responses), \\
+        with patch("research_agent.equities_strategy_research_agent.fetch_json", side_effect=responses), \
              patch("research_agent.equities_strategy_research_agent._request_text", side_effect=["README text", "strategy code"]):
             text, paths, provenance = _read_github_source("https://github.com/demo/strategy")
         self.assertIn("strategy code", text)
