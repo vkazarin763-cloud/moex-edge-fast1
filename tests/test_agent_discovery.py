@@ -424,19 +424,19 @@ class AgentDiscoveryTests(unittest.TestCase):
         )
         self.assertEqual(len(report["forecast_reviews"]), 18)
         by_key = {
-            (row["symbol"], row["horizon_sessions"]): row
+            (row["role"], row["symbol"], row["horizon_sessions"]): row
             for row in report["forecast_reviews"]
         }
-        self.assertEqual(by_key[("SBER", 1)]["assessment"], "NEUTRAL")
-        self.assertEqual(by_key[("LKOH", 1)]["assessment"], "NEUTRAL")
-        self.assertEqual(by_key[("SBER", 5)]["assessment"], "AGREES")
-        self.assertEqual(by_key[("SBER", 20)]["assessment"], "CONTRADICTS")
-        self.assertEqual(by_key[("LKOH", 5)]["assessment"], "AGREES")
-        self.assertEqual(by_key[("LKOH", 20)]["assessment"], "CONTRADICTS")
-        self.assertTrue(by_key[("SBER", 1)]["assessment_corrected"])
-        self.assertEqual(by_key[("SBER", 1)]["agent_reported_assessment"], "AGREES")
-        self.assertEqual(by_key[("SBER", 1)]["agent_rationale"], "raw rationale from role 1")
-        self.assertEqual(by_key[("SBER", 1)]["rationale"], "Класс SIDEWAYS не подтверждает ни LONG, ни SHORT.")
+        self.assertEqual(by_key[("signal_hunter", "SBER", 1)]["assessment"], "NEUTRAL")
+        self.assertEqual(by_key[("skeptical_reviewer", "LKOH", 1)]["assessment"], "NEUTRAL")
+        self.assertEqual(by_key[("signal_hunter", "SBER", 5)]["assessment"], "AGREES")
+        self.assertEqual(by_key[("signal_hunter", "SBER", 20)]["assessment"], "CONTRADICTS")
+        self.assertEqual(by_key[("signal_hunter", "LKOH", 5)]["assessment"], "AGREES")
+        self.assertEqual(by_key[("signal_hunter", "LKOH", 20)]["assessment"], "CONTRADICTS")
+        self.assertTrue(by_key[("signal_hunter", "SBER", 1)]["assessment_corrected"])
+        self.assertEqual(by_key[("signal_hunter", "SBER", 1)]["agent_reported_assessment"], "AGREES")
+        self.assertEqual(by_key[("signal_hunter", "SBER", 1)]["agent_rationale"], "raw rationale from role 1")
+        self.assertEqual(by_key[("signal_hunter", "SBER", 1)]["rationale"], "Класс SIDEWAYS не подтверждает ни LONG, ни SHORT.")
         self.assertEqual(diagnostics["forecast_review_conflicts"], [])
         self.assertEqual(len(diagnostics["forecast_review_agent_reported_conflicts"]), 6)
         self.assertEqual(diagnostics["forecast_review_corrections_count"], 12)
