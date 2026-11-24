@@ -1,10 +1,11 @@
 import unittest
 from datetime import date, datetime, timedelta
+from unittest.mock import patch
 
 from research_agent.core import Candle
 from research_agent.direction_forecast import (
     CLASS_NAMES, FEATURE_NAMES, HOLDOUT_START, _fit_gaussian_nb,
-    _predict_proba, build_samples, evaluate_horizon,
+    _predict_proba, build_samples, evaluate_horizon, run_direction_forecast,
 )
 
 
@@ -37,10 +38,7 @@ class DirectionForecastTests(unittest.TestCase):
                 ((index * (feature + 3)) % 17 - 8) / 10.0
                 for feature in range(len(FEATURE_NAMES))
             ]
-            samples.append({
-                "features": features,
-                "label": index % 3,
-            })
+            samples.append({"features": features, "label": index % 3})
         model = _fit_gaussian_nb(samples)
         probabilities = _predict_proba(model, samples[-1]["features"])
         self.assertEqual(len(probabilities), len(CLASS_NAMES))
@@ -77,6 +75,26 @@ class DirectionForecastTests(unittest.TestCase):
         self.assertGreater(report["oos_samples"], 0)
         self.assertIn("log_loss", report["pooled_oos_metrics"])
         self.assertIn("historical_momentum_baseline_accuracy", report["pooled_oos_metrics"])
+
+    def test_unified_runner_reuses_supplied_d1_data_and_stays_pre_holdout(self):
+        rows = _candles(250, start=date(2025, 11, 20))
+        with patch(
+            "research_agent.direction_forecast._fetch_d1_model_rows",
+            side_effect=AssertionError("Should reuse the already collected D1 history"),
+        ):
+            report = run_direction_forecast(
+                {"SBER": rows},
+                {"SBER": {"status": "OK", "bars": len(rows)}},
+            )
+        self.assertEqual(report["holdout_bars_used"], 0)
+        self.assertEqual(report["historical_latest_forecasts"]["as_of_date"], rows[-1].timestamp.date().isoformat())
+        self.assertLess(rows[-1].timestamp.date(), HOLDOUT_START)
+        self.assertEqual(report["historical_latest_forecasts"]["status"], "HISTORICAL_FORECASTS_ONLY")
+        self.assertTrue(all(
+            item["status"] == "HISTORICAL_FORECAST_ONLY"
+            for item in report["historical_latest_forecasts"]["forecasts"]
+            if "ticker" in item
+        ))
 
 
 if __name__ == "__main__":
