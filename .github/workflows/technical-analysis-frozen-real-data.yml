@@ -1,6 +1,9 @@
 name: Technical Analysis — Frozen MOEX 44 Data Validation
 
 on:
+  push:
+    branches:
+      - feature/technical-analysis-ready-libraries-v1
   workflow_dispatch:
 
 permissions:
