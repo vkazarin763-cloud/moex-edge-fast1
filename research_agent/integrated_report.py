@@ -16,6 +16,8 @@ from .direction_forecast import HORIZONS, TICKERS
 
 REPORT_TYPE = "MOEX_EDGE_INTEGRATED_READ_ONLY_REPORT_V1"
 EXPECTED_FORECAST_STATUS = "EXPERIMENTAL_NOT_CALIBRATED"
+AGENT_ROLES = {"signal_hunter", "strategy_scout", "skeptical_reviewer"}
+FORECAST_ASSESSMENTS = {"AGREES", "CONTRADICTS", "NEUTRAL", "INSUFFICIENT_EVIDENCE"}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -146,9 +148,10 @@ def build_integrated_report(
     signal_rows = scan_report.get("signals")
     proposal_rows = agent_report.get("proposals")
     verification_rows = verification_report.get("results")
+    agent_forecast_reviews = agent_report.get("forecast_reviews", [])
     _require(isinstance(signal_rows, list) and isinstance(proposal_rows, list)
-             and isinstance(verification_rows, list),
-             "Signals, proposals and verification results must be lists")
+             and isinstance(verification_rows, list) and isinstance(agent_forecast_reviews, list),
+             "Signals, proposals, verification results and agent forecast reviews must be lists")
 
     scan_by_symbol: dict[str, list[dict[str, Any]]] = {ticker: [] for ticker in universe}
     for signal in signal_rows:
@@ -188,6 +191,42 @@ def build_integrated_report(
     verified_keys = set(verification_by_key)
     _require(verified_keys == proposal_keys,
              "Verification results do not exactly cover the agent consensus proposals")
+
+    review_keys = set()
+    reviews_by_symbol: dict[str, dict[int, list[dict[str, Any]]]] = {
+        ticker: {horizon: [] for horizon in HORIZONS} for ticker in universe
+    }
+    candidate_symbols = {row.get("symbol") for row in signal_rows}
+    for review in agent_forecast_reviews:
+        _require(isinstance(review, dict), "Agent forecast review must be an object")
+        ticker = review.get("symbol")
+        horizon = review.get("horizon_sessions")
+        role = review.get("role")
+        assessment = review.get("assessment")
+        rationale = review.get("rationale")
+        _require(ticker in candidate_symbols and ticker in reviews_by_symbol
+                 and horizon in HORIZONS and role in AGENT_ROLES
+                 and assessment in FORECAST_ASSESSMENTS
+                 and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400,
+                 "Agent forecast review violates its read-only structured contract")
+        review_key = (role, ticker, horizon)
+        _require(review_key not in review_keys, "Duplicate role/ticker/horizon forecast review")
+        review_keys.add(review_key)
+        reviews_by_symbol[ticker][horizon].append({
+            "role": role, "assessment": assessment, "rationale": rationale,
+        })
+
+    review_conflicts = []
+    for ticker, horizon_map in reviews_by_symbol.items():
+        for horizon, reviews in horizon_map.items():
+            agrees = sorted(item["role"] for item in reviews if item["assessment"] == "AGREES")
+            contradicts = sorted(item["role"] for item in reviews if item["assessment"] == "CONTRADICTS")
+            if agrees and contradicts:
+                review_conflicts.append({
+                    "symbol": ticker, "horizon_sessions": horizon,
+                    "status": "CONTRADICTION",
+                    "agreeing_roles": agrees, "contradicting_roles": contradicts,
+                })
     confirmed_count = sum(row.get("status") == "CONFIRMED" for row in verification_rows)
     _require(verification_report.get("confirmed_signals_count") == confirmed_count,
              "Verification confirmed count does not match its result rows")
@@ -227,6 +266,13 @@ def build_integrated_report(
             "deterministic_candidates": ticker_signals,
             "agent_verified_candidates": ticker_verified,
             "confirmed_signals": confirmed,
+            "agent_forecast_reviews": {
+                str(horizon): reviews_by_symbol[ticker][horizon]
+                for horizon in HORIZONS
+            },
+            "forecast_review_conflicts": [
+                item for item in review_conflicts if item["symbol"] == ticker
+            ],
             "cross_strategy_conflict": any(row.get("cross_strategy_conflict") is True for row in ticker_signals),
             "data_freshness": {
                 "d1_latest_closed_bar": d1_bar,
@@ -254,6 +300,8 @@ def build_integrated_report(
             "agent_consensus_proposal_count": len(proposal_rows),
             "independently_confirmed_candidate_count": verification_report.get("confirmed_signals_count", 0),
             "forecast_count": len(forecast_report.get("forecasts", [])),
+            "agent_forecast_review_count": len(agent_forecast_reviews),
+            "agent_forecast_contradiction_count": len(review_conflicts),
             "forecast_model_version": forecast_report.get("model_version"),
             "calibration_status": "NOT_CALIBRATED",
             "agent_count": agent_diagnostics.get("agent_count"),
@@ -261,6 +309,8 @@ def build_integrated_report(
             "ai_model": agent_diagnostics.get("model"),
         },
         "cards": cards,
+        "agent_forecast_reviews": agent_forecast_reviews,
+        "forecast_review_conflicts": review_conflicts,
         "stage_status": {
             "market_data": "PASS",
             "validation": "PASS",
