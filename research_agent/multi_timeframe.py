@@ -165,8 +165,9 @@ def collect_multi_timeframe(
                 # Finam may timestamp the current daily bar at the exchange
                 # session start (for example 05:00 UTC). Include it in the
                 # request, then exclude it below until its Moscow date closes.
-                request_start = current.replace(hour=0, minute=0, second=0, microsecond=0)
-                start, end = request_start - timedelta(days=lookback), current
+                # Keep the requested interval at or below Finam's strict
+                # 365-day maximum; the current-day bar remains inside the range.
+                start, end = current - timedelta(days=lookback), current
             else:
                 start, end = current - timedelta(days=lookback), current
             try:
