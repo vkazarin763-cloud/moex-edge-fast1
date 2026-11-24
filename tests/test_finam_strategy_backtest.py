@@ -39,7 +39,7 @@ class FinamStrategyBacktestTests(unittest.TestCase):
 
     def test_requests_exact_365_day_d1_window_and_excludes_holdout(self):
         with patch.object(research, "TICKERS", ("SBER",)), patch.object(
-            research.FinamMarketDataClient, "from_api_token", return_value=self.client
+            research, "RefreshingFinamClient", return_value=self.client
         ):
             report = research.run("test-token")
         self.assertEqual(report["status"], "COMPLETE")
