@@ -36,10 +36,12 @@ jobs:
           run-id: 44861047844
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: frozen-data
-      - name: Verify immutable artifact and prepare archive
+      - name: Verify immutable source files
         run: |
-          test -f frozen-data/moex-edge-multi-timeframe-candles.zip
-          echo "6a9ee767f37bec1f9fa9d40d0868ccc8f36b2271dd5ef4a1715f83e4a51af137  frozen-data/moex-edge-multi-timeframe-candles.zip" | sha256sum --check
+          test -f frozen-data/moex_edge_multi_timeframe_candles.json
+          test -f frozen-data/moex_edge_multi_timeframe_validation.json
+          echo "8df302ac97b1132fefeae5054ec263ea3d2545f8a5622eef33065ee2fa2d5eee  frozen-data/moex_edge_multi_timeframe_candles.json" | sha256sum --check
+          echo "900145ac5c01f80a0ba70535847737761509bfcae4c6a4b7fbb17c4d72646fb2  frozen-data/moex_edge_multi_timeframe_validation.json" | sha256sum --check
       - name: Run real-data analysis with sealed holdout excluded
         run: |
           python -m compileall -q research_agent/technical_analysis_ready.py scripts/run_ta_frozen_moex44.py
