@@ -199,6 +199,8 @@ jobs:
                           "symbols_with_forecasts", "forecast_count", "calibration_status",
                           "issue_count", "signals_count", "candidate_count_seen",
                           "consensus_proposal_count", "hypothesis_count",
+                          "forecast_reviews_count", "forecast_review_conflicts",
+                          "agent_forecast_review_count", "agent_forecast_contradiction_count",
                           "confirmed_signals_count", "proposal_count"):
                   if key in data:
                       lines.append(f"- {key}: {data[key]}")
