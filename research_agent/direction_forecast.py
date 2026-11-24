@@ -139,6 +139,7 @@ def build_samples(
             "label": label,
             "future_return": future_return,
             "neutral_threshold": neutral_threshold,
+            "momentum_return": features[{1: 0, 5: 2, 20: 4}[horizon]],
         })
     return samples
 
@@ -299,7 +300,7 @@ def evaluate_horizon(
         predictions = []
         for sample in testing:
             probabilities = _predict_proba(model, sample["features"])
-            momentum_return = sample["features"][2]
+            momentum_return = sample.get("momentum_return", sample["features"][2])
             if momentum_return > sample["neutral_threshold"]:
                 momentum_label = CLASS_UP
             elif momentum_return < -sample["neutral_threshold"]:
