@@ -8,6 +8,7 @@ scale discontinuities. This script never loads raw candles or holdout data.
 from __future__ import annotations
 
 import json
+from math import comb
 from pathlib import Path
 
 import numpy as np
@@ -48,6 +49,25 @@ def equal_symbol_summary(frame: pd.DataFrame, value_col: str, baseline_col: str)
         .reset_index()
     )
     return result
+
+
+def one_sided_sign_p(positive: int, total: int) -> float:
+    """Exact one-sided sign-test p-value under a 50/50 null."""
+    if total <= 0:
+        return float("nan")
+    return float(sum(comb(total, k) for k in range(positive, total + 1)) / (2 ** total))
+
+
+def benjamini_hochberg(values: pd.Series) -> pd.Series:
+    """Benjamini-Hochberg adjusted p-values, preserving original row order."""
+    p = values.to_numpy(dtype=float)
+    n = len(p)
+    order = np.argsort(p)
+    ranked = p[order] * n / np.arange(1, n + 1)
+    adjusted_sorted = np.minimum.accumulate(ranked[::-1])[::-1]
+    adjusted = np.empty(n, dtype=float)
+    adjusted[order] = np.minimum(adjusted_sorted, 1.0)
+    return pd.Series(adjusted, index=values.index)
 
 
 def main() -> int:
@@ -182,6 +202,52 @@ def main() -> int:
     )
     label_summary.to_csv(OUT / "nonoverlap_by_label.csv", index=False)
 
+    # Per-symbol sign robustness across the 44 names. This is a simple
+    # one-sided sign test, not a return-distribution model. Adjust across all
+    # tested label/timeframe/horizon groups with Benjamini-Hochberg.
+    validation_directional = label_nonoverlap[
+        (label_nonoverlap["period"] == "validation")
+        & (label_nonoverlap["metric"] == "DIRECTIONAL_NET_RETURN")
+    ].copy()
+    per_symbol = (
+        validation_directional.groupby(
+            ["feature", "label", "direction", "timeframe", "horizon_bars", "symbol"],
+            dropna=False,
+        )
+        .agg(
+            events=("event_value", "size"),
+            mean_net_return=("event_value", "mean"),
+            mean_excess_vs_baseline=("excess_vs_baseline", "mean"),
+            win_rate=("win_at_cost", "mean"),
+        )
+        .reset_index()
+    )
+    sign_robustness = (
+        per_symbol.groupby(
+            ["feature", "label", "direction", "timeframe", "horizon_bars"],
+            dropna=False,
+        )
+        .agg(
+            symbols=("symbol", "nunique"),
+            events=("events", "sum"),
+            equal_symbol_mean_net_return=("mean_net_return", "mean"),
+            equal_symbol_mean_excess=("mean_excess_vs_baseline", "mean"),
+            equal_symbol_win_rate=("win_rate", "mean"),
+            positive_net_symbols=("mean_net_return", lambda x: int((x > 0).sum())),
+            positive_excess_symbols=("mean_excess_vs_baseline", lambda x: int((x > 0).sum())),
+        )
+        .reset_index()
+    )
+    sign_robustness["p_sign_net_one_sided"] = sign_robustness.apply(
+        lambda row: one_sided_sign_p(int(row["positive_net_symbols"]), int(row["symbols"])), axis=1
+    )
+    sign_robustness["p_sign_excess_one_sided"] = sign_robustness.apply(
+        lambda row: one_sided_sign_p(int(row["positive_excess_symbols"]), int(row["symbols"])), axis=1
+    )
+    sign_robustness["q_sign_net_BH"] = benjamini_hochberg(sign_robustness["p_sign_net_one_sided"])
+    sign_robustness["q_sign_excess_BH"] = benjamini_hochberg(sign_robustness["p_sign_excess_one_sided"])
+    sign_robustness.to_csv(OUT / "per_symbol_sign_robustness.csv", index=False)
+
     report = {
         "status": "PASS",
         "source": str(SOURCE),
@@ -196,8 +262,11 @@ def main() -> int:
         "equal_symbol_weighting": "Average event outcomes within each symbol, then average symbol means equally.",
         "base_round_trip_cost": BASE_ROUND_TRIP_COST,
         "round_trip_cost_sensitivity": list(ROUND_TRIP_COSTS),
+        "validation_sign_test_groups": int(len(sign_robustness)),
+        "minimum_BH_q_for_positive_net_sign": float(sign_robustness["q_sign_net_BH"].min()) if len(sign_robustness) else None,
+        "minimum_BH_q_for_positive_excess_sign": float(sign_robustness["q_sign_excess_BH"].min()) if len(sign_robustness) else None,
         "holdout_boundary": "All source events are already limited to dates before 2026-11-20.",
-        "interpretation": "Exploratory robustness check only. Different horizons are separate samples and can overlap across horizon tables. Label-level summary removes overlap within each label but different labels can overlap. Matched baseline is the unconditional same-symbol/timeframe/period/horizon average from the original event study.",
+        "interpretation": "Exploratory robustness check only. Different horizons are separate samples and can overlap across horizon tables. Label-level summary removes overlap within each label but different labels can overlap. Matched baseline is the unconditional same-symbol/timeframe/period/horizon average from the original event study. Sign tests treat symbols as independent for a simple robustness diagnostic; MOEX stocks may be cross-correlated, and BH adjustment does not correct market-wide dependence or all research-selection effects.",
     }
     (OUT / "nonoverlap_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
