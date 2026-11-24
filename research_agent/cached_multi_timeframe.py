@@ -81,12 +81,19 @@ def load_cache(path: str | Path) -> dict:
         return {"schema_version": CACHE_SCHEMA_VERSION, "bars": {}}
 
 
+def next_cache_run(cache: dict, *, force_full_refresh: bool = False) -> tuple[int, bool]:
+    """Reconcile the full supported lookback every seventh successful cache cycle."""
+    run_number = int(cache.get("run_count", 0)) + 1
+    return run_number, force_full_refresh or run_number % 7 == 0
+
+
 def save_cache(path: str | Path, cache: dict) -> None:
     cache_path = Path(path)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema_version": CACHE_SCHEMA_VERSION,
         "updated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "run_count": int(cache.get("run_count", 0)),
         "bars": cache.get("bars", {}),
     }
     temporary = cache_path.with_suffix(cache_path.suffix + ".tmp")
@@ -161,15 +168,19 @@ def main() -> int:
     if unsupported:
         parser.error(f"Incremental cache currently supports Finam frames only: {sorted(unsupported)}")
     cache = load_cache(args.cache)
+    run_number, periodic_reconciliation = next_cache_run(
+        cache, force_full_refresh=args.full_refresh
+    )
     client = CachedFinamClient(
         RefreshingFinamClient(token, source_app_id), cache,
-        full_refresh=args.full_refresh,
+        full_refresh=periodic_reconciliation,
     )
     tickers = [item.strip().upper() for item in args.tickers.split(",") if item.strip()]
     report = collect_multi_timeframe(
         tickers, api_token=token, source_app_id=source_app_id,
         frames=frames, finam_client=client,
     )
+    cache["run_count"] = run_number
     save_cache(args.cache, cache)
     Path("moex_edge_candle_cache_diagnostics.json").write_text(
         json.dumps(client.stats, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -185,6 +196,7 @@ def main() -> int:
             f"{values['total_completed_bars']} completed bars, {values['errors']} errors"
         )
     print("Cache diagnostics: " + json.dumps(client.stats, sort_keys=True))
+    print(f"Cache cycle: {run_number}; full reconciliation: {periodic_reconciliation}")
     print(f"Cache saved: {args.cache}")
     return 0 if all(value["ok"] == value["symbols"] and value["errors"] == 0
                     for value in report["timeframes"].values()) else 1
