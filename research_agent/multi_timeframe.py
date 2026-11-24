@@ -26,7 +26,7 @@ FINAM_FRAMES = {
 }
 # Native MOEX ISS candle intervals: 10m, weekly, monthly, quarterly.
 MOEX_FRAMES = {"M10": 10, "W1": 7, "MN": 31, "QR": 4}
-ALL_FRAMES = (*FINAM_FRAMES.keys(), *MOEX_FRAMES.keys(), "D1")
+ALL_FRAMES = (*FINAM_FRAMES.keys(), *MOEX_FRAMES.keys())
 
 
 def _normalize_frames(frames):
