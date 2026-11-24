@@ -165,6 +165,24 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertEqual(result["ambiguous_session_scope_dates"], 1)
         self.assertEqual(result["unexplained_mismatch_dates"], 1)
 
+    def test_session_scope_diagnostics_report_both_candidates_and_selection_reason(self):
+        trade_date = date(2025, 10, 27)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 105, 98, 102, 900)]
+        total = [HistoryRecord(trade_date, 30, 100, 105, 98, 102, 1000)]
+        morning_main = [HistoryRecord(trade_date, 25, 100, 106, 98, 102, 950)]
+        result = reconcile_session_candles(
+            raw, total, comparison_history_records=morning_main
+        )
+        diagnostic = result["session_scope_comparison_diagnostics"][0]
+        self.assertEqual(diagnostic["trade_date"], "2025-10-27")
+        self.assertEqual(diagnostic["raw_aggregated_ohlcv"]["volume"], 900)
+        self.assertEqual(diagnostic["total_session_ohlcv"]["volume"], 1000)
+        self.assertEqual(diagnostic["morning_plus_main_ohlcv"]["volume"], 950)
+        self.assertTrue(diagnostic["raw_ohlc_matches_total_session"])
+        self.assertFalse(diagnostic["raw_ohlc_matches_morning_plus_main"])
+        self.assertEqual(diagnostic["selection_reason"], "ONLY_TOTAL_SESSION_OHLC_MATCHES")
+        self.assertEqual(diagnostic["raw_volume_matches_total_session"]["difference_history_minus_raw"], 100)
+
     def test_known_split_price_basis_accepts_reciprocal_direction(self):
         trade_date = date(2024, 4, 3)
         raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
