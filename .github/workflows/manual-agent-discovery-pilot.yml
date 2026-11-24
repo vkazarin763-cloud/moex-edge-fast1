@@ -35,7 +35,7 @@ jobs:
       - name: Compile and run offline safety tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback -v
+          python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_multi_timeframe_validation tests.test_multi_timeframe_d1_fallback tests.test_operational_forecast tests.test_operational_agent_integration -v
 
       - name: Verify read-only Finam and Groq credentials are configured
         env:
@@ -112,6 +112,32 @@ jobs:
           print("PASS: deterministic market-data validation has zero issues; D1/H1 coverage is 44/44.")
           PY
 
+      - name: Generate 1/5/20-session probabilities from frozen pre-holdout labels
+        run: |
+          python -m research_agent.operational_forecast \
+            --candles moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --output moex_edge_direction_forecast.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("moex_edge_direction_forecast.json").read_text())
+          if report.get("status") != "COMPLETE":
+              raise SystemExit("Operational forecast is incomplete.")
+          if report.get("forecast_count") != 132:
+              raise SystemExit(f"Expected 132 ticker/horizon forecasts, got {report.get('forecast_count')}")
+          policy = report.get("holdout_policy", {})
+          for key in (
+              "post_holdout_outcomes_used_for_training",
+              "post_holdout_outcomes_used_for_model_selection",
+              "post_holdout_outcomes_used_for_calibration",
+              "post_holdout_outcomes_used_for_performance_metrics",
+          ):
+              if policy.get(key) != 0:
+                  raise SystemExit(f"Frozen holdout policy violation: {key}")
+          print("PASS: 44×3 experimental forecasts; post-holdout outcomes used for training/selection/calibration/performance=0.")
+          PY
+
       - name: Generate all deterministic D1/H1 candidates (no research-registry filtering)
         run: |
           python -m research_agent.mtf_scanner \
@@ -127,6 +153,7 @@ jobs:
           python -m research_agent.agent_discovery \
             --scan moex_edge_mtf_signals.json \
             --registry research-data/strategy_registry.json \
+            --forecast moex_edge_direction_forecast.json \
             --groq-model "$GROQ_MODEL" \
             --proposals agent_proposals.json \
             --diagnostics agent_discovery_diagnostics.json \
@@ -143,6 +170,7 @@ jobs:
               ("moex_edge_multi_timeframe_candles.json", "Market data"),
               ("moex_edge_multi_timeframe_validation.json", "Validation"),
               ("moex_edge_mtf_signals.json", "Deterministic scan"),
+              ("moex_edge_direction_forecast.json", "1/5/20-session direction forecast"),
               ("agent_discovery_diagnostics.json", "AI discovery"),
               ("agent_signal_verification.json", "Independent verification"),
           ]:
@@ -181,6 +209,7 @@ jobs:
             moex_edge_multi_timeframe_candles.json
             moex_edge_multi_timeframe_validation.json
             moex_edge_mtf_signals.json
+            moex_edge_direction_forecast.json
             agent_proposals.json
             agent_discovery_diagnostics.json
             agent_signal_verification.json
