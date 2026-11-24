@@ -297,6 +297,7 @@ def reconcile_session_candles(
     total_session_volume_disambiguated_dates = 0
     total_session_fallback_dates = 0
     mapped_weekend_fragments_excluded_from_comparison = 0
+    session_scope_comparison_diagnostics = []
     for target, fragments in sorted(grouped.items()):
         record = by_date[target]
         weekday_fragments = [
@@ -343,8 +344,13 @@ def reconcile_session_candles(
                 abs_tol=max(1e-8, abs(expected_volume) * 1e-8),
             )
 
+        selection_reason = "NO_SESSION_SCOPE_COMPARISON_AVAILABLE"
+        selected_scope = "TOTAL_SESSION_FALLBACK"
+        morning_main_record = comparison_by_date.get(target)
+        matches_morning_main = False
+        matches_total = price_matches(record)
+        raw_volume = sum(item.volume for item in fragments_to_compare)
         if target in comparison_by_date and weekday_fragments:
-            morning_main_record = comparison_by_date.get(target)
             matches_morning_main = price_matches(morning_main_record)
             matches_total = price_matches(record)
             if matches_morning_main and matches_total:
@@ -352,24 +358,88 @@ def reconcile_session_candles(
                 total_volume_matches = volume_matches(record)
                 if morning_volume_matches and not total_volume_matches:
                     record = morning_main_record
+                    selected_scope = "MORNING_PLUS_MAIN"
+                    selection_reason = "BOTH_OHLC_MATCH_MORNING_MAIN_VOLUME_MATCHES"
                     morning_main_comparison_dates += 1
                     morning_main_volume_disambiguated_dates += 1
                 elif total_volume_matches and not morning_volume_matches:
+                    selected_scope = "TOTAL_SESSION"
+                    selection_reason = "BOTH_OHLC_MATCH_TOTAL_SESSION_VOLUME_MATCHES"
                     total_session_comparison_dates += 1
                     total_session_volume_disambiguated_dates += 1
                 else:
+                    selected_scope = "TOTAL_SESSION"
+                    selection_reason = (
+                        "BOTH_OHLC_MATCH_BOTH_VOLUMES_MATCH"
+                        if morning_volume_matches and total_volume_matches
+                        else "BOTH_OHLC_MATCH_NEITHER_VOLUME_MATCHES"
+                    )
                     ambiguous_session_scope_dates += 1
                     total_session_comparison_dates += 1
             elif matches_morning_main:
                 record = morning_main_record
+                selected_scope = "MORNING_PLUS_MAIN"
+                selection_reason = "ONLY_MORNING_PLUS_MAIN_OHLC_MATCHES"
                 morning_main_comparison_dates += 1
             elif matches_total:
+                selected_scope = "TOTAL_SESSION"
+                selection_reason = "ONLY_TOTAL_SESSION_OHLC_MATCHES"
                 total_session_comparison_dates += 1
             else:
+                selected_scope = "TOTAL_SESSION_FALLBACK"
+                selection_reason = "NEITHER_SESSION_SCOPE_OHLC_MATCHES"
                 unresolved_session_scope_dates += 1
                 total_session_fallback_dates += 1
         else:
             total_session_fallback_dates += 1
+
+        def diagnostic_record(candidate: HistoryRecord | None) -> dict | None:
+            if candidate is None:
+                return None
+            return {
+                "open": candidate.open,
+                "high": candidate.high,
+                "low": candidate.low,
+                "close": candidate.close,
+                "volume": candidate.volume,
+            }
+
+        selected_values = diagnostic_record(record)
+        raw_ohlcv = {
+            "open": actual_ohlc[0],
+            "high": actual_ohlc[1],
+            "low": actual_ohlc[2],
+            "close": actual_ohlc[3],
+            "volume": raw_volume,
+        }
+        def volume_audit(candidate: HistoryRecord | None) -> dict | None:
+            if candidate is None or candidate.volume is None:
+                return None
+            candidate_volume = float(candidate.volume)
+            return {
+                "history_volume": candidate_volume,
+                "raw_volume": raw_volume,
+                "difference_history_minus_raw": candidate_volume - raw_volume,
+                "history_to_raw_ratio": (
+                    candidate_volume / raw_volume if raw_volume > 0 else None
+                ),
+                "matches": volume_matches(candidate),
+            }
+
+        if target in comparison_by_date and weekday_fragments:
+            session_scope_comparison_diagnostics.append({
+                "trade_date": target.isoformat(),
+                "raw_aggregated_ohlcv": raw_ohlcv,
+                "total_session_ohlcv": diagnostic_record(by_date.get(target)),
+                "morning_plus_main_ohlcv": diagnostic_record(morning_main_record),
+                "raw_ohlc_matches_total_session": matches_total,
+                "raw_ohlc_matches_morning_plus_main": matches_morning_main,
+                "raw_volume_matches_total_session": volume_audit(by_date.get(target)),
+                "raw_volume_matches_morning_plus_main": volume_audit(morning_main_record),
+                "selected_scope": selected_scope,
+                "selection_reason": selection_reason,
+                "selected_ohlcv": selected_values,
+            })
         expected = (record.open, record.high, record.low, record.close, record.volume)
 
         if any(value is None for value in expected):
@@ -553,6 +623,7 @@ def reconcile_session_candles(
         ),
         "raw_candles": len(rows),
         "session_scope_probe_dates": session_scope_probe_dates,
+        "session_scope_comparison_diagnostics": session_scope_comparison_diagnostics[:100],
         "comparison_basis": (
             "OHLC_MATCHED_MORNING_MAIN_OR_TOTAL_SESSION"
             if comparison_history_records is not None else "TOTAL_SESSION_HISTORY"
