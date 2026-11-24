@@ -200,12 +200,27 @@ def _compact_context(
         expected = {(ticker, horizon) for ticker in scan["universe"] for horizon in (1, 5, 20)}
         if seen_forecasts != expected:
             raise ValueError("Forecast report must contain all 1/5/20-session forecasts for the full universe")
+
+        # Validate the complete 44 x 3 forecast matrix above, but send only
+        # forecasts relevant to current deterministic candidates to each agent.
+        # This keeps free-tier prompts small without weakening full-universe checks.
+        candidate_symbols = {
+            row["symbol"] for row in candidates
+            if row.get("symbol") in scan["universe"]
+        }
+        agent_forecasts = {
+            symbol: by_symbol[symbol]
+            for symbol in sorted(candidate_symbols)
+            if symbol in by_symbol
+        }
         forecast_context = {
             "model_version": model_version,
             "as_of_date": forecast_report.get("as_of_date"),
             "training_label_cutoff_exclusive": policy.get("holdout_start"),
             "calibration_status": "NOT_CALIBRATED",
-            "by_symbol": dict(by_symbol),
+            "full_universe_forecast_rows_validated": len(seen_forecasts),
+            "candidate_symbols_shared_with_agents": len(agent_forecasts),
+            "by_symbol": agent_forecasts,
         }
 
     return {
@@ -633,6 +648,12 @@ def run_discovery(
         "candidate_count_seen": len(candidate_keys),
         "forecast_model_version": (forecast_context.get("model_version") if forecast_context else None),
         "forecast_as_of_date": (forecast_context.get("as_of_date") if forecast_context else None),
+        "full_universe_forecast_rows_validated": (
+            forecast_context.get("full_universe_forecast_rows_validated") if forecast_context else 0
+        ),
+        "forecast_symbols_shared_with_agents": (
+            forecast_context.get("candidate_symbols_shared_with_agents") if forecast_context else 0
+        ),
         "agents_can_modify_probabilities": False,
         "forecast_reviews_count": len(forecast_reviews),
         "forecast_review_conflicts": _forecast_review_conflicts(forecast_reviews),
