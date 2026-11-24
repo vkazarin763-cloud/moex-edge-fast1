@@ -1,10 +1,14 @@
 """Offline tests for the three-year candlestick and support/resistance research."""
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from unittest.mock import patch
 
-from research_agent.candle_level_research import detect_signals, _h1_daily_trend
+from research_agent.candle_level_research import (
+    detect_signals, _h1_daily_trend, _fetch_d1_model_rows,
+)
 from research_agent.core import Candle
 from research_agent.finam_market_data import FinamBar
+from research_agent.moex_iss import HistoryRecord
 
 
 class CandleLevelResearchTests(unittest.TestCase):
@@ -14,6 +18,35 @@ class CandleLevelResearchTests(unittest.TestCase):
             Candle(start + timedelta(days=i), 100.0, 101.0, 99.0, 100.0, 1000.0)
             for i in range(count)
         ]
+
+    def test_d1_loader_uses_history_trade_dates_not_raw_calendar_candles(self):
+        records = [
+            HistoryRecord(
+                trade_date=date(2025, 3, 3), num_trades=100,
+                open=100.0, high=105.0, low=99.0, close=104.0, volume=5000.0,
+            ),
+            HistoryRecord(
+                trade_date=date(2025, 3, 4), num_trades=0,
+                open=None, high=None, low=None, close=None, volume=None,
+            ),
+            HistoryRecord(
+                trade_date=date(2025, 3, 5), num_trades=120,
+                open=104.0, high=108.0, low=103.0, close=107.0, volume=6000.0,
+            ),
+        ]
+        with patch(
+            "research_agent.candle_level_research.fetch_history_records",
+            return_value=records,
+        ) as fetch:
+            rows, audit = _fetch_d1_model_rows("SBER", "2023-11-20", "2026-11-19")
+        fetch.assert_called_once_with(
+            "SBER", "2023-11-20", "2026-11-19", board="TQBR"
+        )
+        self.assertEqual([row.timestamp.date() for row in rows], [
+            date(2025, 3, 3), date(2025, 3, 5),
+        ])
+        self.assertEqual(audit["session_mapping"]["zero_trade_history_rows_excluded"], 1)
+        self.assertEqual(audit["status"], "OK")
 
     def test_bullish_engulfing_is_detected_after_close(self):
         rows = self._flat_rows(10)
