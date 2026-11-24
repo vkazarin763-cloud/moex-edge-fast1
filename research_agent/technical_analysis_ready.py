@@ -196,7 +196,7 @@ def analyze_ohlcv(
     ta_frame.ta.rsi(length=14, append=True)
     ta_frame.ta.atr(length=14, append=True)
     ta_frame.ta.adx(length=14, append=True)
-    ta_frame.ta.sma(close="volume", length=20, append=True, col_names=("VOL_SMA_20",))
+    ta_frame["VOL_SMA_20"] = ta_frame["volume"].rolling(20, min_periods=20).mean()
     patterns = ta_frame.ta.cdl_pattern(name=list(PATTERNS))
 
     last = ta_frame.iloc[-1]
