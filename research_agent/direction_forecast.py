@@ -413,12 +413,12 @@ def run_direction_forecast(
     source_candles: dict[str, list[Candle]] | None = None,
     source_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    start_text = DATA_START.isoformat()
+    end_text = (HOLDOUT_START - timedelta(days=1)).isoformat()
     candles_by_ticker: dict[str, list[Candle]] = {}
     audits: dict[str, Any] = {}
     errors: dict[str, str] = {}
     if source_candles is None:
-        start_text = DATA_START.isoformat()
-        end_text = (HOLDOUT_START - timedelta(days=1)).isoformat()
         for ticker in TICKERS:
             try:
                 rows, audit = _fetch_d1_model_rows(ticker, start_text, end_text)
