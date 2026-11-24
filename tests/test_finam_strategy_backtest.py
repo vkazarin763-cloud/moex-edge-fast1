@@ -90,7 +90,7 @@ class FinamStrategyBacktestTests(unittest.TestCase):
         self.assertEqual(len(trades), 1)
         self.assertEqual(trades[0].status, "CLOSED")
         self.assertEqual(trades[0].exit_reason, "CHANDELIER_EXIT")
-        self.assertEqual(trades[0].exit_time, rows[27].timestamp)
+        self.assertEqual(trades[0].exit_time, rows[25].timestamp)
 
 
 if __name__ == "__main__":
