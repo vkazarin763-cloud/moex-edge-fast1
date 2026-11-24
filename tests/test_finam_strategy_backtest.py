@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from research_agent import finam_strategy_backtest as research
 from research_agent.finam_market_data import FinamBar
+from research_agent.core import Candle, Signal
 
 
 class FakeFinamClient:
@@ -69,6 +70,27 @@ class FinamStrategyBacktestTests(unittest.TestCase):
             report = research.run("test-token")
         self.assertEqual(report["data_audit"]["SBER"]["snapshot_true_excluded"], 1)
         self.assertEqual(report["data_audit"]["SBER"]["retained_completed_bars"], 89)
+
+    def test_chandelier_exit_has_no_fixed_stop_target_or_time_limit(self):
+        self.assertIsNone(research.BASE_CONFIG.stop_pct)
+        self.assertIsNone(research.BASE_CONFIG.target_pct)
+        self.assertIsNone(research.BASE_CONFIG.max_bars)
+        rows = []
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        for index in range(32):
+            price = 100 + index if index <= 22 else 122 - (index - 22) * 3
+            rows.append(Candle(
+                timestamp=start + timedelta(days=index),
+                open=float(price), high=float(price + 1),
+                low=float(price - 1), close=float(price), volume=1000.0,
+            ))
+        trades = research._chandelier_backtest(
+            rows, [Signal(20, 1, "RSI14Trend50")], research.BASE_CONFIG
+        )
+        self.assertEqual(len(trades), 1)
+        self.assertEqual(trades[0].status, "CLOSED")
+        self.assertEqual(trades[0].exit_reason, "CHANDELIER_EXIT")
+        self.assertEqual(trades[0].exit_time, rows[27].timestamp)
 
 
 if __name__ == "__main__":
