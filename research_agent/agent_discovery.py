@@ -97,7 +97,7 @@ OUTPUT_SCHEMA = {
 }
 
 
-def _compact_context(scan: dict[str, Any], registry: dict[str, Any]) -> dict[str, Any]:
+def _compact_context(\n    scan: dict[str, Any], registry: dict[str, Any],\n    forecast_report: dict[str, Any] | None = None,\n) -> dict[str, Any]:
     if scan.get("status") != "READ_ONLY_LATEST_SIGNAL_SCAN":
         raise ValueError("Input must be a deterministic read-only latest-signal scan")
     if not isinstance(scan.get("signals"), list) or not isinstance(scan.get("universe"), list):
@@ -127,11 +127,70 @@ def _compact_context(scan: dict[str, Any], registry: dict[str, Any]) -> dict[str
             "h1_confirmation": row.get("h1_confirmation"),
             "cross_strategy_conflict": row.get("cross_strategy_conflict"),
         })
+    forecast_context = None
+    if forecast_report is not None:
+        if (forecast_report.get("report_type") != "MOEX_EDGE_OPERATIONAL_DIRECTION_FORECAST_V1"
+                or forecast_report.get("status") != "COMPLETE"):
+            raise ValueError("Agents require a complete operational direction-forecast report")
+        policy = forecast_report.get("holdout_policy") or {}
+        if (policy.get("post_holdout_outcomes_used_for_training") != 0
+                or policy.get("post_holdout_outcomes_used_for_model_selection") != 0
+                or policy.get("post_holdout_outcomes_used_for_calibration") != 0
+                or policy.get("post_holdout_outcomes_used_for_performance_metrics") != 0
+                or policy.get("inference_parameters_frozen_before_holdout") is not True):
+            raise ValueError("Forecast report violates the frozen holdout policy")
+        forecast_rows = forecast_report.get("forecasts")
+        if not isinstance(forecast_rows, list):
+            raise ValueError("Forecast report is missing its forecast list")
+        by_symbol: dict[str, dict[str, Any]] = defaultdict(dict)
+        seen_forecasts = set()
+        model_version = forecast_report.get("model_version")
+        for row in forecast_rows:
+            if not isinstance(row, dict):
+                raise ValueError("Forecast row must be an object")
+            ticker = row.get("ticker")
+            horizon = row.get("horizon_sessions")
+            key = (ticker, horizon)
+            if ticker not in scan["universe"] or horizon not in (1, 5, 20) or key in seen_forecasts:
+                raise ValueError("Forecast row has an invalid or duplicate ticker/horizon")
+            if (row.get("status") != "EXPERIMENTAL_NOT_CALIBRATED"
+                    or row.get("model_version") != model_version
+                    or row.get("post_holdout_outcomes_used") is not False):
+                raise ValueError("Forecast row has an invalid model or holdout status")
+            probabilities = {
+                "DOWN": row.get("probability_down"),
+                "SIDEWAYS": row.get("probability_sideways"),
+                "UP": row.get("probability_up"),
+            }
+            values = list(probabilities.values())
+            if (not all(isinstance(value, (int, float)) and math.isfinite(value)
+                        and 0.0 <= value <= 1.0 for value in values)
+                    or not math.isclose(sum(values), 1.0, rel_tol=0.0, abs_tol=1e-8)):
+                raise ValueError("Forecast probabilities must be finite, normalized and within [0, 1]")
+            by_symbol[ticker][str(horizon)] = {
+                "probabilities": probabilities,
+                "predicted_class": row.get("predicted_class"),
+                "calibration_status": "NOT_CALIBRATED",
+                "status": row["status"],
+            }
+            seen_forecasts.add(key)
+        expected = {(ticker, horizon) for ticker in scan["universe"] for horizon in (1, 5, 20)}
+        if seen_forecasts != expected:
+            raise ValueError("Forecast report must contain all 1/5/20-session forecasts for the full universe")
+        forecast_context = {
+            "model_version": model_version,
+            "as_of_date": forecast_report.get("as_of_date"),
+            "training_label_cutoff_exclusive": policy.get("holdout_start"),
+            "calibration_status": "NOT_CALIBRATED",
+            "by_symbol": dict(by_symbol),
+        }
+
     return {
         "as_of_utc": scan.get("as_of_utc"),
         "universe": scan["universe"],
         "candidate_signals": candidates,
         "candidate_count": len(candidates),
+        "direction_forecast": forecast_context,
         "strategy_registry_summary": summary,
         "strategy_evidence_by_family_and_direction": dict(by_strategy_direction),
         "allowed_strategy_families": STRATEGIES,
@@ -141,6 +200,9 @@ def _compact_context(scan: dict[str, Any], registry: dict[str, Any]) -> dict[str
             "H1 confirmation is mandatory for a final confirmed signal.",
             "Strategy hypotheses are ideas only; they require deterministic historical testing.",
             "No raw OHLCV, future bars, broker data, account data or execution actions are available.",
+            "Probabilities are read-only model output; do not alter, recalculate, or restate their numeric values.",
+            "The probability model is NOT_CALIBRATED; never describe its probabilities as reliable or proven.",
+            "You may identify qualitative agreement or disagreement with a candidate, but cannot change forecast classes or percentages.",
         ],
     }
 
@@ -360,8 +422,9 @@ def run_discovery(
     groq_api_key: str = "",
     groq_model: str = DEFAULT_MODEL,
     caller: Callable[..., dict[str, Any]] = call_groq_discovery,
+    forecast_report: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    context = _compact_context(scan, registry)
+    context = _compact_context(scan, registry, forecast_report)
     context_json = json.dumps(context, ensure_ascii=False, separators=(",", ":"))
     candidate_keys = {
         (row["symbol"], row["direction"], row["strategy"], row["d1_bar_end_utc"])
@@ -483,6 +546,9 @@ def run_discovery(
         "agent_count": len(ROLES),
         "agent_roles": outputs,
         "candidate_count_seen": len(candidate_keys),
+        "forecast_model_version": (forecast_context.get("model_version") if forecast_context else None),
+        "forecast_as_of_date": (forecast_context.get("as_of_date") if forecast_context else None),
+        "agents_can_modify_probabilities": False,
         "consensus_proposal_count": len(consensus),
         "strategy_hypotheses": hypotheses,
         "hypothesis_count": len(hypotheses),
@@ -503,6 +569,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run free-tier autonomous MOEX strategy/signal discovery agents")
     parser.add_argument("--scan", required=True)
     parser.add_argument("--registry", required=True)
+    parser.add_argument("--forecast", default=None,
+                        help="Optional complete operational forecast report; agents may critique but never alter probabilities")
     parser.add_argument("--proposals", default="agent_proposals.json")
     parser.add_argument("--diagnostics", default="agent_discovery_diagnostics.json")
     parser.add_argument("--verification", default="agent_signal_verification.json")
@@ -513,8 +581,13 @@ def main(argv: list[str] | None = None) -> int:
     groq_api_key = os.getenv("GROQ_API_KEY", "")
     scan = json.loads(Path(args.scan).read_text(encoding="utf-8"))
     registry = json.loads(Path(args.registry).read_text(encoding="utf-8"))
+    forecast_report = (
+        json.loads(Path(args.forecast).read_text(encoding="utf-8"))
+        if args.forecast else None
+    )
     report, diagnostics = run_discovery(
         scan, registry, model=args.model,
+        forecast_report=forecast_report,
         openrouter_api_key=openrouter_api_key, groq_api_key=groq_api_key,
         groq_model=args.groq_model,
     )
