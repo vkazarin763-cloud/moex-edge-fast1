@@ -220,9 +220,7 @@ def _metrics(
         return {"status": "INSUFFICIENT_TEST_DATA", "test_samples": 0}
     actual = [item[0] for item in predictions]
     probabilities = [item[1] for item in predictions]
-    majority_class = max(range(3), key=lambda label: train_counts.get(CLASS_NAMES[label], 0))
     model_labels = [max(range(3), key=lambda label: probs[label]) for probs in probabilities]
-    majority_accuracy = sum(label == majority_class for label in actual) / len(actual)
     momentum_labels = [item[2] for item in predictions]
     momentum_accuracy = sum(a == b for a, b in zip(actual, momentum_labels)) / len(actual)
     accuracy = sum(a == b for a, b in zip(actual, model_labels)) / len(actual)
@@ -306,10 +304,11 @@ def evaluate_horizon(
                 momentum_label = CLASS_DOWN
             else:
                 momentum_label = CLASS_SIDEWAYS
-            predictions.append((
-                sample["label"], probabilities, momentum_label,
-                max(range(3), key=lambda label: probabilities[label]),
-            ))
+            majority_label = max(
+                range(3),
+                key=lambda label: model["class_counts"].get(CLASS_NAMES[label], 0),
+            )
+            predictions.append((sample["label"], probabilities, momentum_label, majority_label))
         metrics = _metrics(predictions, model["class_counts"])
         fold_reports.append({
             "fold": fold + 1,
@@ -317,6 +316,7 @@ def evaluate_horizon(
             "test_start": test_start.isoformat(),
             "test_end_exclusive": test_end.isoformat(),
             "train_samples": len(training),
+            "train_max_label_maturity_date": max(sample["target_date"] for sample in training).isoformat(),
             "metrics": metrics,
         })
         out_of_sample.extend(predictions)
@@ -327,7 +327,7 @@ def evaluate_horizon(
             "folds": fold_reports,
         }
     # Aggregate metrics from the pooled out-of-sample predictions.
-    pooled = _metrics(out_of_sample, {name: 0 for name in CLASS_NAMES})
+    pooled = _metrics(out_of_sample, {})
     pooled["status"] = "OUT_OF_SAMPLE_EVALUATED"
     return {
         "status": "OUT_OF_SAMPLE_EVALUATED",
