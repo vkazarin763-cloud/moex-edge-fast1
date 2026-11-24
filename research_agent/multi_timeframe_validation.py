@@ -29,7 +29,9 @@ def candle_end_utc(timestamp: str, source: str, frame: str) -> datetime:
     if frame in FINAM_MINUTES:
         return start + timedelta(minutes=FINAM_MINUTES[frame])
     if frame == "D1" and source.startswith("Finam"):
-        return start + timedelta(days=1)
+        local = start.astimezone(MOSCOW)
+        next_midnight = local.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        return next_midnight.astimezone(timezone.utc)
     if frame == "M10":
         return start + timedelta(minutes=10)
     local = start.astimezone(MOSCOW)
