@@ -147,7 +147,7 @@ def build_operational_forecast(
     current_date = max(dates).isoformat() if dates else None
     return {
         "report_type": "MOEX_EDGE_OPERATIONAL_DIRECTION_FORECAST_V1",
-        "status": "COMPLETE" if len(candles_by_ticker) == len(TICKERS) and not data_errors else "PARTIAL",
+        "status": "COMPLETE" if not data_errors and actual_keys == expected_keys else "PARTIAL",
         "model_version": MODEL_VERSION,
         "calibration_status": "NOT_CALIBRATED",
         "probabilities_are_calibrated": False,
@@ -207,7 +207,7 @@ def main() -> int:
         f"{report['forecast_count']} horizon forecasts; "
         f"post-holdout outcomes used=0; calibration=NOT_CALIBRATED"
     )
-    return 0 if report["symbols_with_forecasts"] > 0 else 2
+    return 0 if report["status"] == "COMPLETE" else 2
 
 
 if __name__ == "__main__":
