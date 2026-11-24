@@ -14,7 +14,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from .core import BacktestConfig, Candle, backtest, generate_signals, summarize, validate_candles
+from .core import BacktestConfig, Candle, Trade, _wilder_atr, generate_signals, summarize, validate_candles
 from .multi_timeframe import RefreshingFinamClient
 
 TICKERS = (
@@ -29,12 +29,59 @@ STRATEGIES = ("RSI14Trend50", "Keltner20x2ATR")
 HOLDOUT_START = date(2026, 11, 20)
 DATA_START = date(2025, 11, 20)
 MOSCOW = ZoneInfo("Europe/Moscow")
-BASE_CONFIG = BacktestConfig()  # Frozen project baseline: 0.10% fee + 0.05% slippage per side; 3% stop, 6% target, 120 D1 bars.
+BASE_CONFIG = BacktestConfig(0.001, 0.0005, None, None, None)  # 0.10% fee + 0.05% slippage per side; no fixed stop, target, or time exit. Chandelier Exit is used below.
 
 
 def _dataset_hash(rows: list[Candle]) -> str:
     payload = [[c.timestamp.isoformat(), c.open, c.high, c.low, c.close, c.volume] for c in rows]
     return hashlib.sha256(json.dumps(payload, separators=(",", ":")).encode()).hexdigest()
+
+
+def _chandelier_backtest(rows: list[Candle], signals, config: BacktestConfig):
+    """ATR(14) x 3 Chandelier Exit; exit is signalled at close and filled next open."""
+    atr = _wilder_atr(rows, 14)
+    trades = []
+    available_after = -1
+    for signal in sorted(signals, key=lambda item: (item.index, -item.direction)):
+        entry_index = signal.index + 1
+        if signal.direction not in (-1, 1) or entry_index >= len(rows) or entry_index <= available_after:
+            continue
+        entry_fill = rows[entry_index].open * (1.0 + signal.direction * config.slippage_per_side)
+        exit_index = None
+        exit_fill = None
+        for index in range(entry_index, len(rows) - 1):
+            if atr[index] is None or index < 21:
+                continue
+            trailing = rows[index - 21:index + 1]
+            if signal.direction == 1:
+                chandelier = max(bar.high for bar in trailing) - 3.0 * atr[index]
+                exit_triggered = rows[index].close <= chandelier
+            else:
+                chandelier = min(bar.low for bar in trailing) + 3.0 * atr[index]
+                exit_triggered = rows[index].close >= chandelier
+            if exit_triggered:
+                exit_index = index + 1
+                raw_exit = rows[exit_index].open
+                exit_fill = raw_exit * (1.0 - signal.direction * config.slippage_per_side)
+                break
+        if exit_index is None:
+            trades.append(Trade(
+                signal.strategy, signal.direction, rows[signal.index].timestamp,
+                rows[entry_index].timestamp, None, entry_fill, None, None,
+                "OPEN", "END_OF_DATA",
+            ))
+            available_after = len(rows) - 1
+            continue
+        gross = signal.direction * (exit_fill - entry_fill) / entry_fill
+        fee_cost = config.fee_per_side * (entry_fill + exit_fill) / entry_fill
+        net_return = gross - fee_cost
+        trades.append(Trade(
+            signal.strategy, signal.direction, rows[signal.index].timestamp,
+            rows[entry_index].timestamp, rows[exit_index].timestamp,
+            entry_fill, exit_fill, net_return, "CLOSED", "CHANDELIER_EXIT",
+        ))
+        available_after = exit_index
+    return trades
 
 
 def _trades_for_window(rows: list[Candle], strategy: str, config: BacktestConfig,
@@ -46,7 +93,7 @@ def _trades_for_window(rows: list[Candle], strategy: str, config: BacktestConfig
         signal for signal in generate_signals(history)
         if signal.strategy == strategy and start_index <= signal.index < end_index - 1
     ]
-    return backtest(history, signals, config)
+    return _chandelier_backtest(history, signals, config)
 
 
 def _aggregate(rows_by_ticker: dict[str, list[Candle]], strategy: str,
@@ -190,8 +237,9 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
             "baseline": asdict(BASE_CONFIG),
             "stress": asdict(double_cost_config),
             "entry": "Signal at completed D1 close; entry at next D1 open.",
-            "same_bar_exit": "Stop-first conservative ordering; gap fills at open.",
+            "exit_policy": "Chandelier Exit: rolling 22-bar high/low +/- 3 x Wilder ATR(14); trigger at completed D1 close and fill at next D1 open.",
             "position_overlap": "One open trade per ticker and strategy; strategies evaluated independently.",
+            "fixed_stop_target_time_exit": "Disabled; no fixed stop, fixed target, or maximum holding period.",
             "terminal_open_trades": "Reported as OPEN and excluded from realized return statistics.",
             "portfolio_claims": "No portfolio return, capital, sizing, or drawdown is inferred from pooled trades.",
         },
