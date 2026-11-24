@@ -59,7 +59,14 @@ class OperationalAgentIntegrationTests(unittest.TestCase):
 
         def fake_agent(prompt, *, api_key, model):
             prompts.append(prompt)
-            return {"proposals": [], "strategy_hypotheses": []}
+            assessment = ("AGREES", "CONTRADICTS", "NEUTRAL")[len(prompts) - 1]
+            return {
+                "proposals": [], "strategy_hypotheses": [],
+                "forecast_reviews": [{
+                    "symbol": "SBER", "horizon_sessions": 1,
+                    "assessment": assessment, "rationale": "Qualitative review only.",
+                }],
+            }
 
         report, diagnostics = run_discovery(
             self.scan, self.registry, api_key="test", caller=fake_agent,
@@ -71,6 +78,14 @@ class OperationalAgentIntegrationTests(unittest.TestCase):
         self.assertEqual(diagnostics["forecast_as_of_date"], "2026-11-24")
         self.assertFalse(diagnostics["agents_can_modify_probabilities"])
         self.assertEqual(report["proposals"], [])
+        self.assertEqual(len(report["forecast_reviews"]), 3)
+        self.assertEqual(diagnostics["forecast_reviews_count"], 3)
+        self.assertEqual(diagnostics["forecast_review_conflicts"], [{
+            "symbol": "SBER", "horizon_sessions": 1,
+            "status": "CONTRADICTION",
+            "agreeing_roles": ["signal_hunter"],
+            "contradicting_roles": ["strategy_scout"],
+        }])
 
     def test_rejects_incomplete_forecast_coverage(self):
         incomplete = {**self.forecast, "forecasts": self.forecast["forecasts"][:-1]}
