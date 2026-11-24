@@ -251,9 +251,9 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
             errors[ticker] = (errors.get(ticker, "") + f" H1: {exc}").strip()
 
     aggregate = {
-        name: {"signals": 0, "all_period_trades": [], "recent_signals": 0,
-               "recent_trades": [], "h1_covered": 0, "h1_confirmed": 0,
-               "h1_confirmed_trades": []}
+        name: {"signals": 0, "all_period_trades": [], "all_period_tickers": set(), "recent_signals": 0,
+               "recent_trades": [], "recent_tickers": set(), "h1_covered": 0, "h1_confirmed": 0,
+               "h1_confirmed_trades": [], "h1_confirmed_tickers": set()}
         for name in STRATEGIES
     }
     per_ticker = {}
@@ -273,9 +273,12 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
                 if rows[signal.index].timestamp.date() in trend_by_day
                 and trend_by_day[rows[signal.index].timestamp.date()] == signal.direction
             ]
-            stats = _run_backtest(rows, signals)
-            recent_stats = _run_backtest(rows, recent)
-            confirmed_stats = _run_backtest(rows, confirmed)
+            all_trades = _run_backtest(rows, signals)
+            recent_trades = _run_backtest(rows, recent)
+            confirmed_trades = _run_backtest(rows, confirmed)
+            stats = summarize(all_trades)
+            recent_stats = summarize(recent_trades)
+            confirmed_stats = summarize(confirmed_trades)
             per_ticker[ticker]["strategies"][name] = {
                 "signal_count": len(signals), "all_period": stats,
                 "recent_30d_signal_count": len(recent),
@@ -285,38 +288,33 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
             }
             item = aggregate[name]
             item["signals"] += len(signals)
-            item["all_period_trades"].append(stats)
+            item["all_period_trades"].extend(all_trades)
+            if all_trades:
+                item["all_period_tickers"].add(ticker)
             item["recent_signals"] += len(recent)
-            item["recent_trades"].append(recent_stats)
+            item["recent_trades"].extend(recent_trades)
+            if recent_trades:
+                item["recent_tickers"].add(ticker)
             item["h1_covered"] += sum(
                 rows[s.index].timestamp.date() in trend_by_day for s in recent
             )
             item["h1_confirmed"] += len(confirmed)
-            item["h1_confirmed_trades"].append(confirmed_stats)
+            item["h1_confirmed_trades"].extend(confirmed_trades)
+            if confirmed_trades:
+                item["h1_confirmed_tickers"].add(ticker)
 
     results = {}
     for name, item in aggregate.items():
-        def merge_stats(stats_list):
-            # Reconstruct aggregate counts/returns from ticker-level summaries is
-            # insufficient for exact PF, so collect actual trades below instead.
-            return {
-                "ticker_count_with_signals": sum(s["closed_trades"] > 0 or s["open_terminal_trades_excluded"] > 0 for s in stats_list),
-                "closed_trades": sum(s["closed_trades"] for s in stats_list),
-                "open_terminal_trades_excluded": sum(s["open_terminal_trades_excluded"] for s in stats_list),
-                "average_net_return_unweighted_ticker_means": (
-                    sum(s["average_net_return"] for s in stats_list if s["average_net_return"] is not None)
-                    / max(1, sum(s["average_net_return"] is not None for s in stats_list))
-                ),
-                "note": "Ticker means are unweighted; pooled PF is intentionally not inferred from summary-only data.",
-            }
+        def merge_stats(trades, ticker_count):
+            return {**summarize(trades), "tickers_with_trades": ticker_count}
         results[name] = {
             "total_signals": item["signals"],
-            "all_period": merge_stats(item["all_period_trades"]),
+            "all_period": merge_stats(item["all_period_trades"], len(item["all_period_tickers"])),
             "recent_30d_signals": item["recent_signals"],
-            "recent_30d_unfiltered": merge_stats(item["recent_trades"]),
+            "recent_30d_unfiltered": merge_stats(item["recent_trades"], len(item["recent_tickers"])),
             "recent_30d_h1_coverage_signals": item["h1_covered"],
             "recent_30d_h1_confirmed_signals": item["h1_confirmed"],
-            "recent_30d_h1_confirmed": merge_stats(item["h1_confirmed_trades"]),
+            "recent_30d_h1_confirmed": merge_stats(item["h1_confirmed_trades"], len(item["h1_confirmed_tickers"])),
         }
 
     return {
