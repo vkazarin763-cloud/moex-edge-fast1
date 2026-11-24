@@ -98,7 +98,10 @@ OUTPUT_SCHEMA = {
 }
 
 
-def _compact_context(\n    scan: dict[str, Any], registry: dict[str, Any],\n    forecast_report: dict[str, Any] | None = None,\n) -> dict[str, Any]:
+def _compact_context(
+    scan: dict[str, Any], registry: dict[str, Any],
+    forecast_report: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     if scan.get("status") != "READ_ONLY_LATEST_SIGNAL_SCAN":
         raise ValueError("Input must be a deterministic read-only latest-signal scan")
     if not isinstance(scan.get("signals"), list) or not isinstance(scan.get("universe"), list):
