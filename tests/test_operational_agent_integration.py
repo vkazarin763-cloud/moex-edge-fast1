@@ -82,13 +82,19 @@ class OperationalAgentIntegrationTests(unittest.TestCase):
         self.assertEqual(report["proposals"], [])
         self.assertEqual(len(report["forecast_reviews"]), 3)
         self.assertEqual(diagnostics["forecast_reviews_count"], 3)
-        self.assertEqual(diagnostics["forecast_review_conflicts"], [{
-            "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
-            "d1_bar_end_utc": "2026-11-23T21:00:00+00:00",
-            "horizon_sessions": 1, "status": "CONTRADICTION",
-            "agreeing_roles": ["signal_hunter"],
-            "contradicting_roles": ["strategy_scout"],
-        }])
+        self.assertEqual(diagnostics["forecast_review_conflicts"], [])
+        self.assertEqual(
+            {row["assessment"] for row in report["forecast_reviews"]},
+            {"AGREES"},
+        )
+        self.assertEqual(
+            [row["agent_reported_assessment"] for row in report["forecast_reviews"]],
+            ["AGREES", "CONTRADICTS", "NEUTRAL"],
+        )
+        self.assertTrue(all(
+            row["assessment_corrected"] is (row["agent_reported_assessment"] != "AGREES")
+            for row in report["forecast_reviews"]
+        ))
 
     def test_rejects_incomplete_forecast_coverage(self):
         incomplete = {**self.forecast, "forecasts": self.forecast["forecasts"][:-1]}
