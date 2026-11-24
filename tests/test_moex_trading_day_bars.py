@@ -138,6 +138,33 @@ class TradingDayBarTests(unittest.TestCase):
         self.assertTrue(result["complete"])
         self.assertEqual(result["status"], "RECONCILED_WITH_DOCUMENTED_CORPORATE_ACTIONS")
 
+    def test_session_scope_volume_disambiguates_matching_ohlc(self):
+        trade_date = date(2025, 10, 27)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 105, 98, 102, 900)]
+        total = [HistoryRecord(trade_date, 30, 100, 105, 98, 102, 1000)]
+        morning_main = [HistoryRecord(trade_date, 25, 100, 105, 98, 102, 900)]
+        result = reconcile_session_candles(
+            raw, total, comparison_history_records=morning_main
+        )
+        self.assertTrue(result["complete"])
+        self.assertEqual(result["morning_plus_main_comparison_dates"], 1)
+        self.assertEqual(result["morning_main_volume_disambiguated_dates"], 1)
+        self.assertEqual(result["ambiguous_session_scope_dates"], 0)
+        self.assertEqual(result["trading_days_mismatched"], 0)
+
+    def test_session_scope_volume_mismatch_is_not_silently_resolved(self):
+        trade_date = date(2025, 10, 27)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 105, 98, 102, 900)]
+        total = [HistoryRecord(trade_date, 30, 100, 105, 98, 102, 1000)]
+        morning_main = [HistoryRecord(trade_date, 25, 100, 105, 98, 102, 950)]
+        result = reconcile_session_candles(
+            raw, total, comparison_history_records=morning_main
+        )
+        self.assertFalse(result["complete"])
+        self.assertEqual(result["morning_main_volume_disambiguated_dates"], 0)
+        self.assertEqual(result["ambiguous_session_scope_dates"], 1)
+        self.assertEqual(result["unexplained_mismatch_dates"], 1)
+
     def test_known_split_price_basis_accepts_reciprocal_direction(self):
         trade_date = date(2024, 4, 3)
         raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
