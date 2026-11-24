@@ -64,7 +64,7 @@ class FinamStrategyBacktestTests(unittest.TestCase):
             is_data_snapshot=True,
         )
         with patch.object(research, "TICKERS", ("SBER",)), patch.object(
-            research.FinamMarketDataClient, "from_api_token", return_value=self.client
+            research, "RefreshingFinamClient", return_value=self.client
         ):
             report = research.run("test-token")
         self.assertEqual(report["data_audit"]["SBER"]["snapshot_true_excluded"], 1)
