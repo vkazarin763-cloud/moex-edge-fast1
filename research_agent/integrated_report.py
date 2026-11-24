@@ -154,23 +154,42 @@ def build_integrated_report(
         _require(signal.get("symbol") in scan_by_symbol, "Scan contains a symbol outside the frozen universe")
         scan_by_symbol[signal["symbol"]].append(signal)
 
+    scan_keys = {
+        (row.get("symbol"), row.get("direction"), row.get("strategy"), row.get("d1_bar_end_utc"))
+        for row in signal_rows
+    }
     verification_by_key = {}
+    allowed_verification_states = {
+        "CONFIRMED", "VERIFIED_SIGNAL_H1_NOT_CONFIRMED",
+        "EXPERIMENTAL_STRATEGY_UNAPPROVED", "REJECTED_NOT_REPRODUCED",
+    }
     for result in verification_rows:
         key = (result.get("symbol"), result.get("direction"),
                result.get("strategy"), result.get("d1_bar_end_utc"))
         _require(key not in verification_by_key, "Duplicate agent verification row")
+        _require(result.get("status") in allowed_verification_states,
+                 "Verification result has an unknown status")
+        if result.get("status") == "CONFIRMED":
+            verified_signal = result.get("verified_signal")
+            _require(key in scan_keys and isinstance(verified_signal, dict)
+                     and verified_signal.get("h1_confirmation") == "CONFIRMED",
+                     "A confirmed result is not backed by an exact scan row and H1 confirmation")
         verification_by_key[key] = result
     proposal_keys = set()
     for proposal in proposal_rows:
         key = (proposal.get("symbol"), proposal.get("direction"),
                proposal.get("strategy"), proposal.get("d1_bar_end_utc"))
         _require(key not in proposal_keys, "Duplicate consensus proposal")
+        _require(key in scan_keys, "Agent proposal is not an exact deterministic scan candidate")
         proposal_keys.add(key)
         _require(key in verification_by_key, "Agent proposal has no independent verification result")
 
     verified_keys = set(verification_by_key)
     _require(verified_keys == proposal_keys,
              "Verification results do not exactly cover the agent consensus proposals")
+    confirmed_count = sum(row.get("status") == "CONFIRMED" for row in verification_rows)
+    _require(verification_report.get("confirmed_signals_count") == confirmed_count,
+             "Verification confirmed count does not match its result rows")
 
     cards = []
     state_counts = {"CONFIRMED": 0, "WATCH_OR_UNCONFIRMED": 0, "NO_SIGNAL": 0, "INCOMPLETE": 0}
