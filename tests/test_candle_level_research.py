@@ -25,7 +25,6 @@ class CandleLevelResearchTests(unittest.TestCase):
 
     def test_level_breakout_uses_only_confirmed_pivots(self):
         rows = self._flat_rows(12)
-        # A strict swing high at index 4; it becomes known only after index 7 closes.
         rows[1] = Candle(rows[1].timestamp, 103, 105, 102, 104, 1000)
         rows[2] = Candle(rows[2].timestamp, 104, 105, 103, 104, 1000)
         rows[3] = Candle(rows[3].timestamp, 104, 106, 103, 105, 1000)
@@ -39,7 +38,7 @@ class CandleLevelResearchTests(unittest.TestCase):
         self.assertIn(8, breakout_indices)
         self.assertGreaterEqual(audit["confirmed_resistance_pivots"], 1)
 
-    def test_h1_trend_excludes_snapshots_and_frozen_holdout(self):
+    def test_h1_trend_excludes_frozen_holdout(self):
         start = datetime(2026, 10, 22, 6, tzinfo=timezone.utc)
         bars = []
         for i in range(60):
@@ -49,7 +48,6 @@ class CandleLevelResearchTests(unittest.TestCase):
                 open=price, high=price + 1, low=price - 1,
                 close=price, volume=1000.0, is_data_snapshot=False,
             ))
-        # Snapshot and a bar on the frozen holdout date must not affect trend.
         bars.append(FinamBar(
             timestamp=datetime(2026, 11, 20, 10, tzinfo=timezone.utc),
             open=1000, high=1001, low=999, close=1000,
