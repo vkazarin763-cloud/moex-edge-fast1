@@ -12,11 +12,11 @@ CODE_EXTENSIONS = (".py", ".ipynb", ".md", ".txt", ".pine")
 RULE_PATTERNS = {
     "entry": re.compile(r"(?i)(entry|buy|long|enter|breakout|cross(?:es|over)?|signal.{0,30}(?:buy|long))"),
     "exit": re.compile(r"(?i)(exit|sell|close|stop.?loss|take.?profit|trailing stop)"),
-    "timeframe": re.compile(r"(?i)\\b(daily|weekly|hourly|minute|\\d+\\s*(?:min|minute|hour|day|week)s?)\\b"),
-    "indicators": re.compile(r"(?i)\\b(ema|sma|rsi|macd|atr|adx|bollinger|donchian|ichimoku|vwap|stochastic)\\b"),
+    "timeframe": re.compile(r"(?i)\b(daily|weekly|hourly|minute|\d+\s*(?:min|minute|hour|day|week)s?)\b"),
+    "indicators": re.compile(r"(?i)\b(ema|sma|rsi|macd|atr|adx|bollinger|donchian|ichimoku|vwap|stochastic)\b"),
     "execution": re.compile(r"(?i)(next.?open|market order|limit order|slippage|commission|transaction cost)"),
 }
-INFRA = re.compile(r"(?i)\\b(backtesting engine|framework|data provider|broker api|screener|scanner|sdk|toolkit)\\b")
+INFRA = re.compile(r"(?i)\b(backtesting engine|framework|data provider|broker api|screener|scanner|sdk|toolkit)\b")
 
 def _request_text(url: str, timeout: int = 20) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json, application/json, text/plain"})
@@ -69,7 +69,7 @@ def _read_github_source(url: str):
         "source_file_sha256": file_hashes,
         "source_commit_url": f"https://github.com/{owner}/{repo}/commit/{commit_sha}",
     }
-    return "\\n\\n".join(chunks), paths, provenance
+    return "\n\n".join(chunks), paths, provenance
 
 def _read_crossref_source(url: str):
     doi = url.rstrip("/").split("/")[-1]
@@ -77,7 +77,7 @@ def _read_crossref_source(url: str):
         return "", [], {"source_version_status": "DOI_UNRESOLVED"}
     item = fetch_json("https://api.crossref.org/works/" + urllib.parse.quote(doi, safe="")).get("message", {})
     abstract = re.sub(r"<[^>]+>", " ", item.get("abstract", "") or "")
-    content = " ".join(item.get("title", []) or []) + "\\n" + abstract
+    content = " ".join(item.get("title", []) or []) + "\n" + abstract
     return content, ["Crossref metadata/abstract"], {
         "source_version": doi, "source_version_status": "DOI_IDENTIFIER",
         "source_license_status": "UNKNOWN_REQUIRES_REVIEW",
@@ -89,7 +89,7 @@ def _extract(text: str) -> dict:
         matches = []
         for line in text.splitlines():
             if pattern.search(line):
-                clean = re.sub(r"\\s+", " ", line).strip()
+                clean = re.sub(r"\s+", " ", line).strip()
                 if clean and clean not in matches:
                     matches.append(clean[:280])
                 if len(matches) >= 12:
@@ -161,7 +161,7 @@ def inspect_candidate(candidate: dict) -> dict:
     rules = _extract(content)
     required = ("entry", "exit", "timeframe", "indicators")
     complete = all(rules.get(k) for k in required)
-    infrastructure = bool(INFRA.search((candidate.get("title") or "") + "\\n" + content[:5000]))
+    infrastructure = bool(INFRA.search((candidate.get("title") or "") + "\n" + content[:5000]))
     if errors or not content:
         status = "SOURCE_READ_FAILED"
     elif infrastructure and not complete:
@@ -213,7 +213,7 @@ def main(argv=None):
     parser.add_argument("--output", default="equities_strategy_research.json")
     args = parser.parse_args(argv)
     report = run(args.limit)
-    Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"{report['status']}: {report['candidate_count']} sources inspected; statuses={report['status_counts']}; LLM={report['llm_status_counts']}")
     return 0 if report["candidate_count"] else 2
 
