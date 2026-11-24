@@ -15,7 +15,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .core import BacktestConfig, Candle, backtest, generate_signals, summarize, validate_candles
-from .finam_market_data import FinamMarketDataClient
+from .multi_timeframe import RefreshingFinamClient
 
 TICKERS = (
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
@@ -110,7 +110,7 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
     end = datetime.combine(HOLDOUT_START, time.min, tzinfo=timezone.utc)
     if end - start != timedelta(days=365):
         raise AssertionError("Finam D1 request must be exactly 365 days")
-    client = FinamMarketDataClient.from_api_token(api_token, source_app_id)
+    client = RefreshingFinamClient(api_token, source_app_id)
     rows_by_ticker: dict[str, list[Candle]] = {}
     data_audit = {}
     fetch_errors = {}
@@ -166,7 +166,10 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
             },
         }
 
-    incomplete_symbols = [ticker for ticker in TICKERS if len(rows_by_ticker[ticker]) < 60]
+    incomplete_symbols = [
+        ticker for ticker in TICKERS
+        if ticker not in fetch_errors and len(rows_by_ticker[ticker]) < 60
+    ]
     return {
         "report_version": "finam-two-strategy-d1-v1",
         "status": "COMPLETE" if not fetch_errors and not incomplete_symbols else "INCOMPLETE_DATA",
