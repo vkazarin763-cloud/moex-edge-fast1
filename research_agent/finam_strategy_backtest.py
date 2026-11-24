@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 
 from .core import BacktestConfig, Candle, Trade, _wilder_atr, generate_expanded_signals, summarize, validate_candles
 from .multi_timeframe import RefreshingFinamClient
+from .direction_forecast import run_direction_forecast
 
 TICKERS = (
     "AFKS", "AFLT", "ALRS", "BSPB", "CBOM", "CHMF", "CNRU", "DOMRF",
@@ -221,7 +222,7 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         ticker for ticker in TICKERS
         if ticker not in fetch_errors and len(rows_by_ticker[ticker]) < 60
     ]
-    return {
+    report = {
         "report_version": "finam-ta-library-d1-v2",
         "status": "COMPLETE" if not fetch_errors and not incomplete_symbols else "INCOMPLETE_DATA",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -272,6 +273,9 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         ),
         "safety": "Read-only market-data calls; no broker accounts, orders, positions, or execution endpoints.",
     }
+    # Reuse the exact validated Finam D1 candles; never fetch a second data source.
+    report["direction_forecast_research"] = run_direction_forecast(rows_by_ticker, data_audit)
+    return report
 
 
 def main() -> int:
@@ -283,6 +287,20 @@ def main() -> int:
     report = run(token, source_app_id)
     Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     summary = report["data_summary"]
+    forecast = report.get("direction_forecast_research", {})
+    print(json.dumps({
+        "direction_forecast_status": forecast.get("status"),
+        "direction_forecast_source": forecast.get("source"),
+        "direction_forecast_holdout_bars_used": forecast.get("holdout_bars_used"),
+        "direction_forecast_horizons": {
+            horizon: {
+                "status": item.get("status"),
+                "oos_samples": item.get("oos_samples"),
+                "metrics": item.get("pooled_oos_metrics"),
+            }
+            for horizon, item in forecast.get("walk_forward", {}).items()
+        },
+    }, ensure_ascii=False))
     print(f"Status: {report['status']}")
     print(f"Finam D1 usable history: {summary['symbols_with_usable_history']}/{report['universe_count']} symbols")
     print(f"Retained bars: {summary['total_retained_bars']}")
