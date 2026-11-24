@@ -68,7 +68,7 @@ def _feature_from_indicators(rows, index, ema20, ema50, rsi, atr):
         return None
     prior_returns = [
         rows[j].close / rows[j - 1].close - 1.0
-        for j in range(index - 19, index)
+        for j in range(index - 20, index)
         if rows[j - 1].close > 0
     ]
     if len(prior_returns) < 10:
@@ -395,6 +395,8 @@ def latest_forecasts(
                 "predicted_class": CLASS_NAMES[max(range(3), key=lambda label: probabilities[label])],
                 "training_samples": len(training),
                 "training_class_counts": model["class_counts"],
+                "calibration_status": "NOT_CALIBRATED",
+                "probabilities_are_calibrated": False,
             })
     return {
         "status": "HISTORICAL_FORECASTS_ONLY",
@@ -476,6 +478,7 @@ def run_direction_forecast(
             ),
             "assumed_round_trip_cost": ROUND_TRIP_COST,
             "dependencies": "Python standard library only",
+            "probability_calibration": "NOT_CALIBRATED; log-loss and Brier score are reported for chronological out-of-sample assessment.",
             "limitations": [
                 "Diagonal Gaussian assumptions ignore feature dependence.",
                 "Probabilities are uncalibrated until calibration is assessed on separate data.",
