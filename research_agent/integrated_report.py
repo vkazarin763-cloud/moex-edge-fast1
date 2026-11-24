@@ -78,6 +78,7 @@ def _validate_forecast(report: dict[str, Any], universe: list[str], snapshot_tim
         by_symbol[ticker][horizon] = {
             "horizon_sessions": horizon,
             "probabilities": probabilities,
+            "probabilities_percent": {name: value * 100.0 for name, value in probabilities.items()},
             "predicted_direction": predicted,
             "status": EXPECTED_FORECAST_STATUS,
             "training_samples": row.get("training_samples"),
