@@ -6,6 +6,7 @@ from research_agent.technical_analysis_ready import (
     _confirmed_pivots,
     _normalise_and_validate,
     _regression_channel,
+    analyze_ohlcv,
 )
 
 
@@ -59,6 +60,13 @@ class TechnicalAnalysisReadyTests(unittest.TestCase):
         self.assertEqual(result["window_bars"], 40)
         self.assertEqual(result["window_end"], frame.iloc[-1]["timestamp"].isoformat())
         self.assertGreater(result["upper_at_last_close"], result["lower_at_last_close"])
+
+    def test_end_to_end_pandas_ta_adapter_smoke(self):
+        report = analyze_ohlcv(sample_candles(260), channel_window=60)
+        self.assertEqual(report["analysis_mode"], "DESCRIPTIVE_ONLY_NO_TRADING_SIGNALS")
+        self.assertEqual(report["bars_received"], 260)
+        self.assertIn("rsi_14", report["indicators"])
+        self.assertIn("candlestick_patterns", report)
 
     def test_channel_returns_none_when_history_is_short(self):
         frame = _normalise_and_validate(sample_candles(20))
