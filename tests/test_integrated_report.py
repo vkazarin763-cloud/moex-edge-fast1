@@ -97,7 +97,7 @@ class IntegratedReportTests(unittest.TestCase):
         parts = list(_fixtures())
         signal = {
             "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
-            "d1_bar_end_utc": "2026-11-24T21:00:00+00:00",
+            "d1_bar_end_utc": "2026-11-23T21:00:00+00:00",
             "d1_close": 100.0, "h1_confirmation": "CONFIRMED",
             "cross_strategy_conflict": False, "parameters": {},
         }
@@ -137,6 +137,8 @@ class IntegratedReportTests(unittest.TestCase):
         self.assertEqual(sber["forecast_review_conflicts"][0]["strategy"], "Donchian20")
         self.assertEqual(report["summary"]["agent_forecast_review_count"], 3)
         self.assertEqual(report["summary"]["agent_forecast_contradiction_count"], 1)
+        self.assertEqual(sber["forecast"]["1"]["probabilities_percent"],
+                         {"DOWN": 20.0, "SIDEWAYS": 30.0, "UP": 50.0})
 
     def test_rejects_missing_horizon_or_invalid_probability(self):
         parts = list(_fixtures())
