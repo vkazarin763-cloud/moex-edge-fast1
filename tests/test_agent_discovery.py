@@ -405,7 +405,8 @@ class AgentDiscoveryTests(unittest.TestCase):
             nonlocal calls
             calls += 1
             role_reviews = []
-            # Deliberately mislabel SIDEWAYS as AGREES and invert some directional labels.
+            # Each role reports a different assessment; canonical output must follow the model class.
+            reported = {1: "AGREES", 2: "CONTRADICTS", 3: "NEUTRAL"}[calls]
             for ticker, direction, strategy, bar_end in [
                 ("SBER", "LONG", "Donchian20", "2026-11-20T21:00:00+00:00"),
                 ("LKOH", "SHORT", "Donchian20", "2026-11-20T21:00:00+00:00"),
@@ -414,7 +415,7 @@ class AgentDiscoveryTests(unittest.TestCase):
                     role_reviews.append({
                         "symbol": ticker, "direction": direction, "strategy": strategy,
                         "d1_bar_end_utc": bar_end, "horizon_sessions": horizon,
-                        "assessment": "AGREES", "rationale": "agent supplied rationale",
+                        "assessment": reported, "rationale": f"raw rationale from role {calls}",
                     })
             return {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": role_reviews}
         report, diagnostics = run_discovery(
@@ -434,7 +435,14 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(by_key[("LKOH", 20)]["assessment"], "CONTRADICTS")
         self.assertTrue(by_key[("SBER", 1)]["assessment_corrected"])
         self.assertEqual(by_key[("SBER", 1)]["agent_reported_assessment"], "AGREES")
+        self.assertEqual(by_key[("SBER", 1)]["agent_rationale"], "raw rationale from role 1")
+        self.assertEqual(by_key[("SBER", 1)]["rationale"], "Класс SIDEWAYS не подтверждает ни LONG, ни SHORT.")
         self.assertEqual(diagnostics["forecast_review_conflicts"], [])
+        self.assertEqual(len(diagnostics["forecast_review_agent_reported_conflicts"]), 6)
+        self.assertEqual(diagnostics["forecast_review_corrections_count"], 12)
+        self.assertEqual(diagnostics["forecast_review_corrections_by_role"], {
+            "signal_hunter": 4, "strategy_scout": 4, "skeptical_reviewer": 4,
+        })
 
 if __name__ == "__main__":
     unittest.main()
