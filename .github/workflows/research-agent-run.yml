@@ -42,7 +42,7 @@ jobs:
             https://gu-st.ru/content/downloads/Russian_Trusted_Root_CA.cer \
             --output /tmp/russian_trusted_root_ca.cer
           curl --fail --silent --show-error --location \
-            https://gu-st.ru/content/downloads/Russian_Trusted_Sub_CA.cer \
+            https://gu-st.ru/content/downloads/Russian_Trusted_Sub_CA_2024.cer \
             --output /tmp/russian_trusted_sub_ca.cer
 
           convert_cert() {
