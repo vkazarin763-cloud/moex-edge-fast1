@@ -1,0 +1,82 @@
+name: MOEX EDGE V2 — Immediate Research + Rolling Fresh Checks
+
+on:
+  # One-off historical optimizer pilot on the already validated frozen artifact.
+  # Ordinary pushes do not trigger this job unless the commit message has the marker.
+  push:
+    branches: [feat/autonomous-strategy-discovery-v1]
+  workflow_run:
+    workflows: ["MOEX EDGE Multi-Timeframe Candles (Read Only)"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: moex-edge-v2-research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[run-moex-pilot]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout isolated research branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/autonomous-strategy-discovery-v1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download the exact validated collector artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: moex-edge-multi-timeframe-candles
+          run-id: ${{ github.event.workflow_run.id || 44933369191 }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run expanding-window autonomous discovery on available pre-holdout history
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            MAX_HYPOTHESES=200
+            MAX_OPTIMIZED=5
+            RESAMPLES=49999
+          else
+            MAX_HYPOTHESES=200
+            MAX_OPTIMIZED=5
+            RESAMPLES=199999
+          fi
+          python -m research_agent.v2.rolling_runner \
+            --data moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --holdout-start 2026-11-20 \
+            --max-hypotheses-per-symbol "${MAX_HYPOTHESES}" \
+            --max-optimized-candidates-per-direction "${MAX_OPTIMIZED}" \
+            --resamples "${RESAMPLES}" \
+            --output moex_edge_v2_rolling_research.json
+
+      - name: Evaluate any fresh post-seal data without waiting for a fixed bar count
+        run: |
+          python -m research_agent.v2.moex_forward_runner \
+            --data moex_edge_multi_timeframe_candles.json \
+            --validation moex_edge_multi_timeframe_validation.json \
+            --sealed-through 2026-11-20 \
+            --minimum-forward-bars 1 \
+            --resamples 49999 \
+            --output moex_edge_v2_forward_validation.json
+
+      - name: Upload research reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-v2-research-reports
+          path: |
+            moex_edge_v2_rolling_research.json
+            moex_edge_v2_forward_validation.json
+          if-no-files-found: error
+          retention-days: 30
