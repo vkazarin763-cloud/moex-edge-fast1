@@ -117,6 +117,27 @@ class TradingDayBarTests(unittest.TestCase):
                 self.assertEqual(raw[0].close, 105)
                 self.assertEqual(history[0].close, 105 * factor)
 
+
+    def test_documented_split_ohlc_basis_does_not_hide_volume_mismatch(self):
+        trade_date = date(2024, 4, 3)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
+        history = [HistoryRecord(trade_date, 20, 1, 1.1, 0.9, 1.05, 1100)]
+        result = reconcile_session_candles(raw, history, ticker="GMKN")
+        self.assertEqual(result["documented_corporate_action_mismatch_dates"], 0)
+        self.assertEqual(result["unexplained_mismatch_dates"], 1)
+        self.assertFalse(result["complete"])
+
+    def test_documented_split_only_price_basis_is_not_an_unexplained_mismatch(self):
+        trade_date = date(2024, 4, 3)
+        raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
+        history = [HistoryRecord(trade_date, 20, 1, 1.1, 0.9, 1.05, 1000)]
+        result = reconcile_session_candles(raw, history, ticker="GMKN")
+        self.assertEqual(result["trading_days_mismatched"], 1)
+        self.assertEqual(result["documented_corporate_action_mismatch_dates"], 1)
+        self.assertEqual(result["unexplained_mismatch_dates"], 0)
+        self.assertTrue(result["complete"])
+        self.assertEqual(result["status"], "RECONCILED_WITH_DOCUMENTED_CORPORATE_ACTIONS")
+
     def test_known_split_price_basis_accepts_reciprocal_direction(self):
         trade_date = date(2024, 4, 3)
         raw = [Candle(datetime.combine(trade_date, datetime.min.time()), 100, 110, 90, 105, 1000)]
