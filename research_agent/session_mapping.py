@@ -293,6 +293,8 @@ def reconcile_session_candles(
     total_session_comparison_dates = 0
     unresolved_session_scope_dates = 0
     ambiguous_session_scope_dates = 0
+    morning_main_volume_disambiguated_dates = 0
+    total_session_volume_disambiguated_dates = 0
     total_session_fallback_dates = 0
     mapped_weekend_fragments_excluded_from_comparison = 0
     for target, fragments in sorted(grouped.items()):
@@ -331,13 +333,33 @@ def reconcile_session_candles(
                 for got, want in zip(actual_ohlc, expected_prices)
             )
 
+        def volume_matches(candidate: HistoryRecord | None) -> bool:
+            if candidate is None or candidate.volume is None:
+                return False
+            actual_volume = sum(item.volume for item in fragments_to_compare)
+            expected_volume = float(candidate.volume)
+            return math.isclose(
+                actual_volume, expected_volume, rel_tol=0.0,
+                abs_tol=max(1e-8, abs(expected_volume) * 1e-8),
+            )
+
         if target in comparison_by_date and weekday_fragments:
             morning_main_record = comparison_by_date.get(target)
             matches_morning_main = price_matches(morning_main_record)
             matches_total = price_matches(record)
             if matches_morning_main and matches_total:
-                ambiguous_session_scope_dates += 1
-                total_session_comparison_dates += 1
+                morning_volume_matches = volume_matches(morning_main_record)
+                total_volume_matches = volume_matches(record)
+                if morning_volume_matches and not total_volume_matches:
+                    record = morning_main_record
+                    morning_main_comparison_dates += 1
+                    morning_main_volume_disambiguated_dates += 1
+                elif total_volume_matches and not morning_volume_matches:
+                    total_session_comparison_dates += 1
+                    total_session_volume_disambiguated_dates += 1
+                else:
+                    ambiguous_session_scope_dates += 1
+                    total_session_comparison_dates += 1
             elif matches_morning_main:
                 record = morning_main_record
                 morning_main_comparison_dates += 1
@@ -539,6 +561,8 @@ def reconcile_session_candles(
         "total_session_comparison_dates": total_session_comparison_dates,
         "unresolved_session_scope_dates": unresolved_session_scope_dates,
         "ambiguous_session_scope_dates": ambiguous_session_scope_dates,
+        "morning_main_volume_disambiguated_dates": morning_main_volume_disambiguated_dates,
+        "total_session_volume_disambiguated_dates": total_session_volume_disambiguated_dates,
         "total_session_fallback_dates": total_session_fallback_dates,
         "mapped_weekend_fragments_excluded_from_comparison": mapped_weekend_fragments_excluded_from_comparison,
         "mapped_raw_candles": mapped_raw_candles,
