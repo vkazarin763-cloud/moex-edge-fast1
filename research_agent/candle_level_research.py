@@ -220,6 +220,8 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
                 "status": "OK", "bars": len(rows),
                 "first_date": rows[0].timestamp.date().isoformat(),
                 "last_date": rows[-1].timestamp.date().isoformat(),
+                "calendar_history_days": (rows[-1].timestamp.date() - rows[0].timestamp.date()).days,
+                "full_three_year_coverage": rows[0].timestamp.date() <= DATA_START + timedelta(days=7),
                 "holdout_bars_used": 0,
             }
         except Exception as exc:
@@ -350,6 +352,8 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         "data_summary": {
             "d1_symbols_ok": sum(bool(rows) for rows in data.values()),
             "d1_symbols_failed": sum(not rows for rows in data.values()),
+            "d1_symbols_full_3y": sum(bool(rows) and audit[ticker].get("full_three_year_coverage", False) for ticker, rows in data.items()),
+            "d1_symbols_shorter_history": sum(bool(rows) and not audit[ticker].get("full_three_year_coverage", False) for ticker, rows in data.items()),
             "d1_bars": sum(len(rows) for rows in data.values()),
             "h1_symbols_with_trend": sum(bool(v) for v in h1_trends.values()),
             "errors": errors,
