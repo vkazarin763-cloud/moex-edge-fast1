@@ -241,6 +241,7 @@ jobs:
           name: moex-edge-agent-discovery-${{ github.run_id }}
           path: |
             moex_edge_multi_timeframe_candles.json
+            moex_edge_candle_cache_diagnostics.json
             moex_edge_multi_timeframe_validation.json
             moex_edge_mtf_signals.json
             moex_edge_direction_forecast.json
