@@ -77,6 +77,17 @@ class OperationalForecastTests(unittest.TestCase):
             self.assertAlmostEqual(sum(probabilities), 1.0, places=8)
             self.assertTrue(all(0.0 <= value <= 1.0 for value in probabilities))
 
+    def test_partial_history_never_claims_complete_forecast_coverage(self):
+        candles, validation = _fixture()
+        candles["results"][TICKERS[0]]["D1"]["candles"] = (
+            candles["results"][TICKERS[0]]["D1"]["candles"][:59]
+        )
+        report = build_operational_forecast(candles, validation)
+        self.assertEqual(report["status"], "PARTIAL")
+        self.assertEqual(report["symbols_with_valid_d1_history"], len(TICKERS) - 1)
+        self.assertEqual(report["symbols_with_forecasts"], len(TICKERS) - 1)
+        self.assertEqual(len(report["missing_forecasts"]), len(HORIZONS))
+
     def test_rejects_nonpassing_data_validation(self):
         candles, validation = _fixture()
         validation["issue_count"] = 1
