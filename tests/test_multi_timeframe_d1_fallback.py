@@ -22,11 +22,17 @@ class FakeFinamClient:
                 datetime(2026, 11, 20, 5, 0, tzinfo=timezone.utc),
                 102.0, 104.0, 101.0, 103.0, 1200.0, False,
             ),
+            # Current Moscow trading date: request must accept this timestamp,
+            # but collection must exclude it until the Moscow date is over.
+            FinamBar(
+                datetime(2026, 11, 24, 5, 0, tzinfo=timezone.utc),
+                103.0, 105.0, 102.0, 104.0, 1300.0, False,
+            ),
         ]
 
 
 class MultiTimeframeFinamD1Tests(unittest.TestCase):
-    def test_d1_uses_finam_directly_with_exchange_session_timestamp_bounds(self):
+    def test_d1_accepts_current_session_timestamp_but_excludes_unclosed_moscow_date(self):
         client = FakeFinamClient()
         report = collect_multi_timeframe(
             ["SBER"],
@@ -40,13 +46,15 @@ class MultiTimeframeFinamD1Tests(unittest.TestCase):
         self.assertEqual(daily["status"], "OK")
         self.assertEqual(daily["source"], "Finam")
         self.assertEqual(daily["completed_bars"], 2)
+        self.assertEqual(daily["raw_bars"], 3)
+        self.assertEqual(daily["incomplete_bars_excluded"], 1)
         self.assertEqual(
             client.calls,
             [(
                 "SBER@MISX",
                 "TIME_FRAME_D",
                 datetime(2025, 11, 24, 0, 0, tzinfo=timezone.utc),
-                datetime(2026, 11, 24, 0, 0, tzinfo=timezone.utc),
+                datetime(2026, 11, 24, 12, 0, tzinfo=timezone.utc),
             )],
         )
 
