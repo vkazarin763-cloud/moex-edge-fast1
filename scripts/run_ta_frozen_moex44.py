@@ -18,8 +18,10 @@ import pandas as pd
 
 from research_agent.technical_analysis_ready import analyze_ohlcv, _normalise_and_validate
 
-ARTIFACT = Path("frozen-data/moex-edge-multi-timeframe-candles.zip")
-EXPECTED_SHA256 = "6a9ee767f37bec1f9fa9d40d0868ccc8f36b2271dd5ef4a1715f83e4a51af137"
+DATA_FILE = Path("frozen-data/moex_edge_multi_timeframe_candles.json")
+VALIDATION_FILE = Path("frozen-data/moex_edge_multi_timeframe_validation.json")
+EXPECTED_DATA_SHA256 = "8df302ac97b1132fefeae5054ec263ea3d2545f8a5622eef33065ee2fa2d5eee"
+EXPECTED_VALIDATION_SHA256 = "900145ac5c01f80a0ba70535847737761509bfcae4c6a4b7fbb17c4d72646fb2"
 CUTOFF = date(2026, 11, 20)
 TIMEFRAMES = ("D1", "H1", "W1")
 OUT = Path("ta-real-data-report")
@@ -27,13 +29,15 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> int:
-    digest = hashlib.sha256(ARTIFACT.read_bytes()).hexdigest()
-    if digest != EXPECTED_SHA256:
-        raise RuntimeError(f"Frozen artifact SHA256 mismatch: {digest}")
+    data_digest = hashlib.sha256(DATA_FILE.read_bytes()).hexdigest()
+    validation_digest = hashlib.sha256(VALIDATION_FILE.read_bytes()).hexdigest()
+    if data_digest != EXPECTED_DATA_SHA256:
+        raise RuntimeError(f"Frozen candles JSON SHA256 mismatch: {data_digest}")
+    if validation_digest != EXPECTED_VALIDATION_SHA256:
+        raise RuntimeError(f"Frozen validation JSON SHA256 mismatch: {validation_digest}")
 
-    with zipfile.ZipFile(ARTIFACT) as archive:
-        payload = json.loads(archive.read("moex_edge_multi_timeframe_candles.json"))
-        validation = json.loads(archive.read("moex_edge_multi_timeframe_validation.json"))
+    payload = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+    validation = json.loads(VALIDATION_FILE.read_text(encoding="utf-8"))
 
     universe = payload.get("universe", [])
     if len(universe) != 44 or len(set(universe)) != 44:
@@ -119,7 +123,7 @@ def main() -> int:
     (OUT / "features.json").write_text(json.dumps({
         "source_run_id": 44861047844,
         "source_artifact_id": 14690518588,
-        "source_artifact_sha256": digest,
+        "source_candles_json_sha256": data_digest,\n        "source_validation_json_sha256": validation_digest,
         "generated_from_frozen_data_at": payload.get("generated_at_utc"),
         "holdout_cutoff_exclusive": CUTOFF.isoformat(),
         "holdout_bars_excluded": excluded_holdout_bars,
