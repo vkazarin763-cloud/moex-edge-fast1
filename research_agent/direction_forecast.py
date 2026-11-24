@@ -407,24 +407,33 @@ def latest_forecasts(
     }
 
 
-def run_direction_forecast() -> dict[str, Any]:
-    start_text = DATA_START.isoformat()
-    end_text = (HOLDOUT_START - timedelta(days=1)).isoformat()
+def run_direction_forecast(
+    source_candles: dict[str, list[Candle]] | None = None,
+    source_audit: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     candles_by_ticker: dict[str, list[Candle]] = {}
     audits: dict[str, Any] = {}
     errors: dict[str, str] = {}
-    for ticker in TICKERS:
-        try:
-            rows, audit = _fetch_d1_model_rows(ticker, start_text, end_text)
-            if rows:
-                candles_by_ticker[ticker] = validate_candles(rows)
-            else:
+    if source_candles is None:
+        start_text = DATA_START.isoformat()
+        end_text = (HOLDOUT_START - timedelta(days=1)).isoformat()
+        for ticker in TICKERS:
+            try:
+                rows, audit = _fetch_d1_model_rows(ticker, start_text, end_text)
+                candles_by_ticker[ticker] = validate_candles(rows) if rows else []
+                audits[ticker] = audit
+            except Exception as exc:
                 candles_by_ticker[ticker] = []
-            audits[ticker] = audit
-        except Exception as exc:
-            candles_by_ticker[ticker] = []
-            errors[ticker] = str(exc)[:500]
-            audits[ticker] = {"status": "ERROR", "error": str(exc)[:500]}
+                errors[ticker] = str(exc)[:500]
+                audits[ticker] = {"status": "ERROR", "error": str(exc)[:500]}
+    else:
+        source_audit = source_audit or {}
+        for ticker in TICKERS:
+            rows = source_candles.get(ticker, [])
+            candles_by_ticker[ticker] = validate_candles(rows) if rows else []
+            audits[ticker] = source_audit.get(ticker, {"status": "MISSING_SOURCE_AUDIT"})
+            if audits[ticker].get("status") in {"D1_ERROR", "ERROR"}:
+                errors[ticker] = str(audits[ticker].get("error", "Source D1 collection failed"))[:500]
     samples_by_horizon = {
         horizon: [
             sample
