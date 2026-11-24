@@ -35,6 +35,39 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Diagnose MOEX ISS TLS trust chain
+        continue-on-error: true
+        run: |
+          set +e
+          for host in iss.moex.com www.python.org; do
+            echo "=== TLS certificate chain: ${host} ==="
+            timeout 20 openssl s_client -connect "${host}:443" -servername "${host}" -showcerts </dev/null >"/tmp/${host}.tls.out" 2>"/tmp/${host}.tls.err"
+            awk -v prefix="/tmp/${host}.cert" '
+              /-----BEGIN CERTIFICATE-----/ { n++; file=sprintf("%s-%02d.pem", prefix, n) }
+              file { print > file }
+              /-----END CERTIFICATE-----/ { close(file); file="" }
+            ' "/tmp/${host}.tls.out"
+            for cert in /tmp/"${host}".cert-*.pem; do
+              [ -f "$cert" ] || continue
+              openssl x509 -in "$cert" -noout -subject -issuer -dates -fingerprint -sha256
+            done
+            echo "--- OpenSSL verification diagnostics ---"
+            grep -E "verify error|Verify return code|CONNECTED|depth=" "/tmp/${host}.tls.err" "/tmp/${host}.tls.out" | tail -12 || true
+            echo "--- Python urllib trust test ---"
+            HOST="$host" python - <<'PY'
+          import os
+          import ssl
+          import urllib.request
+
+          host = os.environ["HOST"]
+          print("Default CA paths:", ssl.get_default_verify_paths())
+          try:
+              with urllib.request.urlopen(f"https://{host}/", timeout=15) as response:
+                  print(f"{host}: HTTP {response.status}")
+          except Exception as exc:
+              print(f"{host}: {type(exc).__name__}: {exc}")
+          PY
+          done
       - name: Resolve and validate research date range
         id: dates
         env:
