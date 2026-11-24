@@ -1,4 +1,4 @@
-name: MOEX EDGE Finam D1 Two-Strategy Historical Research (Read Only)
+name: MOEX EDGE Finam D1 Technical Analysis Research (Read Only)
 
 on:
   workflow_call:
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: moex-edge-finam-two-strategy-research
+  group: moex-edge-finam-technical-analysis-research
   cancel-in-progress: false
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
         run: |
           test -n "$FINAM_API_TOKEN" || { echo "FINAM_API_TOKEN is missing"; exit 1; }
           echo "Finam market-data credential is configured; value is not printed."
-      - name: Collect one-year Finam D1 data and test only the two selected strategies
+      - name: Collect one-year Finam D1 data and evaluate the full registered technical-analysis candidate set
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
@@ -47,7 +47,7 @@ jobs:
           import json
           from pathlib import Path
           path = Path("finam_two_strategy_report.json")
-          lines = ["# Finam D1 two-strategy historical research", ""]
+          lines = ["# Finam D1 technical analysis research", ""]
           if not path.exists():
               lines.append("Report was not created; inspect the collection step logs.")
           else:
