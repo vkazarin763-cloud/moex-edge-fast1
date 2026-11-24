@@ -31,6 +31,16 @@ class DirectionForecastTests(unittest.TestCase):
         self.assertTrue(all(sample["date"] < HOLDOUT_START for sample in samples))
         self.assertTrue(all(len(sample["features"]) == len(FEATURE_NAMES) for sample in samples))
 
+    def test_momentum_baseline_uses_matching_forecast_horizon(self):
+        rows = _candles(120)
+        for horizon, feature_index in ((1, 0), (5, 2), (20, 4)):
+            samples = build_samples("SBER", rows, horizon)
+            self.assertTrue(samples)
+            self.assertAlmostEqual(
+                samples[0]["momentum_return"],
+                samples[0]["features"][feature_index],
+            )
+
     def test_gaussian_nb_returns_normalized_three_class_probabilities(self):
         samples = []
         for index in range(180):
