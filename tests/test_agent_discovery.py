@@ -358,5 +358,78 @@ class AgentDiscoveryTests(unittest.TestCase):
 
 
 
+    def test_forecast_review_assessment_is_canonical_for_both_directions(self):
+        forecasts = []
+        classes = {
+            ("SBER", 1): "SIDEWAYS",
+            ("SBER", 5): "UP",
+            ("SBER", 20): "DOWN",
+            ("LKOH", 1): "SIDEWAYS",
+            ("LKOH", 5): "DOWN",
+            ("LKOH", 20): "UP",
+        }
+        for ticker in self.scan["universe"]:
+            for horizon in (1, 5, 20):
+                predicted = classes[(ticker, horizon)]
+                forecasts.append({
+                    "ticker": ticker, "horizon_sessions": horizon,
+                    "status": "EXPERIMENTAL_NOT_CALIBRATED",
+                    "model_version": "test-model-v1",
+                    "post_holdout_outcomes_used": False,
+                    "predicted_class": predicted,
+                    "probability_down": 0.2 if predicted != "DOWN" else 0.6,
+                    "probability_sideways": 0.6 if predicted == "SIDEWAYS" else 0.2,
+                    "probability_up": 0.6 if predicted == "UP" else 0.2,
+                })
+        forecast_report = {
+            "report_type": "MOEX_EDGE_OPERATIONAL_DIRECTION_FORECAST_V1",
+            "status": "COMPLETE", "model_version": "test-model-v1",
+            "as_of_date": "2026-11-23",
+            "holdout_policy": {
+                "post_holdout_outcomes_used_for_training": 0,
+                "post_holdout_outcomes_used_for_model_selection": 0,
+                "post_holdout_outcomes_used_for_calibration": 0,
+                "post_holdout_outcomes_used_for_performance_metrics": 0,
+                "inference_parameters_frozen_before_holdout": True,
+                "holdout_start": "2026-11-20",
+            },
+            "forecasts": forecasts,
+        }
+        calls = 0
+        def fake(prompt, *, api_key, model):
+            nonlocal calls
+            calls += 1
+            role_reviews = []
+            # Deliberately mislabel SIDEWAYS as AGREES and invert some directional labels.
+            for ticker, direction, strategy, bar_end in [
+                ("SBER", "LONG", "Donchian20", "2026-11-20T21:00:00+00:00"),
+                ("LKOH", "SHORT", "Donchian20", "2026-11-20T21:00:00+00:00"),
+            ]:
+                for horizon in (1, 5, 20):
+                    role_reviews.append({
+                        "symbol": ticker, "direction": direction, "strategy": strategy,
+                        "d1_bar_end_utc": bar_end, "horizon_sessions": horizon,
+                        "assessment": "AGREES", "rationale": "agent supplied rationale",
+                    })
+            return {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": role_reviews}
+        report, diagnostics = run_discovery(
+            self.scan, self.registry, api_key="fake", caller=fake,
+            forecast_report=forecast_report,
+        )
+        self.assertEqual(len(report["forecast_reviews"]), 6)
+        by_key = {
+            (row["symbol"], row["horizon_sessions"]): row
+            for row in report["forecast_reviews"]
+        }
+        self.assertEqual(by_key[("SBER", 1)]["assessment"], "NEUTRAL")
+        self.assertEqual(by_key[("LKOH", 1)]["assessment"], "NEUTRAL")
+        self.assertEqual(by_key[("SBER", 5)]["assessment"], "AGREES")
+        self.assertEqual(by_key[("SBER", 20)]["assessment"], "CONTRADICTS")
+        self.assertEqual(by_key[("LKOH", 5)]["assessment"], "CONTRADICTS")
+        self.assertEqual(by_key[("LKOH", 20)]["assessment"], "AGREES")
+        self.assertTrue(by_key[("SBER", 1)]["assessment_corrected"])
+        self.assertEqual(by_key[("SBER", 1)]["agent_reported_assessment"], "AGREES")
+        self.assertEqual(diagnostics["forecast_review_conflicts"], [])
+
 if __name__ == "__main__":
     unittest.main()
