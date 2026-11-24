@@ -1,0 +1,86 @@
+name: MOEX EDGE Finam D1 Two-Strategy Historical Research (Read Only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moex-edge-finam-two-strategy-research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile and run focused offline tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_finam_strategy_backtest -v
+      - name: Check read-only Finam credential
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+        run: |
+          test -n "$FINAM_API_TOKEN" || { echo "FINAM_API_TOKEN is missing"; exit 1; }
+          echo "Finam market-data credential is configured; value is not printed."
+      - name: Collect one-year Finam D1 data and test only the two selected strategies
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
+        run: |
+          python -m research_agent.finam_strategy_backtest --output finam_two_strategy_report.json
+      - name: Publish concise research summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("finam_two_strategy_report.json")
+          lines = ["# Finam D1 two-strategy historical research", ""]
+          if not path.exists():
+              lines.append("Report was not created; inspect the collection step logs.")
+          else:
+              report = json.loads(path.read_text(encoding="utf-8"))
+              data = report.get("data_summary", {})
+              lines += [
+                  f"- Status: {report.get('status')}",
+                  f"- Period: {report.get('requested_interval_utc')}",
+                  f"- Holdout starts: {report.get('holdout_start')} (excluded)",
+                  f"- Usable symbols: {data.get('symbols_with_usable_history')}/{report.get('universe_count')}",
+                  f"- Retained D1 bars: {data.get('total_retained_bars')}",
+              ]
+              for name, item in report.get("results", {}).items():
+                  stats = item["baseline_execution"]["all_period"]["pooled_trade_statistics_not_portfolio_return"]
+                  stress = item["double_cost_stress"]["all_period"]["pooled_trade_statistics_not_portfolio_return"]
+                  lines += [
+                      "",
+                      f"## {name}",
+                      f"- Baseline closed trades: {stats.get('closed_trades')}",
+                      f"- Win rate: {stats.get('win_rate')}",
+                      f"- Average net trade return: {stats.get('average_net_return')}",
+                      f"- Profit factor: {stats.get('profit_factor')}",
+                      f"- Double-cost average net trade return: {stress.get('average_net_return')}",
+                      f"- First/second half closed trades: {item['baseline_execution']['first_half']['pooled_trade_statistics_not_portfolio_return'].get('closed_trades')} / {item['baseline_execution']['second_half']['pooled_trade_statistics_not_portfolio_return'].get('closed_trades')}",
+                  ]
+              lines += ["", "Pooled trade statistics are not portfolio returns. This is an exploratory screen, not strategy approval."]
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("\n".join(lines) + "\n")
+          PY
+      - name: Upload candles audit and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-finam-two-strategy-${{ github.run_id }}
+          path: finam_two_strategy_report.json
+          if-no-files-found: warn
+          retention-days: 30
