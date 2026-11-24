@@ -83,8 +83,9 @@ class OperationalAgentIntegrationTests(unittest.TestCase):
         self.assertEqual(len(report["forecast_reviews"]), 3)
         self.assertEqual(diagnostics["forecast_reviews_count"], 3)
         self.assertEqual(diagnostics["forecast_review_conflicts"], [{
-            "symbol": "SBER", "horizon_sessions": 1,
-            "status": "CONTRADICTION",
+            "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
+            "d1_bar_end_utc": "2026-11-23T21:00:00+00:00",
+            "horizon_sessions": 1, "status": "CONTRADICTION",
             "agreeing_roles": ["signal_hunter"],
             "contradicting_roles": ["strategy_scout"],
         }])
