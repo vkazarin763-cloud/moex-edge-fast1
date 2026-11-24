@@ -358,6 +358,7 @@ def run_discovery(
     model: str = DEFAULT_OPENROUTER_MODEL,
     openrouter_api_key: str = "",
     groq_api_key: str = "",
+    groq_model: str = DEFAULT_MODEL,
     caller: Callable[..., dict[str, Any]] = call_groq_discovery,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     context = _compact_context(scan, registry)
@@ -392,6 +393,7 @@ def run_discovery(
                 openrouter_api_key=openrouter_api_key,
                 groq_api_key=groq_api_key or api_key,
                 model=model,
+                groq_model=groq_model,
             )
         else:
             response = caller(prompt, api_key=api_key, model=model)
@@ -466,10 +468,17 @@ def run_discovery(
         "agent_run_id": os.getenv("GITHUB_RUN_ID", f"manual-{int(time.time())}"),
         "proposals": consensus,
     }
+    provider_set = set(providers_used)
+    actual_provider = (
+        "groq" if provider_set == {"groq_fallback"}
+        else "openrouter" if provider_set == {"openrouter"}
+        else "mixed" if provider_set
+        else "none"
+    )
     diagnostics = {
         "status": "AGENT_DISCOVERY_COMPLETE",
-        "provider": "openrouter_primary_groq_fallback",
-        "model": model,
+        "provider": actual_provider,
+        "model": groq_model if provider_set == {"groq_fallback"} else model,
         "providers_used": providers_used,
         "agent_count": len(ROLES),
         "agent_roles": outputs,
@@ -498,6 +507,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--diagnostics", default="agent_discovery_diagnostics.json")
     parser.add_argument("--verification", default="agent_signal_verification.json")
     parser.add_argument("--model", default=os.getenv("OPENROUTER_MODEL", DEFAULT_OPENROUTER_MODEL))
+    parser.add_argument("--groq-model", default=os.getenv("GROQ_MODEL", DEFAULT_MODEL))
     args = parser.parse_args(argv)
     openrouter_api_key = os.getenv("OPENROUTER_API_KEY", "")
     groq_api_key = os.getenv("GROQ_API_KEY", "")
@@ -506,6 +516,7 @@ def main(argv: list[str] | None = None) -> int:
     report, diagnostics = run_discovery(
         scan, registry, model=args.model,
         openrouter_api_key=openrouter_api_key, groq_api_key=groq_api_key,
+        groq_model=args.groq_model,
     )
     verified = verify_agent_proposals(report, scan, registry)
     Path(args.proposals).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
