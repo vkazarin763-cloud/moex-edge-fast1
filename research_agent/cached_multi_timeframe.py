@@ -60,6 +60,8 @@ def load_cache(path: str | Path) -> dict:
             return {"schema_version": CACHE_SCHEMA_VERSION, "bars": {}}
         if not isinstance(payload.get("bars"), dict):
             raise ValueError("Cache bars field must be an object")
+        if not isinstance(payload.get("run_count", 0), int) or payload.get("run_count", 0) < 0:
+            raise ValueError("Cache run_count must be a non-negative integer")
         # Parse every row now; a corrupt cache must not contaminate a scan.
         for symbols in payload["bars"].values():
             if not isinstance(symbols, dict):
