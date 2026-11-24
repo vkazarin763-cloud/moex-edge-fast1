@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -91,9 +92,55 @@ def run_universe(
                     legacy_reconciliation_history_by_ticker[ticker] = []
                     legacy_history_errors[ticker] = str(alias_exc)
 
-    effective_till = latest_completed_session_date(
-        history_records_by_ticker, calendar_date_ceiling
-    ).isoformat()
+    # MOEX ISS can occasionally return a syntactically valid but empty
+    # history.data block. Empty data is not proof that the entire universe has
+    # no completed sessions: retry only empty responses once before failing.
+    positive_history_exists = any(
+        record.trade_date <= date.fromisoformat(calendar_date_ceiling)
+        and record.num_trades is not None
+        and record.num_trades > 0
+        for records in history_records_by_ticker.values()
+        if records
+        for record in records
+    )
+    empty_history_tickers = [
+        ticker for ticker, records in history_records_by_ticker.items()
+        if records == []
+    ]
+    if not positive_history_exists and empty_history_tickers:
+        time.sleep(2)
+        for ticker in empty_history_tickers:
+            try:
+                history_records_by_ticker[ticker] = fetch_history_records(
+                    ticker, fetch_from, history_fetch_till, board="TQBR"
+                )
+                history_errors.pop(ticker, None)
+            except Exception as history_exc:
+                history_records_by_ticker[ticker] = None
+                history_errors[ticker] = str(history_exc)
+
+    try:
+        effective_till = latest_completed_session_date(
+            history_records_by_ticker, calendar_date_ceiling
+        ).isoformat()
+    except Exception as exc:
+        returned_tickers = sum(
+            1 for records in history_records_by_ticker.values() if records
+        )
+        empty_tickers = [
+            ticker for ticker, records in history_records_by_ticker.items()
+            if records == []
+        ]
+        failed_tickers = {
+            ticker: error for ticker, error in history_errors.items()
+        }
+        raise RuntimeError(
+            "Unable to map the latest completed TQBR session after one bounded "
+            "retry of empty ISS history responses. "
+            f"Universe={len(selected)}, nonempty_history_tickers={returned_tickers}, "
+            f"empty_history_tickers={empty_tickers}, "
+            f"history_request_errors={failed_tickers}. Original error: {exc}"
+        ) from exc
     effective_from = earliest_session_date(
         history_records_by_ticker, fetch_from, effective_till
     ).isoformat()
