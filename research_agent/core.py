@@ -164,53 +164,156 @@ def _wilder_atr(rows: list[Candle], period: int = 14) -> list[Optional[float]]:
     return result
 
 
+def _sma(values: list[float], period: int) -> list[Optional[float]]:
+    out: list[Optional[float]] = [None] * len(values)
+    for i in range(period - 1, len(values)):
+        out[i] = sum(values[i-period+1:i+1]) / period
+    return out
+
+
+def _rolling_std(values: list[float], period: int) -> list[Optional[float]]:
+    out: list[Optional[float]] = [None] * len(values)
+    for i in range(period - 1, len(values)):
+        window = values[i-period+1:i+1]
+        mean = sum(window) / period
+        out[i] = math.sqrt(sum((x-mean)**2 for x in window) / period)
+    return out
+
+
+def _wilder_adx(rows: list[Candle], period: int = 14):
+    plus_dm, minus_dm, tr = [0.0], [0.0], [rows[0].high - rows[0].low]
+    for i in range(1, len(rows)):
+        up = rows[i].high - rows[i-1].high
+        down = rows[i-1].low - rows[i].low
+        plus_dm.append(up if up > down and up > 0 else 0.0)
+        minus_dm.append(down if down > up and down > 0 else 0.0)
+        tr.append(max(rows[i].high-rows[i].low, abs(rows[i].high-rows[i-1].close), abs(rows[i].low-rows[i-1].close)))
+    pdi: list[Optional[float]] = [None] * len(rows)
+    mdi: list[Optional[float]] = [None] * len(rows)
+    adx: list[Optional[float]] = [None] * len(rows)
+    if len(rows) < period * 2:
+        return adx, pdi, mdi
+    sm_tr, sm_plus, sm_minus = sum(tr[1:period+1]), sum(plus_dm[1:period+1]), sum(minus_dm[1:period+1])
+    dx_values = []
+    for i in range(period, len(rows)):
+        if i > period:
+            sm_tr = sm_tr - sm_tr/period + tr[i]
+            sm_plus = sm_plus - sm_plus/period + plus_dm[i]
+            sm_minus = sm_minus - sm_minus/period + minus_dm[i]
+        pdi[i] = 100*sm_plus/sm_tr if sm_tr else 0.0
+        mdi[i] = 100*sm_minus/sm_tr if sm_tr else 0.0
+        denom = (pdi[i] or 0.0) + (mdi[i] or 0.0)
+        dx_values.append(100*abs((pdi[i] or 0.0)-(mdi[i] or 0.0))/denom if denom else 0.0)
+        if len(dx_values) == period:
+            adx[i] = sum(dx_values)/period
+        elif len(dx_values) > period:
+            prev = next((adx[j] for j in range(i-1, -1, -1) if adx[j] is not None), None)
+            if prev is not None:
+                adx[i] = (prev*(period-1)+dx_values[-1])/period
+    return adx, pdi, mdi
+
+
 def generate_signals(candles: list[Candle]) -> list[Signal]:
-    """Pre-registered candidate set; fixed parameters, no fitting or look-ahead."""
+    """Broad, fixed-rule TA candidate library. No parameter fitting or look-ahead."""
     rows = validate_candles(candles)
     closes = [c.close for c in rows]
-    ema12, ema20, ema26, ema50 = (
-        _ema(closes, 12), _ema(closes, 20), _ema(closes, 26), _ema(closes, 50)
-    )
-    macd = [fast - slow for fast, slow in zip(ema12, ema26)]
+    ema12, ema20, ema26, ema50 = (_ema(closes, 12), _ema(closes, 20), _ema(closes, 26), _ema(closes, 50))
+    macd = [a - b for a, b in zip(ema12, ema26)]
     macd_signal = _ema(macd, 9)
-    rsi14 = _wilder_rsi(closes, 14)
-    atr14 = _wilder_atr(rows, 14)
-    keltner_upper = [
-        ema20[i] + 2.0 * atr14[i] if atr14[i] is not None else None
-        for i in range(len(rows))
-    ]
-    keltner_lower = [
-        ema20[i] - 2.0 * atr14[i] if atr14[i] is not None else None
-        for i in range(len(rows))
-    ]
+    rsi = _wilder_rsi(closes, 14)
+    atr = _wilder_atr(rows, 14)
+    upper_k = [ema20[i] + 2 * atr[i] if atr[i] is not None else None for i in range(len(rows))]
+    lower_k = [ema20[i] - 2 * atr[i] if atr[i] is not None else None for i in range(len(rows))]
+    bb_mid = _sma(closes, 20)
+    bb_std = _rolling_std(closes, 20)
+    bb_upper = [bb_mid[i] + 2 * bb_std[i] if bb_mid[i] is not None else None for i in range(len(rows))]
+    bb_lower = [bb_mid[i] - 2 * bb_std[i] if bb_mid[i] is not None else None for i in range(len(rows))]
+    adx, plus_di, minus_di = _wilder_adx(rows, 14)
+    avg_volume = _sma([c.volume for c in rows], 20)
     signals: list[Signal] = []
     for i in range(55, len(rows) - 1):
-        prior_high = max(c.high for c in rows[i - 20:i])
-        prior_low = min(c.low for c in rows[i - 20:i])
-        if rows[i].close > prior_high:
-            signals.append(Signal(i, 1, "Donchian20"))
-        elif rows[i].close < prior_low:
-            signals.append(Signal(i, -1, "Donchian20"))
-        if ema20[i] > ema50[i] and ema20[i - 1] <= ema50[i - 1]:
+        prior = rows[i-20:i]
+        prior_high, prior_low = max(c.high for c in prior), min(c.low for c in prior)
+        c, p = rows[i], rows[i-1]
+        # Trend and momentum
+        if ema20[i] > ema50[i] and ema20[i-1] <= ema50[i-1]:
             signals.append(Signal(i, 1, "EMA20x50"))
-        elif ema20[i] < ema50[i] and ema20[i - 1] >= ema50[i - 1]:
+        elif ema20[i] < ema50[i] and ema20[i-1] >= ema50[i-1]:
             signals.append(Signal(i, -1, "EMA20x50"))
-        if rsi14[i] is not None and rsi14[i - 1] is not None:
-            if ema20[i] > ema50[i] and rsi14[i] > 50 and rsi14[i - 1] <= 50:
+        if rsi[i] is not None and rsi[i-1] is not None:
+            if ema20[i] > ema50[i] and rsi[i] > 50 >= rsi[i-1]:
                 signals.append(Signal(i, 1, "RSI14Trend50"))
-            elif ema20[i] < ema50[i] and rsi14[i] < 50 and rsi14[i - 1] >= 50:
+            elif ema20[i] < ema50[i] and rsi[i] < 50 <= rsi[i-1]:
                 signals.append(Signal(i, -1, "RSI14Trend50"))
-        if macd[i] > macd_signal[i] and macd[i - 1] <= macd_signal[i - 1]:
+        if macd[i] > macd_signal[i] and macd[i-1] <= macd_signal[i-1]:
             signals.append(Signal(i, 1, "MACD12x26"))
-        elif macd[i] < macd_signal[i] and macd[i - 1] >= macd_signal[i - 1]:
+        elif macd[i] < macd_signal[i] and macd[i-1] >= macd_signal[i-1]:
             signals.append(Signal(i, -1, "MACD12x26"))
-        if keltner_upper[i] is not None and keltner_upper[i - 1] is not None:
-            if rows[i].close > keltner_upper[i] and rows[i - 1].close <= keltner_upper[i - 1]:
+        if adx[i] is not None and adx[i] >= 20:
+            if plus_di[i] > minus_di[i] and plus_di[i-1] <= minus_di[i-1]:
+                signals.append(Signal(i, 1, "ADX14Trend"))
+            elif minus_di[i] > plus_di[i] and minus_di[i-1] <= plus_di[i-1]:
+                signals.append(Signal(i, -1, "ADX14Trend"))
+        # Breakouts and volatility
+        if c.close > prior_high:
+            signals.append(Signal(i, 1, "Donchian20"))
+        elif c.close < prior_low:
+            signals.append(Signal(i, -1, "Donchian20"))
+        if upper_k[i] is not None and upper_k[i-1] is not None:
+            if c.close > upper_k[i] and p.close <= upper_k[i-1]:
                 signals.append(Signal(i, 1, "Keltner20x2ATR"))
-            elif rows[i].close < keltner_lower[i] and rows[i - 1].close >= keltner_lower[i - 1]:
+            elif c.close < lower_k[i] and p.close >= lower_k[i-1]:
                 signals.append(Signal(i, -1, "Keltner20x2ATR"))
+        if bb_upper[i] is not None and bb_upper[i-1] is not None:
+            if c.close > bb_upper[i] and p.close <= bb_upper[i-1]:
+                signals.append(Signal(i, 1, "Bollinger20x2"))
+            elif c.close < bb_lower[i] and p.close >= bb_lower[i-1]:
+                signals.append(Signal(i, -1, "Bollinger20x2"))
+        if avg_volume[i] and c.volume > 1.5 * avg_volume[i]:
+            if c.close > prior_high:
+                signals.append(Signal(i, 1, "VolumeBreakout"))
+            elif c.close < prior_low:
+                signals.append(Signal(i, -1, "VolumeBreakout"))
+        # Breakout retest: prior breakout within five completed bars, retest and reclaim
+        if i >= 26:
+            resistance = max(bar.high for bar in rows[i-25:i-5])
+            support = min(bar.low for bar in rows[i-25:i-5])
+            broke_up = any(rows[j].close > resistance for j in range(i-5, i))
+            broke_down = any(rows[j].close < support for j in range(i-5, i))
+            if broke_up and c.low <= resistance * 1.01 and c.close > resistance:
+                signals.append(Signal(i, 1, "BreakoutRetest"))
+            elif broke_down and c.high >= support * 0.99 and c.close < support:
+                signals.append(Signal(i, -1, "BreakoutRetest"))
+        # Candlestick reversal patterns in direction of prevailing short trend
+        body = abs(c.close - c.open)
+        prev_body = abs(p.close - p.open)
+        if body > 0 and prev_body > 0:
+            bullish_engulf = p.close < p.open and c.close > c.open and c.open <= p.close and c.close >= p.open
+            bearish_engulf = p.close > p.open and c.close < c.open and c.open >= p.close and c.close <= p.open
+            if bullish_engulf and ema20[i] > ema50[i]:
+                signals.append(Signal(i, 1, "EngulfingTrend"))
+            elif bearish_engulf and ema20[i] < ema50[i]:
+                signals.append(Signal(i, -1, "EngulfingTrend"))
+        candle_range = c.high - c.low
+        if candle_range > 0:
+            lower_wick = min(c.open, c.close) - c.low
+            upper_wick = c.high - max(c.open, c.close)
+            if lower_wick >= 2 * max(body, candle_range * 0.05) and c.close > c.open and ema20[i] > ema50[i]:
+                signals.append(Signal(i, 1, "PinBarTrend"))
+            elif upper_wick >= 2 * max(body, candle_range * 0.05) and c.close < c.open and ema20[i] < ema50[i]:
+                signals.append(Signal(i, -1, "PinBarTrend"))
+        # Volatility squeeze: narrowest Bollinger width of the prior 20 bars, then range break
+        if bb_upper[i] is not None and bb_mid[i] and bb_mid[i] > 0:
+            width = (bb_upper[i] - bb_lower[i]) / bb_mid[i]
+            prior_widths = []
+            for j in range(i-20, i):
+                if bb_upper[j] is not None and bb_mid[j] and bb_mid[j] > 0:
+                    prior_widths.append((bb_upper[j] - bb_lower[j]) / bb_mid[j])
+            if prior_widths and width <= min(prior_widths) and c.close > prior_high:
+                signals.append(Signal(i, 1, "SqueezeBreakout"))
+            elif prior_widths and width <= min(prior_widths) and c.close < prior_low:
+                signals.append(Signal(i, -1, "SqueezeBreakout"))
     return signals
-
 
 def backtest(candles: list[Candle], signals: list[Signal],
              config: BacktestConfig = BacktestConfig()) -> list[Trade]:
