@@ -49,6 +49,15 @@ jobs:
         run: |
           python -m compileall -q research_agent/technical_analysis_ready.py scripts/run_ta_frozen_moex44.py
           python scripts/run_ta_frozen_moex44.py
+          python -m compileall -q scripts/run_ta_pattern_event_study.py
+          python scripts/run_ta_pattern_event_study.py
+      - name: Upload chronological event-study report
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-ta-chronological-event-study
+          path: ta-event-study-report/
+          if-no-files-found: error
+          retention-days: 30
       - name: Upload compact analysis report
         uses: actions/upload-artifact@v4
         with:
