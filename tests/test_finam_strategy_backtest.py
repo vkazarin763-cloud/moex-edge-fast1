@@ -44,7 +44,7 @@ class FinamStrategyBacktestTests(unittest.TestCase):
         ):
             report = research.run("test-token")
         self.assertEqual(report["status"], "COMPLETE")
-        self.assertEqual(report["strategies"], ["Donchian20","EMA20x50","RSI14Trend50","MACD12x26","ADX14Trend","Keltner20x2ATR","Bollinger20x2","VolumeBreakout","BreakoutRetest","EngulfingTrend","PinBarTrend","SqueezeBreakout"])
+        self.assertEqual(report["strategies"], ["Donchian20","EMA20x50","RSI14Trend50","MACD12x26","ADX14Trend","Keltner20x2ATR","Bollinger20x2","VolumeBreakout","BreakoutRetest","EngulfingTrend","PinBarTrend","SqueezeBreakout","TrendMomentumConfirm","TrendVolumeBreakout","ADXDonchian","CandleVolumeConfirm"])
         self.assertEqual(len(self.client.calls), 1)
         symbol, timeframe, start, end = self.client.calls[0]
         self.assertEqual((symbol, timeframe), ("SBER@MISX", "TIME_FRAME_D"))
