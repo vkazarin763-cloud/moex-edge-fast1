@@ -58,12 +58,10 @@ jobs:
           TICKERS: ${{ github.event.inputs.tickers }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ]; then
-            python -m research_agent.multi_timeframe --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
-          elif [ -n "${TICKERS:-}" ]; then
-            python -m research_agent.multi_timeframe --tickers "$TICKERS" --output moex_edge_multi_timeframe_candles.json
+          if [ -n "${TICKERS:-}" ]; then
+            python -m research_agent.multi_timeframe --tickers "$TICKERS" --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
           else
-            python -m research_agent.multi_timeframe --output moex_edge_multi_timeframe_candles.json
+            python -m research_agent.multi_timeframe --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
           fi
       - name: Validate timestamps and no-lookahead alignment
         run: |
