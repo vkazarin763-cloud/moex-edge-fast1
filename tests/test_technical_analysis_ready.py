@@ -68,6 +68,14 @@ class TechnicalAnalysisReadyTests(unittest.TestCase):
         self.assertIn("rsi_14", report["indicators"])
         self.assertIn("candlestick_patterns", report)
 
+    def test_recent_levels_are_bounded_by_type(self):
+        report = analyze_ohlcv(sample_candles(260), level_lookback=120, max_zones_per_kind=2)
+        zones = report["levels"]["zones"]
+        self.assertLessEqual(sum(z["kind"] == "support" for z in zones), 2)
+        self.assertLessEqual(sum(z["kind"] == "resistance" for z in zones), 2)
+        self.assertEqual(report["levels"]["pivot_lookback_bars"], 120)
+        self.assertGreaterEqual(report["levels"]["candidate_zone_count"], len(zones))
+
     def test_channel_returns_none_when_history_is_short(self):
         frame = _normalise_and_validate(sample_candles(20))
         self.assertIsNone(_regression_channel(frame, window=60))
