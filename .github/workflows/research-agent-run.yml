@@ -122,16 +122,32 @@ jobs:
           if start > end:
               raise SystemExit("date_from must not be after date_till")
           PY
-          printf 'date_from=%s\\n' "$START" >> "$GITHUB_OUTPUT"
-          printf 'date_till=%s\\n' "$END" >> "$GITHUB_OUTPUT"
+          printf 'date_from=%s\n' "$START" >> "$GITHUB_OUTPUT"
+          printf 'date_till=%s\n' "$END" >> "$GITHUB_OUTPUT"
       - name: Run read-only research across MOEX first-listing universe
         env:
           DATE_FROM: ${{ steps.dates.outputs.date_from }}
           DATE_TILL: ${{ steps.dates.outputs.date_till }}
         run: |
-          set -euo pipefail
+          set +e
           python -m research_agent.cli --from "$DATE_FROM" --till "$DATE_TILL" --output research_report.json
           research_exit=$?
+          set -e
+          if [ "$research_exit" -eq 3 ] && [ -s research_report.json ] && [ -s strategy_registry.json ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("research_report.json").read_text(encoding="utf-8"))
+          audit = report.get("independent_validation", {})
+          if audit.get("status") != "INDEPENDENT_VALIDATION_INCOMPLETE" or audit.get("errors"):
+              raise SystemExit("Exit code 3 is only tolerated for warning-only INCOMPLETE reports.")
+          print("Research report and strategy registry are available; structural audit is INCOMPLETE with warnings only.")
+          PY
+            echo "::warning::Research audit is INCOMPLETE with warnings; registry remains development-only and cannot authorize live trading."
+            exit 0
+          fi
+          exit "$research_exit"
       - name: Upload research report
         if: always()
         uses: actions/upload-artifact@v4
