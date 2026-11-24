@@ -15,6 +15,9 @@ from pathlib import Path
 
 import pandas as pd
 
+# Running a script from scripts/ puts that directory, not the repository root, on sys.path.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from research_agent.technical_analysis_ready import analyze_ohlcv, _normalise_and_validate
 
 DATA_FILE = Path("frozen-data/moex_edge_multi_timeframe_candles.json")
