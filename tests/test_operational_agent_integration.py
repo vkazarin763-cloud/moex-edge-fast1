@@ -63,8 +63,10 @@ class OperationalAgentIntegrationTests(unittest.TestCase):
             return {
                 "proposals": [], "strategy_hypotheses": [],
                 "forecast_reviews": [{
-                    "symbol": "SBER", "horizon_sessions": 1,
-                    "assessment": assessment, "rationale": "Qualitative review only.",
+                    "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
+                    "d1_bar_end_utc": "2026-11-23T21:00:00+00:00",
+                    "horizon_sessions": 1, "assessment": assessment,
+                    "rationale": "Qualitative review only.",
                 }],
             }
 
