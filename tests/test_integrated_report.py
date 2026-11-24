@@ -88,6 +88,10 @@ class IntegratedReportTests(unittest.TestCase):
         self.assertEqual(report["summary"]["calibration_status"], "NOT_CALIBRATED")
         self.assertFalse(report["safety"]["live_trading_authorized"])
         self.assertEqual(report["cards"][0]["forecast"]["1"]["predicted_direction"], "UP")
+        self.assertEqual(
+            report["cards"][0]["forecast"]["1"]["probabilities_percent"],
+            {"DOWN": 20.0, "SIDEWAYS": 30.0, "UP": 50.0},
+        )
 
     def test_only_independently_verified_candidate_becomes_confirmed(self):
         parts = list(_fixtures())
