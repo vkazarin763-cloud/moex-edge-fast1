@@ -416,12 +416,26 @@ def main() -> int:
         os.environ.get("FINAM_SOURCE_APP_ID", "").strip() or None,
     )
     Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    forecast = report.get("direction_forecast_research", {})
+    forecast_summary = {
+        "status": forecast.get("status"),
+        "as_of_date": (forecast.get("historical_latest_forecasts") or {}).get("as_of_date"),
+        "horizons": {
+            horizon: {
+                "status": result.get("status"),
+                "oos_samples": result.get("oos_samples"),
+                "metrics": result.get("pooled_oos_metrics"),
+            }
+            for horizon, result in forecast.get("walk_forward", {}).items()
+        },
+    }
     print(json.dumps({
         "status": report["status"],
         "d1_symbols_ok": report["data_summary"]["d1_symbols_ok"],
         "d1_bars": report["data_summary"]["d1_bars"],
         "h1_symbols_with_trend": report["data_summary"]["h1_symbols_with_trend"],
         "errors": len(report["data_summary"]["errors"]),
+        "direction_forecast": forecast_summary,
         "output": args.output,
     }, ensure_ascii=False))
     return 0 if report["status"] == "COMPLETE" else 1
