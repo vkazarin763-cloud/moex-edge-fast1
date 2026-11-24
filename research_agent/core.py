@@ -214,7 +214,55 @@ def _wilder_adx(rows: list[Candle], period: int = 14):
 
 
 def generate_signals(candles: list[Candle]) -> list[Signal]:
-    """Broad, fixed-rule TA candidate library. No parameter fitting or look-ahead."""
+    """Pre-registered candidate set; fixed parameters, no fitting or look-ahead."""
+    rows = validate_candles(candles)
+    closes = [c.close for c in rows]
+    ema12, ema20, ema26, ema50 = (
+        _ema(closes, 12), _ema(closes, 20), _ema(closes, 26), _ema(closes, 50)
+    )
+    macd = [fast - slow for fast, slow in zip(ema12, ema26)]
+    macd_signal = _ema(macd, 9)
+    rsi14 = _wilder_rsi(closes, 14)
+    atr14 = _wilder_atr(rows, 14)
+    keltner_upper = [
+        ema20[i] + 2.0 * atr14[i] if atr14[i] is not None else None
+        for i in range(len(rows))
+    ]
+    keltner_lower = [
+        ema20[i] - 2.0 * atr14[i] if atr14[i] is not None else None
+        for i in range(len(rows))
+    ]
+    signals: list[Signal] = []
+    for i in range(55, len(rows) - 1):
+        prior_high = max(c.high for c in rows[i - 20:i])
+        prior_low = min(c.low for c in rows[i - 20:i])
+        if rows[i].close > prior_high:
+            signals.append(Signal(i, 1, "Donchian20"))
+        elif rows[i].close < prior_low:
+            signals.append(Signal(i, -1, "Donchian20"))
+        if ema20[i] > ema50[i] and ema20[i - 1] <= ema50[i - 1]:
+            signals.append(Signal(i, 1, "EMA20x50"))
+        elif ema20[i] < ema50[i] and ema20[i - 1] >= ema50[i - 1]:
+            signals.append(Signal(i, -1, "EMA20x50"))
+        if rsi14[i] is not None and rsi14[i - 1] is not None:
+            if ema20[i] > ema50[i] and rsi14[i] > 50 and rsi14[i - 1] <= 50:
+                signals.append(Signal(i, 1, "RSI14Trend50"))
+            elif ema20[i] < ema50[i] and rsi14[i] < 50 and rsi14[i - 1] >= 50:
+                signals.append(Signal(i, -1, "RSI14Trend50"))
+        if macd[i] > macd_signal[i] and macd[i - 1] <= macd_signal[i - 1]:
+            signals.append(Signal(i, 1, "MACD12x26"))
+        elif macd[i] < macd_signal[i] and macd[i - 1] >= macd_signal[i - 1]:
+            signals.append(Signal(i, -1, "MACD12x26"))
+        if keltner_upper[i] is not None and keltner_upper[i - 1] is not None:
+            if rows[i].close > keltner_upper[i] and rows[i - 1].close <= keltner_upper[i - 1]:
+                signals.append(Signal(i, 1, "Keltner20x2ATR"))
+            elif rows[i].close < keltner_lower[i] and rows[i - 1].close >= keltner_lower[i - 1]:
+                signals.append(Signal(i, -1, "Keltner20x2ATR"))
+    return signals
+
+
+def generate_expanded_signals(candles: list[Candle]) -> list[Signal]:
+    """Expanded 16-hypothesis research library; isolated from the frozen five-strategy core."""
     rows = validate_candles(candles)
     closes = [c.close for c in rows]
     ema12, ema20, ema26, ema50 = (_ema(closes, 12), _ema(closes, 20), _ema(closes, 26), _ema(closes, 50))
@@ -334,7 +382,6 @@ def generate_signals(candles: list[Candle]) -> list[Signal]:
             elif p.close > p.open and c.close < c.open and c.open >= p.close and c.close <= p.open:
                 signals.append(Signal(i, -1, "CandleVolumeConfirm"))
     return signals
-
 def backtest(candles: list[Candle], signals: list[Signal],
              config: BacktestConfig = BacktestConfig()) -> list[Trade]:
     """One non-overlapping trade per symbol; conservative same-bar stop-first.
