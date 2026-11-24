@@ -1,4 +1,4 @@
-"""Read-only one-year Finam D1 research for two pre-registered MOEX strategies.
+"""Read-only one-year Finam D1 research for a broad pre-registered MOEX technical-analysis candidate set.
 
 The requested interval ends strictly before the frozen 2026-11-20 holdout.
 No account, portfolio, order, or execution endpoints are used.
@@ -222,7 +222,7 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         if ticker not in fetch_errors and len(rows_by_ticker[ticker]) < 60
     ]
     return {
-        "report_version": "finam-two-strategy-d1-v1",
+        "report_version": "finam-ta-library-d1-v2",
         "status": "COMPLETE" if not fetch_errors and not incomplete_symbols else "INCOMPLETE_DATA",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source": "Finam Trade API TIME_FRAME_D, native D1 bars",
@@ -275,7 +275,7 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Finam D1 one-year two-strategy historical research")
+    parser = argparse.ArgumentParser(description="Finam D1 one-year technical-analysis research")
     parser.add_argument("--output", default="finam_two_strategy_report.json")
     args = parser.parse_args()
     token = os.environ.get("FINAM_API_TOKEN", "").strip()
