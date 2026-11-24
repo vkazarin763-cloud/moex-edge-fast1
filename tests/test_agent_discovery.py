@@ -37,6 +37,88 @@ class AgentDiscoveryTests(unittest.TestCase):
             "scanner_contract": {"consume_only_status": "PASS", "live_trading_authorized": False},
         }
 
+    def test_validates_full_forecast_but_shares_only_candidate_forecasts_with_agents(self):
+        forecasts = []
+        for ticker in self.scan["universe"]:
+            for horizon in (1, 5, 20):
+                forecasts.append({
+                    "ticker": ticker,
+                    "horizon_sessions": horizon,
+                    "status": "EXPERIMENTAL_NOT_CALIBRATED",
+                    "model_version": "test-model-v1",
+                    "post_holdout_outcomes_used": False,
+                    "predicted_class": "UP",
+                    "probability_down": 0.2,
+                    "probability_sideways": 0.3,
+                    "probability_up": 0.5,
+                })
+        forecast_report = {
+            "report_type": "MOEX_EDGE_OPERATIONAL_DIRECTION_FORECAST_V1",
+            "status": "COMPLETE",
+            "model_version": "test-model-v1",
+            "as_of_date": "2026-11-23",
+            "holdout_policy": {
+                "post_holdout_outcomes_used_for_training": 0,
+                "post_holdout_outcomes_used_for_model_selection": 0,
+                "post_holdout_outcomes_used_for_calibration": 0,
+                "post_holdout_outcomes_used_for_performance_metrics": 0,
+                "inference_parameters_frozen_before_holdout": True,
+                "holdout_start": "2026-11-20",
+            },
+            "forecasts": forecasts,
+        }
+        prompts = []
+
+        def fake(prompt, *, api_key, model):
+            prompts.append(prompt)
+            return {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": []}
+
+        _, diagnostics = run_discovery(
+            self.scan, self.registry, api_key="fake", caller=fake,
+            forecast_report=forecast_report,
+        )
+        self.assertEqual(len(prompts), 3)
+        self.assertEqual(diagnostics["full_universe_forecast_rows_validated"], 6)
+        self.assertEqual(diagnostics["forecast_symbols_shared_with_agents"], 1)
+        for prompt in prompts:
+            self.assertIn('"SBER"', prompt)
+            self.assertNotIn('"LKOH"', prompt)
+
+    def test_incomplete_full_universe_forecast_is_still_rejected(self):
+        forecasts = []
+        for ticker in self.scan["universe"]:
+            for horizon in (1, 5, 20):
+                forecasts.append({
+                    "ticker": ticker,
+                    "horizon_sessions": horizon,
+                    "status": "EXPERIMENTAL_NOT_CALIBRATED",
+                    "model_version": "test-model-v1",
+                    "post_holdout_outcomes_used": False,
+                    "predicted_class": "UP",
+                    "probability_down": 0.2,
+                    "probability_sideways": 0.3,
+                    "probability_up": 0.5,
+                })
+        forecast_report = {
+            "report_type": "MOEX_EDGE_OPERATIONAL_DIRECTION_FORECAST_V1",
+            "status": "COMPLETE",
+            "model_version": "test-model-v1",
+            "holdout_policy": {
+                "post_holdout_outcomes_used_for_training": 0,
+                "post_holdout_outcomes_used_for_model_selection": 0,
+                "post_holdout_outcomes_used_for_calibration": 0,
+                "post_holdout_outcomes_used_for_performance_metrics": 0,
+                "inference_parameters_frozen_before_holdout": True,
+            },
+            "forecasts": forecasts[:-1],
+        }
+        with self.assertRaisesRegex(ValueError, "all 1/5/20-session forecasts"):
+            run_discovery(
+                self.scan, self.registry, api_key="fake",
+                caller=lambda prompt, **kwargs: {"proposals": [], "strategy_hypotheses": []},
+                forecast_report=forecast_report,
+            )
+
     def test_http_permission_error_preserves_provider_diagnostic(self):
         body = json.dumps({
             "error": {
