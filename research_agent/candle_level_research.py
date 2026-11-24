@@ -438,7 +438,7 @@ def main() -> int:
         "direction_forecast": forecast_summary,
         "output": args.output,
     }, ensure_ascii=False))
-    return 0 if report["status"] == "COMPLETE" else 1
+    return 0 if report["data_summary"]["d1_symbols_ok"] > 0 and not report["data_summary"]["errors"] else 1
 
 
 if __name__ == "__main__":
