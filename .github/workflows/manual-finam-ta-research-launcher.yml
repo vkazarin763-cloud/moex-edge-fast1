@@ -13,7 +13,7 @@ concurrency:
 jobs:
   research:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout research implementation from Draft PR branch
         uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
       - name: Compile and run offline research tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_finam_strategy_backtest -v
+          python -m unittest tests.test_finam_strategy_backtest tests.test_candle_level_research -v
 
       - name: Check Finam read-only credential
         env:
@@ -45,12 +45,15 @@ jobs:
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
         run: |
           python -m research_agent.finam_strategy_backtest --output finam_ta_research_report.json
+          python -m research_agent.candle_level_research --output moex_candle_level_research_report.json
 
       - name: Upload research report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: moex-edge-finam-ta-research-${{ github.run_id }}
-          path: finam_ta_research_report.json
+          path: |
+            finam_ta_research_report.json
+            moex_candle_level_research_report.json
           if-no-files-found: warn
           retention-days: 30
