@@ -138,6 +138,20 @@ class FinamMarketDataTests(unittest.TestCase):
         with self.assertRaises(FinamAPIError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
+    def test_d1_accepts_session_start_bar_on_inclusive_start_date(self):
+        start = datetime(2026, 11, 18, 12, 0, tzinfo=timezone.utc)
+        end = datetime(2026, 11, 19, 12, 0, tzinfo=timezone.utc)
+        client = FinamMarketDataClient(
+            "token",
+            requester=lambda *a, **k: {
+                "symbol": "SBER@MISX",
+                "bars": [bar("2026-11-18T05:00:00Z")],
+            },
+        )
+        rows = client.fetch_bars("SBER@MISX", "TIME_FRAME_D", start, end)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].timestamp, datetime(2026, 11, 18, 5, 0, tzinfo=timezone.utc))
+
     def test_fetch_bars_rejects_bars_outside_requested_interval(self):
         client = FinamMarketDataClient(
             "token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [bar("2026-11-19T00:00:00Z")]}
