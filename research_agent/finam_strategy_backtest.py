@@ -9,7 +9,6 @@ import argparse
 import hashlib
 import json
 import os
-from collections import defaultdict
 from dataclasses import asdict, replace
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -167,9 +166,10 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
             },
         }
 
+    incomplete_symbols = [ticker for ticker in TICKERS if len(rows_by_ticker[ticker]) < 60]
     return {
         "report_version": "finam-two-strategy-d1-v1",
-        "status": "COMPLETE" if not fetch_errors else "INCOMPLETE_DATA",
+        "status": "COMPLETE" if not fetch_errors and not incomplete_symbols else "INCOMPLETE_DATA",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source": "Finam Trade API TIME_FRAME_D, native D1 bars",
         "universe": list(TICKERS),
@@ -194,12 +194,21 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
         },
         "data_summary": {
             "symbols_with_usable_history": len(analyzed),
-            "symbols_insufficient_history": len(TICKERS) - len(analyzed) - len(fetch_errors),
+            "symbols_insufficient_history": len(incomplete_symbols),
             "symbols_with_fetch_or_validation_errors": len(fetch_errors),
             "total_retained_bars": sum(len(rows) for rows in analyzed.values()),
             "errors": fetch_errors,
         },
         "data_audit": data_audit,
+        "candles": {
+            ticker: [
+                {"timestamp": candle.timestamp.isoformat(), "open": candle.open,
+                 "high": candle.high, "low": candle.low, "close": candle.close,
+                 "volume": candle.volume}
+                for candle in rows_by_ticker[ticker]
+            ]
+            for ticker in TICKERS
+        },
         "results": results,
         "interpretation": (
             "One-year exploratory historical screen only. Half-period metrics are temporal diagnostics, "
