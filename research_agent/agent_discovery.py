@@ -82,11 +82,14 @@ OUTPUT_SCHEMA = {
                         "type": "object",
                         "properties": {
                             "symbol": {"type": "string"},
+                            "direction": {"type": "string", "enum": DIRECTIONS},
+                            "strategy": {"type": "string", "enum": STRATEGIES},
+                            "d1_bar_end_utc": {"type": "string"},
                             "horizon_sessions": {"type": "integer", "enum": [1, 5, 20]},
                             "assessment": {"type": "string", "enum": FORECAST_ASSESSMENTS},
                             "rationale": {"type": "string"},
                         },
-                        "required": ["symbol", "horizon_sessions", "assessment", "rationale"],
+                        "required": ["symbol", "direction", "strategy", "d1_bar_end_utc", "horizon_sessions", "assessment", "rationale"],
                         "additionalProperties": False,
                     },
                 },
@@ -435,16 +438,20 @@ def call_discovery_with_fallback(
 
 
 def _forecast_review_conflicts(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    grouped: dict[tuple[str, int], dict[str, list[str]]] = defaultdict(
+    grouped: dict[tuple[str, str, str, str, int], dict[str, list[str]]] = defaultdict(
         lambda: {"AGREES": [], "CONTRADICTS": [], "NEUTRAL": [], "INSUFFICIENT_EVIDENCE": []}
     )
     for review in reviews:
-        grouped[(review["symbol"], review["horizon_sessions"])][review["assessment"]].append(review["role"])
+        key = (review["symbol"], review["direction"], review["strategy"],
+               review["d1_bar_end_utc"], review["horizon_sessions"])
+        grouped[key][review["assessment"]].append(review["role"])
     conflicts = []
-    for (symbol, horizon), roles in sorted(grouped.items()):
+    for key, roles in sorted(grouped.items()):
         if roles["AGREES"] and roles["CONTRADICTS"]:
+            symbol, direction, strategy, d1_end, horizon = key
             conflicts.append({
-                "symbol": symbol, "horizon_sessions": horizon,
+                "symbol": symbol, "direction": direction, "strategy": strategy,
+                "d1_bar_end_utc": d1_end, "horizon_sessions": horizon,
                 "status": "CONTRADICTION",
                 "agreeing_roles": sorted(roles["AGREES"]),
                 "contradicting_roles": sorted(roles["CONTRADICTS"]),
@@ -494,10 +501,13 @@ def run_discovery(
             "they are unverified research questions, not signals or claims of profitability. "
             "Do not propose a strategy family outside the supplied catalog. "
             "If direction_forecast is present, you may return forecast_reviews for symbols that "
-            "also appear in candidate_signals. Review horizons 1, 5 and 20 independently; use "
-            "AGREES, CONTRADICTS, NEUTRAL or INSUFFICIENT_EVIDENCE and give a brief evidence-based "
-            "rationale. Do not alter, recalculate or repeat numeric probabilities. If evidence is "
-            "insufficient or there are no candidate symbols, return an empty forecast_reviews array.\n"
+            "also appear in candidate_signals, copying the exact symbol, direction, strategy and "
+            "d1_bar_end_utc. For each candidate and each horizon, compare candidate direction to "
+            "the model's predicted_class: LONG/UP or SHORT/DOWN is AGREES; LONG/DOWN or SHORT/UP "
+            "is CONTRADICTS; SIDEWAYS is NEUTRAL; use INSUFFICIENT_EVIDENCE when the data do not "
+            "support a view. Treat probabilities as experimental and NOT_CALIBRATED. Do not alter, "
+            "recalculate or repeat numeric probabilities. If no candidate exists, return an empty "
+            "forecast_reviews array.\n"
             f"DETERMINISTIC SNAPSHOT: {context_json}"
         )
         if caller is call_groq_discovery:
@@ -518,19 +528,25 @@ def run_discovery(
             if not isinstance(review, dict):
                 continue
             symbol = review.get("symbol")
+            direction = review.get("direction")
+            strategy = review.get("strategy")
+            d1_bar_end_utc = review.get("d1_bar_end_utc")
             horizon = review.get("horizon_sessions")
             assessment = review.get("assessment")
             rationale = review.get("rationale")
-            review_key = (symbol, horizon)
-            if (forecast_context is not None and symbol in candidate_symbols
+            candidate_key = (symbol, direction, strategy, d1_bar_end_utc)
+            review_key = (*candidate_key, horizon)
+            if (forecast_context is not None and candidate_key in candidate_keys
                     and symbol in forecast_symbols and horizon in (1, 5, 20)
                     and assessment in FORECAST_ASSESSMENTS
                     and isinstance(rationale, str) and 0 < len(rationale.strip()) <= 400
                     and review_key not in seen_forecast_reviews_this_agent):
                 seen_forecast_reviews_this_agent.add(review_key)
                 forecast_reviews.append({
-                    "role": role, "symbol": symbol, "horizon_sessions": horizon,
-                    "assessment": assessment, "rationale": rationale.strip(),
+                    "role": role, "symbol": symbol, "direction": direction,
+                    "strategy": strategy, "d1_bar_end_utc": d1_bar_end_utc,
+                    "horizon_sessions": horizon, "assessment": assessment,
+                    "rationale": rationale.strip(),
                 })
         for item in response["proposals"]:
             if not isinstance(item, dict):
