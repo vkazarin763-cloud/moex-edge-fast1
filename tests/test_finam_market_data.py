@@ -170,7 +170,7 @@ class FinamMarketDataTests(unittest.TestCase):
                 "symbol": "SBER@MISX", "bars": [bar("2026-11-20T05:00:00Z")]
             }
         )
-        with self.assertRaisesRegex(FinamAPIError, r"timestamp=2026-11-20T05:00:00\\+00:00"):
+        with self.assertRaisesRegex(FinamAPIError, r"timestamp=2026-11-20T05:00:00\+00:00"):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
     def test_fetch_bars_rejects_missing_response_symbol(self):
