@@ -81,7 +81,8 @@ def main() -> int:
 
             try:
                 validated = _normalise_and_validate(candles)
-                result = analyze_ohlcv(validated)
+                level_lookback = {"D1": 250, "H1": 240, "W1": 104}[timeframe]
+                result = analyze_ohlcv(validated, level_lookback=level_lookback, max_zones_per_kind=8)
             except Exception as exc:
                 errors.append(f"{symbol}/{timeframe}: {type(exc).__name__}: {exc}")
                 continue
@@ -107,6 +108,8 @@ def main() -> int:
                 "relative_volume20": result["indicators"]["relative_volume_20"],
                 "confirmed_pivots": result["levels"]["confirmed_pivot_count"],
                 "zones_count": len(result["levels"]["zones"]),
+                "candidate_zones_count": result["levels"]["candidate_zone_count"],
+                "level_lookback_bars": result["levels"]["pivot_lookback_bars"],
                 "channel_type": (result["channel"] or {}).get("channel_type"),
                 "channel_window_bars": (result["channel"] or {}).get("window_bars"),
             }
