@@ -84,3 +84,42 @@ Neutral Doji/Inside patterns and sideways-channel observations are measured by a
 This is a simple, overlapping event study. It does not correct for multiple testing, dependence between repeated/overlapping observations, volatility regimes, or all market microstructure effects. The matched baseline is the same symbol/timeframe/period/horizon's unconditional directional return average, not a matched control portfolio. No statistical significance, risk-adjusted edge, portfolio performance, or profitability is established.
 
 **Decision:** keep the adapter descriptive and disabled as a signal source. The next useful research step is a narrower, pre-registered set of hypotheses with non-overlapping events, per-symbol robustness, regime controls, and costs/slippage sensitivity. Do not tune on or inspect the sealed period beginning 2026-11-20.
+
+
+## Non-overlapping robustness and cost sensitivity — version 3
+
+A second pass was added to reduce repeated/overlapping event observations and to test whether apparent effects are spread across symbols.
+
+- Final workflow run: https://github.com/vkazarin763-cloud/moex-edge-fast1/actions/runs/45318840663
+- Final report artifact: `moex-ta-chronological-event-study` (includes `nonoverlap_summary.csv`, `nonoverlap_by_label.csv`, `cost_sensitivity.csv`, `per_symbol_sign_robustness.csv`, and the original event files; 30-day retention).
+- Input: 781,996 event rows.
+- 97,822 same-bar conflicting-direction rows excluded; 14,078 same-bar same-direction duplicate labels collapsed.
+- Family-level chronological non-overlap selection retained 321,270 events (47.94% of the cleaned rows). Label-level selection retained 346,610 events; separate labels can still overlap one another.
+- Results are first averaged within each symbol, then symbols are equally weighted.
+- Cost sensitivity uses round-trip assumptions of 0.16%, 0.32%, 0.64%, and 1.00%. The baseline is adjusted by the same cost.
+
+### Multiple-testing and cross-symbol robustness
+
+There are 140 directional label/timeframe/horizon groups in the validation period. For each group, a one-sided sign test checks whether more symbols had positive mean event returns or positive mean excess versus their own matched baseline. Benjamini-Hochberg adjustment is applied across all 140 groups.
+
+- Best adjusted q-value for positive net-return signs: **0.0299**.
+- Best adjusted q-value for positive excess-versus-baseline signs: **0.0882**.
+- Therefore **no tested group clears the 5% false-discovery threshold for consistent positive excess over its baseline**.
+- The lowest q-value for positive net return belongs to weekly Hammer/LONG at a 5-bar horizon (22 symbols, 26 events). Its positive excess does not survive multiple-testing adjustment (q = 0.1013); this is a small, exploratory subset, not a validated trading edge.
+
+The sign test treats symbols as independent for this diagnostic, although MOEX shares are correlated. It is not a substitute for a block bootstrap or a time-series model.
+
+### Cost sensitivity example
+
+The broad D1 candlestick-pattern family at a 5-bar horizon had 440 non-overlapping observations across 44 symbols:
+
+| Assumed round-trip cost | Equal-symbol mean net return | Equal-symbol win rate |
+|---|---:|---:|
+| 0.16% | +0.5336% | 51.11% |
+| 0.32% | +0.3736% | 49.55% |
+| 0.64% | +0.0536% | 47.02% |
+| 1.00% | -0.3064% | 44.07% |
+
+This is a post-hoc aggregate over several candle labels. It is not a pre-registered signal, and the positive mean does not establish a repeatable edge. The label-level sign tests do not establish significant excess versus baseline after multiple-testing correction.
+
+**Decision remains unchanged:** keep technical-analysis features descriptive only. Do not connect them to live LONG/SHORT signals. A future candidate must be specified before another test, validated over a longer chronological sample, compared with a matched baseline, and pass symbol-level robustness and realistic spread/fee/slippage checks. The sealed period from 2026-11-20 onward remains untouched.
