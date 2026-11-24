@@ -1,0 +1,56 @@
+name: MOEX EDGE Finam TA Research Launcher
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moex-edge-finam-ta-research-launcher
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout research implementation from Draft PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: vkazarin763-cloud/moex-edge-fast1
+          ref: feat/finam-only-d1-h1-v1
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile and run offline research tests
+        run: |
+          python -m compileall -q research_agent tests
+          python -m unittest tests.test_finam_strategy_backtest -v
+
+      - name: Check Finam read-only credential
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+        run: |
+          test -n "$FINAM_API_TOKEN" || { echo "FINAM_API_TOKEN is missing"; exit 1; }
+          echo "Finam credential is configured; secret value is not printed."
+
+      - name: Run full D1 technical-analysis research
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
+        run: |
+          python -m research_agent.finam_strategy_backtest --output finam_ta_research_report.json
+
+      - name: Upload research report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-finam-ta-research-${{ github.run_id }}
+          path: finam_ta_research_report.json
+          if-no-files-found: warn
+          retention-days: 30
