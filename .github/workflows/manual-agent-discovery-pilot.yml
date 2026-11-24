@@ -154,11 +154,15 @@ jobs:
               if "timeframes" in data:
                   for frame, item in data["timeframes"].items():
                       lines.append(f"- {frame}: {item.get('ok')}/{item.get('symbols')} symbols; {item.get('errors')} errors")
-              for key in ("status", "issue_count", "signals_count", "candidate_count_seen",
-                          "consensus_proposal_count", "hypothesis_count", "confirmed_signals_count",
-                          "proposal_count"):
+              for key in ("status", "provider", "model", "issue_count", "signals_count",
+                          "candidate_count_seen", "consensus_proposal_count", "hypothesis_count",
+                          "confirmed_signals_count", "proposal_count"):
                   if key in data:
                       lines.append(f"- {key}: {data[key]}")
+              if isinstance(data.get("providers_used"), list):
+                  lines.append(f"- providers_used: {data['providers_used']}")
+              if isinstance(data.get("agent_roles"), dict):
+                  lines.append(f"- agent_roles: {data['agent_roles']}")
               if isinstance(data.get("counts"), dict):
                   lines.append(f"- statuses: {data['counts']}")
               if isinstance(data.get("policy"), dict):
