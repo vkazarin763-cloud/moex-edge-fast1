@@ -284,6 +284,8 @@ def _audit_raw_session_provenance(
         "history_trade_dates_without_raw_fragments",
         "trading_days_reconciled",
         "trading_days_mismatched",
+        "documented_corporate_action_mismatch_dates",
+        "unexplained_mismatch_dates",
         "unassigned_raw_candles",
         "raw_candles",
         "mapped_raw_candles",
@@ -356,6 +358,9 @@ def _audit_raw_session_provenance(
 
     if counts["trading_days_reconciled"] + counts["trading_days_mismatched"] != counts["history_dates_with_raw_fragments"]:
         errors.append(f"{ticker}: reconciled and mismatched trading-day counts do not cover raw/history matched dates")
+    if (counts["documented_corporate_action_mismatch_dates"]
+            + counts["unexplained_mismatch_dates"] != counts["trading_days_mismatched"]):
+        errors.append(f"{ticker}: documented and unexplained mismatch counts do not sum to mismatched trading days")
 
     expected_missing = counts["positive_trade_history_dates"] - counts["history_dates_with_raw_fragments"]
     if expected_missing < 0 or counts["history_trade_dates_without_raw_fragments"] != expected_missing:
@@ -382,23 +387,26 @@ def _audit_raw_session_provenance(
 
     expected_complete = (
         counts["raw_candles"] > 0
-        and counts["trading_days_mismatched"] == 0
+        and counts["unexplained_mismatch_dates"] == 0
         and counts["unassigned_raw_candles"] == 0
         and expected_missing == 0
     )
     if audit.get("complete") is not expected_complete:
         errors.append(f"{ticker}: raw session reconciliation complete flag is inconsistent")
     expected_reconciliation_status = (
+        "RECONCILED_WITH_DOCUMENTED_CORPORATE_ACTIONS"
+        if expected_complete and counts["documented_corporate_action_mismatch_dates"] else
         "RECONCILED" if expected_complete else
         "NO_RAW_CANDLES" if counts["raw_candles"] == 0 else
         "RECONCILIATION_WITH_CAVEATS"
     )
     if audit.get("status") != expected_reconciliation_status:
         errors.append(f"{ticker}: raw session reconciliation status is inconsistent")
-    if counts["trading_days_mismatched"] or counts["unassigned_raw_candles"] or expected_missing:
+    if counts["unexplained_mismatch_dates"] or counts["unassigned_raw_candles"] or expected_missing:
         warnings.append(
             f"{ticker}: raw calendar candles do not fully reconcile to TQBR history "
-            f"(missing dates={max(expected_missing, 0)}, mismatched days={counts['trading_days_mismatched']}, "
+            f"(missing dates={max(expected_missing, 0)}, unexplained mismatched days={counts['unexplained_mismatch_dates']}, "
+            f"documented corporate-action basis dates={counts['documented_corporate_action_mismatch_dates']}, "
             f"unassigned candles={counts['unassigned_raw_candles']})"
         )
     return 1
