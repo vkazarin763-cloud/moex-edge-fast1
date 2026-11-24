@@ -39,12 +39,17 @@ def probe_case(case: dict, *, fetcher=fetch_candles) -> dict:
             )
             if row.timestamp.date() == trade_date
         ]
-        minute_rows = [
-            row for row in fetcher(
+        try:
+            fetched_minutes = fetcher(
                 ticker, trade_date.isoformat(), trade_date.isoformat(),
                 interval=1, board="TQBR",
             )
-            if row.timestamp.date() == trade_date
+        except ISSDataError as exc:
+            if "No candles returned" not in str(exc):
+                raise
+            fetched_minutes = []
+        minute_rows = [
+            row for row in fetched_minutes if row.timestamp.date() == trade_date
         ]
         if len(daily_rows) != 1:
             raise ISSDataError(
