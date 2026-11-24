@@ -435,7 +435,7 @@ def run_direction_forecast(
             rows = source_candles.get(ticker, [])
             candles_by_ticker[ticker] = validate_candles(rows) if rows else []
             audits[ticker] = source_audit.get(ticker, {"status": "MISSING_SOURCE_AUDIT"})
-            if audits[ticker].get("status") in {"D1_ERROR", "ERROR"}:
+            if audits[ticker].get("status") in {"D1_ERROR", "ERROR", "FETCH_OR_VALIDATION_ERROR"}:
                 errors[ticker] = str(audits[ticker].get("error", "Source D1 collection failed"))[:500]
     samples_by_horizon = {
         horizon: [
@@ -456,7 +456,11 @@ def run_direction_forecast(
         "report_type": "MOEX_DIRECTION_FORECAST_RESEARCH_V1",
         "status": "COMPLETE" if available == len(TICKERS) and not errors else "PARTIAL",
         "generated_scope": "DEVELOPMENT_ONLY_NO_HOLDOUT",
-        "source": "MOEX ISS TQBR total-session D1 history with corporate-action price-basis exclusions",
+        "source": (
+            "Finam Trade API native D1 candles supplied by the caller"
+            if source_candles is not None
+            else "MOEX ISS TQBR total-session D1 history with corporate-action price-basis exclusions"
+        ),
         "universe": list(TICKERS),
         "universe_size": len(TICKERS),
         "symbols_with_eligible_history": available,
