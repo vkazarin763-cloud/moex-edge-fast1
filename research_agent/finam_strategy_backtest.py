@@ -25,7 +25,7 @@ TICKERS = (
     "SNGS", "SNGSP", "SVCB", "T", "TATN", "TATNP", "TRNFP", "UGLD",
     "VKCO", "VTBR", "X5", "YDEX",
 )
-STRATEGIES = ("Donchian20", "EMA20x50", "RSI14Trend50", "MACD12x26", "ADX14Trend", "Keltner20x2ATR", "Bollinger20x2", "VolumeBreakout", "BreakoutRetest", "EngulfingTrend", "PinBarTrend", "SqueezeBreakout")
+STRATEGIES = ("Donchian20", "EMA20x50", "RSI14Trend50", "MACD12x26", "ADX14Trend", "Keltner20x2ATR", "Bollinger20x2", "VolumeBreakout", "BreakoutRetest", "EngulfingTrend", "PinBarTrend", "SqueezeBreakout", "TrendMomentumConfirm", "TrendVolumeBreakout", "ADXDonchian", "CandleVolumeConfirm")
 HOLDOUT_START = date(2026, 11, 20)
 DATA_START = date(2025, 11, 20)
 MOSCOW = ZoneInfo("Europe/Moscow")
