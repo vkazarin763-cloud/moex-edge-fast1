@@ -1,4 +1,5 @@
 """Research-only OHLC strategy backtest with next-bar entries and explicit cost scenarios."""
+# This evaluator is isolated from production and never submits orders.
 from __future__ import annotations
 import csv,gzip,json,math,statistics
 from datetime import datetime,timezone
