@@ -1,0 +1,63 @@
+name: Price Forecast 24H — read-only data collector
+
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "Optional comma-separated subset; blank collects the 44-symbol candidate pool"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: price-forecast-24h-collector
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout selected research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify read-only market-data credential exists
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+        run: |
+          if [ -z "${FINAM_API_TOKEN:-}" ]; then
+            echo "Missing Actions secret FINAM_API_TOKEN"
+            exit 1
+          fi
+      - name: Collect completed H1 bars and official MOEX daily turnover
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
+          TICKERS: ${{ inputs.tickers }}
+        run: python -m research_agent.price_forecast_24h.collector
+      - name: Commit immutable daily delta snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research_agent/price_forecast_24h/data/
+          if git diff --cached --quiet; then
+            echo "No new market data to commit."
+            exit 0
+          fi
+          git commit -m "data: append 24h price forecast snapshot"
+          git push origin HEAD:research/price-forecast-24h-v1
+      - name: Upload snapshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: price-forecast-24h-snapshot
+          path: research_agent/price_forecast_24h/data/snapshot-*.json.gz
+          if-no-files-found: warn
+          retention-days: 30
