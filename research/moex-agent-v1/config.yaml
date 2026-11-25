@@ -1,0 +1,5 @@
+universe:
+  tickers:
+    - SBER
+telegram:
+  enabled: false
