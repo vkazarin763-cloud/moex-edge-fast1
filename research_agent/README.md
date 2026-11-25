@@ -1,184 +1,92 @@
-# MOEX EDGE — isolated AI Research Agent
+# MOEX EDGE — Finam-only research and signal pipeline
 
-This package is deliberately separate from the live stock/futures executors and
-from `ai_agent.py`, `ai_trainer.py`, `ai_portfolio.json` and `ai_weights.json`.
-It has no broker client, order endpoint, Telegram sender, or production write path.
+This package is isolated from the live stock/futures executors and from
+`ai_agent.py`, `ai_trainer.py`, portfolio state, and production strategy
+configuration. The research and scanner workflows are read-only: they do not
+access broker accounts, positions, orders, or execution endpoints.
 
-## Current scope
+## Active market-data source
 
-- Strict OHLCV validation (finite positive prices, valid OHLC relationships,
-  non-negative volume, strictly increasing timestamps; gaps are not fabricated).
-- Timestamp policy: a dataset must use either all-naive exchange-local timestamps
-  (the format returned by MOEX ISS) or all timezone-aware timestamps. Mixed
-  aware/naive timestamps are rejected rather than silently compared.
-- MOEX additional weekend sessions are part of the next ordinary trading day.
-  The research agent therefore builds D1 model bars from per-security TQBR daily
-  history OHLCV (`TRADEDATE`, total trading session), not by treating each raw
-  Saturday/Sunday candle as an extra trading day. The daily-history row already
-  includes the weekend session(s) and the following ordinary session. Raw calendar-
-  date candles are retained for diagnostics. From the 2025-03-01 weekend-session
-  launch onward, weekend fragments are grouped to the next positive-trade TQBR
-  date and reconciled against daily-history OHLCV; pre-launch weekend dates
-  require same-date history confirmation. Unassigned
-  fragments or OHLCV mismatches are reported; the history row remains the model
-  input and no raw fragment is silently discarded or double-counted. Therefore
-  `max_bars` counts TQBR trading dates rather than separate weekend calendar
-  fragments.
-- A fixed, pre-registered candidate set: Donchian-20 breakout, EMA-20/50 cross,
-  RSI-14 trend momentum, MACD-12/26 crossover and Keltner-20/2ATR breakout. Parameters are not fitted on the evaluation data.
-- Signal is calculated on a completed candle; entry is the next available candle open.
-- Conservative intrabar ambiguity: stop is checked before target; stop gaps fill
-  at the bar open; target fills at the target level.
-- Fees and slippage are charged on both entry and exit.
-- Each candidate strategy is simulated independently with non-overlapping trades; terminal positions are labelled OPEN and excluded from realized performance statistics.
-- The event-driven portfolio engine reports two complementary development-only views: fold-isolated walk-forward portfolios (reset to flat at each fold) and a continuous replay over the same pre-holdout development window (positions may carry across fold boundaries). Both compare position caps 5/7/10, normalized cash-only equity, one-position-per-ticker overlap, realized drawdown, profit factor and slot utilization. Open terminal trades are excluded. Neither view is independent holdout evidence or production approval. The continuous replay also includes descriptive market-breadth stratification: the share of eligible tickers with close above EMA200 and EMA50 above EMA200 defines bullish (>=60%), bearish (<=40%) or neutral regimes; insufficient/stale breadth is UNKNOWN. Regimes are assigned as of the trade's signal close and are not used as an entry filter.
-- No parameter optimizer and no production promotion.
+**Finam Trade API is the only market-data provider in the active research and
+D1/H1 signal pipeline.**
 
-## Input format
+- D1 research uses native Finam `TIME_FRAME_D` candles for the 365-calendar-day
+  window from 2025-11-20 through 2026-11-19.
+- The frozen holdout begins 2026-11-20. Bars on or after that date are excluded
+  from strategy selection, parameter tuning, calibration, and historical
+  performance metrics.
+- The D1/H1 inference collector fetches both timeframes directly from Finam.
+  H1 is limited to Finam's documented 30-calendar-day history window.
+- Explicit `is_data_snapshot=true` bars are excluded. Unknown snapshot flags
+  are retained and counted; they are not silently assumed complete.
+- OHLCV, timestamps, ordering, symbol/MIC identity, request boundaries, and
+  completed-bar status are validated. Missing bars are not fabricated.
+- There is no MOEX ISS fallback, resampling, provider blending, interpolation,
+  or gap filling in the active collector or signal scanner.
+- Exchange-qualified symbols use Finam's `@MISX` MIC, for example
+  `SBER@MISX`.
 
-CSV columns: `timestamp,open,high,low,close,volume`. Timestamp must be ISO-8601.
-Each file should contain one instrument and one timeframe, sorted oldest first.
+Finam documents a maximum 365-day D1 lookback and 30-day H1 lookback in the
+client adapter. The collector enforces those limits locally.
 
-## Important limitations
+## Research and scanner workflow
 
-The read-only runner (`python -m research_agent.cli --from YYYY-MM-DD --till YYYY-MM-DD`)
-fetches daily candles and per-security TQBR history from public MOEX ISS for the
-fixed 44-symbol first-listing universe and produces a JSON report. `moex_iss.py`
-paginates responses, validates OHLCV and rejects duplicate timestamps without
-fabricating missing candles. The daily research series is built from TQBR
-total-session history OHLCV, while raw calendar-date candles are retained as a
-separate reconciliation source. From 2025-03-01 onward, weekend fragments are
-assigned to the next positive-trade TQBR date and aggregated for comparison with
-that date's history row; pre-launch weekend dates require same-date history
-confirmation. The model uses the history row itself. This follows MOEX's description of
-the additional weekend session as part of the next ordinary trading day (see
-[MOEX weekend-session rules](https://www.moex.com/a8920) and
-[the securities/modes table](https://www.moex.com/ru/SecuritiesListing.aspx)).
-Every analyzed ticker also receives a `data_quality` section with requested/actual
-date boundaries, zero-volume and weekend bar counts, history sufficiency, and
-long calendar-gap candidates. A calendar-gap candidate is deliberately not called a missing session: the MOEX holiday, listing and suspension calendars are not yet joined. `validation.py`
-evaluates fixed candidates on sequential walk-forward folds with expanding indicator
-history and explicit minimum-sample/stability gates. A pass is labelled
-`DEVELOPMENT_SCREEN_PASS_UNADJUSTED`: it is only a development shortlist, not an
-independent or multiplicity-adjusted result. The separate prospective holdout
-is the only stage that applies HAC inference, block-bootstrap intervals and
-Holm correction.
+The scheduled/manual workflow **MOEX EDGE Autonomous Research (Finam Only,
+Read Only)** calls the reusable **MOEX EDGE Finam D1 Technical Analysis
+Research (Read Only)** workflow. It collects one year of D1 data for the fixed
+44-symbol first-listing universe and evaluates the pre-registered technical
+candidate set with fees, slippage, next-open execution, and Chandelier Exit.
 
-This is not yet a fully validated discovery system. The multi-symbol portfolio report includes both fold-isolated diagnostics and a continuous development replay that permits positions to carry across fold boundaries. Mark-to-market accounting and explicit portfolio risk sizing remain limitations. Market-breadth regimes are descriptive only and have not been independently validated or used to select strategies. Regime analysis remains descriptive and unvalidated. An independent structural report validator now checks development/holdout chronology, walk-forward fold separation, doubled-cost configuration, and consistency of survival claims. This validator is a separate audit path; it does not rerun the simulator, generate strategy hypotheses, establish statistical significance, or certify profitability. Independent strategy replication and portfolio-level testing remain outstanding. The
-prospective holdout includes HAC inference, moving-block bootstrap intervals and
-Holm correction, but those safeguards do not replace independent replication or
-portfolio-level testing. Exploratory statistics are not live signals or evidence
-of profitability.
+The report includes source coverage, OHLCV audit information, dataset hashes,
+trade ledgers, and doubled-cost diagnostics. Pooled trade statistics are not
+portfolio returns and do not establish profitability.
 
-## Prospective validation protocol
+The current one-year exploratory report does not yet contain four independent
+walk-forward folds per ticker/strategy/direction. Therefore
+`finam_strategy_registry.py` deliberately marks every strategy
+`INSUFFICIENT_DATA` and never approves a candidate. The scanner may run only
+when the 44-symbol Finam data coverage is complete, but it will filter out all
+strategies until a separate Finam-only walk-forward evaluation satisfies every
+frozen gate:
 
-The strategy definitions and parameters are frozen as candidate set
-`v1-frozen-2026-11-19` for prospective evaluation. Reports include this version
-and the exact execution assumptions (fees, slippage, stop, target and maximum
-bar horizon) so later cohorts cannot silently reuse the same label.
-The historical research period ends before **2026-11-20**; that date is the
-boundary for the untouched holdout. The loader retains at least three full
-years of pre-cutoff development history even after the normal rolling fetch
-window moves forward. Data on or after that date is
-evaluated separately and is never included in the development walk-forward or
-its doubled-cost stress test. Until new post-cutoff candles arrive, each ticker
-must report `WAITING_FOR_PROSPECTIVE_DATA`; previously reviewed history is not
-relabelled as an independent holdout.
+- at least 30 closed trades;
+- all four walk-forward folds have at least five trades;
+- positive average net return;
+- profit factor above one;
+- positive result under doubled costs.
 
-The prospective screen requires at least 30 closed trades per ticker/strategy.
-It reports a one-sided Newey-West HAC test of mean net trade return, a 95%
-moving-block bootstrap confidence interval, and Holm-Bonferroni family-wise
-error correction over the full selected universe × five pre-registered
-strategies (220 hypotheses for the default 44-symbol universe). The confidence
-interval and corrected test are both required for a research-pass label.
-These are statistical screening safeguards, not proof of future profitability.
-The holdout is prospective and cumulative; keep the frozen start date and
-candidate definitions unchanged while collecting it.
+These gates must not be weakened merely to produce signals. A zero-signal
+result is valid when no candidate has sufficient evidence.
 
-## Safety boundary
+The multi-timeframe collector supports Finam-native D1 and intraday bars.
+The operational signal workflow requests D1/H1 only. The scanner requires
+Finam Trade API as the source for both frames, validates timestamps and
+no-lookahead alignment, and does not calculate capital, position sizing,
+portfolio allocation, or broker orders.
 
-The scheduled research workflow is read-only and has no broker secrets. Nothing in this package can submit orders or alter the existing AI Trainer,
-virtual trading state, Finam executors, futures executor, scheduled workflows,
-or production strategy configuration. Promotion requires independent review
-and explicit owner approval.
+## Frozen holdout and inference boundary
 
-## Optional Finam market-data cross-check
+The strategy research cutoff is 2026-11-19 inclusive; the untouched holdout
+starts 2026-11-20. Post-cutoff observations may be used for current inference
+with already-frozen formulas, but their outcomes must not be used to select
+strategies, tune parameters, calibrate probabilities, or report performance
+metrics. Experimental probabilities remain explicitly uncalibrated and must
+not be presented as reliable probabilities.
 
-`finam_market_data.py` is a separate read-only REST client for historical
-aggregated candles. It exchanges a Finam API token for a short-lived JWT and
-requests bars for exchange-qualified symbols such as `SBER@MISX`. It has no
-account, order, position, or execution methods and is not imported by the
-scheduled MOEX ISS research workflow.
+## Legacy code
 
-The adapter preserves Finam's `is_data_snapshot` field as source metadata and
-keeps it explicitly unknown if a response omits it; it does not assume that the
-flag alone means a candle is complete or incomplete. It also checks that the
-symbol echoed by Finam matches the requested ticker and MIC.
-Consumers must apply an explicit completed-session policy before using the
-latest bar in a signal calculation. OHLCV values, timestamps, ordering, and
-requested interval boundaries are validated. The documented per-timeframe
-history window is enforced locally (M1 7 days; M5-M30 and H1-H8 30 days; D1
-365 days; W1/MN/QR 5 years).
+Older MOEX ISS research modules and their offline tests remain in the repository
+for historical regression/reference purposes only. The old MOEX ISS and
+cross-provider Actions workflows have been retired. They are not called by the
+active Finam-only research, candle collection, registry, or signal-scanning
+workflows. Do not reactivate them as a fallback or mix their data into Finam
+reports.
 
-Credentials must be supplied by the operator at runtime and must never be
-committed to the repository, printed in logs, or added to the scheduled
-workflow. The adapter has been exercised through read-only D1 and H1 MOEX-vs-Finam
-cross-checks. A session-boundary audit found that MOEX D1 can include a 06:00
-Moscow H1 opening-auction bucket that Finam D1 does not include; the feeds remain
-separate and neither is declared universally authoritative. Finam data does not
-replace MOEX ISS and is not mixed into the frozen strategy/holdout dataset.
+## Credentials and safety
 
-### Running the optional D1 cross-check
-
-After installing the project in its existing Python environment, supply the
-Finam API token through the process environment (not a command-line argument):
-
-```bash
-export FINAM_API_TOKEN="..."
-# Optional, only if Finam has issued a source application ID:
-export FINAM_SOURCE_APP_ID="..."
-python -m research_agent.finam_crosscheck \
-  --from 2026-11-01 --till 2026-11-18 \
-  --tickers SBER,GAZP,LKOH,VTBR,T \
-  --output finam_moex_crosscheck.json
-```
-
-The date range is inclusive and capped at 365 calendar dates. Daily timestamps
-are aligned by their calendar date in Europe/Moscow. The report lists matched
-dates, source-only dates, and raw OHLCV differences. It deliberately does not
-set a winner, impose an unvalidated price/volume tolerance, fill missing dates,
-or combine the two sources. The token is read from the environment and is not
-written to the report. The scheduled workflow remains MOEX-only.
-
-### Running it in GitHub Actions
-
-For a no-local-code run, add the Finam API token as a repository Actions secret
-named `FINAM_API_TOKEN` (Settings → Secrets and variables → Actions → New
-repository secret). If Finam issued a source application ID, optionally add
-`FINAM_SOURCE_APP_ID` the same way. Do not put either value in workflow inputs,
-commits, or chat messages.
-
-Then open Actions → **MOEX EDGE Finam Candle Cross-check (Manual, Read Only)**
-→ Run workflow. If the end date is left blank, it defaults to the previous
-calendar day in the Moscow timezone, avoiding an unfinished current-day candle.
-This workflow is manual-only, has `contents: read` permission, does not run on a
-schedule, and uploads the JSON comparison as an artifact.
-The scheduled MOEX research workflow is not given these credentials.
-
-
-### Running the combined D1-H1 session reconciliation
-
-The manual-only workflow **MOEX EDGE D1-H1 Session Reconciliation (Manual, Read Only)**
-fetches daily and hourly bars from both sources over the same rolling 1–30 calendar-day
-window. It removes the current unfinished D1 candle and unfinished H1 bars, then
-reports each source's D1-to-H1 open/high/low/close/volume reconciliation independently.
-MOEX's 06:00 bucket is retained for its daily open and volume checks; Finam's observed
-main-session aggregation starts after the 06:00 bucket. Missing bars and residual
-high/low differences are reported, never filled or silently normalized.
-
-Run it from Actions → **MOEX EDGE D1-H1 Session Reconciliation (Manual, Read Only)**
-→ Run workflow. It requires the existing repository Actions secret
-`FINAM_API_TOKEN`; the optional `FINAM_SOURCE_APP_ID` may also be configured.
-The workflow is manual-only, read-only, uploads a JSON artifact, and does not access
-accounts or order endpoints. The resulting diagnostics are research-quality
-data-integrity checks, not a strategy-performance result or production approval.
+Supply `FINAM_API_TOKEN` as a GitHub Actions repository secret. If Finam has
+issued a source application ID, supply `FINAM_SOURCE_APP_ID` as a separate
+secret. Never put credentials in workflow inputs, commits, reports, or chat.
+The client does not expose account, order, position, or execution methods.
+Promotion to production requires independent review and explicit owner
+approval.
