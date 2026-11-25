@@ -1,12 +1,7 @@
-name: Price Forecast 24H — read-only data collector
+name: Price Forecast 24H — read-only liquidity-screened collector
 
 on:
   workflow_dispatch:
-    inputs:
-      tickers:
-        description: "Optional comma-separated subset; blank collects the 44-symbol candidate pool"
-        required: false
-        type: string
 
 permissions:
   contents: write
@@ -20,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Checkout selected research branch
+      - name: Checkout isolated research branch
         uses: actions/checkout@v4
         with:
           ref: research/price-forecast-24h-v1
@@ -36,11 +31,10 @@ jobs:
             echo "Missing Actions secret FINAM_API_TOKEN"
             exit 1
           fi
-      - name: Collect completed H1 bars and official MOEX daily turnover
+      - name: Screen all 44 candidates by official MOEX VALUE; collect H1 only for top 10
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
-          TICKERS: ${{ inputs.tickers }}
         run: python -m research_agent.price_forecast_24h.collector
       - name: Commit immutable daily delta snapshot
         run: |
@@ -51,7 +45,7 @@ jobs:
             echo "No new market data to commit."
             exit 0
           fi
-          git commit -m "data: append 24h price forecast snapshot"
+          git commit -m "data: append 24h liquidity-screened forecast snapshot"
           git push origin HEAD:research/price-forecast-24h-v1
       - name: Upload snapshot artifact
         if: always()
