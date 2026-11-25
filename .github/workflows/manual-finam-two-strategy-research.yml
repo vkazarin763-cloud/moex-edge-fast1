@@ -27,7 +27,7 @@ jobs:
       - name: Compile and run focused offline tests
         run: |
           python -m compileall -q research_agent tests
-          python -m unittest tests.test_finam_strategy_backtest -v
+          python -m unittest tests.test_finam_strategy_backtest tests.test_finam_strategy_registry -v
       - name: Check read-only Finam credential
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
