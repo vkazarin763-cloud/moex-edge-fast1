@@ -267,7 +267,7 @@ def call_groq_discovery(
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.1,
-        "max_completion_tokens": 8192,
+        "max_completion_tokens": 1536,
         "reasoning_format": "hidden",
         "reasoning_effort": "low",
         "response_format": OUTPUT_SCHEMA,
