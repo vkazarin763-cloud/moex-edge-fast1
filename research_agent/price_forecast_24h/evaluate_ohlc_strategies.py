@@ -48,7 +48,7 @@ def split_folds(n):
 def indicators(bars):
     n=len(bars)
     prior_high=[None]*n;prior_low=[None]*n
-    mean=[None]*n;sd=[None]*n
+    mean=[None]*n;sd=[None]*n;sma50=[None]*n;rsi14=[None]*n
     for i in range(n):
         if i>=BREAKOUT_LOOKBACK:
             window=bars[i-BREAKOUT_LOOKBACK:i]
@@ -58,7 +58,14 @@ def indicators(bars):
             values=[x["close"] for x in bars[i-MEAN_LOOKBACK+1:i+1]]
             mean[i]=statistics.fmean(values)
             sd[i]=statistics.pstdev(values)
-    return prior_high,prior_low,mean,sd
+        if i>=50:
+            sma50[i]=statistics.fmean(x["close"] for x in bars[i-49:i+1])
+        if i>=14:
+            changes=[bars[j]["close"]-bars[j-1]["close"] for j in range(i-13,i+1)]
+            gains=sum(max(x,0) for x in changes)/14
+            losses=sum(max(-x,0) for x in changes)/14
+            rsi14[i]=100.0 if losses==0 and gains>0 else (50.0 if losses==0 else 100-100/(1+gains/losses))
+    return prior_high,prior_low,mean,sd,sma50,rsi14
 
 
 def make_trade(bars,signal_i,fold_end,direction,exit_mode,mean):
@@ -81,8 +88,9 @@ def make_trade(bars,signal_i,fold_end,direction,exit_mode,mean):
 
 
 def simulate(bars,start,end):
-    ph,pl,mean,sd=indicators(bars)
-    strategies={"breakout_20":[],"mean_reversion_20_2sd":[]}
+    ph,pl,mean,sd,sma50,rsi14=indicators(bars)
+    strategies={"breakout_20":[],"breakout_20_sma50_filter":[],
+                "mean_reversion_20_2sd":[],"mean_reversion_rsi_30_70":[]}
     i=start
     while i<end-1:
         direction=0
@@ -92,6 +100,16 @@ def simulate(bars,start,end):
         if direction:
             trade=make_trade(bars,i,end,direction,"fixed",mean)
             if trade:strategies["breakout_20"].append(trade)
+            filtered=0
+            if sma50[i] is not None and i>=51:
+                prev_sma=statistics.fmean(x["close"] for x in bars[i-50:i])
+                if direction==1 and bars[i]["close"]>sma50[i] and sma50[i]>prev_sma:
+                    filtered=1
+                elif direction==-1 and bars[i]["close"]<sma50[i] and sma50[i]<prev_sma:
+                    filtered=-1
+            if filtered:
+                trade=make_trade(bars,i,end,filtered,"fixed",mean)
+                if trade:strategies["breakout_20_sma50_filter"].append(trade)
             i+=HORIZON
             continue
         if mean[i] is not None and sd[i] is not None and sd[i]>0:
@@ -104,6 +122,13 @@ def simulate(bars,start,end):
             if trade:strategies["mean_reversion_20_2sd"].append(trade)
             i+=HORIZON
         else:
+            if rsi14[i] is not None:
+                rsi_direction=1 if rsi14[i]<30 else (-1 if rsi14[i]>70 else 0)
+                if rsi_direction:
+                    trade=make_trade(bars,i,end,rsi_direction,"mean",mean)
+                    if trade:strategies["mean_reversion_rsi_30_70"].append(trade)
+                    i+=HORIZON
+                    continue
             i+=1
     return strategies
 
@@ -154,7 +179,7 @@ def evaluate_symbol(rows):
 
 def aggregate(results):
     out={}
-    for name in ("breakout_20","mean_reversion_20_2sd"):
+    for name in ("breakout_20","breakout_20_sma50_filter","mean_reversion_20_2sd","mean_reversion_rsi_30_70"):
         out[name]={}
         for cost in COST_BPS_PER_SIDE:
             all_trades=[t for v in results.values() if v.get("status")=="OK"
@@ -204,7 +229,9 @@ def main():
         "validation":"four sequential non-overlapping test blocks in final 50% of each symbol history; indicators use only current and prior completed bars; each strategy is reset at fold boundaries",
         "execution":"signal on completed close; entry at next H1 open; exit at close on mean-line cross or after at most 24 bars; no overlapping positions per strategy and ticker",
         "strategies":{"breakout_20":"LONG above prior 20-bar high; SHORT below prior 20-bar low; fixed 24-bar maximum holding period",
-            "mean_reversion_20_2sd":"LONG below 20-close SMA minus 2 population standard deviations; SHORT above SMA plus 2 standard deviations; exit on SMA cross or after at most 24 bars"},
+            "breakout_20_sma50_filter":"same breakout, only LONG above rising SMA50 or SHORT below falling SMA50; slope compares current SMA50 to prior SMA50",
+            "mean_reversion_20_2sd":"LONG below 20-close SMA minus 2 population standard deviations; SHORT above SMA plus 2 standard deviations; exit on SMA cross or after at most 24 bars",
+            "mean_reversion_rsi_30_70":"RSI14 below 30 LONG or above 70 SHORT; exit on 20-close SMA cross or after at most 24 bars; evaluated only when no breakout/2SD signal is active"},
         "cost_scenarios":"0, 5, and 10 basis points per side (round trip 0, 10, 20 bps); illustrative assumptions, not verified Finam tariffs or actual spreads",
         "limitations":["gross and assumed-cost simulations only; no real order-book spread, queue, fills, borrow availability, taxes or market impact",
             "short-selling availability and instrument constraints are not validated",
