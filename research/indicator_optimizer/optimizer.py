@@ -217,8 +217,9 @@ def split_bounds(df):
 
 def walk_forward_metrics(df, trades, folds=4):
     """Four chronological out-of-sample blocks after an initial 50% warm-up/training period."""
-    start_idx = int(len(df) * 0.50)
-    edges = np.linspace(start_idx, len(df), folds + 1, dtype=int)
+    start_idx = int(len(df) * 0.20)
+    end_idx = int(len(df) * 0.60)  # keep all walk-forward stability checks inside training; validation/test remain separate
+    edges = np.linspace(start_idx, end_idx, folds + 1, dtype=int)
     output = []
     for fold_no in range(folds):
         lo_idx, hi_idx = edges[fold_no], edges[fold_no+1]
