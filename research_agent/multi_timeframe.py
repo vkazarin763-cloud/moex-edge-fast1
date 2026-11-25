@@ -97,6 +97,13 @@ def _finam_bar_is_complete(timestamp, frame, now_utc):
     return timestamp.astimezone(timezone.utc) + duration <= now_utc
 
 
+def _finam_daily_bar_is_complete(timestamp, now_utc):
+    """D1 bars are date-based; exclude the current Moscow trading date."""
+    if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+        return False
+    return timestamp.astimezone(MOSCOW).date() < now_utc.astimezone(MOSCOW).date()
+
+
 def _moex_bar_is_complete(timestamp, frame, now_moscow):
     """MOEX ISS timestamps are exchange-local naive datetimes."""
     if timestamp.tzinfo is not None and timestamp.utcoffset() is not None:
@@ -278,7 +285,7 @@ def collect_multi_timeframe(
                 ]
                 completed_daily = [
                     bar for bar in eligible_daily
-                    if _finam_bar_is_complete(bar.timestamp, "D1", current)
+                    if _finam_daily_bar_is_complete(bar.timestamp, current)
                 ]
                 symbol_result["D1"] = {
                     "source": "Finam daily fallback (MOEX ISS unavailable)",
