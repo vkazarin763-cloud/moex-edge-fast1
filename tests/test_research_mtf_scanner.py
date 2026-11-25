@@ -125,8 +125,8 @@ class MTFScannerTests(unittest.TestCase):
         self.assertEqual(sum(gated["registry_filtered_candidates_by_direction"].values()), gated["registry_filtered_candidates"])
         self.assertEqual(gated["strategy_registry_summary"]["INSUFFICIENT_DATA"], 440)
         self.assertEqual(gated["strategy_registry_version"], "test-v1")
-        future_registry = {**registry, "generated_at_utc": "2026-03-03T00:00:00+00:00"}
-        with self.assertRaisesRegex(ValueError, "newer than the candle snapshot"):
+        future_registry = {**registry, "generated_at_utc": "2026-03-20T00:00:00+00:00"}
+        with self.assertRaisesRegex(ValueError, "older than 14 days"):
             scan_multi_timeframe_report(candles_report, validation, future_registry)
         stale_registry = {**registry, "generated_at_utc": "2026-02-01T00:00:00+00:00"}
         with self.assertRaisesRegex(ValueError, "older than 14 days"):
@@ -149,6 +149,24 @@ class MTFScannerTests(unittest.TestCase):
         }
         for signal in result["signals"]:
             self.assertFalse(forbidden_fields.intersection(signal))
+
+
+    def test_scanner_rejects_non_finam_signal_sources(self):
+        snapshot = "2026-03-02T00:00:00+00:00"
+        candles_report = {
+            "generated_at_utc": snapshot,
+            "universe": ["TEST"],
+            "results": {"TEST": {
+                "D1": {"source": "MOEX ISS TQBR history", "status": "OK", "candles": []},
+                "H1": {"source": "Finam Trade API", "status": "OK", "candles": []},
+            }},
+        }
+        validation = {
+            "generated_at_utc": snapshot, "as_of_utc": snapshot,
+            "status": "PASS", "issue_count": 0,
+        }
+        with self.assertRaisesRegex(ValueError, "Finam Trade API D1/H1 candles only"):
+            scan_multi_timeframe_report(candles_report, validation)
 
     def test_scanner_rejects_failed_validation(self):
         with self.assertRaises(ValueError):
