@@ -186,20 +186,29 @@ def scan_multi_timeframe_report(
                 or contract.get("consume_only_status") != "PASS"
                 or contract.get("live_trading_authorized") is not False):
             raise ValueError("Strategy registry is not a valid development-only shadow-scanner registry")
-        # The report timestamp is generated after the research job finishes and
-        # is not the market-data cutoff. Compare the report's last completed
-        # MOEX session date with the candle snapshot's Moscow calendar date.
+        # Registry freshness is based on its generation time, not the fixed
+        # pre-holdout training cutoff. This permits the same frozen research
+        # evidence to gate current inference without consuming post-holdout outcomes.
         source_date_value = strategy_registry.get("source_report_date_till")
+        holdout_start_value = strategy_registry.get("holdout_start")
+        generated_value = strategy_registry.get("generated_at_utc")
         try:
             source_date = date.fromisoformat(source_date_value)
-        except (TypeError, ValueError):
-            raise ValueError("Strategy registry is missing a valid source_report_date_till")
-        snapshot_date = cutoff.astimezone(MOSCOW).date()
-        registry_age_days = (snapshot_date - source_date).days
-        if registry_age_days < 0:
-            raise ValueError("Strategy registry source data is newer than the candle snapshot")
+            holdout_start = date.fromisoformat(holdout_start_value)
+            registry_generated = datetime.fromisoformat(
+                generated_value.replace("Z", "+00:00")
+            ).astimezone(timezone.utc)
+        except (TypeError, ValueError, AttributeError):
+            raise ValueError("Strategy registry is missing valid source, holdout, or generation dates")
+        if source_date >= holdout_start:
+            raise ValueError("Strategy registry source data must end before the frozen holdout")
+        if holdout_start.isoformat() != "2026-11-20":
+            raise ValueError("Strategy registry holdout boundary does not match the frozen policy")
+        if registry_generated > cutoff:
+            raise ValueError("Strategy registry was generated after the candle snapshot")
+        registry_age_days = (cutoff - registry_generated).total_seconds() / 86400
         if registry_age_days > 14:
-            raise ValueError("Strategy registry source data is older than 14 days; rerun research before scanning")
+            raise ValueError("Strategy registry is older than 14 days; rerun the Finam research workflow")
         allowed = {
             (row.get("ticker"), row.get("direction"), row.get("strategy"))
             for row in strategy_registry.get("strategies", [])
@@ -220,6 +229,9 @@ def scan_multi_timeframe_report(
         symbol_data = candles_report["results"].get(symbol, {})
         d1_item = symbol_data.get("D1", {})
         h1_item = symbol_data.get("H1", {})
+        if (d1_item.get("source") != "Finam Trade API"
+                or h1_item.get("source") != "Finam Trade API"):
+            raise ValueError("Signal scanner accepts Finam Trade API D1/H1 candles only")
         if d1_item.get("status") != "OK" or h1_item.get("status") != "OK":
             skipped.append({"symbol": symbol, "reason": "D1_OR_H1_UNAVAILABLE"})
             continue
