@@ -1,4 +1,4 @@
-name: Price Forecast 24H — read-only liquidity-screened collector
+name: Price Forecast 24H — read-only all-44 collector
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
             echo "Missing Actions secret FINAM_API_TOKEN"
             exit 1
           fi
-      - name: Screen all 44 candidates by official MOEX VALUE; collect H1 only for top 10
+      - name: Collect H1 and D1 for all 44 candidate shares (no liquidity filter)
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
@@ -45,7 +45,7 @@ jobs:
             echo "No new market data to commit."
             exit 0
           fi
-          git commit -m "data: append 24h liquidity-screened forecast snapshot"
+          git commit -m "data: append 24h all-44 forecast snapshot"
           git push origin HEAD:research/price-forecast-24h-v1
       - name: Upload snapshot artifact
         if: always()
