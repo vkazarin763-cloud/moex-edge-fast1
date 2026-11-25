@@ -10,7 +10,7 @@ from pathlib import Path
 from research_agent.multi_timeframe import DEFAULT_TICKERS, collect_multi_timeframe
 
 DATA_DIR = Path("research_agent/price_forecast_24h/data")
-STATE_FILE = DATA_DIR / "LATEST.json"
+STATE_FILE = DATA_DIR / "LATEST.json"\nH1_HISTORY_FILE = DATA_DIR / "H1_HISTORY.json.gz"
 
 
 def collect_all_universe(tickers, *, api_token, source_app_id=None, collector=collect_multi_timeframe):
@@ -149,7 +149,7 @@ def main() -> None:
         "requested_symbols": len(tickers),
         "symbols_returned": len(payload["results"]),
         "symbols_with_new_data": len(delta["symbols"]),
-        "new_h1_bars": sum(len(item["H1"]) for item in delta["symbols"].values()),
+        "new_h1_bars": sum(len(item["H1"]) for item in delta["symbols"].values()),\n        "cumulative_h1_bars": sum(len(item.get("candles", [])) for item in h1_history["symbols"].values()),\n        "cumulative_h1_symbols": len(h1_history["symbols"]),
         "new_d1_rows": sum(len(item["D1"]) for item in delta["symbols"].values()),
         "d1_rows_missing_official_value": sum(item.get("D1_value_missing", 0) for item in delta["symbols"].values()),
         "frame_status": statuses,
