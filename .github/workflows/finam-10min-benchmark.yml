@@ -1,0 +1,104 @@
+name: MOEX EDGE Finam 10-minute benchmark (Read Only)
+# Repeatability check: second independent read-only run.
+
+on:
+  push:
+    branches:
+      - "experiment/finam-fast-scan-10min"
+    paths:
+      - ".github/workflows/finam-10min-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moex-edge-finam-10min-benchmark
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout experimental branch
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/finam-fast-scan-10min
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime dependencies
+        run: pip install pandas requests numpy
+
+      - name: Verify Finam API secret is configured
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+        run: |
+          if [ -z "${FINAM_API_TOKEN:-}" ]; then
+            echo "::error::FINAM_API_TOKEN is not configured."
+            exit 1
+          fi
+          echo "Finam API secret is configured; its value will not be printed."
+
+      - name: Collect D1 and H1 candles for the frozen 44-symbol universe
+        id: collect
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
+        run: |
+          START=$(date +%s)
+          python -m research_agent.multi_timeframe --frames "D1,H1" --output moex_edge_multi_timeframe_candles.json
+          END=$(date +%s)
+          echo "collect_seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+
+      - name: Validate candle quality and D1/H1 alignment
+        id: validate
+        run: |
+          START=$(date +%s)
+          python -m research_agent.multi_timeframe_validation \
+            --input moex_edge_multi_timeframe_candles.json \
+            --output moex_edge_multi_timeframe_validation.json
+          END=$(date +%s)
+          echo "validation_seconds=$((END-START))" >> "$GITHUB_OUTPUT"
+
+      - name: Publish benchmark summary
+        if: always()
+        env:
+          COLLECT_SECONDS: ${{ steps.collect.outputs.collect_seconds }}
+          VALIDATION_SECONDS: ${{ steps.validate.outputs.validation_seconds }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from datetime import datetime, timezone
+          lines = ["# MOEX EDGE Finam benchmark", ""]
+          lines.append(f"- Finished (UTC): {datetime.now(timezone.utc).isoformat()}")
+          lines.append(f"- Candle collection: {os.getenv('COLLECT_SECONDS', 'not completed')} seconds")
+          lines.append(f"- Validation: {os.getenv('VALIDATION_SECONDS', 'not completed')} seconds")
+          if Path("moex_edge_multi_timeframe_candles.json").exists():
+              data = json.loads(Path("moex_edge_multi_timeframe_candles.json").read_text())
+              lines += ["", "## Candle coverage"]
+              for frame, item in data.get("timeframes", {}).items():
+                  lines.append(f"- {frame}: {item.get('ok')}/{item.get('symbols')} symbols; {item.get('total_completed_bars')} completed bars; {item.get('errors')} errors")
+          if Path("moex_edge_multi_timeframe_validation.json").exists():
+              report = json.loads(Path("moex_edge_multi_timeframe_validation.json").read_text())
+              lines += ["", "## Validation", f"- Status: {report.get('status')}", f"- Issues: {report.get('issue_count')}", f"- As of UTC: {report.get('as_of_utc')}"]
+          lines += ["", "Read-only benchmark. No broker account, order, position, or execution endpoints are used."]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
+              out.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload benchmark data and validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-edge-finam-10min-benchmark
+          path: |
+            moex_edge_multi_timeframe_candles.json
+            moex_edge_multi_timeframe_validation.json
+          if-no-files-found: warn
+          retention-days: 7
