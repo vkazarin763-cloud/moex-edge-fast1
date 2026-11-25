@@ -46,6 +46,7 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
         raise ValueError("as_of cannot be later than report generation time")
 
     issues = []
+    warnings = []
     frame_summary = {}
     snapshots = {}
     frame_names = list(report.get("timeframes", {}))
@@ -72,6 +73,7 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
             previous = None
             latest = None
             seen = set()
+            valid_starts = []
             for index, candle in enumerate(candles):
                 try:
                     start = _parse_utc(candle["timestamp"], item["source"])
@@ -89,6 +91,7 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
                     if end > cutoff:
                         issues.append({"symbol": symbol, "frame": frame, "index": index, "type": "unclosed_or_future_bar"})
                     seen.add(start)
+                    valid_starts.append(start)
                     previous = start
                     if end <= cutoff:
                         latest = {
@@ -99,6 +102,20 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
                 except (KeyError, TypeError, ValueError, OverflowError) as exc:
                     issues.append({"symbol": symbol, "frame": frame, "index": index, "type": "invalid_bar", "detail": str(exc)})
             snapshots[symbol][frame] = latest
+            # D1 calendar gaps are candidates only; no official calendar is consulted.
+            if frame == "D1":
+                for left, right in zip(valid_starts, valid_starts[1:]):
+                    gap_days = (right.date() - left.date()).days
+                    if gap_days > 4:
+                        warnings.append({
+                            "symbol": symbol, "frame": frame,
+                            "type": "possible_d1_session_gap",
+                            "from_timestamp": left.isoformat(),
+                            "to_timestamp": right.isoformat(),
+                            "calendar_days_between": gap_days,
+                            "possible_missing_weekdays": max(0, gap_days - 1),
+                            "message": "Possible missing daily sessions; verify against official exchange calendar.",
+                        })
 
     return {
         "generated_at_utc": generated.isoformat(),
@@ -109,7 +126,9 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
         "latest_closed_bars": snapshots,
         "issue_count": len(issues),
         "issues": issues,
-        "methodology": "Only Finam Trade API sources are accepted. Finam timestamps are timezone-aware UTC; bar ends are calculated from native interval definitions. Only bars whose end is at or before as_of_utc enter latest_closed_bars.",
+        "warning_count": len(warnings),
+        "warnings": warnings,
+        "methodology": "Only Finam Trade API sources are accepted. Finam timestamps are timezone-aware UTC; bar ends are calculated from native interval definitions. Only bars whose end is at or before as_of_utc enter latest_closed_bars. D1 gaps longer than four calendar days are warnings, not failures, because no official exchange calendar is consulted.",
     }
 
 
