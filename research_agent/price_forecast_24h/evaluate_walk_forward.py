@@ -100,14 +100,13 @@ def evaluate_symbol(rows):
 
 
 def main():
-    archives = sorted(DATA.glob("h1-backfill-180d-*.json.gz"))
-    if not archives:
-        raise SystemExit("No h1-backfill-180d archive found")
-    archive = archives[-1]
+    archive = DATA / "H1_HISTORY.json.gz"
+    if not archive.exists():
+        raise SystemExit("Cumulative H1_HISTORY.json.gz not found; run the daily collector first")
     payload = load_archive(archive)
     REPORTS.mkdir(parents=True, exist_ok=True)
     results = {ticker:evaluate_symbol(block["candles"])
-               for ticker,block in payload["results"].items()}
+               for ticker,block in payload.get("symbols", {}).items()}
     valid = [v for v in results.values() if v.get("status")=="OK"]
     outperform = [t for t,v in results.items()
                   if v.get("status")=="OK" and v["model_mae_pct"] < v["baseline_mae_pct"]]
