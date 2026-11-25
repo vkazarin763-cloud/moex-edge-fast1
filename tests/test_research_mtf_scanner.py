@@ -93,8 +93,8 @@ class MTFScannerTests(unittest.TestCase):
             "generated_at_utc": snapshot,
             "universe": ["TEST"],
             "results": {"TEST": {
-                "D1": {"source": "MOEX ISS TQBR history", "status": "OK", "candles": d1},
-                "H1": {"source": "Finam", "status": "OK", "candles": h1},
+                "D1": {"source": "Finam Trade API", "status": "OK", "candles": d1},
+                "H1": {"source": "Finam Trade API", "status": "OK", "candles": h1},
             }},
         }
         validation = {
@@ -108,6 +108,7 @@ class MTFScannerTests(unittest.TestCase):
             "registry_version": "test-v1",
             "generated_at_utc": snapshot,
             "source_report_date_till": "2026-03-01",
+            "holdout_start": "2026-11-20",
             "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
             "holdout_used_for_selection": False,
             "scanner_contract": {
@@ -124,10 +125,10 @@ class MTFScannerTests(unittest.TestCase):
         self.assertEqual(sum(gated["registry_filtered_candidates_by_direction"].values()), gated["registry_filtered_candidates"])
         self.assertEqual(gated["strategy_registry_summary"]["INSUFFICIENT_DATA"], 440)
         self.assertEqual(gated["strategy_registry_version"], "test-v1")
-        future_registry = {**registry, "source_report_date_till": "2026-03-03"}
+        future_registry = {**registry, "generated_at_utc": "2026-03-03T00:00:00+00:00"}
         with self.assertRaisesRegex(ValueError, "newer than the candle snapshot"):
             scan_multi_timeframe_report(candles_report, validation, future_registry)
-        stale_registry = {**registry, "source_report_date_till": "2026-02-01"}
+        stale_registry = {**registry, "generated_at_utc": "2026-02-01T00:00:00+00:00"}
         with self.assertRaisesRegex(ValueError, "older than 14 days"):
             scan_multi_timeframe_report(candles_report, validation, stale_registry)
         self.assertIn("parameters", result["signals"][0])
@@ -161,13 +162,13 @@ class MTFScannerTests(unittest.TestCase):
                  "as_of_utc": "2026-01-02T00:00:00+00:00"},
             )
 
-    def test_d1_naive_timestamp_is_interpreted_as_moscow(self):
-        parsed = _parse_candles(
-            [{"timestamp": "2026-01-01T00:00:00", "open": 10, "high": 11, "low": 9,
-              "close": 10, "volume": 100}],
-            source="MOEX ISS TQBR history",
-        )
-        self.assertEqual(parsed[0].timestamp.utcoffset(), timedelta(hours=3))
+    def test_d1_naive_timestamp_is_rejected_for_finam(self):
+        with self.assertRaises(ValueError):
+            _parse_candles(
+                [{"timestamp": "2026-01-01T00:00:00", "open": 10, "high": 11, "low": 9,
+                  "close": 10, "volume": 100}],
+                source="Finam Trade API",
+            )
 
     def test_h1_naive_timestamp_is_rejected(self):
         with self.assertRaises(ValueError):
