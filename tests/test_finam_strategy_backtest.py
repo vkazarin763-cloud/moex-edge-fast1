@@ -93,7 +93,8 @@ class FinamStrategyBacktestTests(unittest.TestCase):
         ):
             report = research.run("test-token")
         self.assertEqual(report["data_audit"]["SBER"]["snapshot_true_excluded"], 1)
-        self.assertEqual(report["data_audit"]["SBER"]["retained_completed_bars"], 89)
+        self.assertEqual(report["data_audit"]["SBER"]["raw_bars"], 250)
+        self.assertEqual(report["data_audit"]["SBER"]["retained_completed_bars"], 249)
 
     def test_chandelier_exit_has_no_fixed_stop_target_or_time_limit(self):
         self.assertIsNone(research.BASE_CONFIG.stop_pct)
