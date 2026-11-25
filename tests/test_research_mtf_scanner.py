@@ -64,7 +64,7 @@ class MTFScannerTests(unittest.TestCase):
         for i in range(60):
             close = 100 + i
             d1.append({
-                "timestamp": (datetime(2026, 1, 1) + timedelta(days=i)).isoformat(),
+                "timestamp": (datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(days=i)).isoformat(),
                 "open": close, "high": close + 1, "low": close - 1,
                 "close": close, "volume": 1000,
             })
