@@ -189,6 +189,7 @@ class AgentDiscoveryTests(unittest.TestCase):
         ).OUTPUT_SCHEMA
         self.assertEqual(seen["body"]["response_format"], schema)
         props = schema["json_schema"]["schema"]["properties"]
+        self.assertNotIn("rationale", props["proposals"]["items"]["required"])
 
     def test_groq_retries_truncated_json_response(self):
         payload = {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": []}
@@ -219,7 +220,6 @@ class AgentDiscoveryTests(unittest.TestCase):
         candidate = {
             "symbol": "SBER", "direction": "LONG", "strategy": "Donchian20",
             "d1_bar_end_utc": "2026-11-20T21:00:00+00:00",
-            "rationale": "Candidate selected from scan.",
         }
         idea = {
             "strategy": "Donchian20", "direction": "LONG", "timeframe_config": "A",
