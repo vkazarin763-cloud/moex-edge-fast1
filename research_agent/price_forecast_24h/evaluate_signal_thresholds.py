@@ -1,4 +1,5 @@
 """Research-only fixed-threshold signal selection test on out-of-sample folds."""
+# Fixed thresholds are specified before test-fold evaluation.
 from __future__ import annotations
 import csv,gzip,json,math,statistics
 from datetime import datetime,timezone
