@@ -6,6 +6,7 @@ import argparse
 import itertools
 import json
 import math
+import os
 import ssl
 import time
 from dataclasses import dataclass
@@ -34,9 +35,13 @@ def fetch_candles(ticker: str, interval: int, start: str, end: str) -> pd.DataFr
     session = requests.Session()
     # Requests otherwise pins certifi's bundle. Prefer the runner OS CA bundle;
     # TLS verification remains enabled.
-    system_ca = ssl.get_default_verify_paths().cafile
-    if system_ca and Path(system_ca).is_file():
-        session.verify = system_ca
+    ca_candidates = [os.environ.get("REQUESTS_CA_BUNDLE"), os.environ.get("CURL_CA_BUNDLE"),
+                     os.environ.get("SSL_CERT_FILE"), os.environ.get("NODE_EXTRA_CA_CERTS"),
+                     ssl.get_default_verify_paths().cafile]
+    for ca_path in ca_candidates:
+        if ca_path and Path(ca_path).is_file():
+            session.verify = ca_path
+            break
     while True:
         response = session.get(url, params={"from": start, "till": end, "interval": interval,
                                             "start": offset, "iss.reverse": "false"}, timeout=35)
@@ -65,7 +70,7 @@ def fetch_candles(ticker: str, interval: int, start: str, end: str) -> pd.DataFr
 def validate_candles(raw: pd.DataFrame, interval: int, now: datetime | None = None):
     """Return cleaned main-session bars and explicit quality counters."""
     stats = {"raw_rows": int(len(raw)), "duplicates": 0, "invalid_ohlc": 0,
-             "null_rows": 0, "incomplete_last": 0, "outside_main_session": 0}
+             "null_rows": 0, "incomplete_last": 0, "outside_main_session": 0, "weekend_rows": 0}
     if raw.empty:
         return raw.copy(), stats
     df = raw.copy()
@@ -79,6 +84,9 @@ def validate_candles(raw: pd.DataFrame, interval: int, now: datetime | None = No
              & (df["volume"] >= 0))
     stats["invalid_ohlc"] = int((~valid).sum())
     df = df.loc[valid].copy()
+    weekdays = df["begin"].dt.dayofweek < 5
+    stats["weekend_rows"] = int((~weekdays).sum())
+    df = df.loc[weekdays].copy()
     now = now or datetime.now(MSK)
     if now.tzinfo is None:
         now = now.replace(tzinfo=MSK)
