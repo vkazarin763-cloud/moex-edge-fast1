@@ -63,7 +63,6 @@ OUTPUT_SCHEMA = {
             "properties": {
                 "proposals": {
                     "type": "array",
-                    "maxItems": 8,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -79,7 +78,6 @@ OUTPUT_SCHEMA = {
                 },
                 "forecast_reviews": {
                     "type": "array",
-                    "maxItems": 6,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -97,7 +95,6 @@ OUTPUT_SCHEMA = {
                 },
                 "strategy_hypotheses": {
                     "type": "array",
-                    "maxItems": 3,
                     "items": {
                         "type": "object",
                         "properties": {
