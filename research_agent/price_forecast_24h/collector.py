@@ -79,7 +79,8 @@ def build_daily_delta(payload: dict, state: dict) -> tuple[dict, dict]:
         d1_after = previous_d1.get(ticker, "")
         new_h1 = [row for row in h1_candles if row["timestamp"] > h1_after]
         new_d1 = [row for row in d1_candles if row["timestamp"][:10] > d1_after]
-        if new_h1 or new_d1:
+        if (new_h1 or new_d1 or h1_block.get("status") != "OK"
+                or d1_block.get("status") != "OK"):
             delta["symbols"][ticker] = {
                 "H1": new_h1,
                 "D1": new_d1,
