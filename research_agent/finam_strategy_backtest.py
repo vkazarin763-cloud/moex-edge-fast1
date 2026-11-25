@@ -234,7 +234,9 @@ def run(api_token: str, source_app_id: str | None = None) -> dict:
             "calendar_days": 365,
         },
         "development_cutoff": "2026-11-19 inclusive",
+        "date_till": "2026-11-19",
         "holdout_start": HOLDOUT_START.isoformat(),
+        "holdout_used_for_selection": False,
         "holdout_policy": "Any provider-returned D1 bar with Moscow session date on or after 2026-11-20 is excluded before signal generation, indicators, trades, and performance metrics; boundary bars may be validated as source data but are never used in research.",
         "strategies": list(STRATEGIES),
         "execution_policy": {
