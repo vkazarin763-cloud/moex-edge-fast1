@@ -540,7 +540,7 @@ def run_discovery(
             "use INSUFFICIENT_EVIDENCE when the data do not support a view. This review limit does "
             "not limit signal proposals: consider every candidate_signal for proposals. Treat "
             "probabilities as experimental and NOT_CALIBRATED. Do not alter, recalculate or repeat "
-            "numeric probabilities. If no candidate exists, return an empty forecast_reviews array.\\n"
+            "numeric probabilities. If no candidate exists, return an empty forecast_reviews array.\n"
             f"DETERMINISTIC SNAPSHOT: {context_json}"
         )
         if caller is call_groq_discovery:
