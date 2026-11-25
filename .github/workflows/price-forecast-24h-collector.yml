@@ -26,7 +26,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Run data-collector unit tests
-        run: python -m unittest discover -s tests -p 'test_research_multi_timeframe.py'
+        run: |
+          python -m unittest discover -s tests -p 'test_research_multi_timeframe.py'
+          python -m unittest discover -s tests -p 'test_price_forecast_h1_history.py'
       - name: Verify read-only market-data credential exists
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
