@@ -1,0 +1,50 @@
+name: Indicator optimizer research
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Start date (YYYY-MM-DD)"
+        required: true
+        default: "2025-01-01"
+      fee:
+        description: "Round-trip commission fraction (0.0026 = 0.26%)"
+        required: true
+        default: "0.0026"
+      slippage:
+        description: "Round-trip slippage fraction sensitivity (0.001 = 0.10%)"
+        required: true
+        default: "0.001"
+
+permissions:
+  contents: read
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/indicator-optimizer-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install research dependencies
+        run: pip install -r research/indicator_optimizer/requirements.txt
+      - name: Run optimizer (10m and H1, all 44 MOEX Index shares)
+        run: |
+          python research/indicator_optimizer/optimizer.py \
+            --start "\${{ inputs.start }}" \
+            --fee "\${{ inputs.fee }}" \
+            --slippage "\${{ inputs.slippage }}" \
+            --output optimizer_output
+      - name: Upload research outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-indicator-optimizer-\${{ github.run_id }}
+          path: optimizer_output/
+          if-no-files-found: warn
+          retention-days: 30
