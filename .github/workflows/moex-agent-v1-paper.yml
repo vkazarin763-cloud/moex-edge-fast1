@@ -55,14 +55,17 @@ jobs:
       - name: Verify MOEX ISS TLS and API access
         run: |
           python - <<'PY'
-          import requests
+          import json
+          from urllib.request import Request, urlopen
+
           url = "https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json?iss.meta=off"
-          response = requests.get(url, timeout=25)
-          response.raise_for_status()
-          payload = response.json()
+          request = Request(url, headers={"User-Agent": "MOEX-Agent-CI/1.0", "Accept": "application/json"})
+          with urlopen(request, timeout=25) as response:
+              payload = json.loads(response.read().decode("utf-8"))
+              status = response.status
           if "securities" not in payload:
               raise SystemExit("MOEX ISS response did not contain the securities block.")
-          print("MOEX ISS TLS verified; SBER endpoint returned HTTP", response.status_code)
+          print("MOEX ISS TLS verified; SBER endpoint returned HTTP", status)
           PY
 
       - name: Fetch pinned upstream agent
