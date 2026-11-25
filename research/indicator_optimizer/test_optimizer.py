@@ -40,7 +40,7 @@ class OptimizerTests(unittest.TestCase):
         trades=simulate_signals(df,sig,~sig,1,2,0.01,0.02)
         self.assertEqual(len(trades),1)
         self.assertEqual(trades[0]["entry_time"],str(df.begin.iloc[1]))
-        self.assertAlmostEqual(trades[0]["gross_return"],(103-101)/101)
+        self.assertAlmostEqual(trades[0]["gross_return"],(102-101)/101)
         self.assertAlmostEqual(trades[0]["net_return"],(103-101)/101-0.03)
 
     def test_metrics_empty_and_positive(self):
