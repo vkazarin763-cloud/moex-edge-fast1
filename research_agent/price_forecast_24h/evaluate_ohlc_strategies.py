@@ -160,14 +160,16 @@ def evaluate_symbol(rows):
     folds=split_folds(len(bars))
     if len(folds)<3:
         return {"status":"INSUFFICIENT_DATA","bars_after_filter":len(bars),"folds":len(folds),**q}
-    combined={name:[] for name in ("breakout_20","mean_reversion_20_2sd")}
+    combined={name:[] for name in ("breakout_20","breakout_20_sma50_filter","mean_reversion_20_2sd","mean_reversion_rsi_30_70")}
     fold_info=[]
     for no,(start,end) in enumerate(folds,1):
         trades=simulate(bars,start,end)
         fold_info.append({"fold":no,"test_start":bars[start]["timestamp"],
             "test_end":bars[end-1]["timestamp"],"test_bars":end-start,
             "breakout_trades":len(trades["breakout_20"]),
-            "mean_reversion_trades":len(trades["mean_reversion_20_2sd"])})
+            "breakout_sma50_filter_trades":len(trades["breakout_20_sma50_filter"]),
+            "mean_reversion_2sd_trades":len(trades["mean_reversion_20_2sd"]),
+            "mean_reversion_rsi_trades":len(trades["mean_reversion_rsi_30_70"])})
         for name in combined:
             for trade in trades[name]:trade["fold"]=no
             combined[name].extend(trades[name])
