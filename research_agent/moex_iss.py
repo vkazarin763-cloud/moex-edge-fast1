@@ -34,6 +34,7 @@ class HistoryRecord:
     low: float | None = None
     close: float | None = None
     volume: float | None = None
+    value: float | None = None
 
 
 def _get_json(url: str, timeout: int = 20, retries: int = 3,
@@ -185,6 +186,9 @@ def fetch_history_records(
                 low_price = optional_number("LOW")
                 close_price = optional_number("CLOSE", "LEGALCLOSEPRICE")
                 volume = optional_number("VOLUME")
+                value = optional_number("VALUE")
+                if value is not None and value < 0:
+                    raise ValueError("VALUE must be non-negative or null")
             except (IndexError, TypeError, ValueError) as exc:
                 if isinstance(exc, ISSDataError):
                     raise
@@ -194,7 +198,7 @@ def fetch_history_records(
             seen.add(trade_date)
             result.append(HistoryRecord(
                 trade_date, num_trades, open_price, high_price, low_price,
-                close_price, volume,
+                close_price, volume, value,
             ))
         if not rows:
             break
