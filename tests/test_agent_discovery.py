@@ -34,6 +34,11 @@ class AgentDiscoveryTests(unittest.TestCase):
             "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
             "source_report_date_till": "2026-11-20",
             "holdout_used_for_selection": False,
+            "coverage": {
+                "expected_symbols": 2, "analyzed_symbols": 2,
+                "unavailable_symbols": 0, "unavailable_tickers": [],
+                "unexpected_result_tickers": [], "coverage_complete": True,
+            },
             "scanner_contract": {"consume_only_status": "PASS", "live_trading_authorized": False},
         }
 
