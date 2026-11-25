@@ -1,71 +1,16 @@
-name: MOEX EDGE Historical Signal Replay (Development Only)
+name: "RETIRED — Legacy MOEX ISS Historical Replay"
 
 on:
-  workflow_run:
-    workflows:
-      - "MOEX EDGE Multi-Timeframe Candles (Read Only)"
-    types:
-      - completed
+  workflow_dispatch:
 
 permissions:
-  actions: read
   contents: read
 
-concurrency:
-  group: moex-edge-historical-replay
-  cancel-in-progress: false
-
 jobs:
-  replay:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main' &&
-      (github.event.workflow_run.event == 'push' ||
-       github.event.workflow_run.event == 'schedule')
+  retired:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Download source candle artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: moex-edge-multi-timeframe-candles
-          path: mtf-data
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.event.workflow_run.id }}
-      - name: Independently validate source candles
+      - name: Explain Finam-only migration
         run: |
-          python -m research_agent.multi_timeframe_validation \
-            --input mtf-data/moex_edge_multi_timeframe_candles.json \
-            --output mtf-data/moex_edge_multi_timeframe_validation.json
-      - name: Build historical signal and fixed-horizon outcome replay
-        run: |
-          python -m research_agent.historical_replay \
-            --candles mtf-data/moex_edge_multi_timeframe_candles.json \
-            --output moex_edge_historical_simulation.json \
-            --cutoff-exclusive 2026-11-20 \
-            --exclude-symbols T \
-            --source-run-id ${{ github.event.workflow_run.id }}
-      - name: Build frozen-cost historical execution replay
-        run: |
-          python -m research_agent.historical_execution \
-            --candles mtf-data/moex_edge_multi_timeframe_candles.json \
-            --output moex_edge_historical_execution.json \
-            --cutoff-exclusive 2026-11-20 \
-            --exclude-symbols T \
-            --source-run-id ${{ github.event.workflow_run.id }}
-      - name: Upload historical simulation artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: moex-edge-historical-simulation-${{ github.event.workflow_run.id }}
-          path: |
-            moex_edge_historical_simulation.json
-            moex_edge_historical_execution.json
-          if-no-files-found: error
-          retention-days: 30
+          echo "::notice::This legacy workflow is retired as part of the Finam-only migration."
+          echo "No MOEX ISS requests are made. Use 'MOEX EDGE Autonomous Research (Finam Only, Read Only)' and the Finam D1/H1 collector."
