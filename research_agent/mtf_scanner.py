@@ -315,7 +315,7 @@ def scan_multi_timeframe_report(
             "h1_confirmation": "Informational alignment only: LONG requires H1 EMA20>EMA50 and close>EMA20; SHORT requires H1 EMA20<EMA50 and close<EMA20. It does not suppress or rank D1 signals.",
             "lookahead_policy": "Only bars whose native interval end is <= as_of are eligible; H1 is additionally bounded by the D1 signal bar end.",
             "strategy_policy": "Uses the five frozen candidate formulas and their fixed parameters; no optimization or strategy selection is performed.",
-            "research_status": "Scanner prototype only. This output is not a backtest, profitability claim, or trade instruction. Registry freshness is checked against its source report's last completed MOEX session, not report-generation time.",
+            "research_status": "Scanner prototype only. This output is not a backtest, profitability claim, or trade instruction. Registry freshness is checked against registry generation time; its source data cutoff remains frozen before 2026-11-20.",
             "execution_policy": "Read-only; no broker account, order, position, or execution endpoints.",
         },
     }
