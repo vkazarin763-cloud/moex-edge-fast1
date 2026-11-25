@@ -1,6 +1,6 @@
 # MOEX EDGE Indicator Optimizer V1
 
-Status: research-only design; no production scanner or executor changes.
+Status: research-only implementation; no production scanner or executor changes.
 
 ## Scope
 - Repository: `vkazarin763-cloud/moex-edge-fast1`
@@ -8,7 +8,7 @@ Status: research-only design; no production scanner or executor changes.
 - Instruments: the configured 44 TQBR shares in `moex_edge_fast_33.py`.
 - Native MOEX ISS candle intervals: 10 minutes and 60 minutes. ISS does not provide a native 15-minute interval; do not label 10-minute candles as M15. If M15 is later required, construct it only from complete 1-minute bars and validate coverage/session boundaries.
 - Directions: LONG and SHORT evaluated independently.
-- No broker API, order submission, live workflow dispatch, Telegram, or production file edits.
+- No broker API, order submission, Telegram, or production file edits. The only workflow added is a manual research run on this branch.
 
 ## Existing baseline discovered
 The current FAST 4.0 scanner hardcodes:
@@ -34,21 +34,32 @@ It primarily creates signals on D1 and uses H1 EMA20 as a confirmation. Existing
 The grid is a candidate search space, not a claim that any setting is best.
 
 ## Validation protocol
-1. Fetch and validate actual MOEX ISS candles; record source, timestamps, coverage, missing intervals, duplicates, invalid OHLC, and session filtering by ticker/timeframe.
-2. Use only completed candles. A signal formed on candle close may enter no earlier than the next available candle open.
+1. Fetch and validate actual MOEX ISS candles; record source, timestamps, coverage, duplicates, invalid OHLC, incomplete final candles, and excluded out-of-session bars by ticker/timeframe. Raw data is cached locally between runs.
+2. Use only completed candles. A signal formed on candle close may enter no earlier than the next available candle open. Each trade must also exit within its chronological partition; trades crossing train/validation/test boundaries are excluded.
 3. Evaluate 10-minute and 60-minute data separately; never mix timeframe results.
-4. Evaluate LONG and SHORT separately, per ticker first, then report pooled results. Do not silently pool incompatible instruments.
+4. Evaluate LONG and SHORT separately, per ticker first, then report pooled test results by timeframe, strategy family, parameter set, and direction. Do not silently pool incompatible instruments.
 5. Use chronological train/validation/test partitions and walk-forward checks. The final test segment remains untouched during parameter selection.
 6. Include commission and a configurable conservative spread/slippage model; report gross and net returns separately and run cost sensitivity. OHLC candles alone do not prove historical bid/ask spread.
-7. Report trade count, win rate, mean/median net return, profit factor, max drawdown, exposure/time-in-market, and stability across folds/tickers. No portfolio capital or position-size calculations in user-facing reports.
+7. Report trade count, win rate, mean/median gross and net return, profit factor, and max drawdown per ticker plus pooled test statistics. No portfolio capital or position-size calculations in user-facing reports.
 8. Reject settings with too few trades, unstable fold performance, or negative net expectancy. Do not select solely by win rate or the single best historical result.
 9. Compare optimized settings against the unchanged default settings on exactly the same timestamps and execution assumptions.
 
 ## Promotion rule
 Research output is a report/config candidate only. No automatic parameter update to FAST 4.0. Any production adoption requires a separate explicit review and approval after out-of-sample evidence.
 
-## Known caveats to resolve before first run
-- Confirm current TQBR session windows and filter official sessions correctly; do not reuse broad unverified time filters.
-- Confirm MOEX ISS candle availability per ticker/timeframe via candle borders.
-- Validate OHLC-based stop/target ordering when both levels are touched within one candle; use conservative adverse ordering or finer data.
-- Verify fee schedule and model spread/slippage conservatively. Never present modeled costs as exact historical costs.
+
+## Implemented execution model
+- The current version tests each indicator family independently (not all combinations together), using a fixed 3-bar holding horizon to isolate indicator parameter quality from exit-parameter optimization.
+- Entry is next candle open; exit is the close after the configured number of bars. One trade per ticker/family/direction may be open at a time; overlapping signals are skipped.
+- The default modeled round-trip fee is 0.26% and round-trip slippage sensitivity is 0.10%. These are explicit assumptions, not verified current Finam tariffs or measured historical spreads; both are configurable.
+- Default date range begins 2025-01-01. CSV cache avoids re-downloading unchanged ticker/timeframe/date ranges. --refresh forces a reload.
+- Results include data_quality.csv, candidate_results.json, validation_shortlist.json, pooled_test_results.json, and summary.json.
+- Run unit tests from this directory with python -m unittest -v.
+- Manual GitHub Actions run: Actions → Indicator optimizer research → Run workflow. Outputs are uploaded as a 30-day artifact.
+
+## Current limits
+- The initial engine evaluates indicator families separately; it does not yet search multi-indicator ensembles or optimize exit rules.
+- The final test segment is reported but never used to select the validation shortlist. Pooled results are grouped by exact parameter set; inspect ticker-level dispersion before interpreting them.
+- The current model uses fixed-horizon exits and candle OHLC, not historical bid/ask quotes. Treat results as a research screen, not executable performance.
+- Only the main equity session (09:00–19:00 Moscow time after 14-Sep-2026) is included. Morning/evening additional sessions are excluded; weekend trading dates are not inferred from weekday rules alone.
+- Verify current fee schedule and model spread/slippage conservatively. Never present modeled costs as exact historical costs.
