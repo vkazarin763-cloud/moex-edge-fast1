@@ -83,3 +83,30 @@ def build_finam_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
         "This registry cannot authorize signals or live trading."
     )
     return registry
+
+def main() -> int:
+    import argparse
+    import json
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description="Build a fail-closed Finam-only strategy registry")
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args()
+    report = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    registry = build_finam_strategy_registry(report)
+    Path(args.output).write_text(
+        json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(json.dumps({
+        "registry_version": registry["registry_version"],
+        "coverage": registry["coverage"],
+        "summary": registry["summary"],
+        "scanner_contract": registry["scanner_contract"],
+        "strategy_evidence_status": registry["strategy_evidence_status"],
+    }, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
