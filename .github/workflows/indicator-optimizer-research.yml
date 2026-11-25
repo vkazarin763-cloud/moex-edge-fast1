@@ -38,6 +38,16 @@ jobs:
           cache-dependency-path: research/indicator_optimizer/requirements.txt
       - name: Install research dependencies
         run: pip install -r research/indicator_optimizer/requirements.txt
+      - name: Diagnose HTTPS trust configuration
+        run: |
+          python - <<'PY'
+          import os, pathlib, ssl
+          print("Default SSL paths:", ssl.get_default_verify_paths())
+          for key in ("REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS"):
+              value = os.environ.get(key)
+              print(f"{key}: {'configured' if value else 'unset'}; file_exists={bool(value and pathlib.Path(value).is_file())}")
+          PY
+          curl --silent --show-error --max-time 15 -o /dev/null -w "MOEX ISS HTTP %{http_code}\n" https://iss.moex.com/iss/index.json || true
       - name: Smoke test (three shares, real MOEX ISS candles)
         if: contains(github.event.head_commit.message, '[optimizer-smoke]')
         run: |
