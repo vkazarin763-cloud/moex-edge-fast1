@@ -216,16 +216,15 @@ def split_bounds(df):
     return int(n*.60), int(n*.80)
 
 def walk_forward_metrics(df, trades, folds=4):
-    """Four chronological out-of-sample blocks after an initial 50% warm-up/training period."""
+    """Four sequential training-stability blocks; validation and final-test windows are excluded."""
     start_idx = int(len(df) * 0.20)
     end_idx = int(len(df) * 0.60)  # keep all walk-forward stability checks inside training; validation/test remain separate
     edges = np.linspace(start_idx, end_idx, folds + 1, dtype=int)
     output = []
     for fold_no in range(folds):
         lo_idx, hi_idx = edges[fold_no], edges[fold_no+1]
-        lo, hi = pd.Timestamp(df.begin.iloc[lo_idx]), pd.Timestamp(df.begin.iloc[min(hi_idx, len(df)-1)])
-        if fold_no == folds-1:
-            hi = hi + pd.Timedelta(days=1)
+        lo = pd.Timestamp(df.begin.iloc[lo_idx])
+        hi = pd.Timestamp(df.begin.iloc[hi_idx]) if hi_idx < len(df) else pd.Timestamp(df.begin.iloc[-1]) + pd.Timedelta(days=1)
         block = [t for t in trades if lo <= pd.Timestamp(t["signal_time"]) and pd.Timestamp(t["exit_time"]) < hi]
         stat = metrics(block)
         output.append({"fold":fold_no+1,"start":str(lo),"end_exclusive":str(hi),**stat})
