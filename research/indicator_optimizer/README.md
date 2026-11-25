@@ -38,7 +38,7 @@ The grid is a candidate search space, not a claim that any setting is best.
 2. Use only completed candles. A signal formed on candle close may enter no earlier than the next available candle open. Each trade must also exit within its chronological partition; trades crossing train/validation/test boundaries are excluded.
 3. Evaluate 10-minute and 60-minute data separately; never mix timeframe results.
 4. Evaluate LONG and SHORT separately, per ticker first, then report pooled test results by timeframe, strategy family, parameter set, and direction. Do not silently pool incompatible instruments.
-5. Use chronological train/validation/test partitions and four sequential out-of-sample walk-forward blocks after a 50% warm-up period. The final test segment remains untouched during parameter selection.
+5. Use chronological train/validation/test partitions and four sequential training-stability blocks inside the training segment (20%–60% of the timeline). Validation (60%–80%) selects candidates; final test (80%–100%) remains untouched. The final test segment remains untouched during parameter selection.
 6. Include commission and a configurable conservative spread/slippage model; report gross and net returns separately and run cost sensitivity. OHLC candles alone do not prove historical bid/ask spread.
 7. Report trade count, win rate, mean/median gross and net return, profit factor, and max drawdown per ticker plus pooled test statistics. No portfolio capital or position-size calculations in user-facing reports.
 8. The validation shortlist requires at least 10 validation trades, positive validation mean net return, at least 3 of 4 walk-forward blocks with 5+ trades, and positive mean net return across active blocks. This is a screen, not a guarantee. Do not select solely by win rate or the single best historical result.
@@ -59,7 +59,7 @@ Research output is a report/config candidate only. No automatic parameter update
 
 ## Current limits
 - The initial engine evaluates indicator families separately; it does not yet search multi-indicator ensembles or optimize exit rules.
-- The final test segment is reported but never used to select the validation shortlist. Pooled results are grouped by exact parameter set; inspect ticker-level dispersion before interpreting them. Walk-forward metrics are also stored per ticker/candidate.
+- The final test segment is reported but never used to select the validation shortlist. Pooled results are grouped by exact parameter set; inspect ticker-level dispersion before interpreting them. Training-stability fold metrics are also stored per ticker/candidate and do not use validation or final-test candles.
 - The current model uses fixed-horizon exits and candle OHLC, not historical bid/ask quotes. Treat results as a research screen, not executable performance.
 - Only the main equity session (09:00–19:00 Moscow time after 14-Sep-2026) is included. Morning/evening additional sessions are excluded; weekend trading dates are not inferred from weekday rules alone.
 - Verify current fee schedule and model spread/slippage conservatively. Never present modeled costs as exact historical costs.
