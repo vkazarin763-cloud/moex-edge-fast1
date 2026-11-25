@@ -6,7 +6,6 @@ on:
       - research/price-forecast-24h-v1
     paths:
       - "research_agent/price_forecast_24h/compare_models_walk_forward.py"
-      - ".github/workflows/price-forecast-24h-model-comparison.yml"
 
 permissions:
   contents: write
