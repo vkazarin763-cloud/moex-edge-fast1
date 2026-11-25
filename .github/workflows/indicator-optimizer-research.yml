@@ -36,15 +36,15 @@ jobs:
       - name: Run optimizer (10m and H1, all 44 MOEX Index shares)
         run: |
           python research/indicator_optimizer/optimizer.py \
-            --start "\${{ inputs.start }}" \
-            --fee "\${{ inputs.fee }}" \
-            --slippage "\${{ inputs.slippage }}" \
+            --start "${ inputs.start }}" \
+            --fee "${ inputs.fee }}" \
+            --slippage "${ inputs.slippage }}" \
             --output optimizer_output
       - name: Upload research outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: moex-indicator-optimizer-\${{ github.run_id }}
+          name: moex-indicator-optimizer-${ github.run_id }}
           path: optimizer_output/
           if-no-files-found: warn
           retention-days: 30
