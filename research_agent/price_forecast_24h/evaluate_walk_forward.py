@@ -133,12 +133,13 @@ def main():
     out=REPORTS/f"walk-forward-{stamp}.json"
     out.write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     csvpath=REPORTS/f"walk-forward-{stamp}.csv"
-    fields=["ticker","status","bars_after_filter","samples_total","train_samples","test_samples",
-            "baseline_mae_pct","model_mae_pct","mae_improvement_pct","baseline_rmse_pct",
-            "model_rmse_pct","directional_accuracy_pct","nonzero_prediction_pct",
-            "weekend_bars_excluded","duplicates","invalid_ohlc"]
+    fields=["ticker","status","bars_after_filter","samples","samples_total","train_samples","test_samples",
+            "test_start","test_end","alpha","beta","baseline_mae_pct","model_mae_pct",
+            "mae_improvement_pct","baseline_rmse_pct","model_rmse_pct",
+            "directional_accuracy_pct","nonzero_prediction_pct",
+            "weekend_bars_excluded","duplicates","invalid_ohlc","model","baseline"]
     with csvpath.open("w",newline="",encoding="utf-8") as f:
-        w=csv.DictWriter(f,fieldnames=["ticker"]+fields[1:])
+        w=csv.DictWriter(f,fieldnames=fields)
         w.writeheader()
         for ticker,v in results.items(): w.writerow({"ticker":ticker,**v})
     print(json.dumps({
