@@ -95,11 +95,13 @@ def verify_agent_proposals(
         raise AgentContractError("Deterministic scan is missing or has an unexpected status")
     if not isinstance(deterministic_scan.get("signals"), list):
         raise AgentContractError("Deterministic scan signals must be a list")
+    scanner_contract = strategy_registry.get("scanner_contract") or {}
     if (strategy_registry.get("stage") != REGISTRY_STAGE or
             strategy_registry.get("holdout_used_for_selection") is not False or
-            (strategy_registry.get("scanner_contract") or {}).get("consume_only_status") != "PASS" or
-            (strategy_registry.get("scanner_contract") or {}).get("live_trading_authorized") is not False):
+            scanner_contract.get("live_trading_authorized") is not False):
         raise AgentContractError("Strategy registry is not a valid development-only registry")
+    if scanner_contract.get("consume_only_status") != "PASS":
+        raise AgentContractError("Strategy registry is blocked from scanner consumption")
     try:
         scan_cutoff = _aware_utc(deterministic_scan.get("as_of_utc"), "deterministic_scan.as_of_utc")
         registry_source_date = datetime.fromisoformat(
@@ -115,6 +117,16 @@ def verify_agent_proposals(
     universe = deterministic_scan.get("universe") or []
     if not isinstance(universe, list) or any(not isinstance(item, str) for item in universe):
         raise AgentContractError("Deterministic scan universe must be a list of ticker strings")
+    coverage = strategy_registry.get("coverage")
+    if (not isinstance(coverage, dict)
+            or coverage.get("coverage_complete") is not True
+            or coverage.get("expected_symbols") != len(universe)
+            or coverage.get("analyzed_symbols") != len(universe)
+            or coverage.get("unavailable_symbols") != 0
+            or coverage.get("unexpected_result_tickers")):
+        raise AgentContractError(
+            "Strategy registry has missing or incomplete full-universe research coverage"
+        )
     validate_agent_proposals(agent_report, universe)
     reproduced = {
         (row.get("symbol"), row.get("direction"), row.get("strategy"), row.get("d1_bar_end_utc")): row
