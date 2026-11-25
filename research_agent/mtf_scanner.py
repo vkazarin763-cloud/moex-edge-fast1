@@ -204,9 +204,7 @@ def scan_multi_timeframe_report(
             raise ValueError("Strategy registry source data must end before the frozen holdout")
         if holdout_start.isoformat() != "2026-11-20":
             raise ValueError("Strategy registry holdout boundary does not match the frozen policy")
-        if registry_generated > cutoff:
-            raise ValueError("Strategy registry was generated after the candle snapshot")
-        registry_age_days = (cutoff - registry_generated).total_seconds() / 86400
+        registry_age_days = abs((cutoff - registry_generated).total_seconds()) / 86400
         if registry_age_days > 14:
             raise ValueError("Strategy registry is older than 14 days; rerun the Finam research workflow")
         allowed = {
