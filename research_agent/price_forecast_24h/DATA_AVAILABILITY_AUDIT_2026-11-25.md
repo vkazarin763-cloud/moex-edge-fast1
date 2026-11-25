@@ -14,16 +14,15 @@ Status: **historical H1 sample insufficient for a credible model test.** No trai
 
 The 24-H1-bar target and chronological splits with purge/embargo leave too little independent time coverage for a credible multi-regime test. Thousands of ticker-hour rows are not thousands of independent market observations. Accumulate at least 6 months of clean H1 history, preferably 12 months, before model evaluation.
 
-## Liquidity and collection design
+## Updated collection universe decision (2026-11-25)
 
-- The 44 symbols are a candidate pool only.
-- Rank candidates using official MOEX ISS TQBR daily `VALUE`, not `close × volume`.
-- The prospective collector requires at least 40 valid positive `VALUE` observations among the latest 60 completed D1 rows and selects the top 10 by mean turnover.
-- Fetch H1 only for the selected top 10; retain D1 screening records for all candidates and persist the complete selection metadata in each snapshot.
-- Securities without sufficient official `VALUE` history are excluded from eligibility and recorded by absence from the ranking; no proxy is imputed.
-- The top-10 cohort is recomputed at each manual collector run. It is point-in-time per snapshot, not a fixed retrospective cohort.
-- The fixed current 44-symbol candidate pool creates survivorship/universe-selection bias for historical evaluation.
+- User selected the complete 44-symbol universe instead of the proposed top-10 liquidity cohort.
+- Collect H1 and D1 for all 44 symbols; do not filter out symbols based on official `VALUE`, liquidity rank, or missing turnover.
+- Missing `VALUE` remains explicitly missing. Never estimate it from `close × volume`.
+- A failure for one symbol or timeframe must be visible in that symbol's status and must not silently remove other symbols.
+- The earlier top-10 selection design is superseded and must not be used by the active collector.
+- The fixed current 44-symbol pool creates survivorship/universe-selection bias for historical evaluation.
 
 ## Limitations
 
-The inspected artifact's validator confirms structural integrity only for that snapshot. It does not prove prospective collection quality, point-in-time universe correctness, or model validity. The existing H1 feed lookback is 30 calendar days. No model was trained, no signal generated, no workflow dispatched, and no production/trading configuration changed as part of this audit.
+The inspected artifact's validator confirms structural integrity only for that snapshot. It does not prove prospective collection quality, point-in-time universe correctness, or model validity. The existing H1 feed lookback is 30 calendar days. No model was trained, no signal generated, and no production/trading configuration changed as part of this audit.
