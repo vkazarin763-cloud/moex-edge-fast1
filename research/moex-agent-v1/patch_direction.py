@@ -88,6 +88,7 @@ new_exits = '''        # Check stop first: if both levels are touched in one can
 if old_exits not in backtest:
     raise SystemExit("Expected backtest exit block not found; refusing patch")
 backtest = backtest.replace(old_backtest, new_backtest, 1)
-backtest_path.write_text(backtest.replace(old_backtest, new_backtest, 1), encoding="utf-8")
+backtest = backtest.replace(old_exits, new_exits, 1)
+backtest_path.write_text(backtest, encoding="utf-8")
 print("Direction-aware LONG/SHORT patch applied to live and backtest pipelines.")
 print("Conservative same-candle stop/target handling applied to backtest.")
