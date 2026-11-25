@@ -17,6 +17,7 @@ class FinamStrategyRegistryTests(unittest.TestCase):
             "source": "Finam Trade API TIME_FRAME_D, native D1 bars",
             "holdout_start": "2026-11-20",
             "holdout_used_for_selection": False,
+            "date_till": "2026-11-19",
             "generated_at_utc": "2026-11-25T00:00:00+00:00",
             "universe": universe,
             "data_audit": audit,
