@@ -61,5 +61,5 @@ Research output is a report/config candidate only. No automatic parameter update
 - The initial engine evaluates indicator families separately; it does not yet search multi-indicator ensembles or optimize exit rules.
 - The final test segment is reported but never used to select the validation shortlist. Pooled results are grouped by exact parameter set; inspect ticker-level dispersion before interpreting them. Training-stability fold metrics are also stored per ticker/candidate and do not use validation or final-test candles.
 - The current model uses fixed-horizon exits and candle OHLC, not historical bid/ask quotes. Treat results as a research screen, not executable performance.
-- Only the main equity session (09:00–19:00 Moscow time after 14-Sep-2026) is included. Morning/evening additional sessions are excluded; weekend trading dates are not inferred from weekday rules alone.
+- Only weekday main equity session (09:00–19:00 Moscow time after 14-Sep-2026) is included. Morning/evening additional sessions and weekend additional sessions are excluded and counted in data-quality output.
 - Verify current fee schedule and model spread/slippage conservatively. Never present modeled costs as exact historical costs.
