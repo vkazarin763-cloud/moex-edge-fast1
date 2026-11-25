@@ -1,11 +1,6 @@
 name: MOEX Agent V1 Historical Paper Validation
 
 on:
-  push:
-    branches: [experiment/moex-agent-v1-paper]
-    paths:
-      - '.github/workflows/moex-agent-v1-history-backtest.yml'
-      - 'research/moex-agent-v1/**'
   workflow_dispatch:
     inputs:
       days:
