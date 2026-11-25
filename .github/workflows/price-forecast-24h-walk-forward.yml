@@ -1,0 +1,40 @@
+name: Price Forecast 24H — walk-forward evaluation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: price-forecast-24h-walk-forward
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run chronological out-of-sample evaluation
+        run: python -m research_agent.price_forecast_24h.evaluate_walk_forward
+      - name: Commit reports to research branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research_agent/price_forecast_24h/reports/
+          git commit -m "research: add 24-bar walk-forward evaluation report"
+          git push origin HEAD:research/price-forecast-24h-v1
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: price-forecast-24h-walk-forward-report
+          path: research_agent/price_forecast_24h/reports/
+          retention-days: 30
