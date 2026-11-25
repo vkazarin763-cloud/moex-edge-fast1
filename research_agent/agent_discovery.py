@@ -267,7 +267,7 @@ def call_groq_discovery(
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.1,
-        "max_completion_tokens": 6144,
+        "max_completion_tokens": 8192,
         "reasoning_format": "hidden",
         "reasoning_effort": "low",
         "response_format": OUTPUT_SCHEMA,
@@ -532,14 +532,15 @@ def run_discovery(
             "Strategy hypotheses may only select a listed frozen strategy and timeframe config; "
             "they are unverified research questions, not signals or claims of profitability. "
             "Do not propose a strategy family outside the supplied catalog. "
-            "If direction_forecast is present, you may return forecast_reviews for symbols that "
-            "also appear in candidate_signals, copying the exact symbol, direction, strategy and "
-            "d1_bar_end_utc. For each candidate and each horizon, compare candidate direction to "
-            "the model's predicted_class: LONG/UP or SHORT/DOWN is AGREES; LONG/DOWN or SHORT/UP "
-            "is CONTRADICTS; SIDEWAYS is NEUTRAL; use INSUFFICIENT_EVIDENCE when the data do not "
-            "support a view. Treat probabilities as experimental and NOT_CALIBRATED. Do not alter, "
-            "recalculate or repeat numeric probabilities. If no candidate exists, return an empty "
-            "forecast_reviews array.\n"
+            "If direction_forecast is present, return forecast_reviews only for the first "
+            "two candidate_signals in the supplied list (or fewer if fewer exist), covering "
+            "horizons 1, 5 and 20 for each reviewed candidate. Copy the exact symbol, direction, "
+            "strategy and d1_bar_end_utc. Compare candidate direction to predicted_class: LONG/UP "
+            "or SHORT/DOWN is AGREES; LONG/DOWN or SHORT/UP is CONTRADICTS; SIDEWAYS is NEUTRAL; "
+            "use INSUFFICIENT_EVIDENCE when the data do not support a view. This review limit does "
+            "not limit signal proposals: consider every candidate_signal for proposals. Treat "
+            "probabilities as experimental and NOT_CALIBRATED. Do not alter, recalculate or repeat "
+            "numeric probabilities. If no candidate exists, return an empty forecast_reviews array.\\n"
             f"DETERMINISTIC SNAPSHOT: {context_json}"
         )
         if caller is call_groq_discovery:
