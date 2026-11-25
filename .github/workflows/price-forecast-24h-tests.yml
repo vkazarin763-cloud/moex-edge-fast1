@@ -1,0 +1,28 @@
+name: Price Forecast 24H — collector tests
+
+on:
+  push:
+    branches: [research/price-forecast-24h-v1]
+    paths:
+      - "research_agent/moex_iss.py"
+      - "research_agent/multi_timeframe.py"
+      - "research_agent/price_forecast_24h/**"
+      - "tests/test_price_forecast_24h_collector.py"
+      - ".github/workflows/price-forecast-24h-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run focused collector unit tests
+        run: python -m unittest tests.test_price_forecast_24h_collector -v
