@@ -4,42 +4,68 @@ from __future__ import annotations
 import gzip
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from research_agent.multi_timeframe import DEFAULT_TICKERS, collect_multi_timeframe
+from research_agent.multi_timeframe import (DEFAULT_TICKERS, RefreshingFinamClient, _finam_bar_is_complete, _serialize)
 
 DATA_DIR = Path("research_agent/price_forecast_24h/data")
 STATE_FILE = DATA_DIR / "LATEST.json"
 H1_HISTORY_FILE = DATA_DIR / "H1_HISTORY.json.gz"
 
 
-def collect_all_universe(tickers, *, api_token, source_app_id=None, collector=collect_multi_timeframe):
-    """Collect H1 and D1 for every requested symbol; liquidity is descriptive only."""
-    requested = list(dict.fromkeys(str(t).strip().upper() for t in tickers if str(t).strip()))
-    if not requested:
-        raise ValueError("At least one ticker is required")
-    payload = collector(
-        requested, api_token=api_token, source_app_id=source_app_id,
-        frames=("H1", "D1"),
-    )
-    results = payload.get("results", {})
-    missing = [ticker for ticker in requested if ticker not in results]
-    if missing:
-        raise RuntimeError(
-            "Collector omitted requested symbols: " + ", ".join(missing)
-        )
-    payload["universe"] = requested
-    payload["requested_frames"] = ["H1", "D1"]
-    payload["universe_selection"] = {
-        "method": "fixed complete 44-symbol MOEX candidate universe; no liquidity exclusion",
-        "candidate_count": len(requested),
-        "selected_count": len(requested),
-        "symbols": requested,
-        "liquidity_filter": "disabled",
-        "note": "Liquidity may be reported as descriptive metadata but does not determine inclusion.",
+def collect_incremental_h1(
+    tickers, *, history, api_token, source_app_id=None, now=None, client=None
+):
+    """Fetch only the interval since each symbol's latest stored H1 candle."""
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None or current.utcoffset() is None:
+        raise ValueError("now must be timezone-aware")
+    current = current.astimezone(timezone.utc)
+    api = client or RefreshingFinamClient(api_token, source_app_id)
+    results = {}
+    for ticker in dict.fromkeys(str(t).strip().upper() for t in tickers if str(t).strip()):
+        stored = history.get("symbols", {}).get(ticker, {}).get("candles", [])
+        last_timestamp = stored[-1]["timestamp"] if stored else ""
+        if last_timestamp:
+            last_dt = datetime.fromisoformat(last_timestamp)
+            # One-bar overlap protects API boundaries; cumulative merge deduplicates it.
+            start = max(last_dt - timedelta(hours=1), current - timedelta(days=30))
+        else:
+            start = current - timedelta(days=30)
+        try:
+            raw = api.fetch_bars(f"{ticker}@MISX", "TIME_FRAME_H1", start, current)
+            completed = [
+                bar for bar in raw
+                if bar.is_data_snapshot is not True
+                and _finam_bar_is_complete(bar.timestamp, "H1", current)
+            ]
+            all_candles = _serialize(completed, snapshot_field=True)
+            new_candles = [
+                row for row in all_candles
+                if not last_timestamp or row["timestamp"] > last_timestamp
+            ]
+            results[ticker] = {"H1": {
+                "source": "Finam", "status": "OK",
+                "requested_start_utc": start.isoformat(),
+                "raw_bars": len(raw), "completed_bars": len(completed),
+                "new_bars": len(new_candles), "candles": new_candles,
+            }}
+        except Exception as exc:
+            results[ticker] = {"H1": {
+                "source": "Finam", "status": "ERROR",
+                "requested_start_utc": start.isoformat(), "candles": [],
+                "error": f"{type(exc).__name__}: {exc}"[:500],
+            }}
+    return {
+        "generated_at_utc": current.isoformat(), "timezone": "UTC",
+        "results": results,
+        "universe_selection": {
+            "method": "fixed complete 44-symbol universe; no liquidity filter",
+            "candidate_count": len(results), "selected_count": len(results),
+            "symbols": list(results), "liquidity_filter": "disabled",
+        },
     }
-    return payload
 
 
 def _read_previous_state() -> dict:
