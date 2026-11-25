@@ -1,0 +1,64 @@
+name: MOEX Agent V1 Paper
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 4-15 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moex-agent-v1-paper
+  cancel-in-progress: false
+
+jobs:
+  paper-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout isolated experiment
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/moex-agent-v1-paper
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: research/moex-agent-v1/requirements.txt
+
+      - name: Fetch pinned upstream agent
+        run: |
+          git clone https://github.com/omnistrateg-ux/moex-agent.git vendor/moex-agent
+          git -C vendor/moex-agent checkout 5b8a3e56c933a85554feb7496fb251ac95ced1a6
+          test -f vendor/moex-agent/models/meta.json
+          test -f vendor/moex-agent/models/model_time_5m.joblib
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r research/moex-agent-v1/requirements.txt
+
+      - name: Prepare isolated config and correct directional probability
+        run: |
+          cp research/moex-agent-v1/config.yaml vendor/moex-agent/config.yaml
+          python research/moex-agent-v1/patch_direction.py
+
+      - name: Initialize paper database
+        working-directory: vendor/moex-agent
+        run: python -m moex_agent --config config.yaml init-db
+
+      - name: Run one paper cycle
+        working-directory: vendor/moex-agent
+        run: python -m moex_agent --config config.yaml live --once
+
+      - name: Upload paper results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-agent-v1-paper-${{ github.run_number }}
+          path: |
+            vendor/moex-agent/data/moex_agent.sqlite
+            vendor/moex-agent/models/meta.json
+          if-no-files-found: warn
+          retention-days: 14
