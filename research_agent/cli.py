@@ -410,6 +410,9 @@ def run_universe(
 
 def research_exit_code(report: dict, analyzed: int) -> int:
     """Return non-zero when the saved report fails or cannot complete its audit."""
+    results = report.get("results")
+    if not isinstance(results, dict) or not results or analyzed != len(results):
+        return 4
     validation = report.get("independent_validation", {})
     status = validation.get("status") if isinstance(validation, dict) else None
     if status == "INDEPENDENT_VALIDATION_FAIL":
