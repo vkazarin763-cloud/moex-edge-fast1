@@ -14,6 +14,8 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
+import truststore
+truststore.inject_into_ssl()  # use the runner OS trust store; never disable TLS verification
 import requests
 
 TICKERS = """AFKS AFLT ALRS BSPB CBOM CHMF CNRU DOMRF ENPG FLOT GAZP GMKN HEAD IRAO LKOH MAGN MDMG MOEX MTSS NLMK NVTK OZON PHOR PLZL POSI RAGR RENI ROSN RTKM RUAL SBER SBERP SNGS SNGSP SVCB T TATN TATNP TRNFP UGLD VKCO VTBR X5 YDEX""".split()
@@ -290,7 +292,15 @@ def run(args):
         "direction":"LONG" if direction==1 else "SHORT","test":metrics(trades)})
     pd.DataFrame(pooled_rows).to_json(out/"pooled_test_results.json",orient="records",force_ascii=False,indent=2)
     if not all_rows:
-      (out/"summary.json").write_text(json.dumps({"status":"no_eligible_results","note":"No candidate reached minimum training trade count."},indent=2),encoding="utf-8")
+      download_errors=sum(1 for item in quality if "error" in item)
+      expected_downloads=len(args.tickers)*len(args.intervals)
+      if download_errors == expected_downloads:
+        summary={"status":"data_fetch_failed","download_errors":download_errors,
+                 "note":"Every MOEX ISS candle request failed; no strategy statistics were calculated."}
+        (out/"summary.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
+        raise RuntimeError("All MOEX ISS data downloads failed; refusing to report an empty successful run.")
+      (out/"summary.json").write_text(json.dumps({"status":"no_eligible_results","download_errors":download_errors,
+        "note":"No candidate reached minimum training trade count. Check data_quality.csv for coverage and errors."},indent=2),encoding="utf-8")
       return
     results=pd.DataFrame(all_rows)
     # Select only on validation, never on final test. Require positive validation expectancy.
@@ -303,7 +313,7 @@ def run(args):
     results.to_json(out/"candidate_results.json",orient="records",force_ascii=False,indent=2)
     selected=results[(results.val_trades>=10)&(results.val_mean>0)&(results.wf_active_folds>=3)&(results.wf_mean_net>0)].groupby(["interval","family","direction"],as_index=False).head(3)
     selected.to_json(out/"validation_shortlist.json",orient="records",force_ascii=False,indent=2)
-    summary={"status":"completed","tickers":len(TICKERS),"intervals":[10,60],"candidate_rows":len(results),
+    summary={"status":"completed","tickers":len(TICKERS),"intervals":[10,60],"candidate_rows":len(results),"data_errors":sum(1 for item in quality if "error" in item),
       "shortlisted_rows":len(selected),"fee_round_trip":args.fee,"slippage_round_trip":args.slippage,
       "holding_bars":args.hold_bars,"selection":"train minimum trades; validation positive mean net return; final test untouched",
       "important":"These are per-ticker exploratory candidates, not proof of profitability. Aggregate and walk-forward stability review is required before any production use."}
