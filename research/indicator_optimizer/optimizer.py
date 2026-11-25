@@ -214,9 +214,9 @@ def split_bounds(df):
     n=len(df)
     return int(n*.60), int(n*.80)
 
-def evaluate(df, family, params, direction, fee, slippage):
+def evaluate(df, family, params, direction, fee, slippage, hold):
     long_sig, short_sig = candidate_signals(df, family, params)
-    trades=simulate_signals(df,long_sig,short_sig,direction,HOLD_BARS,fee,slippage)
+    trades=simulate_signals(df,long_sig,short_sig,direction,hold,fee,slippage)
     train_end, val_end=split_bounds(df)
     def in_range(items, lo, hi):
         # Keep each trade wholly inside one partition; never let a train trade exit in validation/test.
@@ -255,7 +255,7 @@ def run(args):
           for family,params_list in grids.items():
             for params in params_list:
               for direction in [1,-1]:
-                tr,va,te,trades,test_trades=evaluate(df,family,params,direction,args.fee,args.slippage)
+                tr,va,te,trades,test_trades=evaluate(df,family,params,direction,args.fee,args.slippage,args.hold_bars)
                 if tr["trades"] < args.min_trades: continue
                 param_key=json.dumps(params,sort_keys=True)
                 all_rows.append({"ticker":ticker,"interval":interval,"family":family,
@@ -305,8 +305,6 @@ def main():
     p.add_argument("--min-trades",type=int,default=MIN_TRADES)
     p.add_argument("--hold-bars",type=int,default=HOLD_BARS)
     args=p.parse_args()
-    global HOLD_BARS
-    HOLD_BARS=args.hold_bars
     if args.min_trades<1 or args.hold_bars<1: p.error("min-trades and hold-bars must be positive")
     if args.fee<0 or args.slippage<0: p.error("fee/slippage must be non-negative")
     run(args)
