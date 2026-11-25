@@ -10,7 +10,8 @@ from pathlib import Path
 from research_agent.multi_timeframe import DEFAULT_TICKERS, collect_multi_timeframe
 
 DATA_DIR = Path("research_agent/price_forecast_24h/data")
-STATE_FILE = DATA_DIR / "LATEST.json"\nH1_HISTORY_FILE = DATA_DIR / "H1_HISTORY.json.gz"
+STATE_FILE = DATA_DIR / "LATEST.json"
+H1_HISTORY_FILE = DATA_DIR / "H1_HISTORY.json.gz"
 
 
 def collect_all_universe(tickers, *, api_token, source_app_id=None, collector=collect_multi_timeframe):
@@ -104,6 +105,56 @@ def build_daily_delta(payload: dict, state: dict) -> tuple[dict, dict]:
     return delta, state_out
 
 
+
+def _read_h1_history() -> dict:
+    """Load cumulative H1 history, seeding it from the one-time backfill."""
+    if H1_HISTORY_FILE.exists():
+        try:
+            with gzip.open(H1_HISTORY_FILE, "rt", encoding="utf-8") as stream:
+                return json.load(stream)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"Cannot read cumulative H1 history: {exc}") from exc
+
+    history = {"schema_version": 1, "source": "Finam H1", "symbols": {}}
+    archives = sorted(DATA_DIR.glob("h1-backfill-180d-*.json.gz"))
+    if archives:
+        with gzip.open(archives[-1], "rt", encoding="utf-8") as stream:
+            initial = json.load(stream)
+        for ticker, block in initial.get("results", {}).items():
+            candles = block.get("candles", [])
+            history["symbols"][ticker] = {
+                "candles": candles,
+                "first_timestamp": candles[0]["timestamp"] if candles else None,
+                "last_timestamp": candles[-1]["timestamp"] if candles else None,
+            }
+    return history
+
+
+def merge_cumulative_h1(delta: dict, history: dict) -> dict:
+    """Append only new H1 candles and deduplicate by timestamp."""
+    symbols = history.setdefault("symbols", {})
+    for ticker, block in delta.get("symbols", {}).items():
+        current = symbols.setdefault(ticker, {"candles": []})
+        by_time = {row["timestamp"]: row for row in current.get("candles", [])}
+        for row in block.get("H1", []):
+            by_time.setdefault(row["timestamp"], row)
+        candles = [by_time[key] for key in sorted(by_time)]
+        current["candles"] = candles
+        current["first_timestamp"] = candles[0]["timestamp"] if candles else None
+        current["last_timestamp"] = candles[-1]["timestamp"] if candles else None
+    history["updated_at_utc"] = delta.get("generated_at_utc")
+    history["symbols"] = dict(sorted(symbols.items()))
+    return history
+
+
+def _write_h1_history(history: dict) -> None:
+    temporary = DATA_DIR / "H1_HISTORY.tmp"
+    with temporary.open("wb") as raw:
+        with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as compressed:
+            payload = json.dumps(history, ensure_ascii=False, sort_keys=True) + "\n"
+            compressed.write(payload.encode("utf-8"))
+    temporary.replace(H1_HISTORY_FILE)
+
 def main() -> None:
     token = os.environ.get("FINAM_API_TOKEN", "").strip()
     if not token:
@@ -117,6 +168,8 @@ def main() -> None:
         tickers, api_token=token, source_app_id=source_app_id
     )
     delta, state_out = build_daily_delta(payload, state)
+    h1_history = merge_cumulative_h1(delta, _read_h1_history())
+    _write_h1_history(h1_history)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
     output = DATA_DIR / f"snapshot-{stamp}-{run_id}.json.gz"
@@ -149,7 +202,9 @@ def main() -> None:
         "requested_symbols": len(tickers),
         "symbols_returned": len(payload["results"]),
         "symbols_with_new_data": len(delta["symbols"]),
-        "new_h1_bars": sum(len(item["H1"]) for item in delta["symbols"].values()),\n        "cumulative_h1_bars": sum(len(item.get("candles", [])) for item in h1_history["symbols"].values()),\n        "cumulative_h1_symbols": len(h1_history["symbols"]),
+        "new_h1_bars": sum(len(item["H1"]) for item in delta["symbols"].values()),
+        "cumulative_h1_bars": sum(len(item.get("candles", [])) for item in h1_history["symbols"].values()),
+        "cumulative_h1_symbols": len(h1_history["symbols"]),
         "new_d1_rows": sum(len(item["D1"]) for item in delta["symbols"].values()),
         "d1_rows_missing_official_value": sum(item.get("D1_value_missing", 0) for item in delta["symbols"].values()),
         "frame_status": statuses,
