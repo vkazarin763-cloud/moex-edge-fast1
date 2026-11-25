@@ -37,7 +37,7 @@ jobs:
             echo "Missing Actions secret FINAM_API_TOKEN"
             exit 1
           fi
-      - name: Collect H1 and D1 for all 44 candidate shares (no liquidity filter)
+      - name: Append only newly completed H1 bars for all 44 shares
         env:
           FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
