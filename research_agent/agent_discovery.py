@@ -63,6 +63,7 @@ OUTPUT_SCHEMA = {
             "properties": {
                 "proposals": {
                     "type": "array",
+                    "maxItems": 8,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -78,6 +79,7 @@ OUTPUT_SCHEMA = {
                 },
                 "forecast_reviews": {
                     "type": "array",
+                    "maxItems": 6,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -95,6 +97,7 @@ OUTPUT_SCHEMA = {
                 },
                 "strategy_hypotheses": {
                     "type": "array",
+                    "maxItems": 3,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -268,7 +271,7 @@ def call_groq_discovery(
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.1,
-        "max_completion_tokens": 1400,
+        "max_completion_tokens": 6144,
         "reasoning_format": "hidden",
         "reasoning_effort": "low",
         "response_format": OUTPUT_SCHEMA,
