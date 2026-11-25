@@ -60,9 +60,9 @@ jobs:
           parser = Links()
           parser.feed(html)
           wanted = {
-              "root": re.compile(r"Russian[_ -]Trusted[_ -]Root[_ -]CA\\.(?:cer|crt|pem)$", re.I),
-              "sub": re.compile(r"Russian[_ -]Trusted[_ -]Sub[_ -]CA\\.(?:cer|crt|pem)$", re.I),
-              "sub2024": re.compile(r"Russian[_ -]Trusted[_ -]Sub[_ -]CA[_ -]2024\\.(?:cer|crt|pem)$", re.I),
+              "root": re.compile(r"Russian[_ -]Trusted[_ -]Root[_ -]CA\.(?:cer|crt|pem)$", re.I),
+              "sub": re.compile(r"Russian[_ -]Trusted[_ -]Sub[_ -]CA\.(?:cer|crt|pem)$", re.I),
+              "sub2024": re.compile(r"Russian[_ -]Trusted[_ -]Sub[_ -]CA[_ -]2024\.(?:cer|crt|pem)$", re.I),
           }
           found = {}
           for href in parser.hrefs:
@@ -78,7 +78,7 @@ jobs:
           if set(found) != set(wanted):
               print("Official Gosuslugi certificate links discovered:")
               for href in parser.hrefs:
-                  if re.search(r"trusted|\\.cer|\\.crt|\\.pem", href, re.I):
+                  if re.search(r"trusted|\.cer|\.crt|\.pem", href, re.I):
                       print(urljoin(source, href))
               raise SystemExit("Could not identify all 3 official NCA certificates; refusing to continue.")
 
