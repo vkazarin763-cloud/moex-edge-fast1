@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from optimizer import validate_candles, parameter_grid, candidate_signals, simulate_signals, metrics, walk_forward_metrics
 
-# Regression suite for no-lookahead boundaries and next-bar execution. System CA bundle smoke verification requested.
+# Regression suite for no-lookahead boundaries and next-bar execution. Direct-route and CA-bundle regression smoke requested.
 class OptimizerTests(unittest.TestCase):
     def bars(self, n=400):
         x=np.arange(n,dtype=float)
