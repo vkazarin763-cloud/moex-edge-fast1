@@ -1,6 +1,8 @@
 name: MOEX Agent V1 Paper
 
 on:
+  push:
+    branches: [experiment/moex-agent-v1-paper]
   workflow_dispatch:
   schedule:
     - cron: "5 4-15 * * 1-5"
@@ -28,6 +30,43 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: research/moex-agent-v1/requirements.txt
+
+      - name: Install official Russian NCA certificates for MOEX
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /usr/local/share/ca-certificates/moex-nca
+          declare -A cert_urls=(
+            [root]="https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt"
+            [sub]="https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt"
+          )
+          for name in root sub; do
+            src="/tmp/moex-nca-$name.crt"
+            dst="/usr/local/share/ca-certificates/moex-nca/$name.crt"
+            curl --fail --location --silent --show-error "${cert_urls[$name]}" --output "$src"
+            test "$(wc -c < "$src")" -gt 500
+            openssl x509 -in "$src" -noout -subject
+            sudo install -m 0644 "$src" "$dst"
+          done
+          sudo update-ca-certificates
+          echo "REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt" >> "$GITHUB_ENV"
+          echo "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt" >> "$GITHUB_ENV"
+
+      - name: Verify MOEX ISS TLS and API access
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import Request, urlopen
+
+          url = "https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json?iss.meta=off"
+          request = Request(url, headers={"User-Agent": "MOEX-Agent-CI/1.0", "Accept": "application/json"})
+          with urlopen(request, timeout=25) as response:
+              payload = json.loads(response.read().decode("utf-8"))
+              status = response.status
+          if "securities" not in payload:
+              raise SystemExit("MOEX ISS response did not contain the securities block.")
+          print("MOEX ISS TLS verified; SBER endpoint returned HTTP", status)
+          PY
 
       - name: Fetch pinned upstream agent
         run: |
