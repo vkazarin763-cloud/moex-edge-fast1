@@ -42,6 +42,29 @@ class AgentDiscoveryTests(unittest.TestCase):
             "scanner_contract": {"consume_only_status": "PASS", "live_trading_authorized": False},
         }
 
+    def test_discovery_refuses_incomplete_research_registry_before_calling_agents(self):
+        registry = {
+            **self.registry,
+            "coverage": {
+                "expected_symbols": 2, "analyzed_symbols": 1,
+                "unavailable_symbols": 1, "unavailable_tickers": ["LKOH"],
+                "unexpected_result_tickers": [], "coverage_complete": False,
+            },
+            "scanner_contract": {
+                "consume_only_status": "BLOCKED_INCOMPLETE_COVERAGE",
+                "live_trading_authorized": False,
+            },
+        }
+        calls = []
+        with self.assertRaisesRegex(ValueError, "incomplete full-universe research coverage"):
+            run_discovery(
+                self.scan, registry, api_key="fake",
+                caller=lambda prompt, **kwargs: calls.append(prompt) or {
+                    "proposals": [], "strategy_hypotheses": [], "forecast_reviews": [],
+                },
+            )
+        self.assertEqual(calls, [])
+
     def test_validates_full_forecast_but_shares_only_candidate_forecasts_with_agents(self):
         forecasts = []
         for ticker in self.scan["universe"]:
