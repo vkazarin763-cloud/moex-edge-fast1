@@ -1,4 +1,4 @@
-name: MOEX EDGE Autonomous Research (Read Only)
+name: MOEX EDGE Autonomous Research (Finam Only, Read Only)
 
 on:
   push:
@@ -6,24 +6,8 @@ on:
     paths:
       - "research_agent/**"
       - ".github/workflows/research-agent-run.yml"
+      - ".github/workflows/manual-finam-two-strategy-research.yml"
   workflow_dispatch:
-    inputs:
-      research_mode:
-        description: "Research run mode"
-        required: true
-        type: choice
-        options:
-          - standard
-          - finam_two_strategy
-        default: standard
-      date_from:
-        description: "Start date YYYY-MM-DD (blank = rolling 3 years)"
-        required: false
-        type: string
-      date_till:
-        description: "End date YYYY-MM-DD (blank = today UTC)"
-        required: false
-        type: string
   schedule:
     - cron: "30 1 * * 0"
 
@@ -35,78 +19,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  research:
-    if: inputs.research_mode != 'finam_two_strategy'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Resolve and validate research date range
-        id: dates
-        env:
-          INPUT_FROM: ${{ github.event.inputs.date_from }}
-          INPUT_TILL: ${{ github.event.inputs.date_till }}
-        run: |
-          END="${INPUT_TILL:-$(date -u +%F)}"
-          START="${INPUT_FROM:-$(date -u -d '3 years ago' +%F)}"
-          export START END
-          python - <<'PY'
-          import os
-          from datetime import date
-          from pathlib import Path
-
-          start = date.fromisoformat(os.environ["START"])
-          end = date.fromisoformat(os.environ["END"])
-          if start.isoformat() != os.environ["START"] or end.isoformat() != os.environ["END"]:
-              raise SystemExit("Dates must use YYYY-MM-DD")
-          if start > end:
-              raise SystemExit("date_from must not be after date_till")
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
-              output.write(f"date_from={start.isoformat()}\n")
-              output.write(f"date_till={end.isoformat()}\n")
-          PY
-      - name: Run read-only research across MOEX first-listing universe
-        env:
-          DATE_FROM: ${{ steps.dates.outputs.date_from }}
-          DATE_TILL: ${{ steps.dates.outputs.date_till }}
-        run: |
-          set +e
-          python -m research_agent.cli \
-            --from "$DATE_FROM" \
-            --till "$DATE_TILL" \
-            --output research_report.json
-          research_exit=$?
-          set -e
-          if [ "$research_exit" -eq 3 ] && [ -s research_report.json ] && [ -s strategy_registry.json ]; then
-            python - <<'PY'
-          import json
-          from pathlib import Path
-
-          report = json.loads(Path("research_report.json").read_text(encoding="utf-8"))
-          audit = report.get("independent_validation", {})
-          if audit.get("status") != "INDEPENDENT_VALIDATION_INCOMPLETE" or audit.get("errors"):
-              raise SystemExit("Exit code 3 is only tolerated for warning-only INCOMPLETE reports.")
-          print("Research report and strategy registry are available; structural audit is INCOMPLETE with warnings only.")
-          PY
-            echo "::warning::Research audit is INCOMPLETE with warnings; registry remains development-only and cannot authorize live trading."
-            exit 0
-          fi
-          exit "$research_exit"
-      - name: Upload research report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: moex-edge-research-report
-          path: |
-            research_report.json
-            strategy_registry.json
-          if-no-files-found: warn
-          retention-days: 30
-
-  finam-two-strategy:
-    if: inputs.research_mode == 'finam_two_strategy'
+  finam-only-research:
     uses: ./.github/workflows/manual-finam-two-strategy-research.yml
     secrets: inherit
