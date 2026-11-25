@@ -84,15 +84,24 @@ jobs:
 
       - name: Download recent MOEX ISS history
         working-directory: vendor/moex-agent
-        run: python "$GITHUB_WORKSPACE/research/moex-agent-v1/bootstrap_history.py" --days "${{ inputs.days }}" --workers 8
+        run: |
+          DAYS="${{ inputs.days }}"
+          if [ -z "$DAYS" ]; then DAYS=30; fi
+          PYTHONPATH="$PWD" python "$GITHUB_WORKSPACE/research/moex-agent-v1/bootstrap_history.py" --days "$DAYS" --workers 8
 
       - name: Validate historical data quality
         working-directory: vendor/moex-agent
-        run: python "$GITHUB_WORKSPACE/research/moex-agent-v1/validate_history.py" --days "${{ inputs.days }}"
+        run: |
+          DAYS="${{ inputs.days }}"
+          if [ -z "$DAYS" ]; then DAYS=30; fi
+          PYTHONPATH="$PWD" python "$GITHUB_WORKSPACE/research/moex-agent-v1/validate_history.py" --days "$DAYS"
 
       - name: Run direction-correct historical paper backtest
         working-directory: vendor/moex-agent
-        run: python "$GITHUB_WORKSPACE/research/moex-agent-v1/run_backtest_report.py" --days "${{ inputs.days }}"
+        run: |
+          DAYS="${{ inputs.days }}"
+          if [ -z "$DAYS" ]; then DAYS=30; fi
+          PYTHONPATH="$PWD" python "$GITHUB_WORKSPACE/research/moex-agent-v1/run_backtest_report.py" --days "$DAYS"
 
       - name: Upload historical paper results
         if: always()
