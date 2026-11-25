@@ -1,0 +1,46 @@
+name: Price Forecast 24H — trend and candle features
+
+on:
+  push:
+    branches:
+      - research/price-forecast-24h-v1
+    paths:
+      - "research_agent/price_forecast_24h/evaluate_trend_candle_features.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: price-forecast-24h-feature-evaluation
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile feature evaluator
+        run: python -m py_compile research_agent/price_forecast_24h/evaluate_trend_candle_features.py
+      - name: Run four-fold feature evaluation
+        run: python -m research_agent.price_forecast_24h.evaluate_trend_candle_features
+      - name: Commit reports to research branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research_agent/price_forecast_24h/reports/feature-comparison-*
+          git commit -m "research: add trend and candle feature report"
+          git push origin HEAD:research/price-forecast-24h-v1
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: price-forecast-24h-feature-comparison
+          path: research_agent/price_forecast_24h/reports/feature-comparison-*
+          retention-days: 30
