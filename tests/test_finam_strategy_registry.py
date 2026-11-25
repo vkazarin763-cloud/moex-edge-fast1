@@ -14,6 +14,7 @@ class FinamStrategyRegistryTests(unittest.TestCase):
         if missing:
             audit[missing] = {"status": "FETCH_OR_VALIDATION_ERROR"}
         return {
+            "status": "COMPLETE",
             "source": "Finam Trade API TIME_FRAME_D, native D1 bars",
             "holdout_start": "2026-11-20",
             "holdout_used_for_selection": False,
