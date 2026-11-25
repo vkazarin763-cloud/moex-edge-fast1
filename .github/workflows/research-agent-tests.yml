@@ -33,6 +33,7 @@ jobs:
         run: |
           python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery tests.test_operational_forecast tests.test_operational_agent_integration -v
           python -m unittest tests.test_finam_strategy_backtest tests.test_candle_level_research tests.test_direction_forecast -v
+          python -m unittest tests.test_finam_strategy_registry tests.test_research_multi_timeframe tests.test_multi_timeframe_validation tests.test_research_mtf_scanner tests.test_research_release_safety -v
           python -m unittest discover -s tests -p "test_research_*.py" -v
           python -m unittest discover -s tests -p "test_moex_iss.py" -v
           python -m unittest discover -s tests -p "test_moex_session_mapping.py" -v
