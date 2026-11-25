@@ -1,0 +1,161 @@
+{
+  "version": "1.0",
+  "status": "candidate_search_space_not_optimized",
+  "timeframes": [
+    "10m",
+    "60m"
+  ],
+  "directions": [
+    "LONG",
+    "SHORT"
+  ],
+  "indicators": {
+    "ema": {
+      "fast": [
+        8,
+        10,
+        12,
+        15,
+        20
+      ],
+      "slow": [
+        30,
+        40,
+        50,
+        60,
+        80
+      ],
+      "constraint": "fast < slow"
+    },
+    "rsi": {
+      "period": [
+        7,
+        9,
+        14,
+        21
+      ],
+      "threshold_pairs": [
+        [
+          25,
+          75
+        ],
+        [
+          30,
+          70
+        ],
+        [
+          35,
+          65
+        ]
+      ]
+    },
+    "macd": {
+      "triples": [
+        [
+          8,
+          21,
+          5
+        ],
+        [
+          12,
+          26,
+          9
+        ],
+        [
+          10,
+          30,
+          9
+        ],
+        [
+          5,
+          35,
+          5
+        ]
+      ]
+    },
+    "adx_di": {
+      "period": [
+        10,
+        14,
+        20
+      ],
+      "strength_threshold": [
+        18,
+        20,
+        25,
+        30
+      ]
+    },
+    "bollinger": {
+      "period": [
+        14,
+        20,
+        30
+      ],
+      "stddev": [
+        1.8,
+        2,
+        2.2
+      ]
+    },
+    "donchian": {
+      "lookback": [
+        10,
+        20,
+        30,
+        55
+      ]
+    },
+    "atr_keltner": {
+      "atr_period": [
+        10,
+        14,
+        20
+      ],
+      "multiplier": [
+        1.5,
+        2,
+        2.5
+      ]
+    },
+    "stochastic": {
+      "triples": [
+        [
+          9,
+          3,
+          3
+        ],
+        [
+          14,
+          3,
+          3
+        ],
+        [
+          21,
+          5,
+          5
+        ]
+      ]
+    }
+  },
+  "validation": {
+    "chronological_split": true,
+    "walk_forward": true,
+    "untouched_final_test": true,
+    "entry": "next_available_candle_open_after_signal_close",
+    "include_commission": true,
+    "include_conservative_spread_slippage": true,
+    "report_gross_and_net": true,
+    "evaluate_long_short_separately": true,
+    "minimum_trade_count_required": true,
+    "compare_to_default_baseline": true
+  },
+  "safety": {
+    "paper_research_only": true,
+    "broker_api": false,
+    "live_orders": false,
+    "telegram": false,
+    "production_changes": false,
+    "auto_promote_parameters": false
+  }
+}
