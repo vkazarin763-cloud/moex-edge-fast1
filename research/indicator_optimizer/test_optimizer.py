@@ -41,7 +41,7 @@ class OptimizerTests(unittest.TestCase):
         self.assertEqual(len(trades),1)
         self.assertEqual(trades[0]["entry_time"],str(df.begin.iloc[1]))
         self.assertAlmostEqual(trades[0]["gross_return"],(102-101)/101)
-        self.assertAlmostEqual(trades[0]["net_return"],(103-101)/101-0.03)
+        self.assertAlmostEqual(trades[0]["net_return"],(102-101)/101-0.03)
 
 
     def test_walk_forward_does_not_touch_validation_or_test(self):
