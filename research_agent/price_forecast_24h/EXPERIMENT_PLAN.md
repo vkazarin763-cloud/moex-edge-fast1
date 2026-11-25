@@ -34,7 +34,7 @@ This is a research forecast, not a trading recommendation or order instruction.
 ## Universe: most liquid shares
 
 - Candidate pool: the repository's existing 44-symbol MOEX share universe.
-- Rank securities at each forecast origin using trailing 60 completed MOEX trading sessions of daily RUB turnover (close × traded volume), calculated only from information available at that origin.
+- Rank securities at each forecast origin using trailing 60 completed MOEX trading sessions of the official MOEX ISS `VALUE` (RUB traded value) field, calculated only from information available at that origin. The current candle/history adapter retains `VOLUME` but does not preserve `VALUE`; extend the read-only data schema and validator to retain/validate `VALUE` before ranking. Do not substitute `close × volume` and label it exact turnover.
 - Select the top 10 eligible securities at each origin; require at least 40 valid daily observations in the lookback. Freeze the selection for that origin before generating a forecast.
 - Recompute the ranking on a documented schedule (initially once per trading week) using only then-available data.
 - Record each date's selected symbols and turnover ranks in the dataset/report.
@@ -46,7 +46,7 @@ This is a research forecast, not a trading recommendation or order instruction.
 1. Inspect the existing audited MTF candle artifacts and their exact run IDs, timestamps, checksums, frame coverage, and retention.
 2. Verify how much usable H1 history is actually available. The documented collector limit for intraday H1 is 30 calendar days; do not assume the short archive is sufficient for model training.
 3. Verify timestamps, timezone, completed-bar status, session/weekend labels, duplicate timestamps, monotonicity, OHLC consistency, finite values, and volume validity.
-4. Use daily turnover from a documented source with consistent currency/volume units. Confirm corporate-action/adjustment conventions before combining D1 and H1 data.
+4. Use the official MOEX ISS daily `VALUE` field for traded RUB value. The currently archived D1 OHLCV records do not contain this field; the existing adapter extracts `VOLUME` but drops `VALUE`. Extend the read-only collector and validation schema to preserve the official value field, or stop the liquidity ranking. `close × volume` is only a rough proxy and must not be reported as exact turnover. Confirm corporate-action/adjustment conventions before combining D1 and H1 data.
 5. Do not mix providers or resample/fill one source with another unless a separate validation proves the transformation safe.
 6. If the available clean H1 history is insufficient for a meaningful 24-bar target and chronological splits, stop the retrospective backtest. Propose a read-only prospective data collection plan instead; do not quietly extend the sample or invent data.
 
