@@ -19,6 +19,14 @@ class OperationalAgentIntegrationTests(unittest.TestCase):
         self.registry = {
             "summary": {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 0},
             "strategies": [],
+            "coverage": {
+                "expected_symbols": 2,
+                "analyzed_symbols": 2,
+                "unavailable_symbols": 0,
+                "unavailable_tickers": [],
+                "unexpected_result_tickers": [],
+                "coverage_complete": True,
+            },
         }
         forecasts = []
         for ticker in self.scan["universe"]:
