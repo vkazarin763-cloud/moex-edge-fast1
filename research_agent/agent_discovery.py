@@ -84,7 +84,7 @@ OUTPUT_SCHEMA = {
                             "direction": {"type": "string", "enum": DIRECTIONS},
                             "strategy": {"type": "string", "enum": STRATEGIES},
                             "d1_bar_end_utc": {"type": "string"},
-                            "horizon_sessions": {"type": "integer", "enum": [1, 5, 20]},
+                            "horizon_sessions": {"type": "string", "enum": ["1", "5", "20"]},
                             "assessment": {"type": "string", "enum": FORECAST_ASSESSMENTS},
                             "rationale": {"type": "string"},
                         },
@@ -563,7 +563,11 @@ def run_discovery(
             direction = review.get("direction")
             strategy = review.get("strategy")
             d1_bar_end_utc = review.get("d1_bar_end_utc")
-            horizon = review.get("horizon_sessions")
+            raw_horizon = review.get("horizon_sessions")
+            try:
+                horizon = int(raw_horizon) if str(raw_horizon) in {"1", "5", "20"} else None
+            except (TypeError, ValueError):
+                horizon = None
             reported_assessment = review.get("assessment")
             rationale = review.get("rationale")
             candidate_key = (symbol, direction, strategy, d1_bar_end_utc)
