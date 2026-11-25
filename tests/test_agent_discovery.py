@@ -183,9 +183,40 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(seen["body"]["reasoning_format"], "hidden")
         self.assertEqual(seen["body"]["reasoning_effort"], "low")
         self.assertEqual(seen["body"]["model"], "openai/gpt-oss-20b")
-        self.assertEqual(seen["body"]["response_format"], __import__(
+        self.assertEqual(seen["body"]["max_completion_tokens"], 6144)
+        schema = __import__(
             "research_agent.agent_discovery", fromlist=["OUTPUT_SCHEMA"]
-        ).OUTPUT_SCHEMA)
+        ).OUTPUT_SCHEMA
+        self.assertEqual(seen["body"]["response_format"], schema)
+        props = schema["json_schema"]["schema"]["properties"]
+        self.assertEqual(props["proposals"]["maxItems"], 8)
+        self.assertEqual(props["strategy_hypotheses"]["maxItems"], 3)
+        self.assertEqual(props["forecast_reviews"]["maxItems"], 6)
+
+    def test_groq_retries_truncated_json_response(self):
+        payload = {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": []}
+        calls = []
+
+        class Response:
+            def __init__(self, content):
+                self.content = content
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": self.content}}]}).encode()
+
+        def opener(request, timeout):
+            calls.append(request)
+            content = '{"proposals":' if len(calls) == 1 else json.dumps(payload)
+            return Response(content)
+
+        result = call_groq_discovery(
+            "synthetic probe", api_key="test-key", opener=opener, sleeper=lambda _: None
+        )
+        self.assertEqual(result, payload)
+        self.assertEqual(len(calls), 2)
 
     def test_two_of_three_consensus_and_experimental_verification(self):
         candidate = {
