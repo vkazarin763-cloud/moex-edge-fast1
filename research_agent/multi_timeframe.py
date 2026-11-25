@@ -251,6 +251,7 @@ def collect_multi_timeframe(
                     "timestamp": f"{row.trade_date.isoformat()}T00:00:00",
                     "open": open_, "high": high, "low": low,
                     "close": close, "volume": volume,
+                    "value": row.value,
                 })
             symbol_result["D1"] = {
                 "source": "MOEX ISS TQBR history",
