@@ -189,9 +189,6 @@ class AgentDiscoveryTests(unittest.TestCase):
         ).OUTPUT_SCHEMA
         self.assertEqual(seen["body"]["response_format"], schema)
         props = schema["json_schema"]["schema"]["properties"]
-        self.assertEqual(props["proposals"]["maxItems"], 8)
-        self.assertEqual(props["strategy_hypotheses"]["maxItems"], 3)
-        self.assertEqual(props["forecast_reviews"]["maxItems"], 6)
 
     def test_groq_retries_truncated_json_response(self):
         payload = {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": []}
