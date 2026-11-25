@@ -1,8 +1,6 @@
 name: MOEX Agent V1 Paper
 
 on:
-  push:
-    branches: [experiment/moex-agent-v1-paper]
   workflow_dispatch:
   schedule:
     - cron: "5 4-15 * * 1-5"
