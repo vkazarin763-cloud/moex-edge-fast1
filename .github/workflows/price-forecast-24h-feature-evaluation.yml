@@ -6,6 +6,7 @@ on:
       - research/price-forecast-24h-v1
     paths:
       - "research_agent/price_forecast_24h/evaluate_trend_candle_features.py"
+      - "research_agent/price_forecast_24h/evaluate_signal_thresholds.py"
 
 permissions:
   contents: write
@@ -31,16 +32,18 @@ jobs:
         run: python -m py_compile research_agent/price_forecast_24h/evaluate_trend_candle_features.py
       - name: Run four-fold feature evaluation
         run: python -m research_agent.price_forecast_24h.evaluate_trend_candle_features
+      - name: Run fixed-threshold signal evaluation
+        run: python -m research_agent.price_forecast_24h.evaluate_signal_thresholds
       - name: Commit reports to research branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add research_agent/price_forecast_24h/reports/feature-comparison-*
+          git add research_agent/price_forecast_24h/reports/feature-comparison-* research_agent/price_forecast_24h/reports/threshold-signal-test-*
           git commit -m "research: add trend and candle feature report"
           git push origin HEAD:research/price-forecast-24h-v1
       - name: Upload reports
         uses: actions/upload-artifact@v4
         with:
           name: price-forecast-24h-feature-comparison
-          path: research_agent/price_forecast_24h/reports/feature-comparison-*
+          path: research_agent/price_forecast_24h/reports/feature-comparison-*\n            research_agent/price_forecast_24h/reports/threshold-signal-test-*
           retention-days: 30
