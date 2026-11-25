@@ -1,6 +1,10 @@
 name: MOEX Agent V1 Historical Paper Validation
 
 on:
+  push:
+    branches: [experiment/moex-agent-v1-paper]
+    paths:
+      - research/moex-agent-v1/validate_history.py
   workflow_dispatch:
     inputs:
       days:
