@@ -163,12 +163,33 @@ def aggregate(results):
             by_ticker=[stats(v["trades"][name],cost) for v in results.values()
                        if v.get("status")=="OK" and v["trades"][name]]
             s["tickers_with_trades"]=len(by_ticker)
-            s["tickers_with_positive_total_return"]=sum(x["total_compounded_return_pct"]>0 for x in by_ticker)
+            s["tickers_with_positive_total_return"]=sum(
+                x["total_compounded_return_pct"]>0 for x in by_ticker)
             s["median_ticker_total_return_pct"]=statistics.median(
                 x["total_compounded_return_pct"] for x in by_ticker) if by_ticker else None
+            fold_breakdown=[]
+            for fold_no in range(1,FOLDS+1):
+                fold_trades=[t for t in all_trades if t["fold"]==fold_no]
+                fold_stats=stats(fold_trades,cost)
+                positive_tickers=0
+                active_tickers=0
+                for v in results.values():
+                    ticker_fold=[t for t in v["trades"][name] if t["fold"]==fold_no]
+                    if ticker_fold:
+                        active_tickers+=1
+                        if sum(t["gross_return"]-2*cost/10000 for t in ticker_fold)>0:
+                            positive_tickers+=1
+                fold_breakdown.append({
+                    "fold":fold_no,"active_tickers":active_tickers,
+                    "positive_tickers":positive_tickers,"trades":fold_stats["trades"],
+                    "win_rate_pct":fold_stats["win_rate_pct"],
+                    "mean_net_return_pct":fold_stats["mean_net_return_pct"],
+                    "profit_factor":fold_stats["profit_factor"]})
+            s["fold_breakdown"]=fold_breakdown
+            s["pooled_trade_chain_return_not_portfolio"]=s.pop("total_compounded_return_pct")
+            s["pooled_trade_chain_drawdown_not_portfolio"]=s.pop("max_drawdown_pct")
             out[name][str(cost)] = s
     return out
-
 
 def main():
     path=DATA/"H1_HISTORY.json.gz"
