@@ -4,23 +4,21 @@ Status: prospective read-only data collection and research plan. No forecasting 
 
 ## Objective
 
-For the most liquid shares selected from the existing 44-symbol MOEX candidate pool, forecast:
+For **all 44 shares in the current MOEX candidate universe**, forecast:
 1. Direction (LONG / SHORT / FLAT).
 2. Magnitude of the next 24 completed H1 bars' price change, in percent.
 3. A prediction interval for the forward price.
 
 This is research, not a trading recommendation or order instruction.
 
-## Universe and liquidity selection
+## Universe
 
-- The 44 existing MOEX symbols are **only a candidate pool**, not the forecast universe.
-- For each collection run, fetch completed D1 records for all 44 candidates from MOEX ISS TQBR history.
-- Rank eligible candidates by mean official MOEX ISS `VALUE` (RUB traded value) over their latest 60 completed D1 sessions.
-- Require at least 40 valid, positive, finite `VALUE` observations among those latest 60 rows. Exclude a security if its D1 source is not official MOEX ISS TQBR history or if it lacks sufficient valid `VALUE`. Never substitute `close × volume`.
-- Select the top 10 eligible securities. Fetch H1 history **only for these 10**. D1 liquidity-screening data for all candidates is retained.
-- Store the ranking, lookback count, valid-observation count, average turnover, last included session, and selected H1 cohort in every snapshot. Selection is point-in-time: the current run's cohort is frozen in its snapshot.
-- The collector is manually dispatched; each run recalculates the cohort from data available at that run. Do not describe this as a fixed historical top-10 cohort.
-- The 44-symbol pool is a fixed current candidate list. Without point-in-time historical constituents, results have survivorship/universe-selection bias and are not a complete historical MOEX market test.
+- The forecast and collection universe is the complete fixed list of 44 symbols in `research_agent.multi_timeframe.DEFAULT_TICKERS`.
+- Collect H1 Finam and D1 MOEX ISS TQBR history for every symbol on each run.
+- **No liquidity-based inclusion or exclusion.** Liquidity may be measured and reported descriptively, but must not determine which symbols are collected or forecast.
+- Preserve each symbol's source, status, row counts, last timestamp, and data-quality issues. A symbol with missing H1 or D1 data remains in the report with an explicit status; do not silently drop it.
+- Never replace official MOEX ISS `VALUE` with `close × volume`. Missing `VALUE` is recorded as missing and does not prevent collecting price bars.
+- The fixed current 44-symbol pool may create survivorship/universe-selection bias for historical evaluation. This limitation must be stated.
 
 ## Forecast target
 
@@ -33,9 +31,10 @@ This is research, not a trading recommendation or order instruction.
 
 ## Data quality and collection
 
-- H1 source: Finam completed bars; D1 turnover source: official MOEX ISS TQBR history. Do not merge providers or resample.
+- H1 source: Finam completed bars; D1 source: official MOEX ISS TQBR history, with any Finam fallback explicitly labeled. Do not merge providers or resample.
 - H1 lookback from Finam is currently limited to 30 calendar days. Accumulate prospective immutable snapshots for at least 6 months, preferably 12 months, before meaningful model evaluation.
 - Validate timestamps, completed-bar status, duplicates, monotonicity, OHLC consistency, finite values, volume, missing `VALUE`, and provider provenance.
+- Report per-symbol H1/D1 status, bars received, last available date, missing fields, and errors. One symbol's data failure must not stop collection of the other symbols.
 - Historical H1 archive inspected on 2026-11-25 is too short for credible 24-bar model evaluation. Do not train or claim skill on it.
 - Collection is read-only. No account, order, position, or execution endpoints.
 
