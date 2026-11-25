@@ -16,11 +16,11 @@ FINAM_MINUTES = {
 
 
 def _parse_utc(value: str, source: str) -> datetime:
+    if source != "Finam Trade API":
+        raise ValueError("only Finam Trade API candle sources are accepted")
     stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if stamp.tzinfo is None or stamp.utcoffset() is None:
-        if not source.startswith("MOEX ISS"):
-            raise ValueError("timezone-naive timestamp from non-MOEX source")
-        stamp = stamp.replace(tzinfo=MOSCOW)
+        raise ValueError("Finam timestamps must be timezone-aware")
     return stamp.astimezone(timezone.utc)
 
 
@@ -28,30 +28,11 @@ def candle_end_utc(timestamp: str, source: str, frame: str) -> datetime:
     start = _parse_utc(timestamp, source)
     if frame in FINAM_MINUTES:
         return start + timedelta(minutes=FINAM_MINUTES[frame])
-    if frame == "D1" and source.startswith("Finam"):
+    if frame == "D1":
         local = start.astimezone(MOSCOW)
         next_midnight = local.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
         return next_midnight.astimezone(timezone.utc)
-    if frame == "M10":
-        return start + timedelta(minutes=10)
-    local = start.astimezone(MOSCOW)
-    if frame == "D1":
-        return (local.replace(hour=0, minute=0, second=0, microsecond=0)
-                + timedelta(days=1)).astimezone(timezone.utc)
-    if frame == "W1":
-        end_local = local + timedelta(days=7)
-    elif frame == "MN":
-        year = local.year + (local.month == 12)
-        month = 1 if local.month == 12 else local.month + 1
-        end_local = local.replace(year=year, month=month, day=1)
-    elif frame == "QR":
-        month_index = local.month - 1 + 3
-        year = local.year + month_index // 12
-        month = month_index % 12 + 1
-        end_local = local.replace(year=year, month=month, day=1)
-    else:
-        raise ValueError(f"unsupported timeframe: {frame}")
-    return end_local.astimezone(timezone.utc)
+    raise ValueError(f"unsupported Finam timeframe: {frame}")
 
 
 def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = None) -> dict:
