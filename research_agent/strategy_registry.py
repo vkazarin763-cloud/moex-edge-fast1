@@ -44,6 +44,28 @@ def build_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
     results = report.get("results")
     if not isinstance(results, dict):
         raise ValueError("research report must contain a results object")
+    supplied_universe = report.get("universe")
+    if supplied_universe is None:
+        expected_tickers = sorted(results)
+    elif (not isinstance(supplied_universe, list)
+          or any(not isinstance(ticker, str) or not ticker for ticker in supplied_universe)
+          or len(supplied_universe) != len(set(supplied_universe))):
+        raise ValueError("research report universe must be a unique list of ticker strings")
+    else:
+        expected_tickers = list(supplied_universe)
+    analyzed_tickers = sorted(
+        ticker for ticker in expected_tickers
+        if isinstance(results.get(ticker), dict)
+        and results[ticker].get("status") == "ANALYZED"
+    )
+    unavailable_tickers = sorted(set(expected_tickers) - set(analyzed_tickers))
+    unexpected_tickers = sorted(set(results) - set(expected_tickers))
+    coverage_complete = (
+        bool(expected_tickers)
+        and not unavailable_tickers
+        and not unexpected_tickers
+        and len(results) == len(expected_tickers)
+    )
     entries = []
     summary = {"PASS": 0, "REJECT": 0, "INSUFFICIENT_DATA": 0}
     for ticker in sorted(results):
@@ -91,8 +113,17 @@ def build_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
             "directions_evaluated_independently": True,
         },
         "summary": summary, "strategies": entries,
+        "coverage": {
+            "expected_symbols": len(expected_tickers),
+            "analyzed_symbols": len(analyzed_tickers),
+            "unavailable_symbols": len(unavailable_tickers),
+            "unavailable_tickers": unavailable_tickers,
+            "unexpected_result_tickers": unexpected_tickers,
+            "coverage_complete": coverage_complete,
+        },
         "scanner_contract": {
-            "consume_only_status": "PASS", "require_eligible_for_shadow_scanner": True,
+            "consume_only_status": "PASS" if coverage_complete else "BLOCKED_INCOMPLETE_COVERAGE",
+            "require_eligible_for_shadow_scanner": True,
             "live_trading_authorized": False,
             "note": "PASS is a preliminary development screen only; no production or broker execution approval.",
         },
