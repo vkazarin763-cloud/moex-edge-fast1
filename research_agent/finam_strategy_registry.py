@@ -17,6 +17,8 @@ EXPECTED_SOURCE = "Finam Trade API TIME_FRAME_D, native D1 bars"
 def build_finam_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(report, dict):
         raise ValueError("Finam report must be an object")
+    if report.get("status") != "COMPLETE":
+        raise ValueError("Registry requires a COMPLETE 44-symbol Finam D1 research report")
     if report.get("source") != EXPECTED_SOURCE:
         raise ValueError("Registry accepts only native Finam D1 reports")
     if report.get("holdout_start") != EXPECTED_HOLDOUT_START:
