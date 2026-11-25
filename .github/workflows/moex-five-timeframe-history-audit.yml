@@ -1,0 +1,73 @@
+name: MOEX five-timeframe history audit (isolated)
+
+on:
+  push:
+    branches:
+      - experiment/moex-five-timeframe-history-audit
+    paths:
+      - "research_agent/moex_five_timeframe_audit.py"
+      - "tests/test_moex_five_timeframe_audit.py"
+      - ".github/workflows/moex-five-timeframe-history-audit.yml"
+  workflow_dispatch:
+    inputs:
+      from_date:
+        description: "Inclusive start date (YYYY-MM-DD)"
+        required: true
+        default: "2025-11-20"
+      till_date:
+        description: "Inclusive end date (YYYY-MM-DD)"
+        required: true
+        default: "2026-11-23"
+      configs:
+        description: "Configurations to audit; stage 1 defaults to A-D. Add E only when M15 is selected."
+        required: true
+        default: "A,B,C,D"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moex-five-timeframe-history-audit
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout isolated experiment
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run aggregation unit tests
+        run: python -m unittest discover -s tests -p 'test_moex_five_timeframe_audit.py' -v
+
+  audit:
+    if: github.event_name == 'workflow_dispatch'
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout isolated experiment
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Collect public MOEX ISS candles
+        run: |
+          python -m research_agent.moex_five_timeframe_audit \
+            --from-date "${{ inputs.from_date }}" \
+            --till-date "${{ inputs.till_date }}" \
+            --output artifacts/moex_five_timeframe_history
+      - name: Upload audit and raw candle data
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-five-timeframe-history-audit
+          path: |
+            artifacts/moex_five_timeframe_history/
+            artifacts/moex_five_timeframe_history.zip
+          if-no-files-found: error
+          retention-days: 30

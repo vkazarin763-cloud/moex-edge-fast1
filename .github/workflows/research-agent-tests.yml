@@ -34,6 +34,7 @@ jobs:
           python -m unittest tests.test_agent_signal_verifier tests.test_agent_discovery -v
           python -m unittest discover -s tests -p "test_research_*.py" -v
           python -m unittest discover -s tests -p "test_moex_iss.py" -v
+          python -m unittest discover -s tests -p "test_moex_five_timeframe_audit.py" -v
           python -m unittest discover -s tests -p "test_moex_session_mapping.py" -v
           python -m unittest discover -s tests -p "test_moex_trading_day_bars.py" -v
           python -m unittest discover -s tests -p "test_finam_market_data.py" -v
@@ -41,3 +42,30 @@ jobs:
           python -m unittest discover -s tests -p "test_finam_h1_crosscheck.py" -v
           python -m unittest discover -s tests -p "test_timeframe_reconciliation.py" -v
           python -m unittest discover -s tests -p "test_finam_timeframe_crosscheck.py" -v
+
+  five-timeframe-history-audit:
+    if: github.event_name == 'pull_request' && github.head_ref == 'experiment/moex-five-timeframe-history-audit'
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Collect public MOEX ISS candles for the 44-stock universe
+        run: |
+          python -m research_agent.moex_five_timeframe_audit \
+            --from-date "2025-11-20" \
+            --till-date "2026-11-23" \
+            --configs "A,B,C,D" \
+            --output artifacts/moex_five_timeframe_history
+      - name: Upload candle data and coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-five-timeframe-history-audit
+          path: |
+            artifacts/moex_five_timeframe_history/
+            artifacts/moex_five_timeframe_history.zip
+          if-no-files-found: error
+          retention-days: 30
