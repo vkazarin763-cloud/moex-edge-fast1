@@ -1,9 +1,8 @@
-"""Prospective, read-only collector: screen 44 candidates by official turnover, H1 only top 10."""
+"""Prospective, read-only collector for all 44 MOEX candidate shares."""
 from __future__ import annotations
 
 import gzip
 import json
-import math
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,83 +11,32 @@ from research_agent.multi_timeframe import DEFAULT_TICKERS, collect_multi_timefr
 
 DATA_DIR = Path("research_agent/price_forecast_24h/data")
 STATE_FILE = DATA_DIR / "LATEST.json"
-LIQUIDITY_LOOKBACK_SESSIONS = 60
-LIQUIDITY_MIN_VALID_SESSIONS = 40
-LIQUIDITY_TOP_N = 10
-OFFICIAL_D1_SOURCE = "MOEX ISS TQBR history"
 
 
-def select_top_liquid(d1_payload: dict, *, top_n: int = LIQUIDITY_TOP_N) -> list[dict]:
-    """Rank candidates by mean official VALUE over the latest 60 completed D1 sessions.
-
-    A security is eligible only when its D1 source is MOEX ISS TQBR history and
-    at least 40 of its latest 60 rows have finite, positive official VALUE.
-    Missing VALUE is never estimated from close*volume.
-    """
-    ranked = []
-    for ticker, frames in d1_payload.get("results", {}).items():
-        block = frames.get("D1", {})
-        if block.get("source") != OFFICIAL_D1_SOURCE or block.get("status") != "OK":
-            continue
-        rows = sorted(block.get("candles", []), key=lambda row: row.get("timestamp", ""))[-LIQUIDITY_LOOKBACK_SESSIONS:]
-        valid = []
-        for row in rows:
-            value = row.get("value")
-            if isinstance(value, (int, float)) and math.isfinite(value) and value > 0:
-                valid.append(float(value))
-        if len(valid) < LIQUIDITY_MIN_VALID_SESSIONS:
-            continue
-        ranked.append({
-            "ticker": ticker,
-            "valid_sessions": len(valid),
-            "lookback_rows": len(rows),
-            "average_daily_value_rub": sum(valid) / len(valid),
-            "last_session": rows[-1].get("timestamp", "")[:10] if rows else None,
-            "source": OFFICIAL_D1_SOURCE,
-        })
-    ranked.sort(key=lambda item: (-item["average_daily_value_rub"], item["ticker"]))
-    return ranked[:top_n]
-
-
-def collect_selected_universe(tickers, *, api_token, source_app_id=None, collector=collect_multi_timeframe):
-    """Fetch D1 for all candidates, then request H1 only for the selected top 10."""
-    d1_payload = collector(
-        tickers, api_token=api_token, source_app_id=source_app_id, frames=("D1",)
+def collect_all_universe(tickers, *, api_token, source_app_id=None, collector=collect_multi_timeframe):
+    """Collect H1 and D1 for every requested symbol; liquidity is descriptive only."""
+    requested = list(dict.fromkeys(str(t).strip().upper() for t in tickers if str(t).strip()))
+    if not requested:
+        raise ValueError("At least one ticker is required")
+    payload = collector(
+        requested, api_token=api_token, source_app_id=source_app_id,
+        frames=("H1", "D1"),
     )
-    ranking = select_top_liquid(d1_payload)
-    selected = [item["ticker"] for item in ranking]
-    if not selected:
+    results = payload.get("results", {})
+    missing = [ticker for ticker in requested if ticker not in results]
+    if missing:
         raise RuntimeError(
-            "No eligible liquid shares: official MOEX ISS VALUE history must contain "
-            "at least 40 valid observations in the latest 60 completed sessions."
+            "Collector omitted requested symbols: " + ", ".join(missing)
         )
-    # The collector API requires D1 alongside H1. Its second D1 response is
-    # discarded; only H1 data for the selected cohort is retained.
-    h1_payload = collector(
-        selected, api_token=api_token, source_app_id=source_app_id, frames=("H1", "D1")
-    )
-    combined_results = {}
-    for ticker, frames in d1_payload["results"].items():
-        combined_results[ticker] = {"D1": frames.get("D1", {})}
-    for ticker in selected:
-        combined_results.setdefault(ticker, {})["H1"] = h1_payload["results"].get(
-            ticker, {}
-        ).get("H1", {"source": "Finam", "status": "ERROR", "error": "No H1 result"})
-    payload = dict(d1_payload)
-    payload["results"] = combined_results
-    payload["universe"] = list(combined_results)
-    payload["requested_frames"] = ["D1", "H1"]
-    payload["liquidity_selection"] = {
-        "method": "mean official MOEX ISS TQBR VALUE over latest 60 completed D1 rows",
-        "minimum_valid_sessions": LIQUIDITY_MIN_VALID_SESSIONS,
-        "top_n": LIQUIDITY_TOP_N,
-        "candidate_count": len(tickers),
-        "selected_count": len(selected),
-        "ranking": ranking,
-        "h1_universe": selected,
-        "d1_candidate_universe": list(tickers),
-        "source": OFFICIAL_D1_SOURCE,
-        "missing_value_policy": "exclude missing/non-positive/non-finite VALUE; never substitute close*volume",
+    payload["universe"] = requested
+    payload["requested_frames"] = ["H1", "D1"]
+    payload["universe_selection"] = {
+        "method": "fixed complete 44-symbol MOEX candidate universe; no liquidity exclusion",
+        "candidate_count": len(requested),
+        "selected_count": len(requested),
+        "symbols": requested,
+        "liquidity_filter": "disabled",
+        "note": "Liquidity may be reported as descriptive metadata but does not determine inclusion.",
     }
     return payload
 
@@ -103,7 +51,8 @@ def _read_previous_state() -> dict:
 
 
 def _latest_h1_by_symbol(state: dict) -> dict[str, str]:
-    return state.get("latest_h1", {}) if isinstance(state.get("latest_h1", {}), dict) else {}
+    value = state.get("latest_h1", {})
+    return value if isinstance(value, dict) else {}
 
 
 def build_daily_delta(payload: dict, state: dict) -> tuple[dict, dict]:
@@ -114,8 +63,8 @@ def build_daily_delta(payload: dict, state: dict) -> tuple[dict, dict]:
         "schema_version": 1,
         "generated_at_utc": payload["generated_at_utc"],
         "timezone": payload["timezone"],
-        "source_policy": "H1=Finam completed bars for top-10 liquidity cohort; D1=MOEX ISS TQBR history with official VALUE turnover for 44 candidates",
-        "liquidity_selection": payload.get("liquidity_selection", {}),
+        "source_policy": "H1=Finam completed bars and D1=MOEX ISS TQBR history (Finam fallback explicitly labeled); all 44 symbols are retained without liquidity filtering",
+        "universe_selection": payload.get("universe_selection", {}),
         "symbols": {},
     }
     next_h1 = dict(previous_h1)
@@ -135,7 +84,9 @@ def build_daily_delta(payload: dict, state: dict) -> tuple[dict, dict]:
                 "H1": new_h1,
                 "D1": new_d1,
                 "H1_source": h1_block.get("source"),
+                "H1_status": h1_block.get("status"),
                 "D1_source": d1_block.get("source"),
+                "D1_status": d1_block.get("status"),
                 "D1_value_missing": sum(row.get("value") is None for row in new_d1),
             }
         if new_h1:
@@ -161,7 +112,7 @@ def main() -> None:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     state = _read_previous_state()
-    payload = collect_selected_universe(
+    payload = collect_all_universe(
         tickers, api_token=token, source_app_id=source_app_id
     )
     delta, state_out = build_daily_delta(payload, state)
@@ -174,17 +125,24 @@ def main() -> None:
         with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as compressed:
             compressed.write((json.dumps(delta, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
     STATE_FILE.write_text(json.dumps(state_out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    missing_value = sum(item.get("D1_value_missing", 0) for item in delta["symbols"].values())
+    statuses = {}
+    for frame in ("H1", "D1"):
+        statuses[frame] = {
+            "ok": sum(v.get(frame, {}).get("status") == "OK" for v in payload["results"].values()),
+            "no_data": sum(v.get(frame, {}).get("status") == "NO_COMPLETED_BARS" for v in payload["results"].values()),
+            "errors": sum(v.get(frame, {}).get("status") == "ERROR" for v in payload["results"].values()),
+        }
     print(json.dumps({
         "status": "OK",
         "snapshot": str(output),
-        "candidate_symbols": len(tickers),
-        "h1_universe": payload["liquidity_selection"]["h1_universe"],
+        "requested_symbols": len(tickers),
+        "symbols_returned": len(payload["results"]),
         "symbols_with_new_data": len(delta["symbols"]),
         "new_h1_bars": sum(len(item["H1"]) for item in delta["symbols"].values()),
         "new_d1_rows": sum(len(item["D1"]) for item in delta["symbols"].values()),
-        "d1_rows_missing_official_value": missing_value,
-        "note": "Only top-10 by official MOEX VALUE receive H1 collection; missing VALUE is never imputed.",
+        "d1_rows_missing_official_value": sum(item.get("D1_value_missing", 0) for item in delta["symbols"].values()),
+        "frame_status": statuses,
+        "note": "All requested MOEX shares are retained; missing or invalid data is reported, never imputed.",
     }, ensure_ascii=False))
 
 
