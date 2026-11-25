@@ -113,7 +113,7 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
                             "from_timestamp": left.isoformat(),
                             "to_timestamp": right.isoformat(),
                             "calendar_days_between": gap_days,
-                            "weekday_dates_between": sum(1 for day in range(1, gap_days) if (left.date() + timedelta(days=day)).weekday() < 5,
+                            "weekday_dates_between": sum(1 for day in range(1, gap_days) if (left.date() + timedelta(days=day)).weekday() < 5),
                             "message": "Possible missing daily sessions; verify against official exchange calendar.",
                         })
 
