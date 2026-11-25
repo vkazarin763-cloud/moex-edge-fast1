@@ -21,8 +21,10 @@ def build_finam_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Registry accepts only native Finam D1 reports")
     if report.get("holdout_start") != EXPECTED_HOLDOUT_START:
         raise ValueError("Finam report holdout boundary does not match the frozen policy")
-    if report.get("holdout_used_for_selection") is True:
-        raise ValueError("Frozen holdout must not be used for strategy selection")
+    if report.get("holdout_used_for_selection") is not False:
+        raise ValueError("Finam report must explicitly state that holdout was not used")
+    if report.get("date_till") != "2026-11-19":
+        raise ValueError("Finam research cutoff must remain 2026-11-19")
 
     universe = report.get("universe")
     audit = report.get("data_audit")
@@ -51,7 +53,7 @@ def build_finam_strategy_registry(report: dict[str, Any]) -> dict[str, Any]:
         "results": results,
         "universe": list(universe),
         "generated_at_utc": report.get("generated_at_utc"),
-        "date_till": "2026-11-19",
+        "date_till": report["date_till"],
         "development_holdout_policy": {"holdout_start": EXPECTED_HOLDOUT_START},
     }
     registry = build_strategy_registry(registry_input)
