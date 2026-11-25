@@ -27,6 +27,16 @@ class OptimizerTests(unittest.TestCase):
         self.assertEqual(stats["invalid_ohlc"],1)
         self.assertEqual(len(clean),9)
 
+
+    def test_weekend_bars_are_counted_and_excluded(self):
+        friday=self.bars(10)
+        saturday=friday.copy()
+        saturday["begin"]=saturday["begin"]+pd.Timedelta(days=1)
+        raw=pd.concat([friday,saturday],ignore_index=True)
+        clean,stats=validate_candles(raw,10,now=pd.Timestamp("2025-01-06 00:00",tz="Europe/Moscow").to_pydatetime())
+        self.assertEqual(stats["weekend_rows"],10)
+        self.assertEqual(len(clean),10)
+
     def test_signal_arrays_match_input(self):
         df=self.bars()
         for family,params in ((k,v[0]) for k,v in parameter_grid().items()):
