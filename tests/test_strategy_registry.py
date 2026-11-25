@@ -43,8 +43,22 @@ class StrategyRegistryTests(unittest.TestCase):
         self.assertEqual(rows[("AAA", "LONG", "EMA20x50")]["status"], "INSUFFICIENT_DATA")
         self.assertEqual(rows[("BBB", "LONG", "Donchian20")]["status"], "INSUFFICIENT_DATA")
         self.assertFalse(registry["scanner_contract"]["live_trading_authorized"])
+        self.assertFalse(registry["coverage"]["coverage_complete"])
+        self.assertEqual(registry["coverage"]["expected_symbols"], 2)
+        self.assertEqual(registry["coverage"]["analyzed_symbols"], 1)
+        self.assertEqual(registry["scanner_contract"]["consume_only_status"], "BLOCKED_INCOMPLETE_COVERAGE")
         self.assertEqual(registry["summary"]["PASS"], 1)
         self.assertEqual(registry["summary"]["INSUFFICIENT_DATA"], 19)
+
+    def test_complete_universe_coverage_keeps_registry_consumable(self):
+        registry = build_strategy_registry({
+            "universe": ["AAA"],
+            "development_holdout_policy": {"holdout_start": "2026-11-20"},
+            "results": {"AAA": {"status": "ANALYZED", "walk_forward": {}, "adversarial_cost_check": {}}},
+        })
+        self.assertTrue(registry["coverage"]["coverage_complete"])
+        self.assertEqual(registry["coverage"]["analyzed_symbols"], 1)
+        self.assertEqual(registry["scanner_contract"]["consume_only_status"], "PASS")
 
     def test_registry_rejects_non_positive_average_or_profit_factor(self):
         base = {
