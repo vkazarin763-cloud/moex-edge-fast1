@@ -1,132 +1,55 @@
 # MOEX 24H Price Forecast — experiment plan
 
-Status: PLAN ONLY. No model, signal, workflow, or production code has been implemented.
+Status: prospective read-only data collection and research plan. No forecasting model has been trained and no signal or trading integration is enabled.
 
 ## Objective
 
-For the most liquid shares in the existing 44-symbol MOEX research candidate pool, forecast both:
+For the most liquid shares selected from the existing 44-symbol MOEX candidate pool, forecast:
+1. Direction (LONG / SHORT / FLAT).
+2. Magnitude of the next 24 completed H1 bars' price change, in percent.
+3. A prediction interval for the forward price.
 
-1. the direction of the price move (LONG / SHORT / FLAT);
-2. the magnitude of the move as a percentage;
-3. a prediction interval for the forward price.
+This is research, not a trading recommendation or order instruction.
 
-This is a research forecast, not a trading recommendation or order instruction.
+## Universe and liquidity selection
 
-## Isolation and safety
+- The 44 existing MOEX symbols are **only a candidate pool**, not the forecast universe.
+- For each collection run, fetch completed D1 records for all 44 candidates from MOEX ISS TQBR history.
+- Rank eligible candidates by mean official MOEX ISS `VALUE` (RUB traded value) over their latest 60 completed D1 sessions.
+- Require at least 40 valid, positive, finite `VALUE` observations among those latest 60 rows. Exclude a security if its D1 source is not official MOEX ISS TQBR history or if it lacks sufficient valid `VALUE`. Never substitute `close × volume`.
+- Select the top 10 eligible securities. Fetch H1 history **only for these 10**. D1 liquidity-screening data for all candidates is retained.
+- Store the ranking, lookback count, valid-observation count, average turnover, last included session, and selected H1 cohort in every snapshot. Selection is point-in-time: the current run's cohort is frozen in its snapshot.
+- The collector is manually dispatched; each run recalculates the cohort from data available at that run. Do not describe this as a fixed historical top-10 cohort.
+- The 44-symbol pool is a fixed current candidate list. Without point-in-time historical constituents, results have survivorship/universe-selection bias and are not a complete historical MOEX market test.
 
-- Dedicated branch: `research/price-forecast-24h-v1`, created from `main`.
-- Keep all changes on this branch. Do not merge or open a PR unless explicitly requested.
-- Do not modify `main`, production repository `moex-edge`, the separate options repository `moex-edge-fast`, the frozen D1 strategy cohort, existing scanner workflows, AI Trader state, Finam executor, broker/account/order integrations, Telegram, secrets, schedules, or live-mode settings.
-- Read-only market data only. No account endpoints and no order endpoints.
-- No real or virtual trades are required for this experiment.
-- No automatic strategy promotion. A positive research result only earns a separate validation proposal.
-
-## Forecast horizon and target
+## Forecast target
 
 - Forecast origin: immediately after a fully completed H1 candle.
-- Primary horizon: the next **24 completed H1 bars** (24 exchange-data trading hours; usually spread over roughly three MOEX sessions, not 24 wall-clock hours).
-- Target return: `100 * (close[t+24] / close[t] - 1)`.
-- Direction label: LONG for a positive move, SHORT for a negative move, FLAT inside a pre-registered neutral band.
-- The neutral band must be fixed using training-only data and a documented cost/noise rule before evaluation. Do not choose it after looking at holdout results.
-- If a symbol lacks 24 valid future H1 bars, the observation is excluded with a recorded reason. Never forward-fill, interpolate, or fabricate a target.
-- Forecast price = current completed close multiplied by the predicted return. Prediction intervals must be estimated on training/validation data only and assessed for empirical coverage.
+- Horizon: next **24 completed H1 bars** (24 exchange-data trading hours, generally spread over roughly three MOEX sessions).
+- Return: `100 * (close[t+24] / close[t] - 1)`.
+- Direction: LONG for positive move, SHORT for negative move, FLAT inside a neutral band fixed from training-only data before final evaluation.
+- Exclude missing/invalid future bars; never forward-fill or fabricate targets.
+- Convert predicted return to price using the latest completed close. Calibrate prediction intervals only on training/validation data.
 
-## Universe: most liquid shares
+## Data quality and collection
 
-- Candidate pool: the repository's existing 44-symbol MOEX share universe.
-- Rank securities at each forecast origin using trailing 60 completed MOEX trading sessions of the official MOEX ISS `VALUE` (RUB traded value) field, calculated only from information available at that origin. The current candle/history adapter retains `VOLUME` but does not preserve `VALUE`; extend the read-only data schema and validator to retain/validate `VALUE` before ranking. Do not substitute `close × volume` and label it exact turnover.
-- Select the top 10 eligible securities at each origin; require at least 40 valid daily observations in the lookback. Freeze the selection for that origin before generating a forecast.
-- Recompute the ranking on a documented schedule (initially once per trading week) using only then-available data.
-- Record each date's selected symbols and turnover ranks in the dataset/report.
-- Important limitation: the 44-symbol candidate pool is a fixed current universe. Unless point-in-time historical index membership is available, results must explicitly disclose survivorship/universe-selection bias and must not be described as a complete historical MOEX market test.
-- Do not rank by future returns, model scores, or evaluation-period performance.
+- H1 source: Finam completed bars; D1 turnover source: official MOEX ISS TQBR history. Do not merge providers or resample.
+- H1 lookback from Finam is currently limited to 30 calendar days. Accumulate prospective immutable snapshots for at least 6 months, preferably 12 months, before meaningful model evaluation.
+- Validate timestamps, completed-bar status, duplicates, monotonicity, OHLC consistency, finite values, volume, missing `VALUE`, and provider provenance.
+- Historical H1 archive inspected on 2026-11-25 is too short for credible 24-bar model evaluation. Do not train or claim skill on it.
+- Collection is read-only. No account, order, position, or execution endpoints.
 
-## Data audit — mandatory first gate
+## Models and validation
 
-1. Inspect the existing audited MTF candle artifacts and their exact run IDs, timestamps, checksums, frame coverage, and retention.
-2. Verify how much usable H1 history is actually available. The documented collector limit for intraday H1 is 30 calendar days; do not assume the short archive is sufficient for model training.
-3. Verify timestamps, timezone, completed-bar status, session/weekend labels, duplicate timestamps, monotonicity, OHLC consistency, finite values, and volume validity.
-4. Use the official MOEX ISS daily `VALUE` field for traded RUB value. The currently archived D1 OHLCV records do not contain this field; the existing adapter extracts `VOLUME` but drops `VALUE`. Extend the read-only collector and validation schema to preserve the official value field, or stop the liquidity ranking. `close × volume` is only a rough proxy and must not be reported as exact turnover. Confirm corporate-action/adjustment conventions before combining D1 and H1 data.
-5. Do not mix providers or resample/fill one source with another unless a separate validation proves the transformation safe.
-6. If the available clean H1 history is insufficient for a meaningful 24-bar target and chronological splits, stop the retrospective backtest. Propose a read-only prospective data collection plan instead; do not quietly extend the sample or invent data.
+Compare zero-return and historical-drift baselines, fixed momentum/trend features, regularized linear regression/classification, and at most one small nonlinear challenger if sample size/dependencies justify it.
+Use lagged H1 returns, candle geometry, volume/relative volume, EMA/RSI, realized volatility, and point-in-time market context only. OHLCV is not aggressor-side order flow.
+Use chronological train/validation/test blocks, keep all symbols from one forecast timestamp in one split, purge overlapping 24-bar targets and embargo at least 24 H1 bars. Fit all transforms and thresholds on training only. Open final test once after freezing methodology.
 
-## Models to compare
+## Metrics and promotion gate
 
-Use a small, frozen model set; no broad hyperparameter search in the first pass.
+Report direction coverage and per-class metrics, return MAE/RMSE, median absolute error, prediction interval coverage/width, per-symbol and per-regime breakdowns, uncertainty, and comparisons with baselines. Costs are diagnostic assumptions only until verified.
+No deployment, Telegram, scheduling, or strategy changes from this branch. A separate paper-test proposal requires clean data, out-of-sample improvement over baselines, stability across symbols/regimes, calibrated intervals, plausible post-cost value, and passing leakage tests. Otherwise record the negative result and stop.
 
-1. **Zero-return baseline:** predicts no price change; benchmark for magnitude error.
-2. **Historical-drift baseline:** predicts the training-only mean/median 24-bar return, with direction from its sign.
-3. **Momentum/trend baseline:** fixed return, EMA-distance, and volatility features with parameters documented before evaluation.
-4. **Regularized linear models:** Ridge regression for return magnitude and logistic regression for direction.
-5. **One nonlinear challenger:** a small tree-based regressor/classifier only if the installed dependency and sample size justify it; otherwise omit it rather than adding heavyweight dependencies.
+## Safety and isolation
 
-All models must use the same eligible observations and point-in-time universe. Fit scalers, feature selection, thresholds, and calibration only on the training portion.
-
-## Feature policy
-
-Candidate features known at the forecast origin:
-
-- lagged H1 returns over fixed windows (1, 3, 6, 12, 24 bars);
-- candle body/range and close location;
-- volume and relative-volume changes;
-- EMA distance/slope and RSI;
-- rolling realized volatility and ATR-normalized movement;
-- market-wide context computed only from the same point-in-time eligible data.
-
-No future bars, centered windows, revised future constituents, or target-derived features. OHLCV volume is not order flow and must not be described as buyer/seller aggressor data.
-
-## Validation design
-
-- Use strictly chronological train / validation / final test blocks.
-- Purge observations whose 24-bar target overlaps a later split; apply an embargo of at least 24 H1 bars at split boundaries.
-- Keep all symbols from the same forecast timestamp in the same split.
-- Tune and select models only on training/validation data. Open the final test exactly once after the method is frozen.
-- Report performance by ticker, date, market regime, and forecast horizon; also report pooled results with uncertainty intervals.
-- Do not reuse the earlier five-session H1 quick-rejection window as the sole evidence of success.
-- Keep this experiment's split dates independent of the existing frozen D1 scanner cohort. Do not inspect or alter that cohort's prospective holdout.
-
-## Required metrics
-
-### Direction
-- LONG / SHORT / FLAT counts and coverage;
-- accuracy, balanced accuracy, per-class precision/recall and confusion matrix;
-- Brier score / calibration for directional probabilities where available.
-
-### Magnitude and price
-- MAE and RMSE of the 24-bar percentage return;
-- median absolute error;
-- directional hit rate conditional on confidence;
-- prediction-interval coverage and width;
-- comparison with zero-return and historical-drift baselines.
-
-### Economic sensitivity (diagnostic only)
-- Show gross and net directional returns under explicitly stated per-symbol fee and slippage assumptions.
-- Treat costs as assumptions until verified from actual instrument tariffs and realistic execution data.
-- Include turnover and exposure frequency; do not calculate portfolio capital, position sizes, or allocations.
-- A model is not considered useful merely because it has high raw accuracy; it must improve on baselines and retain value after plausible costs.
-
-## Promotion gate
-
-No deployment, Telegram notifications, workflow scheduling, or strategy change from this branch.
-
-A model may be proposed for a separate prospective paper test only if:
-- data quality and point-in-time universe selection pass;
-- final chronological test beats the relevant baselines on both direction and magnitude;
-- performance is not concentrated in one ticker or one short market regime;
-- uncertainty is reported and results remain useful under plausible costs;
-- prediction intervals are reasonably calibrated;
-- all leakage and regression tests pass.
-
-If the data gate fails or no model beats the baselines, record the negative result and stop rather than tuning endlessly.
-
-## Deliverables
-
-1. This pre-registration plan.
-2. Data-availability and quality audit with exact provenance.
-3. Deterministic dataset builder and leakage/target tests (only after the data gate passes).
-4. Reproducible training/evaluation script with frozen model definitions.
-5. Final report containing metrics, baselines, limitations, and a clear accept/reject decision.
-
-## Immediate next action
-
-Perform only a read-only audit of existing artifacts and source availability to determine whether a valid historical 24-H1-bar experiment is feasible. Do not implement models until that gate is passed.
+All changes remain on `research/price-forecast-24h-v1`. Do not merge or open a PR unless explicitly requested. Do not touch production repo `moex-edge`, separate options repo `moex-edge-fast`, frozen D1 cohort, scanner workflows, AI Trader, Finam execution, broker/account/order integrations, Telegram, secrets, schedules, or live-mode settings.
