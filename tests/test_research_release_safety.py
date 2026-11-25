@@ -33,7 +33,7 @@ class ResearchWorkflowSafetyTests(unittest.TestCase):
             self.assertIn("workflow_dispatch:", workflow)
             self.assertIn("legacy workflow is retired", workflow)
             self.assertNotIn("FINAM_API_TOKEN", workflow)
-            self.assertNotIn("MOEX ISS", workflow)
+            self.assertNotIn("python -m research_agent", workflow)
 
     def test_scheduled_scanner_executor_workflow_is_explicitly_dry_run(self):
         workflow = (ROOT / ".github" / "workflows" / "moex-edge-fast.yml").read_text()
