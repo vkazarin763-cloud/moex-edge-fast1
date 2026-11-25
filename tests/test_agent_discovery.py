@@ -183,7 +183,7 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(seen["body"]["reasoning_format"], "hidden")
         self.assertEqual(seen["body"]["reasoning_effort"], "low")
         self.assertEqual(seen["body"]["model"], "openai/gpt-oss-20b")
-        self.assertEqual(seen["body"]["max_completion_tokens"], 8192)
+        self.assertEqual(seen["body"]["max_completion_tokens"], 1536)
         schema = __import__(
             "research_agent.agent_discovery", fromlist=["OUTPUT_SCHEMA"]
         ).OUTPUT_SCHEMA
