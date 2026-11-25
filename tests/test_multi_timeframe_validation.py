@@ -78,6 +78,50 @@ class MultiTimeframeValidationTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS")
         self.assertEqual(result["issue_count"], 0)
 
+
+    def test_daily_gap_detection_warns_without_false_failing(self):
+        def bar(ts):
+            return {"timestamp": ts, "open": 100, "high": 102, "low": 99,
+                    "close": 101, "volume": 1000}
+        report = {
+            "generated_at_utc": "2026-04-20T21:00:00+00:00",
+            "timeframes": {"D1": {}},
+            "results": {"T": {"D1": {
+                "source": "Finam Trade API", "status": "OK",
+                "candles": [
+                    bar("2026-04-10T05:00:00+00:00"),
+                    bar("2026-04-17T05:00:00+00:00"),
+                ],
+            }}},
+        }
+        result = validate_multi_timeframe_report(report)
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["issue_count"], 0)
+        self.assertEqual(result["warning_count"], 1)
+        warning = result["warnings"][0]
+        self.assertEqual(warning["type"], "possible_d1_session_gap")
+        self.assertEqual(warning["calendar_days_between"], 7)
+        self.assertEqual(warning["symbol"], "T")
+
+    def test_normal_weekend_gap_is_not_warned(self):
+        def bar(ts):
+            return {"timestamp": ts, "open": 100, "high": 102, "low": 99,
+                    "close": 101, "volume": 1000}
+        report = {
+            "generated_at_utc": "2026-04-06T21:00:00+00:00",
+            "timeframes": {"D1": {}},
+            "results": {"SBER": {"D1": {
+                "source": "Finam Trade API", "status": "OK",
+                "candles": [
+                    bar("2026-04-03T05:00:00+00:00"),
+                    bar("2026-04-06T05:00:00+00:00"),
+                ],
+            }}},
+        }
+        result = validate_multi_timeframe_report(report)
+        self.assertEqual(result["warning_count"], 0)
+        self.assertEqual(result["status"], "PASS")
+
     def test_non_finam_source_fails_validation(self):
         report = {
             "generated_at_utc": "2026-11-20T13:00:00+00:00",
