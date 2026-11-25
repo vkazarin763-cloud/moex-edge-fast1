@@ -1,4 +1,5 @@
 """Leakage-aware feature experiment: trend, realized volatility and candle geometry."""
+# Evaluation remains isolated from production and uses only point-in-time H1 features.
 from __future__ import annotations
 import csv, gzip, json, math, statistics
 from datetime import datetime, timezone
