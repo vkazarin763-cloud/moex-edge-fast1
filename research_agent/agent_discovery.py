@@ -128,6 +128,17 @@ def _compact_context(
     if not isinstance(scan.get("signals"), list) or not isinstance(scan.get("universe"), list):
         raise ValueError("Deterministic scan is missing signals or universe")
     summary = registry.get("summary") if isinstance(registry.get("summary"), dict) else {}
+    coverage = registry.get("coverage")
+    expected_symbols = len(scan["universe"])
+    if (not isinstance(coverage, dict)
+            or coverage.get("coverage_complete") is not True
+            or coverage.get("expected_symbols") != expected_symbols
+            or coverage.get("analyzed_symbols") != expected_symbols
+            or coverage.get("unavailable_symbols") != 0
+            or coverage.get("unexpected_result_tickers")):
+        raise ValueError(
+            "Strategy registry has missing or incomplete full-universe research coverage"
+        )
     registry_rows = registry.get("strategies")
     if not isinstance(registry_rows, list):
         raise ValueError("Strategy registry has no strategies list")
