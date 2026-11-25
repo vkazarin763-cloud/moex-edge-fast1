@@ -10,7 +10,9 @@ class ResearchWorkflowSafetyTests(unittest.TestCase):
     def test_research_workflow_is_read_only_and_has_no_broker_execution(self):
         workflow = (ROOT / ".github" / "workflows" / "research-agent-run.yml").read_text()
         self.assertIn("permissions:\n  contents: read", workflow)
-        self.assertIn("python -m research_agent.cli", workflow)
+        self.assertIn("manual-finam-two-strategy-research.yml", workflow)
+        self.assertNotIn("research_agent.cli", workflow)
+        self.assertIn("secrets: inherit", workflow)
         self.assertIn("push:", workflow)
         self.assertIn('"research_agent/**"', workflow)
         self.assertIn("schedule:", workflow)
