@@ -31,7 +31,7 @@ class OptimizerTests(unittest.TestCase):
     def test_weekend_bars_are_counted_and_excluded(self):
         friday=self.bars(10)
         saturday=friday.copy()
-        saturday["begin"]=saturday["begin"]+pd.Timedelta(days=1)
+        saturday["begin"]=saturday["begin"]+pd.Timedelta(days=2)
         raw=pd.concat([friday,saturday],ignore_index=True)
         clean,stats=validate_candles(raw,10,now=pd.Timestamp("2025-01-06 00:00",tz="Europe/Moscow").to_pydatetime())
         self.assertEqual(stats["weekend_rows"],10)
