@@ -133,9 +133,19 @@ def main() -> None:
             "no_data": sum(v.get(frame, {}).get("status") == "NO_COMPLETED_BARS" for v in payload["results"].values()),
             "errors": sum(v.get(frame, {}).get("status") == "ERROR" for v in payload["results"].values()),
         }
+    d1_error_samples = [
+        {
+            "ticker": ticker,
+            "error": str(frames.get("D1", {}).get("error", ""))[:500],
+            "moex_iss_error": str(frames.get("D1", {}).get("moex_iss_error", ""))[:500],
+        }
+        for ticker, frames in payload["results"].items()
+        if frames.get("D1", {}).get("status") == "ERROR"
+    ][:3]
     print(json.dumps({
         "status": "OK",
         "snapshot": str(output),
+        "d1_error_samples": d1_error_samples,
         "requested_symbols": len(tickers),
         "symbols_returned": len(payload["results"]),
         "symbols_with_new_data": len(delta["symbols"]),
