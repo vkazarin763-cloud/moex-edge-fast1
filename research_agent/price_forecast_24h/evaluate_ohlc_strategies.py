@@ -143,7 +143,7 @@ def evaluate_symbol(rows):
             "test_end":bars[end-1]["timestamp"],"test_bars":end-start,
             "breakout_trades":len(trades["breakout_20"]),
             "mean_reversion_trades":len(trades["mean_reversion_20_2sd"])})
-        for name in combined:combined[name].extend(trades[name])
+        for name in combined:\n            for trade in trades[name]:trade["fold"]=no\n            combined[name].extend(trades[name])
     return {"status":"OK","bars_after_filter":len(bars),"folds":fold_info,
         "strategies":{name:{str(cost):stats(trades,cost) for cost in COST_BPS_PER_SIDE}
                       for name,trades in combined.items()},
@@ -187,7 +187,7 @@ def main():
             "short-selling availability and instrument constraints are not validated",
             "H1 bars are Finam technical data; 24 bars do not equal 24 clock hours",
             "fixed 44-symbol universe may have survivorship bias",
-            "no capital allocation or cross-symbol portfolio simulation",
+            "no capital allocation or cross-symbol portfolio simulation; pooled trade-chain compounding and drawdown are diagnostic only, not portfolio performance",
             "research only; no signals, Telegram, broker orders or production changes"],
         "data_quality_totals":{k:sum(v.get(k,0) for v in results.values())
             for k in ("weekend_bars_excluded","duplicates","invalid_ohlc")},
