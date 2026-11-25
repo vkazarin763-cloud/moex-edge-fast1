@@ -190,6 +190,8 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(seen["body"]["response_format"], schema)
         props = schema["json_schema"]["schema"]["properties"]
         self.assertNotIn("rationale", props["proposals"]["items"]["required"])
+        horizon_schema = props["forecast_reviews"]["items"]["properties"]["horizon_sessions"]
+        self.assertEqual(horizon_schema, {"type": "string", "enum": ["1", "5", "20"]})
 
     def test_groq_retries_truncated_json_response(self):
         payload = {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": []}
@@ -442,7 +444,7 @@ class AgentDiscoveryTests(unittest.TestCase):
                 for horizon in (1, 5, 20):
                     role_reviews.append({
                         "symbol": ticker, "direction": direction, "strategy": strategy,
-                        "d1_bar_end_utc": bar_end, "horizon_sessions": horizon,
+                        "d1_bar_end_utc": bar_end, "horizon_sessions": str(horizon),
                         "assessment": reported, "rationale": f"raw rationale from role {calls}",
                     })
             return {"proposals": [], "strategy_hypotheses": [], "forecast_reviews": role_reviews}
