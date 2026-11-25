@@ -35,76 +35,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from html.parser import HTMLParser
-          from pathlib import Path
-          from urllib.parse import urljoin, urlparse, unquote
-          from urllib.request import Request, urlopen
-          import re
-
-          source = "https://www.gosuslugi.ru/landing/crt"
-          request = Request(source, headers={"User-Agent": "Mozilla/5.0 MOEX-Agent-CI"})
-          with urlopen(request, timeout=30) as response:
-              html = response.read().decode("utf-8", errors="replace")
-
-          class Links(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.hrefs = []
-              def handle_starttag(self, tag, attrs):
-                  if tag == "a":
-                      href = dict(attrs).get("href")
-                      if href:
-                          self.hrefs.append(href)
-
-          parser = Links()
-          parser.feed(html)
-          wanted = {
-              "root": re.compile(r"Russian[_ -]Trusted[_ -]Root[_ -]CA\.(?:cer|crt|pem)$", re.I),
-              "sub": re.compile(r"Russian[_ -]Trusted[_ -]Sub[_ -]CA\.(?:cer|crt|pem)$", re.I),
-              "sub2024": re.compile(r"Russian[_ -]Trusted[_ -]Sub[_ -]CA[_ -]2024\.(?:cer|crt|pem)$", re.I),
-          }
-          found = {}
-          for href in parser.hrefs:
-              absolute = urljoin(source, href)
-              parsed = urlparse(absolute)
-              if parsed.scheme != "https":
-                  continue
-              filename = Path(unquote(parsed.path)).name
-              for key, pattern in wanted.items():
-                  if key not in found and pattern.search(filename):
-                      found[key] = absolute
-
-          if set(found) != set(wanted):
-              print("Official Gosuslugi certificate links discovered:")
-              for href in parser.hrefs:
-                  if re.search(r"trusted|\.cer|\.crt|\.pem", href, re.I):
-                      print(urljoin(source, href))
-              raise SystemExit("Could not identify all 3 official NCA certificates; refusing to continue.")
-
-          out = Path("/tmp/moex-nca")
-          out.mkdir(parents=True, exist_ok=True)
-          for key, url in found.items():
-              req = Request(url, headers={"User-Agent": "Mozilla/5.0 MOEX-Agent-CI"})
-              with urlopen(req, timeout=30) as response:
-                  data = response.read()
-              if len(data) < 500:
-                  raise SystemExit(f"Certificate download unexpectedly small: {key}")
-              (out / f"{key}.download").write_bytes(data)
-              print(f"Downloaded {key} certificate from the official Gosuslugi certificate page.")
-          PY
-
           sudo mkdir -p /usr/local/share/ca-certificates/moex-nca
-          for name in root sub sub2024; do
-            src="/tmp/moex-nca/$name.download"
+          declare -A cert_urls=(
+            [root]="https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt"
+            [sub]="https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt"
+          )
+          for name in root sub; do
+            src="/tmp/moex-nca-$name.crt"
             dst="/usr/local/share/ca-certificates/moex-nca/$name.crt"
-            if openssl x509 -in "$src" -noout >/dev/null 2>&1; then
-              sudo cp "$src" "$dst"
-            else
-              openssl x509 -inform DER -in "$src" -out "/tmp/$name.crt"
-              sudo cp "/tmp/$name.crt" "$dst"
-            fi
-            openssl x509 -in "$dst" -noout -subject
+            curl --fail --location --silent --show-error "${cert_urls[$name]}" --output "$src"
+            test "$(wc -c < "$src")" -gt 500
+            openssl x509 -in "$src" -noout -subject
+            sudo install -m 0644 "$src" "$dst"
           done
           sudo update-ca-certificates
           echo "REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt" >> "$GITHUB_ENV"
