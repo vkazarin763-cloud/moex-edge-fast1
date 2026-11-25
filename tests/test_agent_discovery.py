@@ -242,6 +242,9 @@ class AgentDiscoveryTests(unittest.TestCase):
         self.assertEqual(diagnostics["hypothesis_count"], 1)
         self.assertEqual(diagnostics["consensus_proposal_count"], 1)
         self.assertEqual(diagnostics["strategy_hypotheses"][0]["status"], "UNTESTED_RESEARCH_HYPOTHESIS")
+        self.assertEqual(diagnostics["hypothesis_candidates_seen"], 1)
+        self.assertEqual(diagnostics["hypothesis_candidates"][0]["agent_votes"], 2)
+        self.assertEqual(diagnostics["hypothesis_candidates"][0]["status"], "UNTESTED_RESEARCH_HYPOTHESIS")
         from research_agent.agent_signal_verifier import verify_agent_proposals
         checked = verify_agent_proposals(report, self.scan, self.registry)
         self.assertEqual(checked["results"][0]["status"], "EXPERIMENTAL_STRATEGY_UNAPPROVED")
@@ -270,6 +273,33 @@ class AgentDiscoveryTests(unittest.TestCase):
             return {"proposals": [], "strategy_hypotheses": [idea]}
         report, diagnostics = run_discovery(self.scan, self.registry, api_key="fake", caller=fake)
         self.assertEqual(diagnostics["hypothesis_count"], 0)
+        self.assertEqual(
+            diagnostics["agent_roles"]["signal_hunter"]["hypothesis_rejections"],
+            {"numeric_claim": 1},
+        )
+
+    def test_single_agent_hypothesis_is_audited_but_not_promoted(self):
+        idea = {
+            "strategy": "Donchian20", "direction": "LONG", "timeframe_config": "A",
+            "hypothesis": "A breakout family may merit a separate robustness test.",
+            "research_question": "Does higher timeframe context change candidate stability?",
+        }
+        calls = 0
+        def fake(prompt, *, api_key, model):
+            nonlocal calls
+            calls += 1
+            return {
+                "proposals": [],
+                "strategy_hypotheses": [idea] if calls == 2 else [],
+            }
+        report, diagnostics = run_discovery(self.scan, self.registry, api_key="fake", caller=fake)
+        self.assertEqual(diagnostics["hypothesis_count"], 0)
+        self.assertEqual(diagnostics["hypothesis_candidates_seen"], 1)
+        candidate = diagnostics["hypothesis_candidates"][0]
+        self.assertEqual(candidate["agent_votes"], 1)
+        self.assertEqual(candidate["supporting_agents"], ["strategy_scout"])
+        self.assertEqual(candidate["status"], "INSUFFICIENT_INDEPENDENT_SUPPORT")
+        self.assertEqual(diagnostics["hypotheses_without_consensus_count"], 1)
 
     def test_duplicate_rows_from_one_agent_do_not_fake_consensus(self):
         candidate = {
