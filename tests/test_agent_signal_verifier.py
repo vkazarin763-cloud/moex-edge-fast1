@@ -23,6 +23,11 @@ class AgentSignalVerifierTests(unittest.TestCase):
             "source_report_date_till": "2026-11-20",
             "stage": "DEVELOPMENT_ONLY_NOT_PRODUCTION_APPROVAL",
             "holdout_used_for_selection": False,
+            "coverage": {
+                "expected_symbols": 2, "analyzed_symbols": 2,
+                "unavailable_symbols": 0, "unavailable_tickers": [],
+                "unexpected_result_tickers": [], "coverage_complete": True,
+            },
             "scanner_contract": {"consume_only_status": "PASS", "live_trading_authorized": False},
             "strategies": [{
                 "ticker": "SBER", "direction": "LONG", "strategy": "Donchian20",
@@ -85,6 +90,25 @@ class AgentSignalVerifierTests(unittest.TestCase):
         registry = {**self.registry, "source_report_date_till": "2026-11-01"}
         with self.assertRaisesRegex(AgentContractError, "older than 14 days"):
             verify_agent_proposals(self.agent, self.scan, registry)
+
+    def test_incomplete_or_missing_registry_coverage_cannot_confirm_signals(self):
+        for coverage in (
+            {"expected_symbols": 2, "analyzed_symbols": 1, "unavailable_symbols": 1,
+             "unavailable_tickers": ["LKOH"], "unexpected_result_tickers": [],
+             "coverage_complete": False},
+            None,
+        ):
+            registry = {**self.registry}
+            if coverage is None:
+                registry.pop("coverage")
+            else:
+                registry["coverage"] = coverage
+                registry["scanner_contract"] = {
+                    "consume_only_status": "BLOCKED_INCOMPLETE_COVERAGE",
+                    "live_trading_authorized": False,
+                }
+            with self.assertRaisesRegex(AgentContractError, "coverage|blocked"):
+                verify_agent_proposals(self.agent, self.scan, registry)
 
     def test_registry_cannot_authorize_live_trading(self):
         registry = {**self.registry, "scanner_contract": {"live_trading_authorized": True}}
