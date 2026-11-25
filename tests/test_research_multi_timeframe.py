@@ -3,7 +3,7 @@ from datetime import date, datetime, timezone
 
 from research_agent.multi_timeframe import (
     FINAM_FRAMES, MOEX_FRAMES, RefreshingFinamClient,
-    _finam_bar_is_complete, _moex_bar_is_complete, collect_multi_timeframe,
+    _finam_bar_is_complete, _finam_daily_bar_is_complete, _moex_bar_is_complete, collect_multi_timeframe,
 )
 from research_agent.finam_market_data import FinamAPIError
 from unittest.mock import patch
@@ -153,6 +153,20 @@ class MultiTimeframeTests(unittest.TestCase):
         ))
         self.assertFalse(_finam_bar_is_complete(
             datetime(2026, 11, 20, 12, 0), "H1", now
+        ))
+
+    def test_finam_daily_bars_are_complete_by_moscow_calendar_date(self):
+        now = datetime(2026, 11, 25, 19, 33, tzinfo=timezone.utc)
+        # Finam timestamps a D1 candle at 05:00 UTC; don't apply 24h
+        # intraday completion logic to the date-labelled daily candle.
+        self.assertTrue(_finam_daily_bar_is_complete(
+            datetime(2026, 11, 25, 5, 0, tzinfo=timezone.utc), now
+        ))
+        self.assertFalse(_finam_daily_bar_is_complete(
+            datetime(2026, 11, 26, 5, 0, tzinfo=timezone.utc), now
+        ))
+        self.assertFalse(_finam_daily_bar_is_complete(
+            datetime(2026, 11, 25, 5, 0), now
         ))
 
     def test_moex_incomplete_intraday_and_calendar_bars_are_excluded(self):
