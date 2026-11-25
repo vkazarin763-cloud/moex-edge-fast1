@@ -2,6 +2,8 @@ name: Price Forecast 24H — read-only all-44 collector
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '30 16 * * 1-5' # weekdays, after the MOEX session
 
 permissions:
   contents: write
