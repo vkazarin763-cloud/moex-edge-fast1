@@ -215,6 +215,21 @@ def split_bounds(df):
     n=len(df)
     return int(n*.60), int(n*.80)
 
+def walk_forward_metrics(df, trades, folds=4):
+    """Four chronological out-of-sample blocks after an initial 50% warm-up/training period."""
+    start_idx = int(len(df) * 0.50)
+    edges = np.linspace(start_idx, len(df), folds + 1, dtype=int)
+    output = []
+    for fold_no in range(folds):
+        lo_idx, hi_idx = edges[fold_no], edges[fold_no+1]
+        lo, hi = pd.Timestamp(df.begin.iloc[lo_idx]), pd.Timestamp(df.begin.iloc[min(hi_idx, len(df)-1)])
+        if fold_no == folds-1:
+            hi = hi + pd.Timedelta(days=1)
+        block = [t for t in trades if lo <= pd.Timestamp(t["signal_time"]) and pd.Timestamp(t["exit_time"]) < hi]
+        stat = metrics(block)
+        output.append({"fold":fold_no+1,"start":str(lo),"end_exclusive":str(hi),**stat})
+    return output
+
 def evaluate(df, family, params, direction, fee, slippage, hold):
     long_sig, short_sig = candidate_signals(df, family, params)
     trades=simulate_signals(df,long_sig,short_sig,direction,hold,fee,slippage)
@@ -261,7 +276,8 @@ def run(args):
                 param_key=json.dumps(params,sort_keys=True)
                 all_rows.append({"ticker":ticker,"interval":interval,"family":family,
                   "direction":"LONG" if direction==1 else "SHORT","params":param_key,
-                  "is_baseline":params==defaults[family],"train":tr,"validation":va,"test":te})
+                  "is_baseline":params==defaults[family],"train":tr,"validation":va,"test":te,
+                  "walk_forward":walk_forward_metrics(df,trades)})
                 pool_key=(interval,family,param_key,direction)
                 pooled_test.setdefault(pool_key,[]).extend(test_trades)
         except Exception as exc:
@@ -281,9 +297,11 @@ def run(args):
     results["val_mean"]=results.validation.map(lambda x: x["mean_net"] if x["mean_net"] is not None else -999)
     results["val_pf"]=results.validation.map(lambda x: x["profit_factor"] if x["profit_factor"] is not None else 0)
     results["val_trades"]=results.validation.map(lambda x: x["trades"])
+    results["wf_mean_net"]=results.walk_forward.map(lambda xs: float(np.mean([x["mean_net"] for x in xs if x["trades"]>=5 and x["mean_net"] is not None])) if any(x["trades"]>=5 and x["mean_net"] is not None for x in xs) else -999)
+    results["wf_active_folds"]=results.walk_forward.map(lambda xs: sum(1 for x in xs if x["trades"]>=5))
     results=results.sort_values(["val_mean","val_pf","val_trades"],ascending=False)
     results.to_json(out/"candidate_results.json",orient="records",force_ascii=False,indent=2)
-    selected=results[(results.val_trades>=10)&(results.val_mean>0)].groupby(["interval","family","direction"],as_index=False).head(3)
+    selected=results[(results.val_trades>=10)&(results.val_mean>0)&(results.wf_active_folds>=3)&(results.wf_mean_net>0)].groupby(["interval","family","direction"],as_index=False).head(3)
     selected.to_json(out/"validation_shortlist.json",orient="records",force_ascii=False,indent=2)
     summary={"status":"completed","tickers":len(TICKERS),"intervals":[10,60],"candidate_rows":len(results),
       "shortlisted_rows":len(selected),"fee_round_trip":args.fee,"slippage_round_trip":args.slippage,
