@@ -32,10 +32,10 @@ This is research, not a trading recommendation or order instruction.
 ## Data quality and collection
 
 - H1 source: Finam completed bars; D1 source: official MOEX ISS TQBR history, with any Finam fallback explicitly labeled. Do not merge providers or resample.
-- H1 lookback from Finam is currently limited to 30 calendar days. Accumulate prospective immutable snapshots for at least 6 months, preferably 12 months, before meaningful model evaluation.
+- Initial H1 history was backfilled once for 180 calendar days. The canonical `data/H1_HISTORY.json.gz` archive is seeded from that backfill and incrementally extended with only newly completed bars on each weekday collection. The Finam request remains a rolling <=30-calendar-day window; the full history is not downloaded again. Daily deltas remain immutable audit snapshots.
 - Validate timestamps, completed-bar status, duplicates, monotonicity, OHLC consistency, finite values, volume, missing `VALUE`, and provider provenance.
 - Report per-symbol H1/D1 status, bars received, last available date, missing fields, and errors. One symbol's data failure must not stop collection of the other symbols.
-- Historical H1 archive inspected on 2026-11-25 is too short for credible 24-bar model evaluation. Do not train or claim skill on it.
+- Historical H1 archive initially backfilled on 2026-11-25 contains about six months of technical Finam bars. Treat first walk-forward results as exploratory; extend the same cumulative archive daily and rerun validation as history grows.
 - Collection is read-only. No account, order, position, or execution endpoints.
 
 ## Models and validation
@@ -47,7 +47,7 @@ Use chronological train/validation/test blocks, keep all symbols from one foreca
 ## Metrics and promotion gate
 
 Report direction coverage and per-class metrics, return MAE/RMSE, median absolute error, prediction interval coverage/width, per-symbol and per-regime breakdowns, uncertainty, and comparisons with baselines. Costs are diagnostic assumptions only until verified.
-No deployment, Telegram, scheduling, or strategy changes from this branch. A separate paper-test proposal requires clean data, out-of-sample improvement over baselines, stability across symbols/regimes, calibrated intervals, plausible post-cost value, and passing leakage tests. Otherwise record the negative result and stop.
+No deployment, Telegram, or strategy changes from this branch. The only schedule permitted here is the weekday read-only market-data collector that appends to the cumulative research archive. A separate paper-test proposal requires clean data, out-of-sample improvement over baselines, stability across symbols/regimes, calibrated intervals, plausible post-cost value, and passing leakage tests. Otherwise record the negative result and stop.
 
 ## Safety and isolation
 
