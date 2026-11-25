@@ -45,5 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: price-forecast-24h-feature-comparison
-          path: research_agent/price_forecast_24h/reports/feature-comparison-*\n            research_agent/price_forecast_24h/reports/threshold-signal-test-*
+          path: |
+            research_agent/price_forecast_24h/reports/feature-comparison-*
+            research_agent/price_forecast_24h/reports/threshold-signal-test-*
           retention-days: 30
