@@ -24,6 +24,13 @@ def make_candles():
 
 
 class CliHoldoutIsolationTests(unittest.TestCase):
+    def test_partial_universe_research_cannot_be_a_successful_registry_source(self):
+        report = {
+            "results": {"AAA": {"status": "ANALYZED"}, "BBB": {"status": "DATA_OR_ANALYSIS_ERROR"}},
+            "independent_validation": {"status": "INDEPENDENT_VALIDATION_INCOMPLETE", "errors": []},
+        }
+        self.assertEqual(cli.research_exit_code(report, analyzed=1), 4)
+
     def test_development_and_prospective_stages_receive_disjoint_signal_windows(self):
         candles = make_candles()
         observed = {}
