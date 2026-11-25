@@ -39,17 +39,21 @@ TIMEFRAME_CONFIGS = {
 ROLES = {
     "signal_hunter": (
         "Find the strongest current candidate signals. Select ONLY exact rows from "
-        "candidate_signals. Never invent a ticker, direction, strategy or D1 bar-end."
+        "candidate_signals. Never invent a ticker, direction, strategy or D1 bar-end. "
+        "Independently consider whether an existing strategy/timeframe configuration "
+        "deserves a falsifiable research test; return a hypothesis only if justified."
     ),
     "strategy_scout": (
         "Explore which existing frozen strategy families and timeframe configurations "
         "deserve the next deterministic research test. You may shortlist current signals "
-        "only when an exact candidate row supports them. Do not invent performance."
+        "only when an exact candidate row supports them. Do not invent performance. "
+        "Independently nominate only testable hypotheses supported by the supplied context."
     ),
     "skeptical_reviewer": (
         "Act as an adversarial reviewer. Reject weak, conflicting or poorly confirmed "
-        "candidates. Prefer an empty shortlist over unsupported proposals. Highlight "
-        "limitations in qualitative strategy hypotheses."
+        "candidates. Prefer an empty shortlist over unsupported proposals. Independently "
+        "consider testable strategy/timeframe hypotheses, but nominate one only if it "
+        "survives your own skeptical review."
     ),
 }
 
@@ -517,6 +521,7 @@ def run_discovery(
     providers_used = []
     proposal_votes: Counter = Counter()
     hypothesis_votes: dict[tuple, list[dict[str, Any]]] = defaultdict(list)
+    hypothesis_rejections: dict[str, Counter] = defaultdict(Counter)
     forecast_reviews: list[dict[str, Any]] = []
     forecast_symbols = set(forecast_context.get("by_symbol", {})) if forecast_context else set()
 
@@ -529,9 +534,11 @@ def run_discovery(
             "Return the required JSON object. Proposals must copy an exact candidate row's "
             "symbol, direction, strategy and d1_bar_end_utc. Do not return price or indicator claims. "
             "Every proposal must use D1 and H1 (the final verifier enforces both). "
-            "Strategy hypotheses may only select a listed frozen strategy and timeframe config; "
-            "they are unverified research questions, not signals or claims of profitability. "
-            "Do not propose a strategy family outside the supplied catalog. "
+            "Each role must independently assess whether a listed frozen strategy/timeframe "
+            "configuration merits a falsifiable research test. Return only independently "
+            "supported hypotheses; an empty list is valid. Do not echo another role. "
+            "A hypothesis is unverified, not a signal or a claim of profitability; consensus "
+            "still requires support from at least two distinct roles. "
             "If direction_forecast is present, return forecast_reviews only for the first "
             "two candidate_signals in the supplied list (or fewer if fewer exist), covering "
             "horizons 1, 5 and 20 for each reviewed candidate. Copy the exact symbol, direction, "
@@ -623,20 +630,33 @@ def run_discovery(
                 invalid += 1
         for idea in response["strategy_hypotheses"]:
             if not isinstance(idea, dict):
+                hypothesis_rejections[role]["malformed_item"] += 1
                 continue
             key = (idea.get("strategy"), idea.get("direction"), idea.get("timeframe_config"))
-            if (key[0] in STRATEGIES and key[1] in DIRECTIONS and key[2] in TIMEFRAME_CONFIGS
-                    and isinstance(idea.get("hypothesis"), str)
-                    and isinstance(idea.get("research_question"), str)
-                    and not re.search(r"\d", idea.get("hypothesis", "") + idea.get("research_question", ""))
-                    and key not in seen_hypotheses_this_agent):
-                hypothesis_votes[key].append({"role": role, **idea})
-                seen_hypotheses_this_agent.add(key)
+            if key[0] not in STRATEGIES or key[1] not in DIRECTIONS or key[2] not in TIMEFRAME_CONFIGS:
+                hypothesis_rejections[role]["unsupported_configuration"] += 1
+                continue
+            if (not isinstance(idea.get("hypothesis"), str)
+                    or not isinstance(idea.get("research_question"), str)
+                    or not idea.get("hypothesis", "").strip()
+                    or not idea.get("research_question", "").strip()):
+                hypothesis_rejections[role]["missing_text"] += 1
+                continue
+            if re.search(r"\d", idea["hypothesis"] + idea["research_question"]):
+                hypothesis_rejections[role]["numeric_claim"] += 1
+                continue
+            if key in seen_hypotheses_this_agent:
+                hypothesis_rejections[role]["duplicate_from_same_agent"] += 1
+                continue
+            hypothesis_votes[key].append({"role": role, **idea})
+            seen_hypotheses_this_agent.add(key)
         outputs[role] = {
             "proposals_returned": len(response["proposals"]),
             "exact_candidates_selected": len(accepted),
             "invalid_or_unmatched_proposals": invalid,
             "strategy_hypotheses_returned": len(response["strategy_hypotheses"]),
+            "accepted_hypotheses": len(seen_hypotheses_this_agent),
+            "hypothesis_rejections": dict(hypothesis_rejections[role]),
             "forecast_reviews_returned": len(response.get("forecast_reviews", [])),
         }
         invalid_counts[role] = invalid
@@ -656,19 +676,27 @@ def run_discovery(
             })
     consensus.sort(key=lambda row: (row["symbol"], row["direction"], row["strategy"]))
 
-    hypotheses = []
+    hypothesis_candidates = []
     for key, ideas in hypothesis_votes.items():
-        if len(ideas) >= 2:
-            hypotheses.append({
-                "strategy": key[0], "direction": key[1], "timeframe_config": key[2],
-                "timeframes": TIMEFRAME_CONFIGS[key[2]],
-                "agent_votes": len(ideas),
-                "supporting_agents": sorted({idea["role"] for idea in ideas}),
-                "hypothesis": ideas[0]["hypothesis"][:1000],
-                "research_question": ideas[0]["research_question"][:1000],
-                "status": "UNTESTED_RESEARCH_HYPOTHESIS",
-            })
-    hypotheses.sort(key=lambda row: (row["strategy"], row["direction"], row["timeframe_config"]))
+        supporting_agents = sorted({idea["role"] for idea in ideas})
+        hypothesis_candidates.append({
+            "strategy": key[0], "direction": key[1], "timeframe_config": key[2],
+            "timeframes": TIMEFRAME_CONFIGS[key[2]],
+            "agent_votes": len(supporting_agents),
+            "supporting_agents": supporting_agents,
+            "hypothesis": ideas[0]["hypothesis"][:1000],
+            "research_question": ideas[0]["research_question"][:1000],
+            "status": (
+                "UNTESTED_RESEARCH_HYPOTHESIS"
+                if len(supporting_agents) >= 2
+                else "INSUFFICIENT_INDEPENDENT_SUPPORT"
+            ),
+        })
+    hypothesis_candidates.sort(key=lambda row: (row["strategy"], row["direction"], row["timeframe_config"]))
+    hypotheses = [
+        row for row in hypothesis_candidates
+        if row["status"] == "UNTESTED_RESEARCH_HYPOTHESIS"
+    ]
 
     report = {
         "status": "AGENT_SIGNAL_PROPOSALS",
@@ -714,6 +742,12 @@ def run_discovery(
         )),
         "consensus_proposal_count": len(consensus),
         "strategy_hypotheses": hypotheses,
+        "hypothesis_candidates": hypothesis_candidates,
+        "hypothesis_candidates_seen": len(hypothesis_candidates),
+        "hypotheses_without_consensus_count": sum(
+            row["status"] == "INSUFFICIENT_INDEPENDENT_SUPPORT"
+            for row in hypothesis_candidates
+        ),
         "hypothesis_count": len(hypotheses),
         "unmatched_or_invalid_proposals": invalid_counts,
         "policy": {
