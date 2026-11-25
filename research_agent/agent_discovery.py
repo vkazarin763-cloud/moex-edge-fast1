@@ -301,6 +301,13 @@ def call_groq_discovery(
             if not all(isinstance(result[key], list) for key in ("proposals", "strategy_hypotheses", "forecast_reviews")):
                 raise RuntimeError("Groq discovery response arrays are malformed")
             return result
+        except json.JSONDecodeError as exc:
+            if attempt < 2:
+                sleeper(1)
+                continue
+            raise RuntimeError(
+                "Agent provider returned truncated or invalid JSON after 3 attempts"
+            ) from None
         except urllib.error.HTTPError as exc:
             if exc.code == 429 and attempt < 2:
                 retry = 2 ** attempt
@@ -363,7 +370,7 @@ def call_openrouter_discovery(
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.1,
-        "max_completion_tokens": 1400,
+        "max_completion_tokens": 6144,
         "response_format": OUTPUT_SCHEMA,
     }
     request = urllib.request.Request(
@@ -387,6 +394,13 @@ def call_openrouter_discovery(
             if not all(isinstance(result[key], list) for key in ("proposals", "strategy_hypotheses", "forecast_reviews")):
                 raise RuntimeError("OpenRouter discovery response arrays are malformed")
             return result
+        except json.JSONDecodeError as exc:
+            if attempt < 2:
+                sleeper(1)
+                continue
+            raise RuntimeError(
+                "Agent provider returned truncated or invalid JSON after 3 attempts"
+            ) from None
         except urllib.error.HTTPError as exc:
             if exc.code == 429 and attempt < 2:
                 retry = 2 ** attempt
