@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import pandas as pd
-from optimizer import validate_candles, parameter_grid, candidate_signals, simulate_signals, metrics
+from optimizer import validate_candles, parameter_grid, candidate_signals, simulate_signals, metrics, walk_forward_metrics
 
 class OptimizerTests(unittest.TestCase):
     def bars(self, n=400):
@@ -42,6 +42,18 @@ class OptimizerTests(unittest.TestCase):
         self.assertEqual(trades[0]["entry_time"],str(df.begin.iloc[1]))
         self.assertAlmostEqual(trades[0]["gross_return"],(102-101)/101)
         self.assertAlmostEqual(trades[0]["net_return"],(103-101)/101-0.03)
+
+
+    def test_walk_forward_does_not_touch_validation_or_test(self):
+        df=self.bars(100)
+        trades=[
+          {"signal_time":str(df.begin.iloc[25]),"exit_time":str(df.begin.iloc[26]),"net_return":0.02,"gross_return":0.03},
+          {"signal_time":str(df.begin.iloc[65]),"exit_time":str(df.begin.iloc[66]),"net_return":0.02,"gross_return":0.03},
+          {"signal_time":str(df.begin.iloc[85]),"exit_time":str(df.begin.iloc[86]),"net_return":0.02,"gross_return":0.03},
+        ]
+        folds=walk_forward_metrics(df,trades)
+        self.assertEqual(len(folds),4)
+        self.assertEqual(sum(x["trades"] for x in folds),1)
 
     def test_metrics_empty_and_positive(self):
         self.assertEqual(metrics([])["trades"],0)
