@@ -4,21 +4,49 @@ from datetime import datetime, timezone
 from research_agent.cli import cap_to_last_completed_moscow_date, research_exit_code
 
 
+def complete_analyzed_results(count=44):
+    return {
+        f"TICKER{i:02d}": {"status": "ANALYZED"}
+        for i in range(count)
+    }
+
+
 class ResearchExitCodeTests(unittest.TestCase):
     def test_pass_returns_zero(self):
-        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}}, 44), 0)
+        report = {
+            "results": complete_analyzed_results(),
+            "independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"},
+        }
+        self.assertEqual(research_exit_code(report, 44), 0)
 
     def test_fail_returns_two(self):
-        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_FAIL"}}, 44), 2)
+        report = {
+            "results": complete_analyzed_results(),
+            "independent_validation": {"status": "INDEPENDENT_VALIDATION_FAIL"},
+        }
+        self.assertEqual(research_exit_code(report, 44), 2)
 
     def test_incomplete_returns_three(self):
-        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_INCOMPLETE"}}, 44), 3)
+        report = {
+            "results": complete_analyzed_results(),
+            "independent_validation": {"status": "INDEPENDENT_VALIDATION_INCOMPLETE"},
+        }
+        self.assertEqual(research_exit_code(report, 44), 3)
 
     def test_missing_validation_fails_closed_without_recursion(self):
-        self.assertEqual(research_exit_code({}, 44), 3)
+        self.assertEqual(
+            research_exit_code({"results": complete_analyzed_results()}, 44), 3
+        )
 
     def test_no_analyzed_tickers_returns_nonzero(self):
-        self.assertEqual(research_exit_code({"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}}, 0), 1)
+        # Empty results cannot establish full-universe coverage, so fail closed.
+        self.assertEqual(
+            research_exit_code(
+                {"independent_validation": {"status": "INDEPENDENT_VALIDATION_PASS"}},
+                0,
+            ),
+            4,
+        )
 
 
 class CompletedDailyDateTests(unittest.TestCase):
