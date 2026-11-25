@@ -6,6 +6,7 @@ import argparse
 import itertools
 import json
 import math
+import ssl
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, time as dtime
@@ -14,8 +15,6 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
-import truststore
-truststore.inject_into_ssl()  # use the runner OS trust store; never disable TLS verification
 import requests
 
 TICKERS = """AFKS AFLT ALRS BSPB CBOM CHMF CNRU DOMRF ENPG FLOT GAZP GMKN HEAD IRAO LKOH MAGN MDMG MOEX MTSS NLMK NVTK OZON PHOR PLZL POSI RAGR RENI ROSN RTKM RUAL SBER SBERP SNGS SNGSP SVCB T TATN TATNP TRNFP UGLD VKCO VTBR X5 YDEX""".split()
@@ -33,6 +32,11 @@ def fetch_candles(ticker: str, interval: int, start: str, end: str) -> pd.DataFr
     url = f"{ISS}/engines/stock/markets/shares/boards/TQBR/securities/{ticker}/candles.json"
     rows, offset = [], 0
     session = requests.Session()
+    # Requests otherwise pins certifi's bundle. Prefer the runner OS CA bundle;
+    # TLS verification remains enabled.
+    system_ca = ssl.get_default_verify_paths().cafile
+    if system_ca and Path(system_ca).is_file():
+        session.verify = system_ca
     while True:
         response = session.get(url, params={"from": start, "till": end, "interval": interval,
                                             "start": offset, "iss.reverse": "false"}, timeout=35)
