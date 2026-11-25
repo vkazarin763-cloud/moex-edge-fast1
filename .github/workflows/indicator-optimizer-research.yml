@@ -46,12 +46,15 @@ jobs:
           for key in ("REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS"):
               value = os.environ.get(key)
               print(f"{key}: {'configured' if value else 'unset'}; file_exists={bool(value and pathlib.Path(value).is_file())}")
+          for key in ("HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY"):
+              print(f"{key}: {'configured' if os.environ.get(key) else 'unset'}")
           PY
-          curl --silent --show-error --max-time 15 -o /dev/null -w "MOEX ISS HTTP %{http_code}\n" https://iss.moex.com/iss/index.json || true
+          curl --silent --show-error --max-time 15 -o /dev/null -w "MOEX via default route HTTP %{http_code}\n" https://iss.moex.com/iss/index.json || true
+          curl --noproxy '*' --silent --show-error --max-time 15 -o /dev/null -w "MOEX direct route HTTP %{http_code}\n" https://iss.moex.com/iss/index.json || true
       - name: Smoke test (three shares, real MOEX ISS candles)
         if: contains(github.event.head_commit.message, '[optimizer-smoke]')
         run: |
-          python research/indicator_optimizer/optimizer.py \
+          MOEX_ISS_DIRECT=1 python research/indicator_optimizer/optimizer.py \
             --start "2025-01-01" \
             --tickers SBER GAZP LKOH \
             --intervals 10 60 \
