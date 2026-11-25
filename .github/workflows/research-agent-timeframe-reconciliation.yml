@@ -1,70 +1,16 @@
-name: MOEX EDGE D1-H1 Session Reconciliation (Manual, Read Only)
+name: "RETIRED — Cross-provider MOEX/Finam Reconciliation"
 
 on:
   workflow_dispatch:
-    inputs:
-      days:
-        description: "Lookback calendar days (1-30; Finam H1 history limit)"
-        required: false
-        default: "30"
-        type: string
-      tickers:
-        description: "Comma-separated MOEX tickers"
-        required: false
-        default: "AFKS,AFLT,ALRS,BSPB,CBOM,CHMF,CNRU,DOMRF,ENPG,FLOT,GAZP,GMKN,HEAD,IRAO,LKOH,MAGN,MDMG,MOEX,MTSS,NLMK,NVTK,OZON,PHOR,PLZL,POSI,RAGR,RENI,ROSN,RTKM,RUAL,SBER,SBERP,SNGS,SNGSP,SVCB,T,TATN,TATNP,TRNFP,UGLD,VKCO,VTBR,X5,YDEX"
-        type: string
 
 permissions:
   contents: read
 
-concurrency:
-  group: moex-edge-finam-timeframe-reconciliation
-  cancel-in-progress: false
-
 jobs:
-  reconcile:
+  retired:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Validate lookback
-        env:
-          DAYS: ${{ github.event.inputs.days || '30' }}
+      - name: Explain Finam-only migration
         run: |
-          python - <<'PY'
-          import os
-          days = int(os.environ["DAYS"])
-          if not 1 <= days <= 30:
-              raise SystemExit("D1-H1 reconciliation lookback must be between 1 and 30 days")
-          PY
-      - name: Verify Finam credential is configured (never print its value)
-        env:
-          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
-        run: |
-          if [ -z "${FINAM_API_TOKEN:-}" ]; then
-            echo "Repository Actions secret FINAM_API_TOKEN is not configured."
-            exit 1
-          fi
-          echo "Finam API token is configured."
-      - name: Run read-only D1-H1 session reconciliation
-        env:
-          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
-          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
-          DAYS: ${{ github.event.inputs.days || '30' }}
-          TICKERS: ${{ github.event.inputs.tickers || 'AFKS,AFLT,ALRS,BSPB,CBOM,CHMF,CNRU,DOMRF,ENPG,FLOT,GAZP,GMKN,HEAD,IRAO,LKOH,MAGN,MDMG,MOEX,MTSS,NLMK,NVTK,OZON,PHOR,PLZL,POSI,RAGR,RENI,ROSN,RTKM,RUAL,SBER,SBERP,SNGS,SNGSP,SVCB,T,TATN,TATNP,TRNFP,UGLD,VKCO,VTBR,X5,YDEX' }}
-        run: |
-          python -m research_agent.finam_timeframe_crosscheck \
-            --days "$DAYS" \
-            --tickers "$TICKERS" \
-            --output finam_moex_timeframe_reconciliation.json
-      - name: Upload D1-H1 reconciliation report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: finam-moex-timeframe-reconciliation
-          path: finam_moex_timeframe_reconciliation.json
-          if-no-files-found: warn
-          retention-days: 30
+          echo "::notice::This legacy workflow is retired as part of the Finam-only migration."
+          echo "No MOEX ISS requests are made. Use 'MOEX EDGE Autonomous Research (Finam Only, Read Only)' and the Finam D1/H1 collector."
