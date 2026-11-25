@@ -1,0 +1,57 @@
+name: Price Forecast 24H — H1 historical backfill
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: price-forecast-24h-h1-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout isolated research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify read-only market-data credential exists
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+        run: |
+          if [ -z "${FINAM_API_TOKEN:-}" ]; then
+            echo "Missing Actions secret FINAM_API_TOKEN"
+            exit 1
+          fi
+      - name: Download 180 days of H1 history for all 44 shares
+        env:
+          FINAM_API_TOKEN: ${{ secrets.FINAM_API_TOKEN }}
+          FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
+        run: python -m research_agent.price_forecast_24h.h1_backfill
+      - name: Commit separate historical archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research_agent/price_forecast_24h/data/h1-backfill-*.json.gz
+          if git diff --cached --quiet; then
+            echo "No historical archive was produced."
+            exit 1
+          fi
+          git commit -m "data: add 180-day H1 historical backfill"
+          git push origin HEAD:research/price-forecast-24h-v1
+      - name: Upload historical archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: price-forecast-24h-h1-backfill-180d
+          path: research_agent/price_forecast_24h/data/h1-backfill-*.json.gz
+          if-no-files-found: warn
+          retention-days: 30
