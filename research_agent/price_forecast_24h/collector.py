@@ -87,9 +87,10 @@ def main() -> None:
     )
     delta, state_out = build_daily_delta(payload, state)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    output = DATA_DIR / f"snapshot-{stamp}.json.gz"
+    run_id = os.environ.get("GITHUB_RUN_ID", "local")
+    output = DATA_DIR / f"snapshot-{stamp}-{run_id}.json.gz"
     if output.exists():
-        raise SystemExit(f"Snapshot already exists for {stamp}; refusing to overwrite: {output}")
+        raise SystemExit(f"Snapshot already exists for this run; refusing to overwrite: {output}")
     with output.open("wb") as raw:
         with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as compressed:
             compressed.write((json.dumps(delta, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
