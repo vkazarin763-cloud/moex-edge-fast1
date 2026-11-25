@@ -143,7 +143,9 @@ def evaluate_symbol(rows):
             "test_end":bars[end-1]["timestamp"],"test_bars":end-start,
             "breakout_trades":len(trades["breakout_20"]),
             "mean_reversion_trades":len(trades["mean_reversion_20_2sd"])})
-        for name in combined:\n            for trade in trades[name]:trade["fold"]=no\n            combined[name].extend(trades[name])
+        for name in combined:
+            for trade in trades[name]:trade["fold"]=no
+            combined[name].extend(trades[name])
     return {"status":"OK","bars_after_filter":len(bars),"folds":fold_info,
         "strategies":{name:{str(cost):stats(trades,cost) for cost in COST_BPS_PER_SIDE}
                       for name,trades in combined.items()},
