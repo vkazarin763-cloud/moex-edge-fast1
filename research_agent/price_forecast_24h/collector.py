@@ -83,53 +83,37 @@ def _latest_h1_by_symbol(state: dict) -> dict[str, str]:
 
 
 def build_daily_delta(payload: dict, state: dict) -> tuple[dict, dict]:
-    """Keep only bars newer than the last committed snapshot; never fill gaps."""
+    """Keep only newly completed H1 bars; never fill gaps."""
     previous_h1 = _latest_h1_by_symbol(state)
-    previous_d1 = state.get("latest_d1", {})
     delta = {
         "schema_version": 1,
         "generated_at_utc": payload["generated_at_utc"],
         "timezone": payload["timezone"],
-        "source_policy": "H1=Finam completed bars and D1=MOEX ISS TQBR history (Finam fallback explicitly labeled); all 44 symbols are retained without liquidity filtering",
+        "source_policy": "Incremental Finam H1 completed bars; all 44 symbols retained without liquidity filtering",
         "universe_selection": payload.get("universe_selection", {}),
         "symbols": {},
     }
     next_h1 = dict(previous_h1)
-    next_d1 = dict(previous_d1)
-
     for ticker, frames in payload["results"].items():
-        h1_block = frames.get("H1", {})
-        d1_block = frames.get("D1", {})
-        h1_candles = h1_block.get("candles", [])
-        d1_candles = d1_block.get("candles", [])
-        h1_after = previous_h1.get(ticker, "")
-        d1_after = previous_d1.get(ticker, "")
-        new_h1 = [row for row in h1_candles if row["timestamp"] > h1_after]
-        new_d1 = [row for row in d1_candles if row["timestamp"][:10] > d1_after]
-        if (new_h1 or new_d1 or h1_block.get("status") != "OK"
-                or d1_block.get("status") != "OK"):
+        block = frames.get("H1", {})
+        candles = block.get("candles", [])
+        last_seen = previous_h1.get(ticker, "")
+        new_bars = [row for row in candles if row["timestamp"] > last_seen]
+        if new_bars or block.get("status") != "OK":
             delta["symbols"][ticker] = {
-                "H1": new_h1,
-                "D1": new_d1,
-                "H1_source": h1_block.get("source"),
-                "H1_status": h1_block.get("status"),
-                "D1_source": d1_block.get("source"),
-                "D1_status": d1_block.get("status"),
-                "D1_value_missing": sum(row.get("value") is None for row in new_d1),
+                "H1": new_bars,
+                "H1_source": block.get("source"),
+                "H1_status": block.get("status"),
+                "H1_error": block.get("error"),
             }
-        if new_h1:
-            next_h1[ticker] = max(row["timestamp"] for row in new_h1)
-        if new_d1:
-            next_d1[ticker] = max(row["timestamp"][:10] for row in new_d1)
-
+        if new_bars:
+            next_h1[ticker] = max(row["timestamp"] for row in new_bars)
     state_out = {
         "schema_version": 1,
         "latest_h1": next_h1,
-        "latest_d1": next_d1,
         "updated_at_utc": payload["generated_at_utc"],
     }
     return delta, state_out
-
 
 
 def _read_h1_history() -> dict:
@@ -190,12 +174,14 @@ def main() -> None:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     state = _read_previous_state()
-    payload = collect_all_universe(
-        tickers, api_token=token, source_app_id=source_app_id
+    h1_history = _read_h1_history()
+    payload = collect_incremental_h1(
+        tickers, history=h1_history, api_token=token, source_app_id=source_app_id
     )
     delta, state_out = build_daily_delta(payload, state)
-    h1_history = merge_cumulative_h1(delta, _read_h1_history())
+    h1_history = merge_cumulative_h1(delta, h1_history)
     _write_h1_history(h1_history)
+
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
     output = DATA_DIR / f"snapshot-{stamp}-{run_id}.json.gz"
@@ -205,37 +191,25 @@ def main() -> None:
         with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as compressed:
             compressed.write((json.dumps(delta, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
     STATE_FILE.write_text(json.dumps(state_out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    statuses = {}
-    for frame in ("H1", "D1"):
-        statuses[frame] = {
-            "ok": sum(v.get(frame, {}).get("status") == "OK" for v in payload["results"].values()),
-            "no_data": sum(v.get(frame, {}).get("status") == "NO_COMPLETED_BARS" for v in payload["results"].values()),
-            "errors": sum(v.get(frame, {}).get("status") == "ERROR" for v in payload["results"].values()),
-        }
-    d1_error_samples = [
-        {
-            "ticker": ticker,
-            "error": str(frames.get("D1", {}).get("error", ""))[:500],
-            "moex_iss_error": str(frames.get("D1", {}).get("moex_iss_error", ""))[:500],
-        }
-        for ticker, frames in payload["results"].items()
-        if frames.get("D1", {}).get("status") == "ERROR"
-    ][:3]
+
+    statuses = {
+        "ok": sum(v.get("H1", {}).get("status") == "OK" for v in payload["results"].values()),
+        "errors": sum(v.get("H1", {}).get("status") == "ERROR" for v in payload["results"].values()),
+    }
     print(json.dumps({
-        "status": "OK",
+        "status": "OK" if statuses["errors"] == 0 else "PARTIAL",
         "snapshot": str(output),
-        "d1_error_samples": d1_error_samples,
         "requested_symbols": len(tickers),
         "symbols_returned": len(payload["results"]),
-        "symbols_with_new_data": len(delta["symbols"]),
+        "symbols_with_new_data": sum(bool(v.get("H1", {}).get("candles")) for v in payload["results"].values()),
         "new_h1_bars": sum(len(item["H1"]) for item in delta["symbols"].values()),
         "cumulative_h1_bars": sum(len(item.get("candles", [])) for item in h1_history["symbols"].values()),
         "cumulative_h1_symbols": len(h1_history["symbols"]),
-        "new_d1_rows": sum(len(item["D1"]) for item in delta["symbols"].values()),
-        "d1_rows_missing_official_value": sum(item.get("D1_value_missing", 0) for item in delta["symbols"].values()),
-        "frame_status": statuses,
-        "note": "All requested MOEX shares are retained; missing or invalid data is reported, never imputed.",
+        "frame_status": {"H1": statuses},
+        "note": "Only bars after the latest stored timestamp are requested; a one-bar overlap is deduplicated. No trading.",
     }, ensure_ascii=False))
+
+
 
 
 if __name__ == "__main__":
