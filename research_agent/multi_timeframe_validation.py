@@ -75,6 +75,9 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
         snapshots[symbol] = {}
         for frame in frame_names:
             item = symbol_data.get(frame, {})
+            if item.get("source") != "Finam Trade API":
+                issues.append({"symbol": symbol, "frame": frame, "type": "non_finam_source"})
+                continue
             candles = item.get("candles", [])
             if item.get("status") == "ERROR":
                 issues.append({"symbol": symbol, "frame": frame, "type": "source_error"})
@@ -125,12 +128,12 @@ def validate_multi_timeframe_report(report: dict, *, as_of: datetime | None = No
         "latest_closed_bars": snapshots,
         "issue_count": len(issues),
         "issues": issues,
-        "methodology": "Finam timestamps are timezone-aware UTC; naive MOEX ISS timestamps are interpreted as Europe/Moscow. Bar ends are calculated from native interval definitions. Only bars whose end is at or before as_of_utc enter latest_closed_bars.",
+        "methodology": "Only Finam Trade API sources are accepted. Finam timestamps are timezone-aware UTC; bar ends are calculated from native interval definitions. Only bars whose end is at or before as_of_utc enter latest_closed_bars.",
     }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate MOEX EDGE multi-timeframe candle chronology")
+    parser = argparse.ArgumentParser(description="Validate Finam-only MOEX EDGE multi-timeframe candle chronology")
     parser.add_argument("--input", default="moex_edge_multi_timeframe_candles.json")
     parser.add_argument("--output", default="moex_edge_multi_timeframe_validation.json")
     args = parser.parse_args()
