@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit and sanitize MOEX ISS 1-minute candles for weekday trading-session backtests.
+"""Audit and sanitize MOEX ISS 1-minute candles for weekday trading-session backtests (v2).
 
 MOEX ISS timestamps are treated as Moscow local time (naive exchange timestamps).
 Weekend technical rows and malformed/out-of-session rows are reported and removed
