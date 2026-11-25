@@ -180,19 +180,20 @@ def simulate_signals(df, long_sig, short_sig, direction, hold, fee, slippage):
     """Signal on completed close; enter next bar open; exit after hold bars at close."""
     sig = long_sig if direction == 1 else short_sig
     positions = []
-    i = 0
-    while i < len(df)-hold:
-        if bool(sig.iloc[i]):
-            entry_i, exit_i = i+1, i+hold
-            entry, exitp = float(df.open.iloc[entry_i]), float(df.close.iloc[exit_i])
-            if entry > 0:
-                gross = direction*(exitp-entry)/entry
-                net = gross-fee-slippage
-                positions.append({"signal_time":str(df.begin.iloc[i]),"entry_time":str(df.begin.iloc[entry_i]),"exit_time":str(df.begin.iloc[exit_i]),
-                                  "gross_return":gross,"net_return":net,"bars":hold})
-                i = exit_i+1
-                continue
-        i += 1
+    next_allowed = 0
+    # Iterate only actual signal indices, not every candle.
+    for i in np.flatnonzero(sig.to_numpy(dtype=bool)):
+        if i < next_allowed or i + hold >= len(df):
+            continue
+        entry_i, exit_i = i+1, i+hold
+        entry, exitp = float(df.open.iloc[entry_i]), float(df.close.iloc[exit_i])
+        if entry <= 0:
+            continue
+        gross = direction*(exitp-entry)/entry
+        net = gross-fee-slippage
+        positions.append({"signal_time":str(df.begin.iloc[i]),"entry_time":str(df.begin.iloc[entry_i]),"exit_time":str(df.begin.iloc[exit_i]),
+                          "gross_return":gross,"net_return":net,"bars":hold})
+        next_allowed = exit_i+1
     return positions
 
 def metrics(trades):
