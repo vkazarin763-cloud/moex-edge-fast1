@@ -19,7 +19,7 @@ import requests
 TICKERS = """AFKS AFLT ALRS BSPB CBOM CHMF CNRU DOMRF ENPG FLOT GAZP GMKN HEAD IRAO LKOH MAGN MDMG MOEX MTSS NLMK NVTK OZON PHOR PLZL POSI RAGR RENI ROSN RTKM RUAL SBER SBERP SNGS SNGSP SVCB T TATN TATNP TRNFP UGLD VKCO VTBR X5 YDEX""".split()
 ISS = "https://iss.moex.com/iss"
 MSK = ZoneInfo("Europe/Moscow")
-DEFAULT_START = "2023-01-01"
+DEFAULT_START = "2025-01-01"
 ROUND_TRIP_FEE = 0.0026  # conservative legacy estimate; override with verified broker tariff
 ROUND_TRIP_SLIPPAGE = 0.0010  # sensitivity assumption, not measured historical spread
 HOLD_BARS = 3
@@ -188,7 +188,7 @@ def simulate_signals(df, long_sig, short_sig, direction, hold, fee, slippage):
             if entry > 0:
                 gross = direction*(exitp-entry)/entry
                 net = gross-fee-slippage
-                positions.append({"signal_time":str(df.begin.iloc[i]),"entry_time":str(df.begin.iloc[entry_i]),
+                positions.append({"signal_time":str(df.begin.iloc[i]),"entry_time":str(df.begin.iloc[entry_i]),"exit_time":str(df.begin.iloc[exit_i]),
                                   "gross_return":gross,"net_return":net,"bars":hold})
                 i = exit_i+1
                 continue
@@ -204,8 +204,11 @@ def metrics(trades):
     equity = np.cumprod(1+r)
     peak = np.maximum.accumulate(np.r_[1.0,equity])
     dd = equity/peak[1:]-1
+    gross = np.array([x.get("gross_return", np.nan) for x in trades], dtype=float)
     return {"trades":len(r),"win_rate":float((r>0).mean()),"mean_net":float(r.mean()),
-            "median_net":float(np.median(r)),"profit_factor":pf,"max_drawdown":float(dd.min())}
+            "median_net":float(np.median(r)),"mean_gross":float(np.nanmean(gross)) if np.isfinite(gross).any() else None,
+            "median_gross":float(np.nanmedian(gross)) if np.isfinite(gross).any() else None,
+            "profit_factor":pf,"max_drawdown":float(dd.min())}
 
 def split_bounds(df):
     n=len(df)
@@ -216,23 +219,35 @@ def evaluate(df, family, params, direction, fee, slippage):
     trades=simulate_signals(df,long_sig,short_sig,direction,HOLD_BARS,fee,slippage)
     train_end, val_end=split_bounds(df)
     def in_range(items, lo, hi):
-        return [t for t in items if lo <= pd.Timestamp(t["signal_time"]) < hi]
+        # Keep each trade wholly inside one partition; never let a train trade exit in validation/test.
+        return [t for t in items if lo <= pd.Timestamp(t["signal_time"]) and pd.Timestamp(t["exit_time"]) < hi]
     times=df.begin
     train=in_range(trades,times.iloc[0],times.iloc[train_end]) if train_end else []
     val=in_range(trades,times.iloc[train_end],times.iloc[val_end]) if val_end>train_end else []
     test=in_range(trades,times.iloc[val_end],times.iloc[-1]+pd.Timedelta(days=1)) if val_end<len(df) else []
-    return metrics(train),metrics(val),metrics(test),trades
+    return metrics(train),metrics(val),metrics(test),trades,test
 
 def run(args):
     out=Path(args.output); out.mkdir(parents=True,exist_ok=True)
     end=args.end or datetime.now(MSK).date().isoformat()
     all_rows, quality=[],[]
+    pooled_test={}
     grids=parameter_grid()
-    for interval in [10,60]:
-      for ticker in TICKERS:
+    defaults={"EMA":{"fast":20,"slow":50},"RSI":{"period":14,"lower":30,"upper":70},
+      "MACD":{"fast":12,"slow":26,"signal":9},"ADX_DI":{"period":14,"threshold":20},
+      "DONCHIAN":{"period":20},"BOLLINGER":{"period":20,"stdev":2.0},
+      "ATR_KELTNER":{"period":14,"ema":20,"multiplier":2.0},"STOCH":{"period":14,"smooth":3,"lower":20,"upper":80}}
+    for interval in args.intervals:
+      for ticker in args.tickers:
         print(f"FETCH {ticker} {interval}m",flush=True)
         try:
-          raw=fetch_candles(ticker,interval,args.start,end)
+          cache_path=Path(args.cache_dir)/f"{ticker}_{interval}_{args.start}_{end}.csv"
+          if cache_path.exists() and not args.refresh:
+            raw=pd.read_csv(cache_path)
+          else:
+            raw=fetch_candles(ticker,interval,args.start,end)
+            cache_path.parent.mkdir(parents=True,exist_ok=True)
+            raw.to_csv(cache_path,index=False)
           df,q=validate_candles(raw,interval)
           quality.append({"ticker":ticker,"interval":interval,**q,"clean_rows":len(df),
                           "first":str(df.begin.min()) if len(df) else None,"last":str(df.begin.max()) if len(df) else None})
@@ -240,15 +255,23 @@ def run(args):
           for family,params_list in grids.items():
             for params in params_list:
               for direction in [1,-1]:
-                tr,va,te,trades=evaluate(df,family,params,direction,args.fee,args.slippage)
-                if tr["trades"] < MIN_TRADES: continue
+                tr,va,te,trades,test_trades=evaluate(df,family,params,direction,args.fee,args.slippage)
+                if tr["trades"] < args.min_trades: continue
+                param_key=json.dumps(params,sort_keys=True)
                 all_rows.append({"ticker":ticker,"interval":interval,"family":family,
-                  "direction":"LONG" if direction==1 else "SHORT","params":json.dumps(params,sort_keys=True),
-                  "train":tr,"validation":va,"test":te})
+                  "direction":"LONG" if direction==1 else "SHORT","params":param_key,
+                  "is_baseline":params==defaults[family],"train":tr,"validation":va,"test":te})
+                pool_key=(interval,family,param_key,direction)
+                pooled_test.setdefault(pool_key,[]).extend(test_trades)
         except Exception as exc:
           quality.append({"ticker":ticker,"interval":interval,"error":str(exc)})
           print(f"ERROR {ticker} {interval}: {exc}",flush=True)
     qdf=pd.DataFrame(quality); qdf.to_csv(out/"data_quality.csv",index=False)
+    pooled_rows=[]
+    for (interval,family,param_key,direction),trades in pooled_test.items():
+      pooled_rows.append({"interval":interval,"family":family,"params":param_key,
+        "direction":"LONG" if direction==1 else "SHORT","test":metrics(trades)})
+    pd.DataFrame(pooled_rows).to_json(out/"pooled_test_results.json",orient="records",force_ascii=False,indent=2)
     if not all_rows:
       (out/"summary.json").write_text(json.dumps({"status":"no_eligible_results","note":"No candidate reached minimum training trade count."},indent=2),encoding="utf-8")
       return
@@ -263,7 +286,7 @@ def run(args):
     selected.to_json(out/"validation_shortlist.json",orient="records",force_ascii=False,indent=2)
     summary={"status":"completed","tickers":len(TICKERS),"intervals":[10,60],"candidate_rows":len(results),
       "shortlisted_rows":len(selected),"fee_round_trip":args.fee,"slippage_round_trip":args.slippage,
-      "holding_bars":HOLD_BARS,"selection":"train minimum trades; validation positive mean net return; final test untouched",
+      "holding_bars":args.hold_bars,"selection":"train minimum trades; validation positive mean net return; final test untouched",
       "important":"These are per-ticker exploratory candidates, not proof of profitability. Aggregate and walk-forward stability review is required before any production use."}
     (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8")
     print(json.dumps(summary,ensure_ascii=False,indent=2))
@@ -275,7 +298,16 @@ def main():
     p.add_argument("--fee",type=float,default=ROUND_TRIP_FEE)
     p.add_argument("--slippage",type=float,default=ROUND_TRIP_SLIPPAGE)
     p.add_argument("--output",default="optimizer_output")
+    p.add_argument("--cache-dir",default="data/indicator_optimizer_cache")
+    p.add_argument("--refresh",action="store_true")
+    p.add_argument("--tickers",nargs="+",default=TICKERS)
+    p.add_argument("--intervals",nargs="+",type=int,choices=[10,60],default=[10,60])
+    p.add_argument("--min-trades",type=int,default=MIN_TRADES)
+    p.add_argument("--hold-bars",type=int,default=HOLD_BARS)
     args=p.parse_args()
+    global HOLD_BARS
+    HOLD_BARS=args.hold_bars
+    if args.min_trades<1 or args.hold_bars<1: p.error("min-trades and hold-bars must be positive")
     if args.fee<0 or args.slippage<0: p.error("fee/slippage must be non-negative")
     run(args)
 
