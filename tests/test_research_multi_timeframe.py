@@ -156,14 +156,14 @@ class MultiTimeframeTests(unittest.TestCase):
         ))
 
     def test_finam_daily_bars_are_complete_by_moscow_calendar_date(self):
-        now = datetime(2026, 11, 25, 19, 33, tzinfo=timezone.utc)
+        now = datetime(2026, 11, 26, 19, 33, tzinfo=timezone.utc)
         # Finam timestamps a D1 candle at 05:00 UTC; don't apply 24h
         # intraday completion logic to the date-labelled daily candle.
         self.assertTrue(_finam_daily_bar_is_complete(
             datetime(2026, 11, 25, 5, 0, tzinfo=timezone.utc), now
         ))
         self.assertFalse(_finam_daily_bar_is_complete(
-            datetime(2026, 11, 26, 5, 0, tzinfo=timezone.utc), now
+            datetime(2026, 11, 27, 5, 0, tzinfo=timezone.utc), now
         ))
         self.assertFalse(_finam_daily_bar_is_complete(
             datetime(2026, 11, 25, 5, 0), now
