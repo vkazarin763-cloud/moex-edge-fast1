@@ -70,9 +70,8 @@ OUTPUT_SCHEMA = {
                             "direction": {"type": "string", "enum": DIRECTIONS},
                             "strategy": {"type": "string", "enum": STRATEGIES},
                             "d1_bar_end_utc": {"type": "string"},
-                            "rationale": {"type": "string"},
                         },
-                        "required": ["symbol", "direction", "strategy", "d1_bar_end_utc", "rationale"],
+                        "required": ["symbol", "direction", "strategy", "d1_bar_end_utc"],
                         "additionalProperties": False,
                     },
                 },
@@ -610,7 +609,7 @@ def run_discovery(
                 continue
             key = (item.get("symbol"), item.get("direction"), item.get("strategy"), item.get("d1_bar_end_utc"))
             if (key in candidate_keys
-                    and all(isinstance(item.get(field), str) for field in ("symbol", "direction", "strategy", "d1_bar_end_utc", "rationale"))
+                    and all(isinstance(item.get(field), str) for field in ("symbol", "direction", "strategy", "d1_bar_end_utc"))
                     and key not in seen_proposals_this_agent):
                 proposal_votes[key] += 1
                 seen_proposals_this_agent.add(key)
