@@ -29,6 +29,7 @@ def collect_h1_backfill(tickers, *, api_token, source_app_id=None, now=None, cli
     results = {}
     for ticker in dict.fromkeys(str(x).strip().upper() for x in tickers if str(x).strip()):
         bars_by_timestamp = {}
+        received_timestamps = []
         errors = []
         chunk_start = start
         while chunk_start < current:
@@ -38,6 +39,7 @@ def collect_h1_backfill(tickers, *, api_token, source_app_id=None, now=None, cli
                     f"{ticker}@MISX", "TIME_FRAME_H1", chunk_start, chunk_end
                 )
                 for bar in bars:
+                    received_timestamps.append(bar.timestamp.isoformat())
                     if bar.is_data_snapshot is True:
                         continue
                     if _finam_bar_is_complete(bar.timestamp, "H1", current):
@@ -64,7 +66,7 @@ def collect_h1_backfill(tickers, *, api_token, source_app_id=None, now=None, cli
             "bars": len(candles),
             "first_timestamp": candles[0]["timestamp"] if candles else None,
             "last_timestamp": candles[-1]["timestamp"] if candles else None,
-            "duplicate_timestamps_removed": 0,
+            "duplicate_timestamps_removed": len(received_timestamps) - len(set(received_timestamps)),
             "errors": errors,
             "candles": candles,
         }
