@@ -40,6 +40,11 @@ jobs:
           FINAM_SOURCE_APP_ID: ${{ secrets.FINAM_SOURCE_APP_ID }}
         run: |
           python -m research_agent.finam_strategy_backtest --output finam_two_strategy_report.json
+      - name: Build fail-closed Finam-only strategy registry
+        run: |
+          python -m research_agent.finam_strategy_registry \
+            --input finam_two_strategy_report.json \
+            --output strategy_registry.json
       - name: Publish concise research summary
         if: always()
         run: |
@@ -81,7 +86,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: moex-edge-finam-two-strategy-${{ github.run_id }}
-          path: finam_two_strategy_report.json
+          name: moex-edge-research-report
+          path: |
+            finam_two_strategy_report.json
+            strategy_registry.json
           if-no-files-found: warn
           retention-days: 30
