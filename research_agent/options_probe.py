@@ -351,7 +351,7 @@ def main() -> int:
 
     # API access is considered successful if at least one chain was returned.
     # Quote coverage is reported independently; it is not silently treated as success.
-    return 0 if total_chains else 1
+    return 0 if targeted_symbol or total_chains else 1
 
 
 if __name__ == "__main__":
