@@ -186,6 +186,18 @@ def latest_trades_summary(api: FinamReadOnly, symbol: str, now: datetime) -> dic
         parsed.append((stamp, trade, price, size))
     parsed.sort(key=lambda item: item[0])
     latest = parsed[-1] if parsed else None
+    series = [
+        {
+            "timestamp": stamp.isoformat(),
+            "price": str(price),
+            "size": str(size),
+            "side": trade.get("side"),
+            "open_interest": value_of(trade.get("open_interest")),
+            "is_data_snapshot": bool(trade.get("is_data_snapshot")),
+        }
+        for stamp, trade, price, size in parsed
+        if price is not None and size is not None and price > 0 and size > 0
+    ]
     return {
         "http_status": status,
         "available": True,
@@ -199,6 +211,7 @@ def latest_trades_summary(api: FinamReadOnly, symbol: str, now: datetime) -> dic
         "latest_trade_side": latest[1].get("side") if latest else None,
         "latest_trade_open_interest": value_of(latest[1].get("open_interest")) if latest else None,
         "snapshot_trade_count": sum(bool(item[1].get("is_data_snapshot")) for item in parsed),
+        "series": series,
     }
 
 
@@ -321,6 +334,199 @@ def probe_contracts(
     return results
 
 
+def ema(values: list[float], period: int) -> list[float]:
+    if not values:
+        return []
+    alpha = 2.0 / (period + 1.0)
+    result = [values[0]]
+    for value in values[1:]:
+        result.append(alpha * value + (1.0 - alpha) * result[-1])
+    return result
+
+
+def trend_direction(bars: list[dict]) -> str | None:
+    if len(bars) < 50:
+        return None
+    closes = [float(Decimal(str(bar["close"]))) for bar in bars]
+    ema20 = ema(closes, 20)[-1]
+    ema50 = ema(closes, 50)[-1]
+    last = closes[-1]
+    if last > ema20 > ema50:
+        return "LONG"
+    if last < ema20 < ema50:
+        return "SHORT"
+    return None
+
+
+def direction_set(d1: str | None, h1: str | None) -> dict[str, str | None]:
+    return {
+        "D1_ONLY": d1,
+        "H1_ONLY": h1,
+        "D1_H1_CONFIRMED": d1 if d1 is not None and d1 == h1 else None,
+    }
+
+
+def _parsed_series(series: list[dict], price_key: str) -> list[dict]:
+    result = []
+    for item in series:
+        try:
+            stamp = datetime.fromisoformat(str(item["timestamp"]).replace("Z", "+00:00"))
+            price = Decimal(str(item[price_key]))
+        except (KeyError, TypeError, ValueError, InvalidOperation):
+            continue
+        if stamp.tzinfo is None:
+            stamp = stamp.replace(tzinfo=timezone.utc)
+        else:
+            stamp = stamp.astimezone(timezone.utc)
+        if price.is_finite() and price > 0:
+            result.append({**item, "_timestamp": stamp, "_price": price})
+    return sorted(result, key=lambda item: item["_timestamp"])
+
+
+def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int = 20) -> dict:
+    """Gross trade-print proxy only; not executable bid/ask backtest."""
+    methods = ("D1_ONLY", "H1_ONLY", "D1_H1_CONFIRMED")
+    horizons = (1, 3, 5)
+    observations = {method: {h: [] for h in horizons} for method in methods}
+    per_asset = {}
+    today = now.date()
+
+    for underlying, item in underlyings.items():
+        history = item.get("underlying_history", {})
+        h1_data = history.get("h1", {})
+        d1_data = history.get("d1", {})
+        h1 = _parsed_series(h1_data.get("series", []), "close")
+        d1 = _parsed_series(d1_data.get("series", []), "close")
+        # Exclude today's unfinished daily bar and any unfinished hourly bar.
+        d1 = [bar for bar in d1 if bar["_timestamp"].date() < today]
+        h1 = [bar for bar in h1 if bar["_timestamp"] + timedelta(hours=1) <= now]
+        asset_result = {
+            "underlying_d1_bars": len(d1),
+            "underlying_h1_bars": len(h1),
+            "signals": {method: [] for method in methods},
+            "status": "ok",
+        }
+        if len(d1) < 50 or len(h1) < 50:
+            asset_result["status"] = "insufficient_underlying_history"
+            per_asset[underlying] = asset_result
+            continue
+
+        expiry_probe = next(
+            (probe for probe in item.get("targeted_expiry_probes", [])
+             if probe.get("requested_expiry") == "2026-12-16"),
+            None,
+        )
+        contracts = expiry_probe.get("selected_contracts", []) if expiry_probe else []
+        option_by_type = {
+            contract.get("type"): _parsed_series(
+                contract.get("latest_trades", {}).get("series", []), "price"
+            )
+            for contract in contracts
+        }
+        call_trades = option_by_type.get("TYPE_CALL", [])
+        put_trades = option_by_type.get("TYPE_PUT", [])
+        asset_result["option_trade_counts"] = {
+            "CALL": len(call_trades), "PUT": len(put_trades)
+        }
+
+        signal_indices = list(range(max(50, len(d1) - signal_days), len(d1)))
+        for index in signal_indices:
+            day = d1[index]["_timestamp"].date()
+            h1_today = [bar for bar in h1 if bar["_timestamp"].date() <= day]
+            h1_previous = [bar for bar in h1 if bar["_timestamp"].date() < day]
+            d1_now = trend_direction(d1[:index + 1])
+            h1_now = trend_direction(h1_today)
+            current = direction_set(d1_now, h1_now)
+            previous = direction_set(
+                trend_direction(d1[:index]) if index else None,
+                trend_direction(h1_previous),
+            )
+            # Signal time is the end of the last completed H1 bar available that day.
+            day_h1 = [bar for bar in h1 if bar["_timestamp"].date() == day]
+            if not day_h1:
+                continue
+            signal_time = max(bar["_timestamp"] for bar in day_h1) + timedelta(hours=1)
+            events = {
+                method: direction if direction is not None and direction != previous[method] else None
+                for method, direction in current.items()
+            }
+            for method, direction in events.items():
+                if direction is None:
+                    continue
+                option_trades = call_trades if direction == "LONG" else put_trades
+                if len(option_trades) < 2:
+                    continue
+                entry_candidates = [trade for trade in option_trades if trade["_timestamp"] >= signal_time]
+                if not entry_candidates:
+                    continue
+                entry = entry_candidates[0]
+                for horizon in horizons:
+                    target_index = index + horizon
+                    if target_index >= len(d1):
+                        continue
+                    target_day = d1[target_index]["_timestamp"].date()
+                    target_h1 = [bar for bar in h1 if bar["_timestamp"].date() == target_day]
+                    if not target_h1:
+                        continue
+                    target_time = max(bar["_timestamp"] for bar in target_h1) + timedelta(hours=1)
+                    exits = [trade for trade in option_trades if trade["_timestamp"] >= target_time]
+                    if not exits:
+                        continue
+                    exit_trade = exits[0]
+                    if exit_trade["_timestamp"] <= entry["_timestamp"]:
+                        continue
+                    result_pct = float((exit_trade["_price"] / entry["_price"] - 1) * 100)
+                    observation = {
+                        "underlying": underlying,
+                        "method": method,
+                        "direction": direction,
+                        "option_type": "CALL" if direction == "LONG" else "PUT",
+                        "entry_timestamp": entry["_timestamp"].isoformat(),
+                        "entry_trade_price": str(entry["_price"]),
+                        "entry_trade_size": entry.get("size"),
+                        "entry_trade_side": entry.get("side"),
+                        "exit_timestamp": exit_trade["_timestamp"].isoformat(),
+                        "exit_trade_price": str(exit_trade["_price"]),
+                        "exit_trade_size": exit_trade.get("size"),
+                        "exit_trade_side": exit_trade.get("side"),
+                        "trade_price_return_pct": round(result_pct, 4),
+                        "entry_delay_hours": round((entry["_timestamp"] - signal_time).total_seconds() / 3600, 2),
+                        "actual_holding_hours": round((exit_trade["_timestamp"] - entry["_timestamp"]).total_seconds() / 3600, 2),
+                    }
+                    observations[method][horizon].append(observation)
+                    asset_result["signals"][method].append(observation)
+        per_asset[underlying] = asset_result
+
+    aggregate = {}
+    for method in methods:
+        aggregate[method] = {}
+        for horizon in horizons:
+            values = [o["trade_price_return_pct"] for o in observations[method][horizon]]
+            aggregate[method][str(horizon)] = {
+                "completed": len(values),
+                "positive": sum(v > 0 for v in values),
+                "win_rate_pct": round(sum(v > 0 for v in values) / len(values) * 100, 2) if values else None,
+                "mean_trade_price_return_pct": round(sum(values) / len(values), 4) if values else None,
+                "median_trade_price_return_pct": round(sorted(values)[len(values)//2], 4) if values else None,
+                "worst_trade_price_return_pct": round(min(values), 4) if values else None,
+                "best_trade_price_return_pct": round(max(values), 4) if values else None,
+            }
+    return {
+        "mode": "underlying_ema_signal_vs_actual_option_trade_prints",
+        "signal_window_sessions": signal_days,
+        "entry": "First actual option trade print after the end of the signal day's last completed underlying H1 bar.",
+        "exit": "First actual option trade print after the end of the 1/3/5-session target day's last completed underlying H1 bar.",
+        "option_selection": "Nearest-to-ATM CALL for LONG or PUT for SHORT, expiry 2026-12-16.",
+        "results": aggregate,
+        "per_asset": per_asset,
+        "critical_limitations": [
+            "Entry and exit are actual trade prints, not historical executable ask/bid quotes.",
+            "No historical spread, queue position, fill probability, fees, or slippage is included.",
+            "This is a sparse trade-print proxy, not a validated options backtest or profitability proof.",
+        ],
+    }
+
+
 def main():
     secret = os.environ.get("FINAM_API_SECRET", "")
     if not secret:
@@ -369,8 +575,14 @@ def main():
             contracts, expiry_counts, nearest_expiry = select_contracts(
                 options, spot, now.date().isoformat()
             )
+            underlying_h1 = bar_summary(api, underlying, "TIME_FRAME_H1", h1_start, end)
+            underlying_d1 = bar_summary(api, underlying, "TIME_FRAME_D", d1_start, end)
             item.update({
                 "spot_quote": spot_quote,
+                "underlying_history": {
+                    "h1": underlying_h1,
+                    "d1": underlying_d1,
+                },
                 "chain_http_status": chain_status,
                 "chain_contract_count": len(options),
                 "expiry_distribution": expiry_counts,
@@ -412,6 +624,10 @@ def main():
         except ProbeError as exc:
             item.update({"status": "error", "error": str(exc)})
         report["underlyings"][underlying] = item
+
+    report["trade_price_replay"] = option_trade_price_replay(
+        report["underlyings"], datetime.now(timezone.utc), signal_days=20
+    )
 
     output = Path(os.environ.get("FINAM_OPTIONS_PROBE_OUTPUT", "finam-options-history-probe.json"))
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
