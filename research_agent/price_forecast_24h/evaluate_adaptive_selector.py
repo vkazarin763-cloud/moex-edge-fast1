@@ -46,6 +46,8 @@ def make_candidate_trades(bars, signals, regimes, ticker):
                 trades.append({
                     "ticker": ticker, "rule": rule, "signal_i": i, "exit_i": exit_i,
                     "regime": joint_regime(regimes[i]),
+                    "trend_regime": regimes[i]["trend_strength"],
+                    "volatility_regime": regimes[i]["volatility"],
                     "gross_return": direction * math.log(exitp / entry),
                     "holding_bars": exit_i - entry_i + 1,
                     "signal_time": bars[i]["timestamp"],
@@ -128,7 +130,10 @@ def evaluate_ticker(ticker, bars):
         # Strict causality: a candidate's exit must precede this signal bar.
         while queue_pos < len(completion_queue) and completion_queue[queue_pos]["exit_i"] < i:
             t = completion_queue[queue_pos]
-            history[(t["rule"], t["regime"])].append(t)
+            history[(t["rule"], "joint", t["regime"])].append(t)
+            history[(t["rule"], "trend", t["trend_regime"])].append(t)
+            history[(t["rule"], "volatility", t["volatility_regime"])].append(t)
+            history[(t["rule"], "all", "all")].append(t)
             queue_pos += 1
 
         current_period = period_for(i)
@@ -147,9 +152,21 @@ def evaluate_ticker(ticker, bars):
 
         scored = []
         for candidate in current:
-            key = (candidate["rule"], candidate["regime"])
-            score = training_score(history[key])
+            scopes = (
+                ("joint", candidate["regime"]),
+                ("trend", candidate["trend_regime"]),
+                ("volatility", candidate["volatility_regime"]),
+                ("all", "all"),
+            )
+            score = None
+            used_scope = None
+            for scope, regime_key in scopes:
+                score = training_score(history[(candidate["rule"], scope, regime_key)])
+                if score is not None:
+                    used_scope = scope
+                    break
             if score is not None:
+                score["training_scope"] = used_scope
                 scored.append((score["score"], score["profit_factor"], candidate["rule"], candidate, score))
         if not scored:
             no_trade_signals += len(current)
@@ -175,6 +192,7 @@ def evaluate_ticker(ticker, bars):
             "training_sample": train["sample"],
             "training_mean_net_10bps_pct": train["score"] * 100,
             "training_profit_factor_10bps": train["profit_factor"],
+            "training_scope": train["training_scope"],
             "period": current_period,
         })
         period_counts[current_period]["selected"] += 1
@@ -244,7 +262,7 @@ def main():
         "symbols_excluded": excluded,
         "protocol": {
             "selector": "At each candidate signal, use only hypothetical candidate trades whose exits are strictly before the current signal bar. Maintain a rolling history of up to 100 completed candidate trades per ticker/rule/joint regime. Require at least 30 observations. Score each rule by mean net return after 10 bps per side; require mean > 0 and profit factor > 1.0. Select highest score; deterministic tie-break by PF then rule name. If no rule qualifies, no trade.",
-            "regime": "Ticker-specific causal trend-strength and ATR/close volatility ranks; low/mid/high terciles from up to 120 prior observations, at least 60 prior observations, current bar excluded.",
+            "regime": "Ticker-specific causal trend-strength and ATR/close volatility ranks; low/mid/high terciles from up to 120 prior observations, at least 60 prior observations, current bar excluded. Training uses a fixed backoff from joint regime to trend-only, volatility-only, then all regimes; the selected scope is recorded per trade.",
             "candidate_streams": "Six predeclared rules; one non-overlapping hypothetical trade per ticker/rule at a time; next H1 open entry, close after at most 12 H1 bars.",
             "execution": "At most one selected trade per ticker at a time across all rules; no overlapping selected trades. Signal on completed H1 close, entry next H1 open.",
             "walk_forward": "First half of first 80% is warm-up/training only. Remaining first 80% is three chronological evaluation folds. Final 20% is later holdout. Selector state carries forward causally; at each decision only completed prior outcomes are available.",
