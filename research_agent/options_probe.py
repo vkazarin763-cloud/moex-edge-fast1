@@ -35,7 +35,7 @@ def option_type(value: Any) -> str:
     return str(value or "").upper()
 
 
-def quote_quality(quote: dict[str, Any]) -> dict[str, Any]:
+def quote_quality(quote: dict[str, Any], now: datetime | None = None) -> dict[str, Any]:
     bid = decimal_value(quote.get("bid"))
     ask = decimal_value(quote.get("ask"))
     last = decimal_value(quote.get("last"))
@@ -44,6 +44,16 @@ def quote_quality(quote: dict[str, Any]) -> dict[str, Any]:
     mid = (bid + ask) / 2 if bid is not None and ask is not None and bid > 0 and ask >= bid else None
     spread_pct = ((ask - bid) / mid * 100) if mid and ask is not None and bid is not None else None
     timestamp = quote.get("timestamp")
+    quote_age_seconds = None
+    if timestamp:
+        try:
+            quoted_at = datetime.fromisoformat(str(timestamp).replace("Z", "+00:00"))
+            reference_time = now or datetime.now(timezone.utc)
+            if quoted_at.tzinfo is None:
+                quoted_at = quoted_at.replace(tzinfo=timezone.utc)
+            quote_age_seconds = max(0, int((reference_time - quoted_at).total_seconds()))
+        except (TypeError, ValueError):
+            quote_age_seconds = None
     return {
         "bid": bid,
         "ask": ask,
@@ -51,6 +61,9 @@ def quote_quality(quote: dict[str, Any]) -> dict[str, Any]:
         "bid_size": bid_size,
         "ask_size": ask_size,
         "timestamp": timestamp,
+        "quote_age_seconds": quote_age_seconds,
+        "quote_fresh_5m": quote_age_seconds <= 300 if quote_age_seconds is not None else False,
+        "quote_stale_30m": quote_age_seconds > 1800 if quote_age_seconds is not None else True,
         "spread_pct_of_mid": round(spread_pct, 3) if spread_pct is not None else None,
         "quote_valid": bool(bid is not None and ask is not None and bid > 0 and ask >= bid),
     }
