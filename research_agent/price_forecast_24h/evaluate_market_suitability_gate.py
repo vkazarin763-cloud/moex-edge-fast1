@@ -262,8 +262,6 @@ def main():
             "status": "OK", "bars": len(bars), "data_quality": quality,
             "evaluation_start": result["evaluation_start"],
             "holdout_start": result["holdout_start"], "data_end": result["data_end"],
-            "periods": result["periods"], "per_rule": result["per_rule"],
-            "gate_scope_counts": result["gate_scope_counts"],
         }
         for rule, count in result["candidate_trade_counts"].items():
             total_candidate_counts[rule] += count
@@ -285,9 +283,20 @@ def main():
             total_scopes[scope] += count
 
     def combine_rule_metrics(items):
-        # Metrics are per ticker; do not pool or compound across tickers.
-        base_count = sum(x["trades"] for x in items)
-        return {"ticker_trade_count_sum": base_count, "ticker_metrics": items}
+        # Equal-weight ticker summary; never compound across tickers.
+        active = [x for x in items if x["trades"] > 0]
+        means5 = [x["5bps"]["mean_net_return_pct"] for x in active]
+        means10 = [x["10bps"]["mean_net_return_pct"] for x in active]
+        pfs5 = [x["5bps"]["profit_factor"] for x in active if x["5bps"]["profit_factor"] is not None]
+        return {
+            "ticker_trade_count_sum": sum(x["trades"] for x in items),
+            "tickers_with_trades": len(active),
+            "tickers_positive_mean_5bps": sum(x > 0 for x in means5),
+            "mean_ticker_mean_net_5bps_pct": statistics.fmean(means5) if means5 else None,
+            "median_ticker_mean_net_5bps_pct": statistics.median(means5) if means5 else None,
+            "mean_ticker_mean_net_10bps_pct": statistics.fmean(means10) if means10 else None,
+            "mean_ticker_profit_factor_5bps": statistics.fmean(pfs5) if pfs5 else None,
+        }
 
     for period in PERIODS:
         for rule in VARIANTS:
