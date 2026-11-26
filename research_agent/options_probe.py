@@ -17,6 +17,7 @@ import requests
 BASE_URL = "https://api.finam.ru"
 UNDERLYINGS = ("GAZP@MISX", "SBER@MISX", "ROSN@MISX", "MOEX@MISX")
 MAX_OPTION_QUOTES_PER_UNDERLYING = 12
+DIAGNOSTIC_OPTION_SYMBOLS = {"ME140CL6@RTSX", "ME190CX6@RTSX"}
 TIMEOUT = 12
 
 
@@ -197,8 +198,14 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
                     except Exception as exc:  # noqa: BLE001
                         row["quote_error"] = f"{type(exc).__name__}: {exc}"
 
-                    # One diagnostics contract per underlying, not per expiry.
-                    if year == 2026 and month == 12 and day == 16 and option_index == 0:
+                    # Keep one baseline diagnostic per underlying and explicitly
+                    # inspect both MOEX contracts that passed the fresh/narrow-spread
+                    # screen. Missing diagnostics on other samples mean not requested,
+                    # not an empty book or an absence of trades.
+                    is_diagnostic_contract = (
+                        option_index == 0 or str(symbol) in DIAGNOSTIC_OPTION_SYMBOLS
+                    )
+                    if year == 2026 and month == 12 and day == 16 and is_diagnostic_contract:
                         try:
                             book = request_json(
                                 session, "GET",
