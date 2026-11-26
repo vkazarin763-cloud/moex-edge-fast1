@@ -136,11 +136,10 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
 
     # Explicit expiries in the intended 20–60 day horizon. The default-chain
     # response previously returned a 2030 date for every underlying.
+    # Primary strategy window only: approximately 20 and 55 calendar days.
     expiry_dates = (
-        (2026, 12, 2),
         (2026, 12, 16),
         (2027, 1, 20),
-        (2027, 3, 17),
     )
     expiry_results = []
     all_samples = []
@@ -168,7 +167,7 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
             expiry_row["returned_expiries"] = returned_expiries
             ordered = sorted(options, key=lambda opt: strike_distance(opt, spot))
             # Small fixed sample around ATM, without searching for an optimized strike.
-            selected = ordered[:4]
+            selected = ordered[:MAX_OPTION_QUOTES_PER_UNDERLYING]
             samples = []
             for option_index, option in enumerate(selected):
                 symbol = option.get("symbol")
