@@ -13,9 +13,16 @@ broker execution, live signals, or production settings.
 - Follows public Smart-Lab article links from ticker-matched posts and records
   article title/description plus external links that look like possible
   issuer documents (e.g. report/disclosure/PDF links).
-- A candidate URL is only a lead. The system does not assume that an external
-  link is an issuer primary source; issuer domain and document authenticity
-  still require verification.
+- Smart-Lab redirect URLs are unwrapped only when the redirect host is
+  Smart-Lab and the destination is HTTPS. Candidate destinations are
+  classified for known disclosure-operator (e-disclosure.ru) and regulator
+  (cbr.ru) domains; this is domain classification, not proof that a page
+  belongs to a specific issuer or contains a financial statement.
+- The Yandex links found in the 2026-11-25 snapshot resolve to three
+  e-disclosure.ru events describing changes in insider ownership rights.
+  They are corporate disclosure events, not financial statements. The event
+  pages could not be fetched by the collector/browser fetch service during
+  verification, so page contents and issuer identity remain unverified.
 - Each Telegram item is marked `unverified_news_lead`. Article pages are
   marked `article_not_primary_source`.
 - Telegram's preview is a recent, best-effort slice, not a complete archive.
