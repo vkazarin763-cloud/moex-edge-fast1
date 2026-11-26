@@ -8,7 +8,7 @@
     "smartlab_lead_only",
     "moex_cci_if_free_access"
   ],
-  "status": "not_yet_verified",
+  "status": "partially_verified_sources_and_report_leads",
   "companies": [
     {
       "ticker": "AFKS",
@@ -112,13 +112,23 @@
     },
     {
       "ticker": "GAZP",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
-      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
+      "issuer_name": "ПАО «Газпром»",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://www.gazprom.ru/investors/",
+      "e_disclosure_search_url": "https://e-disclosure.ru/portal/files.aspx?id=934&type=3",
+      "report_candidates": [
+        {
+          "source_url": "https://e-disclosure.ru/portal/files.aspx?id=934&type=3",
+          "source_type": "interfax_e_disclosure",
+          "report_type": "interim_RAS",
+          "period": "2026-09-30",
+          "publication_date": "2026-11-02",
+          "listing_evidence": "Interfax disclosure listing shows interim RAS accounting statements for 9 months 2026 posted 02.11.2026.",
+          "status": "listing_verified_document_not_downloaded"
+        }
+      ],
       "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted."
     },
     {
       "ticker": "GMKN",
@@ -152,13 +162,23 @@
     },
     {
       "ticker": "LKOH",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
-      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
+      "issuer_name": "ПАО «ЛУКОЙЛ»",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://www.lukoil.ru/InvestorAndShareholder",
+      "e_disclosure_search_url": "https://e-disclosure.ru/portal/files.aspx?attempt=2&id=17&type=4",
+      "report_candidates": [
+        {
+          "source_url": "https://e-disclosure.ru/portal/files.aspx?attempt=2&id=17&type=4",
+          "source_type": "interfax_e_disclosure",
+          "report_type": "interim_consolidated_IFRS",
+          "period": "2026-06-30",
+          "publication_date": "2026-08-28",
+          "listing_evidence": "Interfax disclosure listing shows IFRS interim consolidated statements for 6 months 2026 posted 28.08.2026.",
+          "status": "listing_verified_document_not_downloaded"
+        }
+      ],
       "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted."
     },
     {
       "ticker": "MAGN",
@@ -192,13 +212,23 @@
     },
     {
       "ticker": "MTSS",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
-      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
+      "issuer_name": "ПАО «МТС»",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://ir.mts.ru/investors/financial_center/financial_results",
+      "e_disclosure_search_url": "https://e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [
+        {
+          "source_url": "https://e-disclosure.ru/poisk-po-kompaniyam",
+          "source_type": "issuer_ir",
+          "report_type": "financial_results_release",
+          "period": "2026-09-30",
+          "publication_date": "2026-11-20",
+          "listing_evidence": "Official MTS IR page contains financial/operating results release for Q3 and 9 months 2026 dated 20.11.2026 and a financial reporting section.",
+          "status": "issuer_page_verified_release_not_financial_statement_downloaded"
+        }
+      ],
       "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted."
     },
     {
       "ticker": "NLMK",
@@ -282,13 +312,23 @@
     },
     {
       "ticker": "ROSN",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
-      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
+      "issuer_name": "ПАО «НК «Роснефть»",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://rosneft.ru/Investors/statements_and_presentations/Statements/",
+      "e_disclosure_search_url": "https://e-disclosure.ru/portal/files.aspx?id=6505&type=4",
+      "report_candidates": [
+        {
+          "source_url": "https://e-disclosure.ru/portal/files.aspx?id=6505&type=4",
+          "source_type": "interfax_e_disclosure",
+          "report_type": "interim_consolidated_IFRS",
+          "period": "2026-06-30",
+          "publication_date": "2026-08-31",
+          "listing_evidence": "Interfax disclosure listing shows interim consolidated IFRS statements for 6 months 2026 posted 31.08.2026.",
+          "status": "listing_verified_document_not_downloaded"
+        }
+      ],
       "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted."
     },
     {
       "ticker": "RTKM",
@@ -450,5 +490,6 @@
       "latest_verified_report": null,
       "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
     }
-  ]
+  ],
+  "updated_at": "2026-11-26"
 }
