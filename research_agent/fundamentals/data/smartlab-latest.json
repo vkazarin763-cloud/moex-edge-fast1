@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "collector": "telegram_public_preview_smartlab",
-  "collected_at_utc": "2026-11-26T18:14:29.947308+00:00",
+  "collected_at_utc": "2026-11-26T18:16:18.955742+00:00",
   "source": {
     "channel": "@newssmartlab",
     "url": "https://t.me/s/newssmartlab",
