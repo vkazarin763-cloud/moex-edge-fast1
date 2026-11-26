@@ -38,9 +38,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add research_agent/price_forecast_24h/reports/ohlc-strategy-test-*
-            research_agent/price_forecast_24h/reports/sma50-exit-robustness-* research_agent/price_forecast_24h/reports/sma50-exit-robustness-*
-          git commit -m "research: add OHLC strategy test report"
+          git add research_agent/price_forecast_24h/reports/ohlc-strategy-test-* research_agent/price_forecast_24h/reports/sma50-exit-robustness-*
+          git commit -m "research: add OHLC and SMA50 exit research reports"
+          git pull --rebase origin research/price-forecast-24h-v1
           git push origin HEAD:research/price-forecast-24h-v1
       - name: Upload report
         uses: actions/upload-artifact@v4
@@ -48,4 +48,5 @@ jobs:
           name: price-forecast-24h-ohlc-and-sma50-exit-research
           path: |
             research_agent/price_forecast_24h/reports/ohlc-strategy-test-*
+            research_agent/price_forecast_24h/reports/sma50-exit-robustness-*
           retention-days: 30
