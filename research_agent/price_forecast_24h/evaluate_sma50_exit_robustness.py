@@ -9,7 +9,7 @@ ROOT=Path("research_agent/price_forecast_24h")
 COSTS=(5,10)
 HOLDOUT_FRAC=.20
 FOLDS=3
-EXIT_HORIZONS=(12,24,36)
+EXIT_HORIZONS=(12,24,36)  # evaluated holding windows in H1 bars; entries never overlap
 VARIANTS=("fixed_12","fixed_24","fixed_36","sma50_cross","sma50_slope_5bar")
 
 def calc_trade(bars,signal_i,end,direction,exit_variant,sma50,mean):
