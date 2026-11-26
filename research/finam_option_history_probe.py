@@ -10,6 +10,7 @@ import json
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from statistics import median
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import quote
@@ -384,9 +385,11 @@ def _parsed_series(series: list[dict], price_key: str) -> list[dict]:
 
 
 def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int = 20) -> dict:
-    """Gross trade-print proxy only; not executable bid/ask backtest."""
+    """Strict trade-print proxy; reject delayed, duplicated and overlapping entries."""
     methods = ("D1_ONLY", "H1_ONLY", "D1_H1_CONFIRMED")
     horizons = (1, 3, 5)
+    max_entry_delay_hours = 24
+    max_exit_delay_hours = 24
     observations = {method: {h: [] for h in horizons} for method in methods}
     per_asset = {}
     today = now.date()
@@ -397,7 +400,6 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
         d1_data = history.get("d1", {})
         h1 = _parsed_series(h1_data.get("series", []), "close")
         d1 = _parsed_series(d1_data.get("series", []), "close")
-        # Exclude today's unfinished daily bar and any unfinished hourly bar.
         d1 = [bar for bar in d1 if bar["_timestamp"].date() < today]
         h1 = [bar for bar in h1 if bar["_timestamp"] + timedelta(hours=1) <= now]
         asset_result = {
@@ -428,6 +430,8 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
         asset_result["option_trade_counts"] = {
             "CALL": len(call_trades), "PUT": len(put_trades)
         }
+        last_exit = {method: {h: None for h in horizons} for method in methods}
+        used_entry = {method: {h: set() for h in horizons} for method in methods}
 
         signal_indices = list(range(max(50, len(d1) - signal_days), len(d1)))
         for index in signal_indices:
@@ -441,7 +445,6 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
                 trend_direction(d1[:index]) if index else None,
                 trend_direction(h1_previous),
             )
-            # Signal time is the end of the last completed H1 bar available that day.
             day_h1 = [bar for bar in h1 if bar["_timestamp"].date() == day]
             if not day_h1:
                 continue
@@ -456,10 +459,17 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
                 option_trades = call_trades if direction == "LONG" else put_trades
                 if len(option_trades) < 2:
                     continue
-                entry_candidates = [trade for trade in option_trades if trade["_timestamp"] >= signal_time]
+                entry_candidates = [
+                    trade for trade in option_trades
+                    if trade["_timestamp"] >= signal_time
+                ]
                 if not entry_candidates:
                     continue
                 entry = entry_candidates[0]
+                entry_delay = (entry["_timestamp"] - signal_time).total_seconds() / 3600
+                if entry_delay > max_entry_delay_hours:
+                    continue
+
                 for horizon in horizons:
                     target_index = index + horizon
                     if target_index >= len(d1):
@@ -469,15 +479,32 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
                     if not target_h1:
                         continue
                     target_time = max(bar["_timestamp"] for bar in target_h1) + timedelta(hours=1)
-                    exits = [trade for trade in option_trades if trade["_timestamp"] >= target_time]
+                    if entry["_timestamp"] >= target_time:
+                        continue
+                    exits = [
+                        trade for trade in option_trades
+                        if trade["_timestamp"] >= target_time
+                    ]
                     if not exits:
                         continue
                     exit_trade = exits[0]
+                    exit_delay = (exit_trade["_timestamp"] - target_time).total_seconds() / 3600
+                    if exit_delay > max_exit_delay_hours:
+                        continue
                     if exit_trade["_timestamp"] <= entry["_timestamp"]:
                         continue
+                    if last_exit[method][horizon] is not None and entry["_timestamp"] <= last_exit[method][horizon]:
+                        continue
+                    if entry["_timestamp"] in used_entry[method][horizon]:
+                        continue
+
                     result_pct = float((exit_trade["_price"] / entry["_price"] - 1) * 100)
                     observation = {
                         "underlying": underlying,
+                        "signal_date": day.isoformat(),
+                        "signal_time": signal_time.isoformat(),
+                        "target_date": target_day.isoformat(),
+                        "horizon_sessions": horizon,
                         "method": method,
                         "direction": direction,
                         "option_type": "CALL" if direction == "LONG" else "PUT",
@@ -490,11 +517,14 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
                         "exit_trade_size": exit_trade.get("size"),
                         "exit_trade_side": exit_trade.get("side"),
                         "trade_price_return_pct": round(result_pct, 4),
-                        "entry_delay_hours": round((entry["_timestamp"] - signal_time).total_seconds() / 3600, 2),
+                        "entry_delay_hours": round(entry_delay, 2),
+                        "exit_delay_after_target_hours": round(exit_delay, 2),
                         "actual_holding_hours": round((exit_trade["_timestamp"] - entry["_timestamp"]).total_seconds() / 3600, 2),
                     }
                     observations[method][horizon].append(observation)
                     asset_result["signals"][method].append(observation)
+                    used_entry[method][horizon].add(entry["_timestamp"])
+                    last_exit[method][horizon] = exit_trade["_timestamp"]
         per_asset[underlying] = asset_result
 
     aggregate = {}
@@ -507,21 +537,25 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
                 "positive": sum(v > 0 for v in values),
                 "win_rate_pct": round(sum(v > 0 for v in values) / len(values) * 100, 2) if values else None,
                 "mean_trade_price_return_pct": round(sum(values) / len(values), 4) if values else None,
-                "median_trade_price_return_pct": round(sorted(values)[len(values)//2], 4) if values else None,
+                "median_trade_price_return_pct": round(median(values), 4) if values else None,
                 "worst_trade_price_return_pct": round(min(values), 4) if values else None,
                 "best_trade_price_return_pct": round(max(values), 4) if values else None,
             }
     return {
-        "mode": "underlying_ema_signal_vs_actual_option_trade_prints",
+        "mode": "strict_underlying_ema_signal_vs_actual_option_trade_prints",
         "signal_window_sessions": signal_days,
-        "entry": "First actual option trade print after the end of the signal day's last completed underlying H1 bar.",
-        "exit": "First actual option trade print after the end of the 1/3/5-session target day's last completed underlying H1 bar.",
+        "max_entry_delay_hours": max_entry_delay_hours,
+        "max_exit_delay_after_target_hours": max_exit_delay_hours,
+        "overlap_policy": "One active trade per underlying/method/horizon; a trade print cannot be reused as a second entry.",
+        "entry": "First actual option trade print within 24 hours after the signal day's last completed underlying H1 bar.",
+        "exit": "First actual option trade print within 24 hours after the target day's last completed underlying H1 bar.",
         "option_selection": "Nearest-to-ATM CALL for LONG or PUT for SHORT, expiry 2026-12-16.",
         "results": aggregate,
         "per_asset": per_asset,
         "critical_limitations": [
             "Entry and exit are actual trade prints, not historical executable ask/bid quotes.",
             "No historical spread, queue position, fill probability, fees, or slippage is included.",
+            "Trade-print prices may not have been executable for the tested quantity.",
             "This is a sparse trade-print proxy, not a validated options backtest or profitability proof.",
         ],
     }
