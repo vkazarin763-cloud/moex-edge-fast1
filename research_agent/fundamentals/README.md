@@ -1,49 +1,51 @@
 # MOEX EDGE — Fundamentals research agent (free-source MVP)
 
-This module is independent of the Finam AI Screener, Finam credentials, broker
-execution, Telegram, and production signal generation.
+This module is isolated from production trading, Finam AI Screener, broker
+execution, and live signal generation. All collectors are read-only.
 
-## What it does now
+## Current sources
 
-- Calls the public MOEX ISS corporate-information report-list endpoint and
-  company-reference endpoint.
-- Stores the source response rows and a normalized report index.
-- Keeps the publication timestamp separate from the reporting-period end.
-- Maps a report to a ticker only when the source explicitly supplies a security
-  identifier. Unmatched rows are retained rather than guessed.
-- Runs on weekdays through GitHub Actions and can also be started manually.
+### Smart-Lab Telegram news — discovery only
 
-## Important source limitation
+- Public channel: https://t.me/newssmartlab
+- Collector: `python -m research_agent.fundamentals.smartlab_collector`
+- Reads Telegram's public web preview at `https://t.me/s/newssmartlab`; no bot
+  token, logged-in account, paid API, or Finam integration is needed.
+- Keeps posts only when an explicit ticker tag/token matches one of the 44
+  configured MOEX constituents. Short tickers require a hashtag or dollar
+  prefix to avoid false matches.
+- Stores post text, publication timestamp, post URL, ticker(s), and a simple
+  reporting-related keyword flag. Every item is marked
+  `unverified_news_lead`, not a verified issuer disclosure.
+- The public preview exposes only a recent slice, not a complete archive.
 
-MOEX documents corporate-report metadata endpoints under CCI. However,
-structured IFRS/RAS financial datasets and ready-made financial indicators are
-described by MOEX as subscription services. This MVP does not assume those
-datasets are free, does not bypass access controls, and records HTTP 401/403 or
-missing blocks as source limitations. See:
-- https://www.moex.com/a2836
-- https://www.moex.com/tsentr-korporativnoj-informatsii
-- https://www.moex.com/media/instruktsiya-po-ispolzovaniyu-servisov-tski.pdf
+### MOEX CCI report metadata — access may be restricted
 
-The first stage is report discovery, not yet a financial-statement parser.
-It must not claim that a company is financially strong/weak until source
-documents have been retrieved and key figures verified against the original
-report. Missing figures remain null.
+- Calls MOEX CCI company-reference and corporate-report metadata endpoints.
+- Stores source rows and a normalized report index; publication timestamp is
+  kept separate from reporting-period end.
+- Does not assume structured IFRS/RAS datasets are free. HTTP 401/403 and
+  missing datasets are recorded as source limitations.
+- Documentation: https://www.moex.com/a2836 and
+  https://www.moex.com/tsentr-korporativnoj-informatsii
 
-## Next research stages
+## Data integrity rules
 
-1. Verify actual public API response blocks and ticker/company identifier
-   coverage for the 44-symbol universe.
-2. Add free primary-source document retrieval where issuers publish direct
-   downloadable IFRS/RAS reports.
-3. Parse PDF/XLSX only with page/sheet and source-document evidence retained.
-4. Extract revenue, EBITDA, net profit, net debt, operating/free cash flow,
-   margins, ROE/ROA and valuation only when explicitly available.
-5. Store document publication time, report period, accounting standard,
-   consolidated/standalone scope, currency, units, URL and content hash.
-6. Build point-in-time fundamentals only after publication-date and
-   restatement-version handling is reliable.
+- Smart-Lab is a news-discovery source, not a source of record.
+- Before extracting figures, retrieve the issuer's original disclosure/report
+  and retain its URL, publication time, period, accounting standard,
+  consolidated/standalone scope, currency, units, and content hash.
+- Never substitute reporting-period end for publication time.
+- Fuzzy issuer/ticker matching is disabled. Missing values remain null.
+- Restatements and historical versions must be preserved before point-in-time
+  backtests are considered valid.
+- Fundamental data is a slow-moving research context, not an H1 entry timer.
 
-No historical backtest may use a report before its actual public release time.
-Fundamental data is a slow-moving eligibility/context filter, not an H1 entry
-timer. No production, live-order, Telegram, cron-job.org, or Finam settings are
-changed by this module.
+## Workflow and safety
+
+The GitHub Actions workflow is manual-only until free-source access and
+coverage are verified. It runs tests and stores research snapshots on
+`research/price-forecast-24h-v1`. No scheduled polling is enabled.
+
+No production signals, live orders, Telegram notification bot, secrets,
+cron-job.org schedule, or Finam settings are changed by this module.
