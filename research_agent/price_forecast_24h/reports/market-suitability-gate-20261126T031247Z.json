@@ -1,0 +1,1086 @@
+{
+  "created_utc": "2026-11-26T03:12:47.697536+00:00",
+  "data_source": "Finam technical H1 archive",
+  "symbols_evaluated": 44,
+  "symbols_excluded": {},
+  "protocol": {
+    "purpose": "Test whether a causal market-suitability gate can block market episodes that have historically been unsuitable for the predeclared candidate signals. This is not a strategy selector.",
+    "episode_definition": "One ticker/H1 signal close with one or more of six predeclared candidate rules. Episode outcome is the equal-weight mean gross return of its active candidate trades; this is a diagnostic market-condition label, not a portfolio return.",
+    "causality": "An episode is added to training only after all candidate trades in that episode have exited strictly before the current signal bar. No current or future episode outcome is visible to the gate.",
+    "gate": "Rolling latest 100 completed episodes per ticker/regime key; minimum 30. Backoff: joint trend+volatility, trend-only, volatility-only, then all regimes. Allow only if mean net episode return after 10 bps per side is positive and PF > 1.0; otherwise no trade.",
+    "regime": "Ticker-specific causal trend-strength and ATR/close volatility ranks. Each metric is ranked against up to 120 prior observations, excluding current; at least 60 prior observations; low/mid/high terciles.",
+    "execution": "Signal on completed H1 close; next H1 open entry; close after at most 12 H1 bars. Candidate streams are non-overlapping within each ticker/rule. Filter decision is common to all candidate rules firing at the same ticker/H1 close.",
+    "walk_forward": "First half of first 80% is warm-up; remaining first 80% split into three chronological development folds; final 20% separately. Gate state carries forward using only prior completed episodes.",
+    "costs": "Gate training threshold: 10 bps per side. Reported trade metrics: 5 and 10 bps per side, illustrative only.",
+    "overlap_note": "Different strategy streams may overlap. Per-rule results are reported as independent diagnostic streams; pooled multi-rule trade chains are deliberately not presented as portfolio performance."
+  },
+  "aggregate_per_rule": {
+    "development_fold_1": {
+      "long_breakout_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 179,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 20,
+          "mean_ticker_mean_net_5bps_pct": -0.24783583999768213,
+          "median_ticker_mean_net_5bps_pct": -0.4541958137438813,
+          "mean_ticker_mean_net_10bps_pct": -0.34783583999768214,
+          "mean_ticker_profit_factor_5bps": 1.0824292339054038
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 117,
+          "tickers_with_trades": 36,
+          "tickers_positive_mean_5bps": 19,
+          "mean_ticker_mean_net_5bps_pct": -0.24093424187441503,
+          "median_ticker_mean_net_5bps_pct": 0.04647391483337261,
+          "mean_ticker_mean_net_10bps_pct": -0.34093424187441507,
+          "mean_ticker_profit_factor_5bps": 1.167740003540511
+        }
+      },
+      "long_ema20_pullback": {
+        "baseline": {
+          "ticker_trade_count_sum": 230,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 13,
+          "mean_ticker_mean_net_5bps_pct": -0.4429614738840107,
+          "median_ticker_mean_net_5bps_pct": -0.43265399834952534,
+          "mean_ticker_mean_net_10bps_pct": -0.5429614738840107,
+          "mean_ticker_profit_factor_5bps": 0.8684039997449211
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 140,
+          "tickers_with_trades": 36,
+          "tickers_positive_mean_5bps": 11,
+          "mean_ticker_mean_net_5bps_pct": -0.42313627581322183,
+          "median_ticker_mean_net_5bps_pct": -0.16079468014721285,
+          "mean_ticker_mean_net_10bps_pct": -0.5231362758132218,
+          "mean_ticker_profit_factor_5bps": 0.9296156524856996
+        }
+      },
+      "long_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 220,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 16,
+          "mean_ticker_mean_net_5bps_pct": -0.23236345195533126,
+          "median_ticker_mean_net_5bps_pct": -0.44099950255115433,
+          "mean_ticker_mean_net_10bps_pct": -0.3323634519553313,
+          "mean_ticker_profit_factor_5bps": 1.8101842969890074
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 144,
+          "tickers_with_trades": 36,
+          "tickers_positive_mean_5bps": 15,
+          "mean_ticker_mean_net_5bps_pct": -0.2826399232490035,
+          "median_ticker_mean_net_5bps_pct": -0.12295109676185634,
+          "mean_ticker_mean_net_10bps_pct": -0.38263992324900353,
+          "mean_ticker_profit_factor_5bps": 2.0102563945625684
+        }
+      },
+      "short_breakdown_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 258,
+          "tickers_with_trades": 43,
+          "tickers_positive_mean_5bps": 37,
+          "mean_ticker_mean_net_5bps_pct": 0.6617266008282284,
+          "median_ticker_mean_net_5bps_pct": 0.47645151992263374,
+          "mean_ticker_mean_net_10bps_pct": 0.5617266008282285,
+          "mean_ticker_profit_factor_5bps": 3.4857306755677975
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 166,
+          "tickers_with_trades": 37,
+          "tickers_positive_mean_5bps": 29,
+          "mean_ticker_mean_net_5bps_pct": 0.4634324816035539,
+          "median_ticker_mean_net_5bps_pct": 0.5148874882948419,
+          "mean_ticker_mean_net_10bps_pct": 0.36343248160355385,
+          "mean_ticker_profit_factor_5bps": 4.350528263063145
+        }
+      },
+      "short_ema20_failed_bounce": {
+        "baseline": {
+          "ticker_trade_count_sum": 343,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 26,
+          "mean_ticker_mean_net_5bps_pct": 0.14492301716918218,
+          "median_ticker_mean_net_5bps_pct": 0.11020467740392259,
+          "mean_ticker_mean_net_10bps_pct": 0.04492301716918217,
+          "mean_ticker_profit_factor_5bps": 1.6612044347179078
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 229,
+          "tickers_with_trades": 38,
+          "tickers_positive_mean_5bps": 20,
+          "mean_ticker_mean_net_5bps_pct": -0.21793218263168684,
+          "median_ticker_mean_net_5bps_pct": 0.11802984386050386,
+          "mean_ticker_mean_net_10bps_pct": -0.31793218263168677,
+          "mean_ticker_profit_factor_5bps": 1.4767039878758859
+        }
+      },
+      "short_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 303,
+          "tickers_with_trades": 43,
+          "tickers_positive_mean_5bps": 38,
+          "mean_ticker_mean_net_5bps_pct": 0.5918269316458807,
+          "median_ticker_mean_net_5bps_pct": 0.5572361463623144,
+          "mean_ticker_mean_net_10bps_pct": 0.4918269316458807,
+          "mean_ticker_profit_factor_5bps": 2.6661019148787215
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 196,
+          "tickers_with_trades": 34,
+          "tickers_positive_mean_5bps": 27,
+          "mean_ticker_mean_net_5bps_pct": 0.4175567104409595,
+          "median_ticker_mean_net_5bps_pct": 0.5484309356369008,
+          "mean_ticker_mean_net_10bps_pct": 0.3175567104409595,
+          "mean_ticker_profit_factor_5bps": 2.775932149005934
+        }
+      }
+    },
+    "development_fold_2": {
+      "long_breakout_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 225,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 19,
+          "mean_ticker_mean_net_5bps_pct": -0.05902072699741041,
+          "median_ticker_mean_net_5bps_pct": -0.07703927109932451,
+          "mean_ticker_mean_net_10bps_pct": -0.1590207269974104,
+          "mean_ticker_profit_factor_5bps": 6.752963583252176
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 159,
+          "tickers_with_trades": 39,
+          "tickers_positive_mean_5bps": 14,
+          "mean_ticker_mean_net_5bps_pct": -0.1809466232317026,
+          "median_ticker_mean_net_5bps_pct": -0.14147369935719412,
+          "mean_ticker_mean_net_10bps_pct": -0.2809466232317026,
+          "mean_ticker_profit_factor_5bps": 7.619970732250918
+        }
+      },
+      "long_ema20_pullback": {
+        "baseline": {
+          "ticker_trade_count_sum": 293,
+          "tickers_with_trades": 43,
+          "tickers_positive_mean_5bps": 21,
+          "mean_ticker_mean_net_5bps_pct": 0.09203098148912504,
+          "median_ticker_mean_net_5bps_pct": -0.024425103501898224,
+          "mean_ticker_mean_net_10bps_pct": -0.007969018510874951,
+          "mean_ticker_profit_factor_5bps": 1.8473504625870825
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 209,
+          "tickers_with_trades": 38,
+          "tickers_positive_mean_5bps": 20,
+          "mean_ticker_mean_net_5bps_pct": 0.13587927062283967,
+          "median_ticker_mean_net_5bps_pct": 0.016384330830399786,
+          "mean_ticker_mean_net_10bps_pct": 0.035879270622839673,
+          "mean_ticker_profit_factor_5bps": 1.8560318549651302
+        }
+      },
+      "long_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 297,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 19,
+          "mean_ticker_mean_net_5bps_pct": -0.035304304332721165,
+          "median_ticker_mean_net_5bps_pct": -0.11176363703875106,
+          "mean_ticker_mean_net_10bps_pct": -0.13530430433272114,
+          "mean_ticker_profit_factor_5bps": 1.4927672040955928
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 206,
+          "tickers_with_trades": 39,
+          "tickers_positive_mean_5bps": 18,
+          "mean_ticker_mean_net_5bps_pct": -0.1806251850541103,
+          "median_ticker_mean_net_5bps_pct": -0.1490243509152656,
+          "mean_ticker_mean_net_10bps_pct": -0.28062518505411027,
+          "mean_ticker_profit_factor_5bps": 1.397735656297282
+        }
+      },
+      "short_breakdown_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 192,
+          "tickers_with_trades": 43,
+          "tickers_positive_mean_5bps": 17,
+          "mean_ticker_mean_net_5bps_pct": -0.035014735795280735,
+          "median_ticker_mean_net_5bps_pct": -0.13366732927716515,
+          "mean_ticker_mean_net_10bps_pct": -0.13501473579528073,
+          "mean_ticker_profit_factor_5bps": 1.4315317174891355
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 141,
+          "tickers_with_trades": 36,
+          "tickers_positive_mean_5bps": 13,
+          "mean_ticker_mean_net_5bps_pct": -0.17494287642657935,
+          "median_ticker_mean_net_5bps_pct": -0.1123041450931824,
+          "mean_ticker_mean_net_10bps_pct": -0.27494287642657933,
+          "mean_ticker_profit_factor_5bps": 1.5023705300614516
+        }
+      },
+      "short_ema20_failed_bounce": {
+        "baseline": {
+          "ticker_trade_count_sum": 298,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 14,
+          "mean_ticker_mean_net_5bps_pct": -0.1472549322775386,
+          "median_ticker_mean_net_5bps_pct": -0.17997786366986845,
+          "mean_ticker_mean_net_10bps_pct": -0.2472549322775386,
+          "mean_ticker_profit_factor_5bps": 1.347228303248428
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 207,
+          "tickers_with_trades": 41,
+          "tickers_positive_mean_5bps": 13,
+          "mean_ticker_mean_net_5bps_pct": -0.28465852419442716,
+          "median_ticker_mean_net_5bps_pct": -0.15235290938255902,
+          "mean_ticker_mean_net_10bps_pct": -0.38465852419442714,
+          "mean_ticker_profit_factor_5bps": 1.5421902368159068
+        }
+      },
+      "short_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 250,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 18,
+          "mean_ticker_mean_net_5bps_pct": -0.02275739839708986,
+          "median_ticker_mean_net_5bps_pct": -0.12806793646121056,
+          "mean_ticker_mean_net_10bps_pct": -0.12275739839708985,
+          "mean_ticker_profit_factor_5bps": 1.3067686340203846
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 179,
+          "tickers_with_trades": 39,
+          "tickers_positive_mean_5bps": 16,
+          "mean_ticker_mean_net_5bps_pct": -0.09023726870701182,
+          "median_ticker_mean_net_5bps_pct": -0.15452130692628696,
+          "mean_ticker_mean_net_10bps_pct": -0.1902372687070118,
+          "mean_ticker_profit_factor_5bps": 1.2400296406159494
+        }
+      }
+    },
+    "development_fold_3": {
+      "long_breakout_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 289,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 31,
+          "mean_ticker_mean_net_5bps_pct": 0.4082770815267694,
+          "median_ticker_mean_net_5bps_pct": 0.3107348159087189,
+          "mean_ticker_mean_net_10bps_pct": 0.30827708152676947,
+          "mean_ticker_profit_factor_5bps": 12.167366846542127
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 215,
+          "tickers_with_trades": 40,
+          "tickers_positive_mean_5bps": 28,
+          "mean_ticker_mean_net_5bps_pct": 0.42994767023665625,
+          "median_ticker_mean_net_5bps_pct": 0.32027111442897555,
+          "mean_ticker_mean_net_10bps_pct": 0.3299476702366562,
+          "mean_ticker_profit_factor_5bps": 2.5446865611595486
+        }
+      },
+      "long_ema20_pullback": {
+        "baseline": {
+          "ticker_trade_count_sum": 309,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 30,
+          "mean_ticker_mean_net_5bps_pct": 0.24106684695629485,
+          "median_ticker_mean_net_5bps_pct": 0.24169726097540767,
+          "mean_ticker_mean_net_10bps_pct": 0.14106684695629487,
+          "mean_ticker_profit_factor_5bps": 2.4764680377876656
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 211,
+          "tickers_with_trades": 40,
+          "tickers_positive_mean_5bps": 28,
+          "mean_ticker_mean_net_5bps_pct": 0.27664627849534335,
+          "median_ticker_mean_net_5bps_pct": 0.21895153172938245,
+          "mean_ticker_mean_net_10bps_pct": 0.17664627849534337,
+          "mean_ticker_profit_factor_5bps": 2.4956675706959124
+        }
+      },
+      "long_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 355,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 31,
+          "mean_ticker_mean_net_5bps_pct": 0.24587195609338985,
+          "median_ticker_mean_net_5bps_pct": 0.13979698859942447,
+          "mean_ticker_mean_net_10bps_pct": 0.14587195609338985,
+          "mean_ticker_profit_factor_5bps": 11.726731336658911
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 254,
+          "tickers_with_trades": 40,
+          "tickers_positive_mean_5bps": 29,
+          "mean_ticker_mean_net_5bps_pct": 0.28560284473945907,
+          "median_ticker_mean_net_5bps_pct": 0.193947463177085,
+          "mean_ticker_mean_net_10bps_pct": 0.18560284473945904,
+          "mean_ticker_profit_factor_5bps": 1.967144517420826
+        }
+      },
+      "short_breakdown_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 136,
+          "tickers_with_trades": 43,
+          "tickers_positive_mean_5bps": 11,
+          "mean_ticker_mean_net_5bps_pct": -0.43640087115148507,
+          "median_ticker_mean_net_5bps_pct": -0.3925183918565742,
+          "mean_ticker_mean_net_10bps_pct": -0.5364008711514852,
+          "mean_ticker_profit_factor_5bps": 1.1203386115163485
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 91,
+          "tickers_with_trades": 36,
+          "tickers_positive_mean_5bps": 8,
+          "mean_ticker_mean_net_5bps_pct": -0.5970775891038869,
+          "median_ticker_mean_net_5bps_pct": -0.47309662018006715,
+          "mean_ticker_mean_net_10bps_pct": -0.697077589103887,
+          "mean_ticker_profit_factor_5bps": 0.8640722563800496
+        }
+      },
+      "short_ema20_failed_bounce": {
+        "baseline": {
+          "ticker_trade_count_sum": 247,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 7,
+          "mean_ticker_mean_net_5bps_pct": -0.5529548241267409,
+          "median_ticker_mean_net_5bps_pct": -0.45363601588791025,
+          "mean_ticker_mean_net_10bps_pct": -0.6529548241267409,
+          "mean_ticker_profit_factor_5bps": 0.5003650284034409
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 161,
+          "tickers_with_trades": 38,
+          "tickers_positive_mean_5bps": 4,
+          "mean_ticker_mean_net_5bps_pct": -0.5839083347561181,
+          "median_ticker_mean_net_5bps_pct": -0.5090799154943914,
+          "mean_ticker_mean_net_10bps_pct": -0.6839083347561182,
+          "mean_ticker_profit_factor_5bps": 0.34354478741401806
+        }
+      },
+      "short_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 172,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 10,
+          "mean_ticker_mean_net_5bps_pct": -0.38371584045534424,
+          "median_ticker_mean_net_5bps_pct": -0.3612159435218762,
+          "mean_ticker_mean_net_10bps_pct": -0.4837158404553442,
+          "mean_ticker_profit_factor_5bps": 0.8162155475558686
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 114,
+          "tickers_with_trades": 36,
+          "tickers_positive_mean_5bps": 8,
+          "mean_ticker_mean_net_5bps_pct": -0.5881157549120277,
+          "median_ticker_mean_net_5bps_pct": -0.4599187209131505,
+          "mean_ticker_mean_net_10bps_pct": -0.6881157549120277,
+          "mean_ticker_profit_factor_5bps": 0.6849447060255816
+        }
+      }
+    },
+    "holdout": {
+      "long_breakout_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 272,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 22,
+          "mean_ticker_mean_net_5bps_pct": 0.11065645937428914,
+          "median_ticker_mean_net_5bps_pct": 0.0024566953727333616,
+          "mean_ticker_mean_net_10bps_pct": 0.010656459374289167,
+          "mean_ticker_profit_factor_5bps": 3.1235527166032067
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 175,
+          "tickers_with_trades": 37,
+          "tickers_positive_mean_5bps": 17,
+          "mean_ticker_mean_net_5bps_pct": 0.05644983759297817,
+          "median_ticker_mean_net_5bps_pct": -0.1307981234244258,
+          "mean_ticker_mean_net_10bps_pct": -0.04355016240702179,
+          "mean_ticker_profit_factor_5bps": 3.6854350586238285
+        }
+      },
+      "long_ema20_pullback": {
+        "baseline": {
+          "ticker_trade_count_sum": 332,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 13,
+          "mean_ticker_mean_net_5bps_pct": -0.22368058169201327,
+          "median_ticker_mean_net_5bps_pct": -0.25120669960606523,
+          "mean_ticker_mean_net_10bps_pct": -0.32368058169201325,
+          "mean_ticker_profit_factor_5bps": 1.1373114783247014
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 208,
+          "tickers_with_trades": 38,
+          "tickers_positive_mean_5bps": 13,
+          "mean_ticker_mean_net_5bps_pct": -0.28958832681228724,
+          "median_ticker_mean_net_5bps_pct": -0.34370357053644945,
+          "mean_ticker_mean_net_10bps_pct": -0.3895883268122872,
+          "mean_ticker_profit_factor_5bps": 1.3779766516170562
+        }
+      },
+      "long_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 337,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 18,
+          "mean_ticker_mean_net_5bps_pct": 0.09442233099214886,
+          "median_ticker_mean_net_5bps_pct": -0.08649763817011467,
+          "mean_ticker_mean_net_10bps_pct": -0.005577669007851126,
+          "mean_ticker_profit_factor_5bps": 2.3777224601184717
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 212,
+          "tickers_with_trades": 39,
+          "tickers_positive_mean_5bps": 18,
+          "mean_ticker_mean_net_5bps_pct": 0.05355143092334772,
+          "median_ticker_mean_net_5bps_pct": -0.10046498219186521,
+          "mean_ticker_mean_net_10bps_pct": -0.04644856907665226,
+          "mean_ticker_profit_factor_5bps": 2.4984227773339245
+        }
+      },
+      "short_breakdown_20": {
+        "baseline": {
+          "ticker_trade_count_sum": 354,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 22,
+          "mean_ticker_mean_net_5bps_pct": 0.0043710949070191185,
+          "median_ticker_mean_net_5bps_pct": -0.025936955548656757,
+          "mean_ticker_mean_net_10bps_pct": -0.09562890509298087,
+          "mean_ticker_profit_factor_5bps": 1.6655181147236724
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 239,
+          "tickers_with_trades": 37,
+          "tickers_positive_mean_5bps": 17,
+          "mean_ticker_mean_net_5bps_pct": -0.00024016044434912483,
+          "median_ticker_mean_net_5bps_pct": -0.13014389386955655,
+          "mean_ticker_mean_net_10bps_pct": -0.10024016044434911,
+          "mean_ticker_profit_factor_5bps": 1.40613005217167
+        }
+      },
+      "short_ema20_failed_bounce": {
+        "baseline": {
+          "ticker_trade_count_sum": 517,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 23,
+          "mean_ticker_mean_net_5bps_pct": -0.03404420364205959,
+          "median_ticker_mean_net_5bps_pct": 0.023414899788013005,
+          "mean_ticker_mean_net_10bps_pct": -0.13404420364205957,
+          "mean_ticker_profit_factor_5bps": 1.124703176753603
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 325,
+          "tickers_with_trades": 41,
+          "tickers_positive_mean_5bps": 20,
+          "mean_ticker_mean_net_5bps_pct": -0.01764786206543748,
+          "median_ticker_mean_net_5bps_pct": -0.004604468579423835,
+          "mean_ticker_mean_net_10bps_pct": -0.11764786206543747,
+          "mean_ticker_profit_factor_5bps": 1.3730285998989946
+        }
+      },
+      "short_momentum_10": {
+        "baseline": {
+          "ticker_trade_count_sum": 449,
+          "tickers_with_trades": 44,
+          "tickers_positive_mean_5bps": 19,
+          "mean_ticker_mean_net_5bps_pct": -0.030021988031136346,
+          "median_ticker_mean_net_5bps_pct": -0.08019473056343246,
+          "mean_ticker_mean_net_10bps_pct": -0.13002198803113635,
+          "mean_ticker_profit_factor_5bps": 1.1552979356324862
+        },
+        "filtered": {
+          "ticker_trade_count_sum": 297,
+          "tickers_with_trades": 39,
+          "tickers_positive_mean_5bps": 17,
+          "mean_ticker_mean_net_5bps_pct": -0.09310566664939615,
+          "median_ticker_mean_net_5bps_pct": -0.06693895828494986,
+          "mean_ticker_mean_net_10bps_pct": -0.19310566664939616,
+          "mean_ticker_profit_factor_5bps": 1.0117677499176612
+        }
+      }
+    }
+  },
+  "activity_by_period": {
+    "development_fold_1": {
+      "eligible_episodes": 1100,
+      "allowed_episodes": 717,
+      "blocked_episodes": 383,
+      "blocked_episode_pct": 34.81818181818182
+    },
+    "development_fold_2": {
+      "eligible_episodes": 1192,
+      "allowed_episodes": 850,
+      "blocked_episodes": 342,
+      "blocked_episode_pct": 28.691275167785236
+    },
+    "development_fold_3": {
+      "eligible_episodes": 1106,
+      "allowed_episodes": 757,
+      "blocked_episodes": 349,
+      "blocked_episode_pct": 31.55515370705244
+    },
+    "holdout": {
+      "eligible_episodes": 1670,
+      "allowed_episodes": 1083,
+      "blocked_episodes": 587,
+      "blocked_episode_pct": 35.1497005988024
+    }
+  },
+  "gate_scope_counts": {
+    "volatility": 804,
+    "all": 673,
+    "trend": 1743,
+    "joint": 187
+  },
+  "candidate_trade_counts": {
+    "long_breakout_20": 1495,
+    "long_ema20_pullback": 1767,
+    "long_momentum_10": 1875,
+    "short_breakdown_20": 1704,
+    "short_ema20_failed_bounce": 2368,
+    "short_momentum_10": 2082
+  },
+  "symbols": {
+    "AFKS": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 419
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "AFLT": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "ALRS": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "BSPB": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 416
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "CBOM": {
+      "status": "OK",
+      "bars": 2161,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 404
+      },
+      "evaluation_start": "2026-08-11T08:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "CHMF": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "CNRU": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 417
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "DOMRF": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "ENPG": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 409
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "FLOT": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 418
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "GAZP": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "GMKN": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "HEAD": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "IRAO": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "LKOH": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "MAGN": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "MDMG": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "MOEX": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "MTSS": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "NLMK": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 419
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "NVTK": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "OZON": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "PHOR": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 419
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "PLZL": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "POSI": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "RAGR": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "RENI": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 417
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "ROSN": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "RTKM": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "RUAL": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 419
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "SBER": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "SBERP": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "SNGS": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 418
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "SNGSP": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "SVCB": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "T": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "TATN": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "TATNP": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "TRNFP": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 419
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "UGLD": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 418
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "VKCO": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 419
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "VTBR": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "X5": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    },
+    "YDEX": {
+      "status": "OK",
+      "bars": 2162,
+      "data_quality": {
+        "duplicates": 0,
+        "invalid_ohlc": 0,
+        "weekend_bars_excluded": 420
+      },
+      "evaluation_start": "2026-08-11T07:00:00+00:00",
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "data_end": "2026-11-25T19:00:00+00:00"
+    }
+  },
+  "limitations": [
+    "Diagnostic only: the same historical archive and final 20% have been examined in previous experiments; this is not independent confirmation.",
+    "The episode suitability label averages the outcomes of whichever candidate strategies fired; it is a research proxy, not a tradable benchmark or portfolio return.",
+    "The six candidate strategies are correlated and can overlap across rules; per-rule streams are not a combined portfolio.",
+    "Ticker-specific regimes are not a common MOEX-wide market regime.",
+    "Actual spread, commissions, slippage, borrow availability/cost, taxes and market impact are not modeled; 5/10 bps per side are illustrative.",
+    "Finam H1 bars are technical data; 12 bars are not necessarily 12 clock hours.",
+    "Research only: no production, real signals, Telegram notifications, cron changes, secrets or broker orders."
+  ]
+}
