@@ -1,16 +1,30 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "collector": "telegram_public_preview_smartlab",
-  "collected_at_utc": "2026-11-26T04:00:07.078165+00:00",
+  "collected_at_utc": "2026-11-26T04:02:28.711094+00:00",
   "source": {
     "channel": "@newssmartlab",
     "url": "https://t.me/s/newssmartlab",
     "access_method": "public_web_preview_no_auth"
   },
+  "pagination": {
+    "pages_fetched": 5,
+    "max_pages": 5,
+    "page_urls": [
+      "https://t.me/s/newssmartlab",
+      "https://t.me/s/newssmartlab?before=137843",
+      "https://t.me/s/newssmartlab?before=137818",
+      "https://t.me/s/newssmartlab?before=137793",
+      "https://t.me/s/newssmartlab?before=137772"
+    ],
+    "unique_posts_seen": 100
+  },
   "universe_size": 44,
-  "preview_posts_seen": 20,
-  "ticker_matched_posts": 5,
-  "reporting_related_posts": 0,
+  "preview_posts_seen": 100,
+  "ticker_matched_posts": 34,
+  "reporting_related_posts": 6,
+  "linked_articles_checked": 20,
+  "articles_with_candidate_document_links": 3,
   "posts": [
     {
       "channel": "@newssmartlab",
@@ -20,10 +34,49 @@
       "tickers": [
         "LKOH"
       ],
+      "topic_tags": [],
       "reporting_related": false,
       "text": "Санкции, скорее всего, приведут Лукойл к продаже зарубежных активов, хотя мы не хотим этого — Вагит Алекперов #LKOH Читать далее 👉 https://smartlab.news/i/212447 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212447",
+          "text": "https://smartlab.news/i/212447"
+        }
+      ],
       "verification_status": "unverified_news_lead",
-      "primary_document_url": null
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212447",
+          "fetch_status": "ok",
+          "title": "Санкции, скорее всего, приведут Лукойл к продаже зарубежных активов, хотя мы не хотим этого — Вагит Алекперов Санкции, скорее всего, приведут Лукойл к продаже зарубе... | smartlab.news",
+          "description": "Основатель Лукойла Вагит Алекперов заявил, что санкции могут вынудить компанию продать зарубежный бизнес, хотя сама компания не заинтересована в таком сценари...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vesti.ru%2Fns%2Falekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla&s=2948903366",
+              "anchor_text": "www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379636.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
     },
     {
       "channel": "@newssmartlab",
@@ -33,10 +86,49 @@
       "tickers": [
         "CNRU"
       ],
+      "topic_tags": [],
       "reporting_related": false,
       "text": "Леван Назаров подтвердил приобретение около 20% акций ЦИАН — Ъ По словам источника “Ъ”, точный размер пакета и детали о продавцах не известны, однако покупка прошла через брокерские группы в формате внебиржевых сделок. #CNRU Читать далее 👉 https://smartlab.news/i/212448 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212448",
+          "text": "https://smartlab.news/i/212448"
+        }
+      ],
       "verification_status": "unverified_news_lead",
-      "primary_document_url": null
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212448",
+          "fetch_status": "ok",
+          "title": "Леван Назаров подтвердил приобретение около 20% акций ЦИАН — Ъ Леван Назаров подтвердил приобретение около 20% акций Ц... | smartlab.news",
+          "description": "Крупный пакет акций ЦИАН консолидировал инвестор и предприниматель Леван Назаров. По словам источника “Ъ”, точный размер пакета и детали о продавцах не известн...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130653&s=1352614771",
+              "anchor_text": "www.kommersant.ru/doc/9130653"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.CNRU",
+              "anchor_text": "📈 график акций Циан (CIAN)"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379638.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
     },
     {
       "channel": "@newssmartlab",
@@ -46,10 +138,49 @@
       "tickers": [
         "LKOH"
       ],
+      "topic_tags": [],
       "reporting_related": false,
       "text": "Консорциум Боэли получит 100% Lukoil Int. в обмен на акции Лукойла и «других российских компаний» — релиз Активы, полученные от продажи, будут храниться на депозитарном счете с ограниченным доступом в течение пяти лет или до снятия санкций. #LKOH Читать далее 👉 https://smartlab.news/i/212453 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212453",
+          "text": "https://smartlab.news/i/212453"
+        }
+      ],
       "verification_status": "unverified_news_lead",
-      "primary_document_url": null
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212453",
+          "fetch_status": "ok",
+          "title": "Консорциум Боэли получит 100% Lukoil Int. в обмен на акции Лукойла и «других российских компаний» — релиз Консорциум Боэли получит 100% Lukoil Int. в обмен на ак... | smartlab.news",
+          "description": "Сегодня консорциум во главе с США объявил о заключении окончательного соглашения о приобретении компании LUKOIL International GmbH (LIG) в рамках сделки, напра...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.businesswire.com%2Fnews%2Fhome%2F20261125144720%2Fen%2FAmerican-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio&s=2164802708",
+              "anchor_text": "www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379650.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
     },
     {
       "channel": "@newssmartlab",
@@ -59,10 +190,49 @@
       "tickers": [
         "CNRU"
       ],
+      "topic_tags": [],
       "reporting_related": false,
       "text": "📉 Акции ЦИАН снижались более чем на 6%, ранее вышла новость, что Леван Назаров консолидировал около 20% акций компании #CNRU Читать далее 👉 https://smartlab.news/i/212455 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212455",
+          "text": "https://smartlab.news/i/212455"
+        }
+      ],
       "verification_status": "unverified_news_lead",
-      "primary_document_url": null
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212455",
+          "fetch_status": "ok",
+          "title": "📉 Акции ЦИАН снижались более чем на 6%, ранее вышла новость, что Леван Назаров консолидировал около 20% акций компании 📉 Акции ЦИАН снижались более чем на 6%, ранее вышла но... | smartlab.news",
+          "description": "📉 Акции ЦИАН снижались более чем на 6%, ранее вышла новость, что Леван Назаров консолидировал около 20% акций компании.\r\n\r\n\r\nsmartlab.news/read/212448-levan-na...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/faa4af.jpg",
+              "anchor_text": ""
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.CNRU",
+              "anchor_text": "📈 график акций Циан (CIAN)"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379653.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
     },
     {
       "channel": "@newssmartlab",
@@ -73,17 +243,1942 @@
         "LKOH",
         "ROSN"
       ],
+      "topic_tags": [],
       "reporting_related": false,
       "text": "Экспорт дизтоплива из России за 1–19 ноября вырос на 34,6% к октябрю, до 1,48 млн тонн — Ъ #ROSN #LKOH Читать далее 👉 https://smartlab.news/i/212457 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212457",
+          "text": "https://smartlab.news/i/212457"
+        }
+      ],
       "verification_status": "unverified_news_lead",
-      "primary_document_url": null
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212457",
+          "fetch_status": "ok",
+          "title": "Экспорт дизтоплива из России за 1–19 ноября вырос на 34,6% к октябрю, до 1,48 млн тонн — Ъ Экспорт дизтоплива из России за 1–19 ноября вырос на 34... | smartlab.news",
+          "description": "Экспорт российского дизтоплива за первые две декады ноября превысил отгрузки за весь октябрь более чем на треть и стал рекордным за четыре месяца. Аналитики объ...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130623&s=2215742104",
+              "anchor_text": "www.kommersant.ru/doc/9130623"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.ROSN",
+              "anchor_text": "📈 график акций Роснефть"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379657.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T13:43:57+00:00",
+      "post_url": "https://t.me/newssmartlab/137819",
+      "tickers": [
+        "MOEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Мосбиржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках #MOEX Для участия в розыгрыше с 1 по 31 декабря 2026 года необходимо сформировать на Московской бирже портфель паев инвестиционных фондов (ПИФ) на сумму не менее 20 тыс. рублей или портфель фьючерсных контрактов на сумму не менее 20 тыс. рублей. Читать далее 👉 https://smartlab.news/i/212404 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212404",
+          "text": "https://smartlab.news/i/212404"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212404",
+          "fetch_status": "ok",
+          "title": "Мосбиржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках Мосбиржа проведет розыгрыш билетов в Большой театр сред... | smartlab.news",
+          "description": "Московская биржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках. Участвовать в розыгрыше пригласите...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
+              "anchor_text": "на сайте биржи"
+            },
+            {
+              "url": "https://smart-lab.ru#_ftn1",
+              "anchor_text": "[1]"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
+              "anchor_text": "сайте"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106345&s=949823020",
+              "anchor_text": "www.moex.com/n106345"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.MOEX",
+              "anchor_text": "📈 график акций Московская биржа"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379519.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T13:48:22+00:00",
+      "post_url": "https://t.me/newssmartlab/137820",
+      "tickers": [
+        "MOEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Московская биржа проведет XIV Биржевой форум 15 апреля 2027 года #MOEX Читать далее 👉 https://smartlab.news/i/212405 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212405",
+          "text": "https://smartlab.news/i/212405"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212405",
+          "fetch_status": "ok",
+          "title": "Московская биржа проведет XIV Биржевой форум 15 апреля 2027 года Московская биржа проведет XIV Биржевой форум 15 апреля... | smartlab.news",
+          "description": "Московская биржа проведет XIV Биржевой форум, ключевое мероприятие для профессионального финансового сообщества, 15 апреля 2027 года.\nБиржевой форум – ведущая...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106346&s=1325659356",
+              "anchor_text": "www.moex.com/n106346"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.MOEX",
+              "anchor_text": "📈 график акций Московская биржа"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379521.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T14:01:49+00:00",
+      "post_url": "https://t.me/newssmartlab/137826",
+      "tickers": [
+        "GAZP"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Отбор газа из европейских ПХГ 23 ноября достиг исторического максимума для этой даты на фоне похолодания — Газпром #GAZP Читать далее 👉 https://smartlab.news/i/212410 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212410",
+          "text": "https://smartlab.news/i/212410"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212410",
+          "fetch_status": "ok",
+          "title": "Отбор газа из европейских ПХГ 23 ноября достиг исторического максимума для этой даты на фоне похолодания — Газпром Отбор газа из европейских ПХГ 23 ноября достиг историче... | smartlab.news",
+          "description": "Волна арктического холода в Европе спровоцировала очередные антирекорды по отбору газа из хранилищ.\r\n \r\nПо данным Gas Infrastructure Europe, 23 ноября отбор из...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fgazprom%2F2609&s=2951167633",
+              "anchor_text": "t.me/gazprom/2609"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "anchor_text": "📈 график акций Газпром"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379537.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T14:23:43+00:00",
+      "post_url": "https://t.me/newssmartlab/137829",
+      "tickers": [
+        "MTSS"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Оборот сервиса кикшеринга Юрент достиг 12,7 млрд руб. за 9М 2026 г. — Ведомости Доля Юрент на российском рынке кикшеринга составила около 36% #MTSS #WUSH Читать далее 👉 https://smartlab.news/i/212413 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212413",
+          "text": "https://smartlab.news/i/212413"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212413",
+          "fetch_status": "ok",
+          "title": "Оборот сервиса кикшеринга Юрент достиг 12,7 млрд руб. за 9М 2026 г. — Ведомости Оборот сервиса кикшеринга Юрент достиг 12,7 млрд руб. з... | smartlab.news",
+          "description": "Число поездок на электросамокатах выросло на 4,5% г/г, до 111,6 млн.\nДоля Юрент на российском рынке кикшеринга составила около 36%, сообщил гендиректор компан...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vedomosti.ru%2Finvestments%2Fnews%2F2026%2F11%2F25%2F1415279-oborot-yurent&s=1201390238",
+              "anchor_text": "www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.MTSS",
+              "anchor_text": "📈 график акций МТС"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.WUSH",
+              "anchor_text": "📈 график акций Вуш Холдинг | WHOOSH"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379556.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T14:46:07+00:00",
+      "post_url": "https://t.me/newssmartlab/137833",
+      "tickers": [
+        "DOMRF"
+      ],
+      "topic_tags": [
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "Портфель строящегося жилья достиг рекорда - 121,9 млн м², но запуски и выдача новых разрешений на строительство (РНС) замедляются — Аналитика ДОМ.PФ #DOMRF - В 3кв2026 зарегистрировано 142 тыс. ДДУ на жилые помещения (+18% кв/кв), выручка от продаж новостроек - ₽1,3 трлн. Доля сделок с ипотекой - 75% (за 9м2026 - 72%) - Срок продажи строящегося жилья - 3,2 года, соотношение распроданности и стройготовности - 70%, отношение запусков к продажам - 160%. Распроданность вернулась к 70% благодаря активизации спроса в сентябре Читать далее 👉 https://smartlab.news/i/212421 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212421",
+          "text": "https://smartlab.news/i/212421"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212421",
+          "fetch_status": "ok",
+          "title": "Портфель строящегося жилья достиг рекорда - 121,9 млн м², но запуски и выдача новых разрешений на строительство (РНС) замедляются — Аналитика ДОМ.PФ Портфель строящегося жилья достиг рекорда - 121,9 млн м... | smartlab.news",
+          "description": "Главное из материала «Жилищное строительство в России за III кв. 2026 г. Ноябрь 2026 г.»:\r\n\r\n\nПродажи: в III кв. 2026 г. зарегистрировано 142 тыс. ДДУ н...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fdomresearch%2F1032&s=270218856",
+              "anchor_text": "t.me/domresearch/1032"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2Fdomresearch%2FAaITDrEbeQw&s=1029355103",
+              "anchor_text": "max.ru/domresearch/AaITDrEbeQw"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+              "anchor_text": "📈 график акций ДОМ.РФ"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379572.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T15:01:17+00:00",
+      "post_url": "https://t.me/newssmartlab/137835",
+      "tickers": [
+        "LKOH"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Boehly Group подписала с Лукойлом соглашение об обмене акциями на глобальные активы Консорциум во главе с Тоддом Боэли планирует передать ценные бумаги Лукойла на $10 млрд в обмен на международный портфель компании. В консорциум входит американская DFC. США рассчитывают получить долю будущей прибыли и место в совете директоров приобретающей структуры. #LKOH Читать далее 👉 https://smartlab.news/i/212431 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212431",
+          "text": "https://smartlab.news/i/212431"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212431",
+          "fetch_status": "ok",
+          "title": "Boehly Group подписала с Лукойлом соглашение об обмене акциями на глобальные активы — Reuters Boehly Group подписала с Лукойлом соглашение об обмене... | smartlab.news",
+          "description": "Консорциум во главе с Тоддом Боэли планирует передать ценные бумаги Лукойла на $10 млрд в обмен на международный портфель компании.\nВ консорциум входит амери...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/5a0162.jpg",
+              "anchor_text": ""
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.reuters.com%2Fbusiness%2Fenergy%2Fboehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25%2F&s=1018180804",
+              "anchor_text": "www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379587.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T15:02:21+00:00",
+      "post_url": "https://t.me/newssmartlab/137836",
+      "tickers": [
+        "YDEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "ЯНДЕКС 24.11.2026 Буланцева О.С. и Мордавченков А.А получили совместное право распоряжаться 6,8% голосов в Яндексе Калин Александр Борисович - утратил право Объем акций: 25 819 212 / 6,80% акций компании #YDEX Читать далее 👉 https://smartlab.news/i/212432 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212432",
+          "text": "https://smartlab.news/i/212432"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212432",
+          "fetch_status": "ok",
+          "title": "Буланцева О.С. и Мордавченков А.А. получили совместное право распоряжаться 6,8% голосов в Яндексе. Калин Александр Борисович утратил право. Объем акций: 25 819 212 / 6,80% акций компании Буланцева О.С. и Мордавченков А.А. получили совместное... | smartlab.news",
+          "description": "Буланцева О.С. и Мордавченков А.А. получили совместное право распоряжаться 6,8% голосов в Яндексе. Калин Александр Борисович утратил право. Объем акций: 25 819...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "anchor_text": "📈 график акций Яндекс"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379588.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+            }
+          ],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T15:07:40+00:00",
+      "post_url": "https://t.me/newssmartlab/137837",
+      "tickers": [
+        "SBER"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Внедрение ИИ может удвоить темпы роста производительности в России и добавить до 1,4 п.п. к ежегодному росту ВВП — Финдиректор \"Сбера\" Тарас Скворцов #SBER Читать далее 👉 https://smartlab.news/i/212434 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212434",
+          "text": "https://smartlab.news/i/212434"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212434",
+          "fetch_status": "ok",
+          "title": "Внедрение ИИ может удвоить темпы роста производительности в России и добавить до 1,4 п.п. к ежегодному росту ВВП  — Финдиректор \"Сбера\" Тарас Скворцов Внедрение ИИ может удвоить темпы роста производительнос... | smartlab.news",
+          "description": "«Для нас развитие искусственного интеллекта — это прежде всего усиление человека, а не его замещение. Рутину все больше будут брать на себя ИИ-агенты, а челове...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28354711&s=2797653262",
+              "anchor_text": "tass.ru/ekonomika/28354711"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379592.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T15:22:57+00:00",
+      "post_url": "https://t.me/newssmartlab/137839",
+      "tickers": [
+        "LKOH"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "📈 Акции Лукойла в моменте росли почти на 2% после новости о возможной сделке Boehly Group по приобретению зарубежных активов компании Соглашение еще требует одобрения Минфина США. #LKOH Читать далее 👉 https://smartlab.news/i/212436 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212436",
+          "text": "https://smartlab.news/i/212436"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212436",
+          "fetch_status": "ok",
+          "title": "📈 Акции Лукойла в моменте росли почти на 2% после новости о возможной сделке Boehly Group по приобретению зарубежных активов компании 📈 Акции Лукойла в моменте росли почти на 2% после ново... | smartlab.news",
+          "description": "📈 Акции Лукойла в моменте росли почти на 2% после новости о возможной сделке Boehly Group по приобретению зарубежных активов компании.\nСоглашение еще требует...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/0cb3bd.jpg",
+              "anchor_text": ""
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379600.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T15:40:31+00:00",
+      "post_url": "https://t.me/newssmartlab/137842",
+      "tickers": [
+        "BSPB",
+        "CBOM",
+        "SBER",
+        "SVCB",
+        "T",
+        "VTBR"
+      ],
+      "topic_tags": [
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "Чистая прибыль банков РФ в октябре снизилась на 25% м/м — до 311 млрд руб. на фоне роста резервов — ЦБ #SBER #VTBR #SVCB #BSPB #CBOM #T #MBNK Читать далее 👉 https://smartlab.news/i/212439 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212439",
+          "text": "https://smartlab.news/i/212439"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212439",
+          "fetch_status": "ok",
+          "title": "Чистая прибыль банков РФ в октябре снизилась на 25% м/м — до 311 млрд руб. на фоне роста резервов — ЦБ Чистая прибыль банков РФ в октябре снизилась на 25% м/м... | smartlab.news",
+          "description": "Кредитование компаний (с учетом облигаций) увеличилось в октябре на 2,4% (+0,7% в сентябре). Рост спроса компаний на кредиты в целом характерен для октября – н...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
+              "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "anchor_text": "📈 график акций ВТБ"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SVCB",
+              "anchor_text": "📈 график акций Совкомбанк"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.BSPB",
+              "anchor_text": "📈 график акций Банк Санкт-Петербург"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.CBOM",
+              "anchor_text": "📈 график акций МКБ"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.T",
+              "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.MBNK",
+              "anchor_text": "📈 график акций МТС Банк"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379607.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
+              "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+            }
+          ],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T12:10:55+00:00",
+      "post_url": "https://t.me/newssmartlab/137797",
+      "tickers": [
+        "AFLT"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Новак: Минэнерго подготовило предложение о продлении запрета на экспорт авиакеросина, который действует до конца ноября #AFLT Читать далее 👉 https://smartlab.news/i/212379 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212379",
+          "text": "https://smartlab.news/i/212379"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212379",
+          "fetch_status": "ok",
+          "title": "Новак: Минэнерго подготовило предложение о продлении запрета на экспорт авиакеросина, который действует до конца ноября Новак: Минэнерго подготовило предложение о продлении за... | smartlab.news",
+          "description": "«Да, такие предложения Минэнерго подготовило» — сообщил журналистам вице-премьер РФ Александр Новак., отвечая на вопрос, будет ли принято решение о продлении з...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F1131319&s=110484285",
+              "anchor_text": "www.interfax.ru/business/1131319"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.AFLT",
+              "anchor_text": "📈 график акций Аэрофлот"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379461.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T12:18:36+00:00",
+      "post_url": "https://t.me/newssmartlab/137798",
+      "tickers": [
+        "GAZP"
+      ],
+      "topic_tags": [
+        "dividends"
+      ],
+      "reporting_related": true,
+      "text": "МНЕНИЕ: Мы не ожидаем дивидендов Газпрома по итогам 2026: абсолютный размер чистого долга остается высоким, а ожидаемый свободный денежный поток составляет менее 15% чистого долга — Совкомбанк #GAZP Читать далее 👉 https://smartlab.news/i/212380 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212380",
+          "text": "https://smartlab.news/i/212380"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212380",
+          "fetch_status": "ok",
+          "title": "МНЕНИЕ: Мы не ожидаем дивидендов Газпрома по итогам 2026: абсолютный размер чистого долга остается высоким, а ожидаемый свободный денежный поток составляет менее 15% чистого долга — Совкомбанк МНЕНИЕ: Мы не ожидаем дивидендов Газпрома по итогам 202... | smartlab.news",
+          "description": "EBITDA за 3К26 прогнозируется почти 1 трлн руб при динамике около 0% кв/кв. Поддержка от высоких газовых цен в Европе компенсировалась меньшими физическими об...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/04/14/71/2026/11/25/294062.png",
+              "anchor_text": ""
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fsovcombankinvest%2F2517&s=3107125713",
+              "anchor_text": "Источник"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/editor2",
+              "anchor_text": "Редактор Боб"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "anchor_text": "📈 график акций Газпром"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379462.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T12:36:54+00:00",
+      "post_url": "https://t.me/newssmartlab/137802",
+      "tickers": [
+        "SBER",
+        "VTBR"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Спрос на реструктуризацию кредитов в 3кв2026 вырос: заявки физлиц +4,2% кв/кв (в основном по собственным программам банков), МСП +14,5% кв/кв — Обзор ЦБ РФ #SBER #VTBR Одобрено 25,1% рассмотренных заявок (3,6 млн): по собственным программам - 27,0%, по кредитным каникулам - 15,1%, по ипотечным - 36,6% Читать далее 👉 https://smartlab.news/i/212388 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212388",
+          "text": "https://smartlab.news/i/212388"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212388",
+          "fetch_status": "ok",
+          "title": "Спрос на реструктуризацию кредитов в 3кв2026 вырос: заявки физлиц +4,2% кв/кв (в основном по собственным программам банков), МСП +14,5% кв/кв — Обзор ЦБ РФ Спрос на реструктуризацию кредитов в 3кв2026 вырос: зая... | smartlab.news",
+          "description": "Главное из материала «ДИНАМИКА РЕСТРУКТУРИЗАЦИИ КРЕДИТОВ НАСЕЛЕНИЯ И БИЗНЕСА»:\r\n\r\n\nСпрос на реструктуризацию в III квартале 2026 г. вырос: заявки физлиц...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
+              "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "anchor_text": "📈 график акций ВТБ"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379479.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
+              "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+            }
+          ],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T12:55:47+00:00",
+      "post_url": "https://t.me/newssmartlab/137803",
+      "tickers": [
+        "VTBR"
+      ],
+      "topic_tags": [
+        "financial_report"
+      ],
+      "reporting_related": true,
+      "text": "📈 Акции ВТБ сегодня лучше рынка: +1,7% и попытка пробития-закрепления выше уровня в 56 руб, чтобы после выхода отчета по МСФО 27 ноября одним рывком достичь 87 руб #VTBR Читать далее 👉 https://smartlab.news/i/212389 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212389",
+          "text": "https://smartlab.news/i/212389"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212389",
+          "fetch_status": "ok",
+          "title": "📈Акции ВТБ сегодня лучше рынка: +1,7% и попытка пробития-закрепления выше уровня в 56 руб, чтобы после выхода отчета по МСФО 27 ноября одним рывком достичь 87 руб 📈Акции ВТБ сегодня лучше рынка: +1,7% и попытка пробит... | smartlab.news",
+          "description": "📈Акции ВТБ сегодня лучше рынка: +1,7% и попытка пробития-закрепления выше уровня в 56 руб, чтобы после выхода отчета по МСФО 27 ноября одним рывком достичь 87...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/e74883.png",
+              "anchor_text": ""
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "anchor_text": "📈 график акций ВТБ"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379490.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T13:11:01+00:00",
+      "post_url": "https://t.me/newssmartlab/137807",
+      "tickers": [
+        "IRAO"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "МНЕНИЕ: Аналитики Сбера сохраняют рекомендацию покупать Интер РАО с целевой ценой 4,8 руб. и потенциалом около 90%, но отмечают, что рост котировок во многом зависит от использования крупных денежных резервов #IRAO Читать далее 👉 https://smartlab.news/i/212393 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212393",
+          "text": "https://smartlab.news/i/212393"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212393",
+          "fetch_status": "ok",
+          "title": "МНЕНИЕ: Аналитики Сбера сохраняют рекомендацию покупать Интер РАО с целевой ценой 4,8 руб. и потенциалом около 90%, но отмечают, что рост котировок во многом зависит от использования крупных денежных резервов МНЕНИЕ: Аналитики Сбера сохраняют рекомендацию покупать... | smartlab.news",
+          "description": "Аналитики СберИнвестиций ожидают падения скорректированной чистой прибыли Интер РАО на 46% год к году в третьем квартале после снижения на 38% во втором кварта...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2FSberInvestmentsPRO%2FAaIR70bpUPw&s=315092310",
+              "anchor_text": "Источник"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/editor2",
+              "anchor_text": "Редактор Боб"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.IRAO",
+              "anchor_text": "📈 график акций ИнтерРАО"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379499.php#comments",
+              "anchor_text": "Комментировать на смартлабе"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "anchor_text": ""
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T13:26:13+00:00",
+      "post_url": "https://t.me/newssmartlab/137813",
+      "tickers": [
+        "RTKM"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Решетников: В России будет почти 100% покрытие интернетом #RTKM Читать далее 👉 https://smartlab.news/i/212398 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212398",
+          "text": "https://smartlab.news/i/212398"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T13:30:47+00:00",
+      "post_url": "https://t.me/newssmartlab/137815",
+      "tickers": [
+        "ROSN"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Новак: Проект «Восточного нефтехимического комплекса» (ВНХК) Роснефти снова актуален. Обсуждаются меры его реализации и необходимая господдержка #ROSN Читать далее 👉 https://smartlab.news/i/212400 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212400",
+          "text": "https://smartlab.news/i/212400"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T10:19:12+00:00",
+      "post_url": "https://t.me/newssmartlab/137774",
+      "tickers": [
+        "LKOH",
+        "ROSN"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Российская нефть теряет ценовое преимущество в Индии на фоне роста поставок с Ближнего Востока — Bloomberg #ROSN #LKOH Читать далее 👉 https://smartlab.news/i/212350 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212350",
+          "text": "https://smartlab.news/i/212350"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T10:19:46+00:00",
+      "post_url": "https://t.me/newssmartlab/137775",
+      "tickers": [
+        "MOEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Мосбиржа 24 ноября запустила торги облигациями технологического суверенитета. Новый инструмент сочетает регуляторные и налоговые льготы для эмитентов, банков и инвесторов — Дмитрий Таскин (Мосбиржа) #MOEX Читать далее 👉 https://smartlab.news/i/212351 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212351",
+          "text": "https://smartlab.news/i/212351"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T10:38:27+00:00",
+      "post_url": "https://t.me/newssmartlab/137777",
+      "tickers": [
+        "GAZP"
+      ],
+      "topic_tags": [
+        "guidance",
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "МНЕНИЕ: Прогноз финансовых результатов «Газпрома» за 3 квартал 2026 года от аналитиков Ренессанс Капитал 📈 Выручка вырастет на 21% г/г до 2,62 трлн руб. 📈 EBITDA может вырасти на 81% г/г до 1,15 трлн руб. 📈 Чистая прибыль может увеличиться в 3,5 раза г/г и составить 465 млрд руб. #GAZP Читать далее 👉 https://smartlab.news/i/212353 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212353",
+          "text": "https://smartlab.news/i/212353"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T10:51:45+00:00",
+      "post_url": "https://t.me/newssmartlab/137779",
+      "tickers": [
+        "VTBR"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "ВТБ планирует нарастить портфель зарплатных клиентов на 500 тыс человек - до 12 млн к концу 2027 года #VTBR Читать далее 👉 https://smartlab.news/i/212356 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212356",
+          "text": "https://smartlab.news/i/212356"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T11:02:36+00:00",
+      "post_url": "https://t.me/newssmartlab/137781",
+      "tickers": [
+        "GAZP",
+        "LKOH",
+        "NVTK",
+        "ROSN"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Сопредседатель партии «АдГ» Алис Вайдель призвала вернуться к закупкам газа и нефти из России, а также к атомной энергетике, чтобы оздоровить немецкую экономику #GAZP #NVTK #LKOH #ROSN \"Выгодная энергия, возвращение к атомной энергетике, покупки газа и нефти там, где они дешевле всего, в том числе в России\" Читать далее 👉 https://smartlab.news/i/212360 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212360",
+          "text": "https://smartlab.news/i/212360"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T11:32:45+00:00",
+      "post_url": "https://t.me/newssmartlab/137789",
+      "tickers": [
+        "SNGS"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "📈 Префы Сургутнефтегаза сегодня растут более, чем на 3% до 41,9 руб на фоне ослабления рубля #SNGS Юань растет против рубля до 12,33, доллар также укрепляется до 82,3 руб. Читать далее 👉 https://smartlab.news/i/212368 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212368",
+          "text": "https://smartlab.news/i/212368"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T08:52:41+00:00",
+      "post_url": "https://t.me/newssmartlab/137753",
+      "tickers": [
+        "SBER",
+        "VTBR"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "НРА ожидает прибыль банковского сектора РФ по итогам 2026 года на уровне 4,4-4,8 млрд руб #SBER #VTBR Читать далее 👉 https://smartlab.news/i/212326 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212326",
+          "text": "https://smartlab.news/i/212326"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T09:34:13+00:00",
+      "post_url": "https://t.me/newssmartlab/137760",
+      "tickers": [
+        "VKCO"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Объем рынка рекламы за 9 мес 2026 г. увеличился на 6%, до 720-725 млрд руб — АКАР #VKCO Читать далее 👉 https://smartlab.news/i/212334 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212334",
+          "text": "https://smartlab.news/i/212334"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T09:35:11+00:00",
+      "post_url": "https://t.me/newssmartlab/137761",
+      "tickers": [
+        "GAZP"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "В США 87% добычи газа приходится на трудноизвлекаемые запасы (ТРИЗ), из них 83% - на сланцевый газ и 4% - на метан из угольных пластов — Член правления «Газпрома» Сергей Меньшиков #GAZP Читать далее 👉 https://smartlab.news/i/212335 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212335",
+          "text": "https://smartlab.news/i/212335"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T09:36:53+00:00",
+      "post_url": "https://t.me/newssmartlab/137762",
+      "tickers": [
+        "ROSN"
+      ],
+      "topic_tags": [
+        "guidance",
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "МНЕНИЕ: Прогноз финансовых результатов Роснефти за 3 квартал 2026 года от аналитиков «Ренессанс Капитал» 📈 Выручка вырастет на 20% г/г до 2,4 трлн руб. 📈 EBITDA увеличится на 53% г/г до 900 млрд руб. 📈 Чистая прибыль увеличится более чем в 8 раз г/г и составит 270 млрд руб. #ROSN Читать далее 👉 https://smartlab.news/i/212336 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212336",
+          "text": "https://smartlab.news/i/212336"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T09:48:37+00:00",
+      "post_url": "https://t.me/newssmartlab/137763",
+      "tickers": [
+        "GAZP"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Газпром ввёл в эксплуатацию первую газотурбинную установку мощностью 110 МВт на Южно-Якутской ТЭС, которая обеспечит электроэнергией объекты Восточного полигона железных дорог — Компания #GAZP Алексей Миллер: \"Это вклад «Газпрома» в решение очень важной государственной задачи по расширению логистического коридора между Россией и Азией\" Читать далее 👉 https://smartlab.news/i/212338 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212338",
+          "text": "https://smartlab.news/i/212338"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T10:05:45+00:00",
+      "post_url": "https://t.me/newssmartlab/137771",
+      "tickers": [
+        "FLOT",
+        "LKOH",
+        "ROSN"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Урсула фон дер Ляйен: ЕК предложила внести в черный список 70 танкеров теневого флота и запретить все танкеры, застрахованные в России #ROSN #LKOH #FLOT «Запрет» подразумевает отказ этим судам в любых финансовых и физических услугах в ЕС, включая возможность заходить в порты, оплачивать счета, заправляться и пополнять припасы. Читать далее 👉 https://smartlab.news/i/212346 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212346",
+          "text": "https://smartlab.news/i/212346"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    }
+  ],
+  "articles": [
+    {
+      "url": "https://smartlab.news/i/212447",
+      "fetch_status": "ok",
+      "title": "Санкции, скорее всего, приведут Лукойл к продаже зарубежных активов, хотя мы не хотим этого — Вагит Алекперов Санкции, скорее всего, приведут Лукойл к продаже зарубе... | smartlab.news",
+      "description": "Основатель Лукойла Вагит Алекперов заявил, что санкции могут вынудить компанию продать зарубежный бизнес, хотя сама компания не заинтересована в таком сценари...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vesti.ru%2Fns%2Falekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla&s=2948903366",
+          "anchor_text": "www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379636.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212448",
+      "fetch_status": "ok",
+      "title": "Леван Назаров подтвердил приобретение около 20% акций ЦИАН — Ъ Леван Назаров подтвердил приобретение около 20% акций Ц... | smartlab.news",
+      "description": "Крупный пакет акций ЦИАН консолидировал инвестор и предприниматель Леван Назаров. По словам источника “Ъ”, точный размер пакета и детали о продавцах не известн...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130653&s=1352614771",
+          "anchor_text": "www.kommersant.ru/doc/9130653"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.CNRU",
+          "anchor_text": "📈 график акций Циан (CIAN)"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379638.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212453",
+      "fetch_status": "ok",
+      "title": "Консорциум Боэли получит 100% Lukoil Int. в обмен на акции Лукойла и «других российских компаний» — релиз Консорциум Боэли получит 100% Lukoil Int. в обмен на ак... | smartlab.news",
+      "description": "Сегодня консорциум во главе с США объявил о заключении окончательного соглашения о приобретении компании LUKOIL International GmbH (LIG) в рамках сделки, напра...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.businesswire.com%2Fnews%2Fhome%2F20261125144720%2Fen%2FAmerican-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio&s=2164802708",
+          "anchor_text": "www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379650.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212455",
+      "fetch_status": "ok",
+      "title": "📉 Акции ЦИАН снижались более чем на 6%, ранее вышла новость, что Леван Назаров консолидировал около 20% акций компании 📉 Акции ЦИАН снижались более чем на 6%, ранее вышла но... | smartlab.news",
+      "description": "📉 Акции ЦИАН снижались более чем на 6%, ранее вышла новость, что Леван Назаров консолидировал около 20% акций компании.\r\n\r\n\r\nsmartlab.news/read/212448-levan-na...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/faa4af.jpg",
+          "anchor_text": ""
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.CNRU",
+          "anchor_text": "📈 график акций Циан (CIAN)"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379653.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212457",
+      "fetch_status": "ok",
+      "title": "Экспорт дизтоплива из России за 1–19 ноября вырос на 34,6% к октябрю, до 1,48 млн тонн — Ъ Экспорт дизтоплива из России за 1–19 ноября вырос на 34... | smartlab.news",
+      "description": "Экспорт российского дизтоплива за первые две декады ноября превысил отгрузки за весь октябрь более чем на треть и стал рекордным за четыре месяца. Аналитики объ...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130623&s=2215742104",
+          "anchor_text": "www.kommersant.ru/doc/9130623"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.ROSN",
+          "anchor_text": "📈 график акций Роснефть"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379657.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212404",
+      "fetch_status": "ok",
+      "title": "Мосбиржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках Мосбиржа проведет розыгрыш билетов в Большой театр сред... | smartlab.news",
+      "description": "Московская биржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках. Участвовать в розыгрыше пригласите...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
+          "anchor_text": "на сайте биржи"
+        },
+        {
+          "url": "https://smart-lab.ru#_ftn1",
+          "anchor_text": "[1]"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
+          "anchor_text": "сайте"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106345&s=949823020",
+          "anchor_text": "www.moex.com/n106345"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.MOEX",
+          "anchor_text": "📈 график акций Московская биржа"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379519.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212405",
+      "fetch_status": "ok",
+      "title": "Московская биржа проведет XIV Биржевой форум 15 апреля 2027 года Московская биржа проведет XIV Биржевой форум 15 апреля... | smartlab.news",
+      "description": "Московская биржа проведет XIV Биржевой форум, ключевое мероприятие для профессионального финансового сообщества, 15 апреля 2027 года.\nБиржевой форум – ведущая...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106346&s=1325659356",
+          "anchor_text": "www.moex.com/n106346"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.MOEX",
+          "anchor_text": "📈 график акций Московская биржа"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379521.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212410",
+      "fetch_status": "ok",
+      "title": "Отбор газа из европейских ПХГ 23 ноября достиг исторического максимума для этой даты на фоне похолодания — Газпром Отбор газа из европейских ПХГ 23 ноября достиг историче... | smartlab.news",
+      "description": "Волна арктического холода в Европе спровоцировала очередные антирекорды по отбору газа из хранилищ.\r\n \r\nПо данным Gas Infrastructure Europe, 23 ноября отбор из...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fgazprom%2F2609&s=2951167633",
+          "anchor_text": "t.me/gazprom/2609"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "anchor_text": "📈 график акций Газпром"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379537.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212413",
+      "fetch_status": "ok",
+      "title": "Оборот сервиса кикшеринга Юрент достиг 12,7 млрд руб. за 9М 2026 г. — Ведомости Оборот сервиса кикшеринга Юрент достиг 12,7 млрд руб. з... | smartlab.news",
+      "description": "Число поездок на электросамокатах выросло на 4,5% г/г, до 111,6 млн.\nДоля Юрент на российском рынке кикшеринга составила около 36%, сообщил гендиректор компан...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vedomosti.ru%2Finvestments%2Fnews%2F2026%2F11%2F25%2F1415279-oborot-yurent&s=1201390238",
+          "anchor_text": "www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.MTSS",
+          "anchor_text": "📈 график акций МТС"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.WUSH",
+          "anchor_text": "📈 график акций Вуш Холдинг | WHOOSH"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379556.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212421",
+      "fetch_status": "ok",
+      "title": "Портфель строящегося жилья достиг рекорда - 121,9 млн м², но запуски и выдача новых разрешений на строительство (РНС) замедляются — Аналитика ДОМ.PФ Портфель строящегося жилья достиг рекорда - 121,9 млн м... | smartlab.news",
+      "description": "Главное из материала «Жилищное строительство в России за III кв. 2026 г. Ноябрь 2026 г.»:\r\n\r\n\nПродажи: в III кв. 2026 г. зарегистрировано 142 тыс. ДДУ н...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fdomresearch%2F1032&s=270218856",
+          "anchor_text": "t.me/domresearch/1032"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2Fdomresearch%2FAaITDrEbeQw&s=1029355103",
+          "anchor_text": "max.ru/domresearch/AaITDrEbeQw"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+          "anchor_text": "📈 график акций ДОМ.РФ"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379572.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212431",
+      "fetch_status": "ok",
+      "title": "Boehly Group подписала с Лукойлом соглашение об обмене акциями на глобальные активы — Reuters Boehly Group подписала с Лукойлом соглашение об обмене... | smartlab.news",
+      "description": "Консорциум во главе с Тоддом Боэли планирует передать ценные бумаги Лукойла на $10 млрд в обмен на международный портфель компании.\nВ консорциум входит амери...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/5a0162.jpg",
+          "anchor_text": ""
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.reuters.com%2Fbusiness%2Fenergy%2Fboehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25%2F&s=1018180804",
+          "anchor_text": "www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379587.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212432",
+      "fetch_status": "ok",
+      "title": "Буланцева О.С. и Мордавченков А.А. получили совместное право распоряжаться 6,8% голосов в Яндексе. Калин Александр Борисович утратил право. Объем акций: 25 819 212 / 6,80% акций компании Буланцева О.С. и Мордавченков А.А. получили совместное... | smartlab.news",
+      "description": "Буланцева О.С. и Мордавченков А.А. получили совместное право распоряжаться 6,8% голосов в Яндексе. Калин Александр Борисович утратил право. Объем акций: 25 819...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "anchor_text": "📈 график акций Яндекс"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379588.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+        }
+      ],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212434",
+      "fetch_status": "ok",
+      "title": "Внедрение ИИ может удвоить темпы роста производительности в России и добавить до 1,4 п.п. к ежегодному росту ВВП  — Финдиректор \"Сбера\" Тарас Скворцов Внедрение ИИ может удвоить темпы роста производительнос... | smartlab.news",
+      "description": "«Для нас развитие искусственного интеллекта — это прежде всего усиление человека, а не его замещение. Рутину все больше будут брать на себя ИИ-агенты, а челове...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28354711&s=2797653262",
+          "anchor_text": "tass.ru/ekonomika/28354711"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379592.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212436",
+      "fetch_status": "ok",
+      "title": "📈 Акции Лукойла в моменте росли почти на 2% после новости о возможной сделке Boehly Group по приобретению зарубежных активов компании 📈 Акции Лукойла в моменте росли почти на 2% после ново... | smartlab.news",
+      "description": "📈 Акции Лукойла в моменте росли почти на 2% после новости о возможной сделке Boehly Group по приобретению зарубежных активов компании.\nСоглашение еще требует...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/0cb3bd.jpg",
+          "anchor_text": ""
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379600.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212439",
+      "fetch_status": "ok",
+      "title": "Чистая прибыль банков РФ в октябре снизилась на 25% м/м — до 311 млрд руб. на фоне роста резервов — ЦБ Чистая прибыль банков РФ в октябре снизилась на 25% м/м... | smartlab.news",
+      "description": "Кредитование компаний (с учетом облигаций) увеличилось в октябре на 2,4% (+0,7% в сентябре). Рост спроса компаний на кредиты в целом характерен для октября – н...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
+          "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "anchor_text": "📈 график акций ВТБ"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SVCB",
+          "anchor_text": "📈 график акций Совкомбанк"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.BSPB",
+          "anchor_text": "📈 график акций Банк Санкт-Петербург"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.CBOM",
+          "anchor_text": "📈 график акций МКБ"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.T",
+          "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.MBNK",
+          "anchor_text": "📈 график акций МТС Банк"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379607.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
+          "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+        }
+      ],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212379",
+      "fetch_status": "ok",
+      "title": "Новак: Минэнерго подготовило предложение о продлении запрета на экспорт авиакеросина, который действует до конца ноября Новак: Минэнерго подготовило предложение о продлении за... | smartlab.news",
+      "description": "«Да, такие предложения Минэнерго подготовило» — сообщил журналистам вице-премьер РФ Александр Новак., отвечая на вопрос, будет ли принято решение о продлении з...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F1131319&s=110484285",
+          "anchor_text": "www.interfax.ru/business/1131319"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.AFLT",
+          "anchor_text": "📈 график акций Аэрофлот"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379461.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212380",
+      "fetch_status": "ok",
+      "title": "МНЕНИЕ: Мы не ожидаем дивидендов Газпрома по итогам 2026: абсолютный размер чистого долга остается высоким, а ожидаемый свободный денежный поток составляет менее 15% чистого долга — Совкомбанк МНЕНИЕ: Мы не ожидаем дивидендов Газпрома по итогам 202... | smartlab.news",
+      "description": "EBITDA за 3К26 прогнозируется почти 1 трлн руб при динамике около 0% кв/кв. Поддержка от высоких газовых цен в Европе компенсировалась меньшими физическими об...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/04/14/71/2026/11/25/294062.png",
+          "anchor_text": ""
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fsovcombankinvest%2F2517&s=3107125713",
+          "anchor_text": "Источник"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/editor2",
+          "anchor_text": "Редактор Боб"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "anchor_text": "📈 график акций Газпром"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379462.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212388",
+      "fetch_status": "ok",
+      "title": "Спрос на реструктуризацию кредитов в 3кв2026 вырос: заявки физлиц +4,2% кв/кв (в основном по собственным программам банков), МСП +14,5% кв/кв — Обзор ЦБ РФ Спрос на реструктуризацию кредитов в 3кв2026 вырос: зая... | smartlab.news",
+      "description": "Главное из материала «ДИНАМИКА РЕСТРУКТУРИЗАЦИИ КРЕДИТОВ НАСЕЛЕНИЯ И БИЗНЕСА»:\r\n\r\n\nСпрос на реструктуризацию в III квартале 2026 г. вырос: заявки физлиц...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
+          "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "anchor_text": "📈 график акций ВТБ"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379479.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
+          "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+        }
+      ],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212389",
+      "fetch_status": "ok",
+      "title": "📈Акции ВТБ сегодня лучше рынка: +1,7% и попытка пробития-закрепления выше уровня в 56 руб, чтобы после выхода отчета по МСФО 27 ноября одним рывком достичь 87 руб 📈Акции ВТБ сегодня лучше рынка: +1,7% и попытка пробит... | smartlab.news",
+      "description": "📈Акции ВТБ сегодня лучше рынка: +1,7% и попытка пробития-закрепления выше уровня в 56 руб, чтобы после выхода отчета по МСФО 27 ноября одним рывком достичь 87...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/e74883.png",
+          "anchor_text": ""
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "anchor_text": "📈 график акций ВТБ"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379490.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212393",
+      "fetch_status": "ok",
+      "title": "МНЕНИЕ: Аналитики Сбера сохраняют рекомендацию покупать Интер РАО с целевой ценой 4,8 руб. и потенциалом около 90%, но отмечают, что рост котировок во многом зависит от использования крупных денежных резервов МНЕНИЕ: Аналитики Сбера сохраняют рекомендацию покупать... | smartlab.news",
+      "description": "Аналитики СберИнвестиций ожидают падения скорректированной чистой прибыли Интер РАО на 46% год к году в третьем квартале после снижения на 38% во втором кварта...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2FSberInvestmentsPRO%2FAaIR70bpUPw&s=315092310",
+          "anchor_text": "Источник"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/editor2",
+          "anchor_text": "Редактор Боб"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.IRAO",
+          "anchor_text": "📈 график акций ИнтерРАО"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379499.php#comments",
+          "anchor_text": "Комментировать на смартлабе"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "anchor_text": ""
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
     }
   ],
   "limitations": [
-    "Telegram public preview exposes only a recent slice, not a guaranteed complete archive.",
-    "Posts are discovery leads, not verified financial statements or issuer disclosures.",
-    "Only explicit ticker tags/tokens are mapped; issuer-name fuzzy matching is disabled.",
-    "Publication timestamps are preserved as supplied; missing values remain null.",
-    "No bot token, Telegram account session, paid API, Finam AI Screener, or broker endpoint is used."
+    "Telegram public preview pagination is best-effort and not a guaranteed complete archive.",
+    "Ticker matching uses explicit tags/tokens only; company-name fuzzy matching is disabled.",
+    "Smart-Lab article pages and outbound links are discovery evidence, not proof of issuer authenticity.",
+    "Candidate document links require manual/automated issuer-domain verification before figures are used.",
+    "Missing publication timestamps and document fields remain null.",
+    "No bot token, account session, paid API, Finam AI Screener, or broker endpoint is used."
   ]
 }
