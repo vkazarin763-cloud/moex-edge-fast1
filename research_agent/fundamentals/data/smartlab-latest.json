@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "collector": "telegram_public_preview_smartlab",
-  "collected_at_utc": "2026-11-26T17:57:41.524549+00:00",
+  "collected_at_utc": "2026-11-26T18:00:05.636511+00:00",
   "source": {
     "channel": "@newssmartlab",
     "url": "https://t.me/s/newssmartlab",
@@ -434,7 +434,7 @@
       ],
       "topic_tags": [],
       "reporting_related": false,
-      "text": "Греф: риск пузыря на рынке ИИ существует — скорость внедрения технологии отстает от затрат на ее разработку #SBER Читать далее 👉 https://smartlab.news/i/212610 мы в max",
+      "text": "Греф: - Риск пузыря на рынке ИИ существует — скорость внедрения технологии отстает от затрат на ее разработку. - Мировые инвестиции в ИИ беспрецедентны, таких объемов не было никогда в истории. #SBER Читать далее 👉 https://smartlab.news/i/212610 мы в max",
       "linked_articles": [
         {
           "url": "https://smartlab.news/i/212610",
