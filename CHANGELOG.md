@@ -177,3 +177,12 @@
 
 ## 2026-11-21 — Finam mode safety observation
 - Safety CI run 44864354084 reported derived `FINAM_DRY_RUN=live`. No order was sent. Scheduled and standard manual executor workflows hardcode DRY_RUN; two separate manual workflows remain live-capable behind explicit confirmations. Recorded in handoff; no configuration was changed.
+
+
+## 2026-11-26 — free-source fundamentals report discovery MVP
+- Added isolated `research_agent/fundamentals` collector using public MOEX ISS corporate-information report metadata and company-reference endpoints.
+- Added weekday GitHub Actions workflow and mock-only unit tests.
+- No Finam AI Screener, Finam credentials, broker endpoints, Telegram, or production signal paths are used.
+- Publication timestamp and reporting-period end are stored separately; ticker mapping is only accepted when explicitly supplied by source data. Unmatched rows remain visible.
+- MOEX CCI structured IFRS/RAS financial datasets are subscription services; this MVP does not assume free access or invent missing financial figures. Full statement parsing and verified financial metrics remain a later stage.
+- Research-only branch; no production or live settings changed. Initial GitHub Actions execution is still pending.
