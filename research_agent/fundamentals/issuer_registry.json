@@ -382,13 +382,50 @@
     },
     {
       "ticker": "SBER",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
+      "issuer_name": "ПАО «Сбербанк»",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://www.sberbank.com/ru/investor-relations/ir/news/article?blockID=8&lang=ru&newsID=82812c67-6834-41db-a137-a71b465535ef&regionID=77&type=NEWS",
       "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
-      "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "report_candidates": [
+        {
+          "source_url": "https://www.sberbank.com/ru/investor-relations/ir/news/article?blockID=8&lang=ru&newsID=82812c67-6834-41db-a137-a71b465535ef&regionID=77&type=NEWS",
+          "source_type": "issuer_ir",
+          "report_type": "interim_condensed_consolidated_IFRS",
+          "period": "2026-09-30",
+          "publication_date": "2026-10-28",
+          "listing_evidence": "Official Sber IR release states interim condensed consolidated IFRS financial statements for 9M 2026 were published; release and key metrics inspected.",
+          "status": "issuer_release_verified_metrics_extracted"
+        }
+      ],
+      "latest_verified_report": {
+        "source_url": "https://www.sberbank.com/ru/investor-relations/ir/news/article?blockID=8&lang=ru&newsID=82812c67-6834-41db-a137-a71b465535ef&regionID=77&type=NEWS",
+        "report_type": "interim_condensed_consolidated_IFRS",
+        "period": "2026-09-30",
+        "publication_date": "2026-10-28",
+        "verification_status": "issuer_release_and_financial_results_verified",
+        "extracted_metrics": {
+          "currency": "RUB",
+          "unit": "billion",
+          "net_profit_9m_2026": 1529.9,
+          "net_profit_9m_2025": 1307.3,
+          "net_profit_yoy_pct": 17,
+          "net_interest_income_9m_2026": 3158.8,
+          "net_interest_income_9m_2025": 2567.8,
+          "net_interest_income_yoy_pct": 23,
+          "net_fee_income_9m_2026": 632.1,
+          "net_fee_income_9m_2025": 614.7,
+          "net_fee_income_yoy_pct": 2.8,
+          "operating_income_before_provisions_9m_2026": 3489.6,
+          "provisions_and_fv_revaluation_9m_2026": 442.5,
+          "operating_expenses_9m_2026": 990.6,
+          "return_on_equity_pct": 24,
+          "cost_of_risk_pct": 1.1,
+          "cost_to_income_pct": 28.4,
+          "capital_adequacy_h20_pct": 13.7
+        },
+        "notes": "Group IFRS consolidated results. Net profit growth and NII growth are strong; fee income growth modest. Capital adequacy H20.0 reported at 13.7% after dividend payout."
+      },
+      "notes": "Issuer identity, official IR release and interim consolidated IFRS results for 9M 2026 verified. Figures are group-level, not standalone RAS."
     },
     {
       "ticker": "SBERP",
@@ -442,13 +479,23 @@
     },
     {
       "ticker": "TATN",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
-      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
+      "issuer_name": "ПАО «Татнефть» им. В.Д. Шашина",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://www.tatneft.ru/",
+      "e_disclosure_search_url": "https://e-disclosure.ru/portal/files.aspx?id=118&type=3",
+      "report_candidates": [
+        {
+          "source_url": "https://e-disclosure.ru/portal/files.aspx?id=118&type=3",
+          "source_type": "interfax_e_disclosure",
+          "report_type": "interim_RAS",
+          "period": "2026-09-30",
+          "publication_date": "2026-11-06",
+          "listing_evidence": "Interfax disclosure listing for ПАО «Татнефть» explicitly shows interim accounting statements (all forms) for 9M 2026; listed 06.11.2026. ZIP 10.65 MB.",
+          "status": "listing_verified_document_not_downloaded"
+        }
+      ],
       "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "notes": "Issuer identity and 9M 2026 RAS filing listing verified. Financial figures from media reports are not yet extracted from the primary statement; do not treat as primary-source verified."
     },
     {
       "ticker": "TATNP",
