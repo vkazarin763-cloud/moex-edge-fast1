@@ -287,7 +287,7 @@ def main():
         active = [x for x in items if x["trades"] > 0]
         means5 = [x["5bps"]["mean_net_return_pct"] for x in active]
         means10 = [x["10bps"]["mean_net_return_pct"] for x in active]
-        pfs5 = [x["5bps"]["profit_factor"] for x in active if x["5bps"]["profit_factor"] is not None]
+        pfs5 = [x["5bps"]["profit_factor"] for x in active if isinstance(x["5bps"]["profit_factor"], (int, float))]
         return {
             "ticker_trade_count_sum": sum(x["trades"] for x in items),
             "tickers_with_trades": len(active),
