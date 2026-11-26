@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
 CHANNEL = "newssmartlab"
@@ -36,6 +36,7 @@ TOPIC_TERMS = {
     "dividends": ("дивиденд", "рекомендация дивиденд", "дата отсечки"),
     "debt": ("чистый долг", "долговая нагрузка", "долг/ebitda", "net debt"),
     "guidance": ("прогноз", "guidance", "прогнозирует", "ожидает по итогам"),
+    "ownership_change": ("инсайдер", "право распоряжаться", "доля до", "доля после", "приобрел право", "утратил право"),
 }
 DOCUMENT_HINTS = ("отчет", "отчёт", "отчетность", "отчётность", "мсфо", "рсбу",
                   "раскрытие", "disclosure", "report", "results", ".pdf", ".xlsx", ".xls")
@@ -243,6 +244,30 @@ def _post_number(post):
     return int(url_match.group(1)) if url_match else None
 
 
+def _resolve_smartlab_redirect(url):
+    """Unwrap Smart-Lab redirect links without following arbitrary destinations."""
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    if host not in {"smart-lab.ru", "www.smart-lab.ru"} or parsed.path != "/r.php":
+        return url
+    target = parse_qs(parsed.query).get("u", [None])[0]
+    if not target:
+        return url
+    target_parsed = urlparse(target)
+    if target_parsed.scheme != "https" or not target_parsed.hostname:
+        return url
+    return target
+
+
+def _source_domain_classification(url):
+    host = (urlparse(url).hostname or "").lower()
+    if host == "e-disclosure.ru" or host.endswith(".e-disclosure.ru"):
+        return "known_disclosure_operator_domain"
+    if host == "cbr.ru" or host.endswith(".cbr.ru"):
+        return "known_regulator_domain"
+    return "unverified_domain"
+
+
 def _article_details(url, fetcher):
     try:
         parser = ArticleParser()
@@ -260,9 +285,16 @@ def _article_details(url, fetcher):
         target_host = (parsed.hostname or "").lower()
         if not target_host or target_host == host or target_host.endswith(".smartlab.news"):
             continue
-        item = {"url": target, "anchor_text": link.get("text", "")}
+        resolved = _resolve_smartlab_redirect(target)
+        item = {
+            "url": target,
+            "resolved_url": resolved,
+            "anchor_text": link.get("text", ""),
+            "source_domain_classification": _source_domain_classification(resolved),
+            "content_verification_status": "not_fetched",
+        }
         outbound.append(item)
-        evidence = (target + " " + link.get("text", "")).lower()
+        evidence = (target + " " + resolved + " " + link.get("text", "")).lower()
         if any(hint in evidence for hint in DOCUMENT_HINTS):
             candidates.append(item)
     return {
@@ -354,7 +386,7 @@ def collect(fetcher=_fetch_html, max_pages=MAX_PAGES, max_articles=MAX_ARTICLES)
             "Telegram public preview pagination is best-effort and not a guaranteed complete archive.",
             "Ticker matching uses explicit tags/tokens only; company-name fuzzy matching is disabled.",
             "Smart-Lab article pages and outbound links are discovery evidence, not proof of issuer authenticity.",
-            "Candidate document links require manual/automated issuer-domain verification before figures are used.",
+            "Candidate links are unwrapped and classified by known disclosure-operator/regulator domain; page content and issuer identity are not verified by this collector.",
             "Missing publication timestamps and document fields remain null.",
             "No bot token, account session, paid API, Finam AI Screener, or broker endpoint is used.",
         ],
