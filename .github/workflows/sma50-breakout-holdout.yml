@@ -1,11 +1,13 @@
 name: SMA50 breakout — chronological holdout research
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - research/price-forecast-24h-v1
     paths:
       - "research_agent/price_forecast_24h/evaluate_sma50_holdout.py"
+      - ".github/workflows/sma50-breakout-holdout.yml"
 
 permissions:
   contents: write
