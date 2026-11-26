@@ -263,13 +263,46 @@
     },
     {
       "ticker": "NVTK",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
+      "issuer_name": "ПАО «НОВАТЭК»",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://www.novatek.ru/ru/press/releases/index.php?from_24=2&id_4=2088&id_4=7822",
       "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
-      "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "report_candidates": [
+        {
+          "source_url": "https://www.novatek.ru/ru/press/releases/index.php?from_24=2&id_4=2088&id_4=7822",
+          "source_type": "issuer_ir",
+          "report_type": "interim_condensed_consolidated_IFRS",
+          "period": "2026-06-30",
+          "publication_date": "2026-07-24",
+          "listing_evidence": "Official NOVATEK release says interim condensed consolidated financial statements for six months ended 30 June 2026 were published; figures and comparison period are included.",
+          "status": "issuer_release_verified_metrics_extracted"
+        }
+      ],
+      "latest_verified_report": {
+        "source_url": "https://www.novatek.ru/ru/press/releases/index.php?from_24=2&id_4=2088&id_4=7822",
+        "report_type": "interim_condensed_consolidated_IFRS",
+        "period": "2026-06-30",
+        "publication_date": "2026-07-24",
+        "verification_status": "issuer_release_and_financial_results_verified",
+        "extracted_metrics": {
+          "currency": "RUB",
+          "unit": "million",
+          "revenue_1h_2026": 836336,
+          "revenue_1h_2025": 804320,
+          "revenue_yoy_pct": 4,
+          "normalized_ebitda_1h_2026": 430402,
+          "normalized_ebitda_1h_2025": 471806,
+          "normalized_ebitda_yoy_pct": -8.8,
+          "net_profit_attributable_1h_2026": 218664,
+          "net_profit_attributable_1h_2025": 225697,
+          "normalized_net_profit_ex_fx_1h_2026": 216494,
+          "normalized_net_profit_ex_fx_1h_2025": 237057,
+          "net_debt_1h_2026": -43511,
+          "net_debt_1h_2025": 108379
+        },
+        "notes": "Net debt negative denotes net cash position. Revenue increased but normalized EBITDA and attributable profit declined year over year."
+      },
+      "notes": "Issuer identity, official IR release and consolidated interim IFRS results for 1H 2026 verified. Latest 9M 2026 report not yet located."
     },
     {
       "ticker": "OZON",
