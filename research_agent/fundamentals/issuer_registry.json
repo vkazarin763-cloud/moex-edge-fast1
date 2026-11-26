@@ -202,13 +202,52 @@
     },
     {
       "ticker": "MOEX",
-      "issuer_name": null,
-      "issuer_identity_verified": false,
-      "issuer_ir_url": null,
+      "issuer_name": "ПАО «Московская Биржа»",
+      "issuer_identity_verified": true,
+      "issuer_ir_url": "https://www.moex.com/ru/ir",
       "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
-      "report_candidates": [],
-      "latest_verified_report": null,
-      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+      "report_candidates": [
+        {
+          "source_url": "https://www.moex.com/n106369",
+          "source_type": "issuer_ir_financial_results_release",
+          "report_type": "IFRS_Q3_financial_results_release",
+          "period": "2026-09-30",
+          "publication_date": "2026-11-26",
+          "listing_evidence": "Official MOEX press release dated 26.11.2026 reports Q3 2026 IFRS financial results and comparative Q3 2025/Q2 2026 data.",
+          "status": "issuer_release_verified_metrics_extracted"
+        }
+      ],
+      "latest_verified_report": {
+        "source_url": "https://www.moex.com/n106369",
+        "report_type": "IFRS_Q3_financial_results_release",
+        "period": "2026-09-30",
+        "publication_date": "2026-11-26",
+        "verification_status": "issuer_release_verified_metrics_extracted",
+        "extracted_metrics": {
+          "currency": "RUB",
+          "unit": "million",
+          "gross_operating_income_q3_2026": 37578.7,
+          "gross_operating_income_q3_2025": 33542.4,
+          "fee_commission_income_q3_2026": 23364.1,
+          "fee_commission_income_q3_2025": 19435.2,
+          "net_interest_income_q3_2026": 13973.3,
+          "net_interest_income_q3_2025": 14020.9,
+          "operating_expenses_q3_2026": 10358.9,
+          "operating_expenses_q3_2025": 8815.3,
+          "net_profit_q3_2026": 20830.9,
+          "net_profit_q3_2025": 17252.9,
+          "adjusted_net_profit_q3_2026": 18919,
+          "adjusted_net_profit_q3_2025": 16477.1,
+          "ebitda_q3_2026": 30247.8,
+          "ebitda_q3_2025": 25306.6,
+          "adjusted_ebitda_q3_2026": 27698.6,
+          "adjusted_ebitda_q3_2025": 24272.2,
+          "adjusted_ebitda_margin_pct_q3_2026": 73.7,
+          "adjusted_ebitda_margin_pct_q3_2025": 72.4
+        },
+        "notes": "Official MOEX issuer release. Net profit includes higher ECL allowance; adjusted net profit is a separate issuer-defined measure. MOEX reports its own Group consolidated IFRS results."
+      },
+      "notes": "Issuer identity and official Q3 2026 IFRS results release verified; headline financial metrics extracted."
     },
     {
       "ticker": "MTSS",
@@ -388,10 +427,45 @@
           "publication_date": "2026-08-28",
           "listing_evidence": "Official Rosneft search result identifies its own release 'Results for 1H 2026 under IFRS'; issuer snippet reports EBITDA RUB 1,296bn and attributable net profit RUB 200bn. Direct page fetch currently unreachable; figures retained as search-snippet evidence only.",
           "status": "issuer_release_search_verified_fetch_pending"
+        },
+        {
+          "source_url": "https://www.rosneft.ru/upload/site1/document_file/message_28082026.pdf",
+          "source_type": "issuer_official_financial_results_pdf",
+          "report_type": "IFRS_financial_results_release",
+          "period": "2026-06-30",
+          "publication_date": "2026-08-28",
+          "listing_evidence": "Official Rosneft-hosted PDF for 1H 2026 IFRS results inspected via indexed document content; headline financial and operating figures extracted from issuer PDF.",
+          "status": "issuer_pdf_verified_metrics_extracted"
         }
       ],
-      "latest_verified_report": null,
-      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted."
+      "latest_verified_report": {
+        "source_url": "https://www.rosneft.ru/upload/site1/document_file/message_28082026.pdf",
+        "report_type": "IFRS_financial_results_release",
+        "period": "2026-06-30",
+        "publication_date": "2026-08-28",
+        "verification_status": "issuer_official_pdf_verified_metrics_extracted",
+        "extracted_metrics": {
+          "currency": "RUB",
+          "unit": "billion",
+          "revenue_and_income_from_associates_1h_2026": 4289,
+          "revenue_and_income_from_associates_1h_2025": 4263,
+          "revenue_yoy_pct": 0.6,
+          "ebitda_1h_2026": 1296,
+          "ebitda_1h_2025": 1054,
+          "ebitda_yoy_pct": 23,
+          "net_profit_attributable_1h_2026": 200,
+          "net_profit_attributable_1h_2025": 245,
+          "net_profit_yoy_pct": -18.4,
+          "capex_1h_2026": 858,
+          "capex_1h_2025": 769,
+          "capex_yoy_pct": 11.6,
+          "free_cash_flow_1h_2026": 194,
+          "free_cash_flow_1h_2025": 173,
+          "free_cash_flow_yoy_pct": 12.1
+        },
+        "notes": "Issuer PDF gives revenue including income from associates/JVs; EBITDA and free cash flow increased, while attributable net profit declined. Not a full extraction of all IFRS statements."
+      },
+      "notes": "Issuer identity, official IR and official issuer-hosted IFRS results PDF verified; headline metrics extracted from issuer document. Full consolidated statements still to be parsed separately."
     },
     {
       "ticker": "RTKM",
