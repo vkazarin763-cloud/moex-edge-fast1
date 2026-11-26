@@ -2,8 +2,6 @@ name: Fundamentals — free MOEX report discovery
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "35 5 * * 1-5"
 
 permissions:
   contents: write
