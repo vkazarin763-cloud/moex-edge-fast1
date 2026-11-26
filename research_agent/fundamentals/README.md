@@ -1,52 +1,45 @@
 # MOEX EDGE — Fundamentals research agent (free-source MVP)
 
-This module is isolated from production trading, Finam AI Screener, broker
-execution, and live signal generation. All collectors are read-only.
+The module is research-only and read-only. It does not use Finam AI Screener,
+broker execution, live signals, or production settings.
 
-## Current sources
-
-### Smart-Lab Telegram news — discovery only
+## Smart-Lab Telegram discovery
 
 - Public channel: https://t.me/newssmartlab
 - Collector: `python -m research_agent.fundamentals.smartlab_collector`
-- Reads Telegram's public web preview at `https://t.me/s/newssmartlab`; no bot
-  token, logged-in account, paid API, or Finam integration is needed.
-- Keeps posts only when an explicit ticker tag/token matches one of the 44
-  configured MOEX constituents. Short tickers require a hashtag or dollar
-  prefix to avoid false matches.
-- Stores post text, publication timestamp, post URL, ticker(s), and a simple
-  reporting-related keyword flag. Every item is marked
-  `unverified_news_lead`, not a verified issuer disclosure.
-- The public preview exposes only a recent slice, not a complete archive.
+- Reads the public Telegram preview, paginates up to five pages, deduplicates
+  posts, and matches explicit ticker tags/tokens from the 44-stock universe.
+- Classifies report, revenue/profit, dividend, debt, and guidance topics.
+- Follows public Smart-Lab article links from ticker-matched posts and records
+  article title/description plus external links that look like possible
+  issuer documents (e.g. report/disclosure/PDF links).
+- A candidate URL is only a lead. The system does not assume that an external
+  link is an issuer primary source; issuer domain and document authenticity
+  still require verification.
+- Each Telegram item is marked `unverified_news_lead`. Article pages are
+  marked `article_not_primary_source`.
+- Telegram's preview is a recent, best-effort slice, not a complete archive.
 
-### MOEX CCI report metadata — access may be restricted
+## MOEX CCI metadata
 
-- Calls MOEX CCI company-reference and corporate-report metadata endpoints.
-- Stores source rows and a normalized report index; publication timestamp is
-  kept separate from reporting-period end.
-- Does not assume structured IFRS/RAS datasets are free. HTTP 401/403 and
-  missing datasets are recorded as source limitations.
-- Documentation: https://www.moex.com/a2836 and
-  https://www.moex.com/tsentr-korporativnoj-informatsii
+The separate MOEX CCI collector checks company/report metadata endpoints.
+Structured financial data access may be restricted. SSL verification remains
+enabled; certificate errors are recorded, never bypassed.
 
-## Data integrity rules
+## Data integrity
 
-- Smart-Lab is a news-discovery source, not a source of record.
-- Before extracting figures, retrieve the issuer's original disclosure/report
-  and retain its URL, publication time, period, accounting standard,
-  consolidated/standalone scope, currency, units, and content hash.
-- Never substitute reporting-period end for publication time.
-- Fuzzy issuer/ticker matching is disabled. Missing values remain null.
-- Restatements and historical versions must be preserved before point-in-time
-  backtests are considered valid.
-- Fundamental data is a slow-moving research context, not an H1 entry timer.
+Before financial figures are extracted, preserve the issuer document URL,
+actual publication timestamp, reporting period, IFRS/RAS standard,
+consolidated/standalone scope, currency, units, and content hash. Never use
+period-end date as a substitute for publication time. Missing values remain
+null; no headline is treated as a financial statement. Preserve restatements
+and document versions before any point-in-time backtest.
 
 ## Workflow and safety
 
-The GitHub Actions workflow can be started manually and also validates changes
-pushed to `research/price-forecast-24h-v1` when collector, tests, docs, or the
-workflow itself change. It stores research snapshots on that branch. No
-scheduled polling is enabled.
+GitHub Actions validates changes and can be started manually; no scheduled
+polling is enabled. Snapshots are stored on
+`research/price-forecast-24h-v1`.
 
 No production signals, live orders, Telegram notification bot, secrets,
-cron-job.org schedule, or Finam settings are changed by this module.
+cron-job.org schedule, Finam settings, or production repository are changed.
