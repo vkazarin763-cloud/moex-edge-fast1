@@ -121,61 +121,88 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
         spot = None
         item["underlying_quote_error"] = f"{type(exc).__name__}: {exc}"
 
-    try:
-        chain = request_json(session, "GET", f"/v1/assets/{underlying}/options")
-        options = chain.get("options", [])
-        if not isinstance(options, list):
-            raise ValueError("OptionsChain response has no options array")
-        item["chain_count"] = len(options)
-        item["chain_expiry_scope"] = "Finam default chain response; verify returned expiry dates"
-        ordered = sorted(
-            options,
-            key=lambda opt: strike_distance(opt, spot),
-        )
-        selected = ordered[:MAX_OPTION_QUOTES_PER_UNDERLYING]
-        samples = []
-        for option_index, option in enumerate(selected):
-            symbol = option.get("symbol")
-            row: dict[str, Any] = {"contract": compact_option(option)}
-            if not symbol:
-                row["quote_error"] = "Option chain row has no symbol"
-            else:
-                try:
-                    quote_payload = request_json(
-                        session, "GET",
-                        f"/v1/instruments/{requests.utils.quote(str(symbol), safe='@')}/quotes/latest",
-                    )
-                    quote = quote_payload.get("quote", {})
-                    row["quote"] = quote_quality(quote)
-                    option_metrics = quote.get("option")
-                    if isinstance(option_metrics, dict):
-                        row["option_metrics"] = {
-                            key: decimal_value(option_metrics.get(key))
-                            for key in ("implied_volatility", "theoretical_price", "delta",
-                                        "gamma", "theta", "vega", "rho", "open_interest")
-                            if key in option_metrics
-                        }
-                    # A small GET-only diagnostic sample checks whether missing top quotes
-                    # are a quote endpoint issue, a contract metadata issue, or an empty book.
-                    if option_index < 1:
-                        encoded_symbol = requests.utils.quote(str(symbol), safe="@")
-                        try:
-                            asset = request_json(session, "GET", f"/v1/assets/{encoded_symbol}")
-                            row["asset_metadata"] = {
-                                key: asset.get(key) for key in
-                                ("board", "id", "ticker", "mic", "type", "name",
-                                 "expiration_date", "option_details")
-                                if key in asset
+    # Explicit expiries in the intended 20–60 day horizon. The default-chain
+    # response previously returned a 2030 date for every underlying.
+    expiry_dates = (
+        (2026, 12, 18),
+        (2027, 1, 15),
+        (2027, 1, 22),
+    )
+    expiry_results = []
+    all_samples = []
+    for year, month, day in expiry_dates:
+        expiry_label = f"{year:04d}-{month:02d}-{day:02d}"
+        expiry_row: dict[str, Any] = {"requested_expiry": expiry_label}
+        try:
+            chain = request_json(
+                session,
+                "GET",
+                f"/v1/assets/{underlying}/options",
+                params={
+                    "expiration_date.year": year,
+                    "expiration_date.month": month,
+                    "expiration_date.day": day,
+                },
+            )
+            options = chain.get("options", [])
+            if not isinstance(options, list):
+                raise ValueError("OptionsChain response has no options array")
+            expiry_row["returned_contract_count"] = len(options)
+            returned_expiries = sorted({
+                str(opt.get("expiration_last_day")) for opt in options
+            })
+            expiry_row["returned_expiries"] = returned_expiries
+            ordered = sorted(options, key=lambda opt: strike_distance(opt, spot))
+            # Small fixed sample around ATM, without searching for an optimized strike.
+            selected = ordered[:4]
+            samples = []
+            for option_index, option in enumerate(selected):
+                symbol = option.get("symbol")
+                row: dict[str, Any] = {
+                    "requested_expiry": expiry_label,
+                    "contract": compact_option(option),
+                }
+                if not symbol:
+                    row["quote_error"] = "Option chain row has no symbol"
+                else:
+                    encoded_symbol = requests.utils.quote(str(symbol), safe="@")
+                    try:
+                        quote_payload = request_json(
+                            session, "GET",
+                            f"/v1/instruments/{encoded_symbol}/quotes/latest",
+                        )
+                        quote = quote_payload.get("quote", {})
+                        row["quote"] = quote_quality(quote)
+                        option_metrics = quote.get("option")
+                        if isinstance(option_metrics, dict):
+                            row["option_metrics"] = {
+                                key: decimal_value(option_metrics.get(key))
+                                for key in ("implied_volatility", "theoretical_price", "delta",
+                                            "gamma", "theta", "vega", "rho", "open_interest")
+                                if key in option_metrics
                             }
-                        except Exception as exc:  # noqa: BLE001
-                            row["asset_metadata_error"] = f"{type(exc).__name__}: {exc}"
+                    except Exception as exc:  # noqa: BLE001
+                        row["quote_error"] = f"{type(exc).__name__}: {exc}"
+
+                    # One diagnostics contract per underlying, not per expiry.
+                    if year == 2026 and month == 12 and day == 18 and option_index == 0:
                         try:
-                            book = request_json(session, "GET", f"/v1/instruments/{encoded_symbol}/orderbook")
-                            row["orderbook"] = summarize_orderbook(book)
+                            book = request_json(
+                                session, "GET",
+                                f"/v1/instruments/{encoded_symbol}/orderbook",
+                            )
+                            book_rows = book.get("orderbook", {}).get("rows", [])
+                            row["orderbook"] = {
+                                "row_count": len(book_rows),
+                                "sample": book_rows[:4],
+                            }
                         except Exception as exc:  # noqa: BLE001
                             row["orderbook_error"] = f"{type(exc).__name__}: {exc}"
                         try:
-                            trades = request_json(session, "GET", f"/v1/instruments/{encoded_symbol}/trades/latest")
+                            trades = request_json(
+                                session, "GET",
+                                f"/v1/instruments/{encoded_symbol}/trades/latest",
+                            )
                             trade_rows = trades.get("trades", [])
                             row["latest_trades"] = {
                                 "count": len(trade_rows) if isinstance(trade_rows, list) else None,
@@ -183,14 +210,19 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
                             }
                         except Exception as exc:  # noqa: BLE001
                             row["latest_trades_error"] = f"{type(exc).__name__}: {exc}"
-                except Exception as exc:  # noqa: BLE001
-                    row["quote_error"] = f"{type(exc).__name__}: {exc}"
-            samples.append(row)
-        item["sampled_contracts"] = samples
-    except Exception as exc:  # noqa: BLE001
-        item["chain_error"] = f"{type(exc).__name__}: {exc}"
-    return item
+                samples.append(row)
+                all_samples.append(row)
+            expiry_row["sampled_contracts"] = samples
+        except Exception as exc:  # noqa: BLE001
+            expiry_row["chain_error"] = f"{type(exc).__name__}: {exc}"
+        expiry_results.append(expiry_row)
 
+    item["expiry_queries"] = expiry_results
+    item["sampled_contracts"] = all_samples
+    item["chain_count"] = sum(
+        row.get("returned_contract_count", 0) for row in expiry_results
+    )
+    return item
 
 def main() -> int:
     secret = os.environ.get("FINAM_API_SECRET", "").strip()
