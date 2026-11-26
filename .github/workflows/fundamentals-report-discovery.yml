@@ -1,6 +1,13 @@
 name: Fundamentals — free-source discovery
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - research/price-forecast-24h-v1
+    paths:
+      - 'research_agent/fundamentals/**'
+      - 'tests/test_fundamentals*_collector.py'
+      - '.github/workflows/fundamentals-report-discovery.yml'
 permissions:
   contents: write
 concurrency:
