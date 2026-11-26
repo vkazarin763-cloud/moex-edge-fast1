@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "collector": "moex_iss_cci_public_report_metadata",
-  "collected_at_utc": "2026-11-26T18:07:47.707395+00:00",
+  "collected_at_utc": "2026-11-26T18:12:05.623081+00:00",
   "universe": [
     "AFKS",
     "AFLT",
