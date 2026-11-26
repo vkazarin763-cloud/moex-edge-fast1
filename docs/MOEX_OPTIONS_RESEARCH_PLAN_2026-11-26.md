@@ -50,7 +50,12 @@ Before replay, use one of these lawful/usable routes:
 1. A data entitlement/provider agreement that explicitly permits algorithmic/research use of the required option market data; or
 2. An existing connected provider feed whose terms permit this use and whose API exposes actual option-contract quotes/trades.
 
-The user's existing Finam AI Screener is a stock screener integration; it must not be assumed to provide option-chain or historical option bid/ask data. Do not repeat its setup or invent an options API capability.
+The existing Finam AI Screener connection is not the data source for this task. Separately, the official Finam Trade API documents a read-only options-chain endpoint (`GET /v1/assets/{underlying_symbol}/options`), latest quote endpoint (including option implied volatility and Greeks), order-book and latest-trades endpoints, plus historical bars. The documented history depth is H1 up to 30 days and D1 up to 365 days. This gives us a practical existing-provider route for a read-only contract discovery probe without adding a paid service or reconfiguring the Screener. It does **not** by itself prove that long historical bid/ask snapshots are available; the initial probe must verify actual contract coverage and quote freshness. Do not call any order endpoint.
+
+Finam API references:
+- REST API: https://api.finam.ru/docs/rest/ (OptionsChain, LastQuote, OrderBook, LatestTrades, Bars)
+- gRPC/API reference: https://api.finam.ru/docs/grpc/ (OptionsChain request/response and option metadata)
+- Finam quick start for latest quotes and historical bars: https://api.finam.ru/getting-started/bystryy-start/poluchit-kotirovku-i-istoriyu/
 
 The exchange publishes a daily theoretical option price/volatility table (`/iss/history/engines/futures/markets/options/volat`), but theoretical prices are not executable bid/ask and cannot replace real quotes in the performance replay.
 
@@ -101,7 +106,7 @@ If historical quote depth or executable bid/ask is unavailable, the result must 
 
 ## Operational boundaries
 
-- Research-only. No Finam account, broker, order endpoint, live mode, or Telegram integration.
+- Research-only. Finam Trade API market-data GET endpoints may be used for a read-only probe; do not call account, broker, order, cancel, or SL/TP endpoints. No live mode or Telegram integration.
 - Do not modify production repositories, existing live-execution workflows, scheduled workflows, frozen equities strategies, or the user's fundamentals branch.
 - Do not create a new paid service or request new secrets.
 - Keep this work separate from MOEX EDGE's frozen equities research and from the trend-forecast PR #191.
