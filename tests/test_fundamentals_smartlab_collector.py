@@ -1,6 +1,7 @@
 import unittest
 from research_agent.fundamentals.smartlab_collector import (
-    ArticleParser, PostParser, matched_tickers, normalize_post, collect, topic_tags
+    ArticleParser, PostParser, matched_tickers, normalize_post, collect, topic_tags,
+    _resolve_smartlab_redirect, _source_domain_classification
 )
 
 class SmartLabCollectorTests(unittest.TestCase):
@@ -46,7 +47,17 @@ class SmartLabCollectorTests(unittest.TestCase):
         self.assertTrue(any("before=199" in url for url in seen))
         self.assertEqual(result["posts"][0]["article_details"][0]["candidate_primary_document_links"][0]["url"], "https://issuer.example/report.pdf")
 
-    def test_topic_classification(self):
+    def test_smartlab_redirect_is_unwrapped_and_domain_classified(self):
+        redirect = "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3Dabc&s=123"
+        resolved = _resolve_smartlab_redirect(redirect)
+        self.assertEqual(resolved, "https://e-disclosure.ru/portal/event.aspx?EventId=abc")
+        self.assertEqual(_source_domain_classification(resolved), "known_disclosure_operator_domain")
+        self.assertEqual(_source_domain_classification("https://issuer.example/report.pdf"), "unverified_domain")
+        self.assertEqual(_resolve_smartlab_redirect("https://evil.example/r.php?u=https%3A%2F%2Fe-disclosure.ru"), "https://evil.example/r.php?u=https%3A%2F%2Fe-disclosure.ru")
+
+    def test_topic_classification_separates_ownership_change_from_financial_reports(self):
+        tags = topic_tags("Инсайдер получил право распоряжаться акциями: доля после сделки 6,8%")
+        self.assertEqual(tags, ["ownership_change"])
         self.assertEqual(topic_tags("Компания объявила дивиденды и опубликовала отчёт МСФО"),
                          ["dividends", "financial_report"])
 if __name__ == "__main__":
