@@ -244,6 +244,56 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
     )
     return item
 
+
+def probe_single_contract(session: requests.Session, symbol: str) -> dict[str, Any]:
+    """Capture one time-stamped, read-only quote/book/trades snapshot."""
+    encoded_symbol = requests.utils.quote(symbol, safe="@")
+    result: dict[str, Any] = {
+        "symbol": symbol,
+        "snapshot_started_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        payload = request_json(
+            session, "GET", f"/v1/instruments/{encoded_symbol}/quotes/latest"
+        )
+        quote = payload.get("quote", {})
+        result["quote"] = quote_quality(quote)
+        option_metrics = quote.get("option")
+        if isinstance(option_metrics, dict):
+            result["option_metrics"] = {
+                key: decimal_value(option_metrics.get(key))
+                for key in ("implied_volatility", "theoretical_price", "delta",
+                            "gamma", "theta", "vega", "rho", "open_interest")
+                if key in option_metrics
+            }
+    except Exception as exc:  # noqa: BLE001
+        result["quote_error"] = f"{type(exc).__name__}: {exc}"
+
+    try:
+        book = request_json(
+            session, "GET", f"/v1/instruments/{encoded_symbol}/orderbook"
+        )
+        rows = book.get("orderbook", {}).get("rows", [])
+        result["orderbook"] = {"row_count": len(rows), "sample": rows[:10]}
+    except Exception as exc:  # noqa: BLE001
+        result["orderbook_error"] = f"{type(exc).__name__}: {exc}"
+
+    try:
+        trades = request_json(
+            session, "GET", f"/v1/instruments/{encoded_symbol}/trades/latest"
+        )
+        rows = trades.get("trades", [])
+        result["latest_trades"] = {
+            "count": len(rows) if isinstance(rows, list) else None,
+            "sample": rows[:10] if isinstance(rows, list) else None,
+        }
+    except Exception as exc:  # noqa: BLE001
+        result["latest_trades_error"] = f"{type(exc).__name__}: {exc}"
+
+    result["snapshot_finished_at_utc"] = datetime.now(timezone.utc).isoformat()
+    return result
+
+
 def main() -> int:
     secret = os.environ.get("FINAM_API_SECRET", "").strip()
     if not secret:
@@ -254,28 +304,48 @@ def main() -> int:
     session = requests.Session()
     session.headers.update({"Authorization": f"Bearer {token}"})
 
-    report = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "provider": "Finam Trade API",
-        "mode": "READ_ONLY_MARKET_DATA_ONLY",
-        "order_endpoints_called": False,
-        "underlyings": [probe_underlying(session, symbol) for symbol in UNDERLYINGS],
-    }
+    targeted_symbol = os.environ.get("OPTIONS_PROBE_TARGETED_SYMBOL", "").strip()
+    if targeted_symbol:
+        report = {
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "provider": "Finam Trade API",
+            "mode": "READ_ONLY_SINGLE_CONTRACT_SNAPSHOT",
+            "order_endpoints_called": False,
+            "targeted_contracts": [probe_single_contract(session, targeted_symbol)],
+        }
+    else:
+        report = {
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "provider": "Finam Trade API",
+            "mode": "READ_ONLY_MARKET_DATA_ONLY",
+            "order_endpoints_called": False,
+            "underlyings": [probe_underlying(session, symbol) for symbol in UNDERLYINGS],
+        }
 
     output = Path("artifacts/moex_options_probe.json")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    total_chains = sum("chain_count" in row for row in report["underlyings"])
-    total_contracts = sum(row.get("chain_count", 0) for row in report["underlyings"])
-    total_quotes = sum(
-        1 for row in report["underlyings"]
-        for contract in row.get("sampled_contracts", [])
-        if contract.get("quote", {}).get("quote_valid")
-    )
-    print(f"Underlying chains returned: {total_chains}/{len(UNDERLYINGS)}")
-    print(f"Contracts listed in returned chains: {total_contracts}")
-    print(f"Valid sampled bid/ask quotes: {total_quotes}")
+    if targeted_symbol:
+        target = report["targeted_contracts"][0]
+        quote_ok = target.get("quote", {}).get("quote_valid", False)
+        book_count = target.get("orderbook", {}).get("row_count", "unavailable")
+        trade_count = target.get("latest_trades", {}).get("count", "unavailable")
+        print(f"Targeted contract: {targeted_symbol}")
+        print(f"Valid bid/ask quote: {quote_ok}")
+        print(f"Order-book rows: {book_count}")
+        print(f"Latest trades returned: {trade_count}")
+    else:
+        total_chains = sum("chain_count" in row for row in report["underlyings"])
+        total_contracts = sum(row.get("chain_count", 0) for row in report["underlyings"])
+        total_quotes = sum(
+            1 for row in report["underlyings"]
+            for contract in row.get("sampled_contracts", [])
+            if contract.get("quote", {}).get("quote_valid")
+        )
+        print(f"Underlying chains returned: {total_chains}/{len(UNDERLYINGS)}")
+        print(f"Contracts listed in returned chains: {total_contracts}")
+        print(f"Valid sampled bid/ask quotes: {total_quotes}")
     print(f"Report written: {output}")
     print("READ-ONLY: no account, order, cancel, or SL/TP endpoints were called.")
 
