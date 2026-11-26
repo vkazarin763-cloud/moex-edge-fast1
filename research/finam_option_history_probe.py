@@ -142,39 +142,66 @@ def bar_summary(api: FinamReadOnly, symbol: str, timeframe: str, start: str, end
     }
 
 
-def select_contracts(options: list, spot: Decimal | None) -> list[dict]:
+def select_contracts(options: list, spot: Decimal | None, as_of: str) -> tuple[list[dict], dict, str | None]:
     clean = []
+    expiry_counts: dict[str, int] = {}
     for option in options:
         if not isinstance(option, dict) or not isinstance(option.get("symbol"), str):
             continue
         strike = decimal_value(option.get("strike"))
         if strike is None:
             continue
+        expiry = iso_date(option.get("expiration_last_day")) or iso_date(option.get("expiration_first_day"))
+        expiry_counts[expiry or "UNKNOWN"] = expiry_counts.get(expiry or "UNKNOWN", 0) + 1
         clean.append({
             "symbol": option["symbol"],
             "type": str(option.get("type", "UNKNOWN")),
             "strike": str(strike),
             "expiry_start": iso_date(option.get("expiration_first_day")),
-            "expiry_end": iso_date(option.get("expiration_last_day")),
+            "expiry_end": expiry,
             "trade_first_day": iso_date(option.get("trade_first_day")),
             "trade_last_day": iso_date(option.get("trade_last_day")),
             "contract_size": value_of(option.get("contract_size")),
             "multiplier": value_of(option.get("multiplier")),
             "_distance": abs(strike - spot) if spot is not None else strike,
         })
+    future = [item for item in clean if item["expiry_end"] is None or item["expiry_end"] >= as_of]
+    nearest_expiry = min(
+        (item["expiry_end"] for item in future if item["expiry_end"]),
+        default=None,
+    )
+    nearest = [
+        item for item in future
+        if nearest_expiry is None or item["expiry_end"] == nearest_expiry
+    ]
     selected = []
     for kind in ("CALL", "PUT"):
         candidates = [
-            item for item in clean
+            item for item in nearest
             if kind in item["type"].upper()
         ]
         if candidates:
             selected.append(min(candidates, key=lambda item: item["_distance"]))
     if not selected:
-        selected = sorted(clean, key=lambda item: item["_distance"])[:2]
+        selected = sorted(nearest, key=lambda item: item["_distance"])[:2]
     for item in selected:
         item.pop("_distance", None)
-    return selected
+    return selected, expiry_counts, nearest_expiry
+
+
+def probe_contracts(
+    api: FinamReadOnly, contracts: list[dict], h1_start: str, d1_start: str, end: str
+) -> list[dict]:
+    results = []
+    for contract in contracts:
+        symbol = contract["symbol"]
+        results.append({
+            **contract,
+            "latest_quote": quote_summary(api, symbol),
+            "historical_h1": bar_summary(api, symbol, "TIME_FRAME_H1", h1_start, end),
+            "historical_d1": bar_summary(api, symbol, "TIME_FRAME_D", d1_start, end),
+        })
+    return results
 
 
 def main():
@@ -222,27 +249,47 @@ def main():
                 item.update({"status": "chain_schema_unexpected", "chain_http_status": chain_status})
                 report["underlyings"][underlying] = item
                 continue
-            contracts = select_contracts(options, spot)
+            contracts, expiry_counts, nearest_expiry = select_contracts(
+                options, spot, now.date().isoformat()
+            )
             item.update({
                 "spot_quote": spot_quote,
                 "chain_http_status": chain_status,
                 "chain_contract_count": len(options),
+                "expiry_distribution": expiry_counts,
+                "nearest_expiry": nearest_expiry,
                 "option_type_values": sorted({
                     str(o.get("type", "UNKNOWN")) for o in options if isinstance(o, dict)
                 }),
-                "selected_contracts": [],
+                "selected_contracts": probe_contracts(api, contracts, h1_start, d1_start, end),
             })
-            for contract in contracts:
-                symbol = contract["symbol"]
-                current_quote = quote_summary(api, symbol)
-                h1 = bar_summary(api, symbol, "TIME_FRAME_H1", h1_start, end)
-                d1 = bar_summary(api, symbol, "TIME_FRAME_D", d1_start, end)
-                item["selected_contracts"].append({
-                    **contract,
-                    "latest_quote": current_quote,
-                    "historical_h1": h1,
-                    "historical_d1": d1,
-                })
+            if underlying == "MOEX@MISX":
+                targeted_status, targeted_chain = api.get(
+                    f"/v1/assets/{quote(underlying, safe='')}/options",
+                    params={
+                        "expiration_date.year": "2026",
+                        "expiration_date.month": "12",
+                        "expiration_date.day": "16",
+                    },
+                )
+                targeted = {
+                    "requested_expiry": "2026-12-16",
+                    "http_status": targeted_status,
+                    "chain_contract_count": 0,
+                    "selected_contracts": [],
+                }
+                targeted_options = targeted_chain.get("options") if isinstance(targeted_chain, dict) else None
+                if targeted_status == 200 and isinstance(targeted_options, list):
+                    targeted_contracts, targeted_expiries, targeted_nearest = select_contracts(
+                        targeted_options, spot, now.date().isoformat()
+                    )
+                    targeted["chain_contract_count"] = len(targeted_options)
+                    targeted["expiry_distribution"] = targeted_expiries
+                    targeted["nearest_expiry"] = targeted_nearest
+                    targeted["selected_contracts"] = probe_contracts(
+                        api, targeted_contracts, h1_start, d1_start, end
+                    )
+                item["targeted_expiry_probe"] = targeted
         except ProbeError as exc:
             item.update({"status": "error", "error": str(exc)})
         report["underlyings"][underlying] = item
