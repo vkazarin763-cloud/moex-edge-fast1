@@ -65,6 +65,24 @@ Official data references:
 - MOEX theoretical options price/volatility publication: https://fs.moex.com/f/21878/informacija-o-teoreticheskoy-cene-opcionov.pdf
 - MOEX historical data service description: https://www.moex.com/a2863
 
+## First live data-access probe — 2026-11-26
+
+GitHub Actions run 45876826635 completed successfully. Authentication to Finam succeeded; all four options-chain requests returned successfully:
+
+- GAZP@MISX: 108 contracts in returned chain
+- SBER@MISX: 134
+- ROSN@MISX: 112
+- MOEX@MISX: 198
+- Total: 552 option records returned; 48 sampled contract quote requests completed.
+- **0/48 sampled contracts had a valid positive bid and ask at the same time.** Some responses had ask-only values; all sampled open-interest values were zero.
+- The sampled contracts reported expiration_last_day 2030-12-18, which does not match the intended near-term 20–60 day selection and must be reconciled against the contract metadata / exact chain filters.
+- Underlying spot quotes were returned for all four symbols.
+- No account, order, cancel, or SL/TP endpoint was called.
+
+Interpretation: the API route is reachable, but this probe does **not** yet establish executable option liquidity. Do not issue option signals or claim the strategy is ready. A follow-up read-only diagnostic now checks option asset metadata, order books, and latest trades for a small sample to identify why quotes are empty/one-sided and why the returned expiry date is unusual. If contract-level executable quotes remain unavailable, stop and mark the current Finam data route insufficient rather than inventing prices.
+
+Artifact from the first probe: GitHub Actions artifact `moex-options-readonly-probe`, run 45876826635 (retained for 7 days).
+
 ## Candidate strategy to evaluate first
 
 **Trend-confirmed long premium breakout** (one ruleset, no parameter mining):
