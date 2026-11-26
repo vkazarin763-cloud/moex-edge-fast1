@@ -83,6 +83,12 @@ Interpretation: the API route is reachable, but this probe does **not** yet esta
 
 Artifact from the first probe: GitHub Actions artifact `moex-options-readonly-probe`, run 45876826635 (retained for 7 days).
 
+## Actual MOEX expiries used in the next probe
+
+The MOEX options desk currently lists stock-option exercise dates including 2026-12-02, 2026-12-16, 2027-01-20 and 2027-03-17. Stock options expire on Wednesdays; do not generate Friday monthly expiries by calendar convention. The short-term check is 2026-12-02 (6 days); the main 20–60 day candidates are 2026-12-16 (20 days) and 2027-01-20 (55 days). The longer comparison is 2027-03-17 (111 days).
+
+Official live board: https://www.moex.com/ru/derivatives/optionsdesk.aspx?c4=on&c6=on&c7=on&code=GAZP&sby=1&sid=1&submit=submit
+
 ## Candidate strategy to evaluate first
 
 **Trend-confirmed long premium breakout** (one ruleset, no parameter mining):
