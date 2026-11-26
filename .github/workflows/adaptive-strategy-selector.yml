@@ -1,0 +1,44 @@
+name: H1 adaptive strategy selector (research only)
+on:
+  push:
+    branches:
+      - research/price-forecast-24h-v1
+    paths:
+      - "research_agent/price_forecast_24h/evaluate_adaptive_selector.py"
+      - ".github/workflows/adaptive-strategy-selector.yml"
+      - "research_agent/price_forecast_24h/evaluate_direction_mechanics.py"
+      - "research_agent/price_forecast_24h/evaluate_market_regime_attribution.py"
+permissions:
+  contents: write
+concurrency:
+  group: price-forecast-24h-research-write
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile
+        run: python -m py_compile research_agent/price_forecast_24h/evaluate_adaptive_selector.py
+      - name: Run causal walk-forward selector
+        run: python -m research_agent.price_forecast_24h.evaluate_adaptive_selector
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research_agent/price_forecast_24h/reports/adaptive-selector-*
+          git commit -m "research: report causal adaptive strategy selector"
+          git pull --rebase origin research/price-forecast-24h-v1
+          git push origin HEAD:research/price-forecast-24h-v1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-strategy-selector
+          path: research_agent/price_forecast_24h/reports/adaptive-selector-*
+          retention-days: 30
