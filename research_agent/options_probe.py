@@ -94,6 +94,16 @@ def compact_option(option: dict[str, Any]) -> dict[str, Any]:
     return {key: option.get(key) for key in keys if key in option}
 
 
+def summarize_orderbook(payload: dict[str, Any]) -> dict[str, Any]:
+    summary: dict[str, Any] = {"response_keys": sorted(payload.keys())}
+    for key in ("bids", "asks", "buy", "sell"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            summary[f"{key}_count"] = len(value)
+            summary[f"{key}_sample"] = value[:2]
+    return summary
+
+
 def probe_underlying(session: requests.Session, underlying: str) -> dict[str, Any]:
     item: dict[str, Any] = {"underlying": underlying}
     try:
@@ -124,7 +134,7 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
         )
         selected = ordered[:MAX_OPTION_QUOTES_PER_UNDERLYING]
         samples = []
-        for option in selected:
+        for option_index, option in enumerate(selected):
             symbol = option.get("symbol")
             row: dict[str, Any] = {"contract": compact_option(option)}
             if not symbol:
@@ -145,6 +155,34 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
                                         "gamma", "theta", "vega", "rho", "open_interest")
                             if key in option_metrics
                         }
+                    # A small GET-only diagnostic sample checks whether missing top quotes
+                    # are a quote endpoint issue, a contract metadata issue, or an empty book.
+                    if option_index < 2:
+                        encoded_symbol = requests.utils.quote(str(symbol), safe="@")
+                        try:
+                            asset = request_json(session, "GET", f"/v1/assets/{encoded_symbol}")
+                            row["asset_metadata"] = {
+                                key: asset.get(key) for key in
+                                ("board", "id", "ticker", "mic", "type", "name",
+                                 "expiration_date", "option_details")
+                                if key in asset
+                            }
+                        except Exception as exc:  # noqa: BLE001
+                            row["asset_metadata_error"] = f"{type(exc).__name__}: {exc}"
+                        try:
+                            book = request_json(session, "GET", f"/v1/instruments/{encoded_symbol}/orderbook")
+                            row["orderbook"] = summarize_orderbook(book)
+                        except Exception as exc:  # noqa: BLE001
+                            row["orderbook_error"] = f"{type(exc).__name__}: {exc}"
+                        try:
+                            trades = request_json(session, "GET", f"/v1/instruments/{encoded_symbol}/trades/latest")
+                            trade_rows = trades.get("trades", [])
+                            row["latest_trades"] = {
+                                "count": len(trade_rows) if isinstance(trade_rows, list) else None,
+                                "sample": trade_rows[:3] if isinstance(trade_rows, list) else None,
+                            }
+                        except Exception as exc:  # noqa: BLE001
+                            row["latest_trades_error"] = f"{type(exc).__name__}: {exc}"
                 except Exception as exc:  # noqa: BLE001
                     row["quote_error"] = f"{type(exc).__name__}: {exc}"
             samples.append(row)
