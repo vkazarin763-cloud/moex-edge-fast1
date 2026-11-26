@@ -1,0 +1,38 @@
+name: MOEX Option Candidate Snapshot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/moex-option-candidate-snapshot.yml"
+      - "research_agent/options_probe.py"
+      - "tests/test_options_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+      OPTIONS_PROBE_TARGETED_SYMBOL: "ME190CX6@RTSX"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install probe dependency
+        run: python -m pip install requests
+      - name: Run offline unit tests
+        run: python -m unittest discover -s tests -p "test_options_probe.py" -v
+      - name: Capture one read-only candidate snapshot (GET only)
+        run: python research_agent/options_probe.py
+      - name: Upload redacted candidate snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-option-candidate-snapshot
+          path: artifacts/moex_options_probe.json
+          if-no-files-found: error
+          retention-days: 7
