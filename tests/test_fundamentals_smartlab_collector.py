@@ -14,7 +14,7 @@ class SmartLabCollectorTests(unittest.TestCase):
         self.assertEqual(post["verification_status"],"unverified_news_lead")
     def test_short_ticker_requires_explicit_prefix(self):
         self.assertEqual(matched_tickers("Акции Т выросли сегодня"),[])
-        self.assertEqual(matched_tickers("Дивиденды #T и #SBER"),["SBER","T"])
+        self.assertEqual(matched_tickers("Дивиденды #T, #SBER и $ROSN"),["ROSN","SBER","T"])
     def test_collect_filters_posts_without_ticker(self):
         html='<div class="tgme_widget_message_wrap" data-post="newssmartlab/1"><div class="tgme_widget_message_text">#ROSN опубликовала отчётность по МСФО</div></div><div class="tgme_widget_message_wrap" data-post="newssmartlab/2"><div class="tgme_widget_message_text">Общий обзор рынка без тикера</div></div>'
         r=collect(lambda:html)
