@@ -40,3 +40,5 @@ jobs:
           name: atr-risk-controls
           path: research_agent/price_forecast_24h/reports/atr-risk-controls-*
           retention-days: 30
+
+# Trigger research run after workflow registration.
