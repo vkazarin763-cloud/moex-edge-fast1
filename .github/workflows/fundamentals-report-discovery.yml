@@ -20,6 +20,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Run read-only public MOEX report metadata discovery
+        continue-on-error: true
         run: python -m research_agent.fundamentals.collector
       - name: Run read-only Smart-Lab public Telegram preview discovery
         run: python -m research_agent.fundamentals.smartlab_collector
