@@ -50,3 +50,17 @@ polling is enabled. Snapshots are stored on
 
 No production signals, live orders, Telegram notification bot, secrets,
 cron-job.org schedule, Finam settings, or production repository are changed.
+
+## Primary financial-report sources and verification pipeline
+
+Source priority (free access; no AI screener):
+1. Issuer's own Investor Relations / Disclosure page (primary publisher).
+2. Interfax e-disclosure company profile and attached documents (public access, accredited disclosure operator).
+3. Smart-Lab Telegram/articles only as discovery leads; never primary evidence.
+4. MOEX CCI metadata only if accessible without paid credentials; SSL validation stays enabled.
+
+Interfax company search: https://www.e-disclosure.ru/poisk-po-kompaniyam . Search by issuer legal name, INN, OGRN, or issuer code, then confirm the profile ticker/issuer identity before opening reports. Its public pages describe access to issuer reports, consolidated financial statements, annual reports, and material-event disclosures without registration.
+
+A candidate is accepted as a financial-report document only after verifying all fields: ticker and issuer legal name; source/profile URL; document URL; report type (IFRS/RAS); consolidated/standalone scope; reporting period; publication date; currency and units; audit/review status; document hash; retrieval timestamp. Corporate events (insider changes, dividends, board decisions) are separate event records and must not be mislabeled as financial statements. Missing fields are null, not inferred.
+
+The first phase is discovery only: create a source lead and a manual/automated verification status. Numeric extraction and investment interpretation are deferred until source identity and document authenticity are verified. No paid API, AI Screener, broker, signal, or production workflow is involved.
