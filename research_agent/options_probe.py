@@ -245,6 +245,77 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
     return item
 
 
+def summarize_historical_bars(payload: dict[str, Any]) -> dict[str, Any]:
+    """Summarize OHLC bars without implying they contain historical bid/ask."""
+    bars = payload.get("bars", [])
+    if not isinstance(bars, list):
+        raise ValueError("Bars response has no bars array")
+
+    def compact_bar(bar: dict[str, Any]) -> dict[str, Any]:
+        row: dict[str, Any] = {}
+        timestamp = bar.get("timestamp")
+        if isinstance(timestamp, dict):
+            row["timestamp"] = timestamp.get("seconds")
+        elif timestamp is not None:
+            row["timestamp"] = timestamp
+        for key in ("open", "high", "low", "close", "volume"):
+            if key in bar:
+                row[key] = decimal_value(bar.get(key))
+        return row
+
+    compact = [compact_bar(bar) for bar in bars if isinstance(bar, dict)]
+    return {
+        "bar_count": len(compact),
+        "first_bar": compact[0] if compact else None,
+        "last_bar": compact[-1] if compact else None,
+        "contains_historical_bid_ask": any(
+            "bid" in bar or "ask" in bar for bar in bars if isinstance(bar, dict)
+        ),
+    }
+
+
+def probe_historical_option_bars(
+    session: requests.Session, symbol: str
+) -> dict[str, Any]:
+    """Test whether Finam exposes historical OHLC bars for this option contract."""
+    encoded_symbol = requests.utils.quote(symbol, safe="@")
+    now = datetime.now(timezone.utc)
+    result: dict[str, Any] = {
+        "symbol": symbol,
+        "endpoint": "GET /v1/instruments/{symbol}/bars",
+        "note": (
+            "OHLC bars are not historical bid/ask quotes. Even a successful response "
+            "does not by itself establish executable option entry/exit prices."
+        ),
+        "timeframes": {},
+    }
+    windows = {
+        "TIME_FRAME_M5": timedelta(days=7),
+        "TIME_FRAME_H1": timedelta(days=30),
+    }
+    for timeframe, lookback in windows.items():
+        params = {
+            "timeframe": timeframe,
+            "interval.start_time": (now - lookback).isoformat(),
+            "interval.end_time": now.isoformat(),
+        }
+        try:
+            payload = request_json(
+                session, "GET", f"/v1/instruments/{encoded_symbol}/bars",
+                params=params,
+            )
+            result["timeframes"][timeframe] = {
+                "status": "ok",
+                **summarize_historical_bars(payload),
+            }
+        except Exception as exc:  # noqa: BLE001 - record per-timeframe API result
+            result["timeframes"][timeframe] = {
+                "status": "error",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+    return result
+
+
 def probe_single_contract(session: requests.Session, symbol: str) -> dict[str, Any]:
     """Capture one time-stamped, read-only quote/book/trades snapshot."""
     encoded_symbol = requests.utils.quote(symbol, safe="@")
@@ -290,6 +361,7 @@ def probe_single_contract(session: requests.Session, symbol: str) -> dict[str, A
     except Exception as exc:  # noqa: BLE001
         result["latest_trades_error"] = f"{type(exc).__name__}: {exc}"
 
+    result["historical_option_bars"] = probe_historical_option_bars(session, symbol)
     result["snapshot_finished_at_utc"] = datetime.now(timezone.utc).isoformat()
     return result
 
@@ -335,6 +407,9 @@ def main() -> int:
         print(f"Valid bid/ask quote: {quote_ok}")
         print(f"Order-book rows: {book_count}")
         print(f"Latest trades returned: {trade_count}")
+        for timeframe, history in target.get("historical_option_bars", {}).get("timeframes", {}).items():
+            print(f"Historical option bars {timeframe}: {history.get('status')} "
+                  f"({history.get('bar_count', 0)} bars)")
     else:
         total_chains = sum("chain_count" in row for row in report["underlyings"])
         total_contracts = sum(row.get("chain_count", 0) for row in report["underlyings"])
