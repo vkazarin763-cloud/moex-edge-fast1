@@ -224,3 +224,12 @@
 ## 2026-11-21 — Finam mode observation
 - Finam Executor Safety Tests run 44864354084 reported derived `FINAM_DRY_RUN=live` (repository variable resolves to false at that time). No order was sent by this check or by the research session.
 - Scheduled `moex-edge-fast.yml` and `finam-executor.yml` currently hardcode DRY_RUN=true and live flag=false. Manual workflows `finam-one-shot-test.yml` and `finam-direct-t-sltp-test.yml` can submit a live order only with explicit confirmation inputs. Do not dispatch them during research; do not change variables/secrets.
+
+
+## 2026-11-26 — Finam option history research (isolated branch)
+- Research branch: `research/finam-option-history-probe`; read-only workflow uses the existing `FINAM_API_SECRET` from this repository. No new secret was created and no token/secret was logged.
+- Finam Trade API was confirmed to return options chains for SBER, GAZP, ROSN and MOEX, actual option OHLCV bars, recent trade prints, current quotes and current order books.
+- For expiry 2026-12-16, selected near-ATM option history exists for all four underlyings. Best current book in this sample was GAZP PUT `GZ100CX6@RTSX` (3.22/3.23, 0.31% quoted spread, OI 225568), but last trade was about 173 minutes old at the probe; watchlist only, not a trade.
+- Finam LatestTrades and Bars provide actual trade prints / OHLCV, but not historical executable bid/ask or historical order-book depth. A strict trade-print replay was very small and unstable; all completed 1-session results were negative. No strategy is approved.
+- Full report: `docs/FINAM_OPTIONS_HISTORY_RESEARCH_2026-11-26.md`. Workflow run 45885560779; artifact 15149226606.
+- Keep this research separate from the live/stock scanner. No account, order, cancel, SL/TP, Telegram or scheduler endpoints were called. Do not merge or activate signals based on this evidence.
