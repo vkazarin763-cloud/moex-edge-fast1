@@ -42,3 +42,5 @@ jobs:
           retention-days: 30
 
 # Trigger research run after workflow registration.
+
+# Trigger workflow after file registration.
