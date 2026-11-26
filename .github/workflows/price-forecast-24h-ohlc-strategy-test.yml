@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: price-forecast-24h-ohlc-strategies
+  group: price-forecast-24h-research-write
   cancel-in-progress: false
 
 jobs:
