@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "collector": "telegram_public_preview_smartlab",
+  "collected_at_utc": "2026-11-26T04:00:07.078165+00:00",
+  "source": {
+    "channel": "@newssmartlab",
+    "url": "https://t.me/s/newssmartlab",
+    "access_method": "public_web_preview_no_auth"
+  },
+  "universe_size": 44,
+  "preview_posts_seen": 20,
+  "ticker_matched_posts": 5,
+  "reporting_related_posts": 0,
+  "posts": [
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T16:26:28+00:00",
+      "post_url": "https://t.me/newssmartlab/137849",
+      "tickers": [
+        "LKOH"
+      ],
+      "reporting_related": false,
+      "text": "Санкции, скорее всего, приведут Лукойл к продаже зарубежных активов, хотя мы не хотим этого — Вагит Алекперов #LKOH Читать далее 👉 https://smartlab.news/i/212447 мы в max",
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T16:30:50+00:00",
+      "post_url": "https://t.me/newssmartlab/137850",
+      "tickers": [
+        "CNRU"
+      ],
+      "reporting_related": false,
+      "text": "Леван Назаров подтвердил приобретение около 20% акций ЦИАН — Ъ По словам источника “Ъ”, точный размер пакета и детали о продавцах не известны, однако покупка прошла через брокерские группы в формате внебиржевых сделок. #CNRU Читать далее 👉 https://smartlab.news/i/212448 мы в max",
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T17:17:57+00:00",
+      "post_url": "https://t.me/newssmartlab/137852",
+      "tickers": [
+        "LKOH"
+      ],
+      "reporting_related": false,
+      "text": "Консорциум Боэли получит 100% Lukoil Int. в обмен на акции Лукойла и «других российских компаний» — релиз Активы, полученные от продажи, будут храниться на депозитарном счете с ограниченным доступом в течение пяти лет или до снятия санкций. #LKOH Читать далее 👉 https://smartlab.news/i/212453 мы в max",
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T17:21:37+00:00",
+      "post_url": "https://t.me/newssmartlab/137854",
+      "tickers": [
+        "CNRU"
+      ],
+      "reporting_related": false,
+      "text": "📉 Акции ЦИАН снижались более чем на 6%, ранее вышла новость, что Леван Назаров консолидировал около 20% акций компании #CNRU Читать далее 👉 https://smartlab.news/i/212455 мы в max",
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T17:45:27+00:00",
+      "post_url": "https://t.me/newssmartlab/137856",
+      "tickers": [
+        "LKOH",
+        "ROSN"
+      ],
+      "reporting_related": false,
+      "text": "Экспорт дизтоплива из России за 1–19 ноября вырос на 34,6% к октябрю, до 1,48 млн тонн — Ъ #ROSN #LKOH Читать далее 👉 https://smartlab.news/i/212457 мы в max",
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null
+    }
+  ],
+  "limitations": [
+    "Telegram public preview exposes only a recent slice, not a guaranteed complete archive.",
+    "Posts are discovery leads, not verified financial statements or issuer disclosures.",
+    "Only explicit ticker tags/tokens are mapped; issuer-name fuzzy matching is disabled.",
+    "Publication timestamps are preserved as supplied; missing values remain null.",
+    "No bot token, Telegram account session, paid API, Finam AI Screener, or broker endpoint is used."
+  ]
+}
