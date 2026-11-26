@@ -172,7 +172,7 @@ def main() -> int:
     print(json.dumps({"output": str(path), "coverage": result["coverage"],
                       "source_access": result["source_access"]}, ensure_ascii=False))
     # A source failure is a failed collection, not an empty successful dataset.
-    return 0 if any(v == "ok" for v in result["source_access"].values() if isinstance(v, str)) else 1
+    return 0 if result["source_access"]["companies"] == "ok" and result["source_access"]["reports"] == "ok" else 1
 
 
 if __name__ == "__main__":
