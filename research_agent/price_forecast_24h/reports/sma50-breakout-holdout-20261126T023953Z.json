@@ -1,0 +1,5473 @@
+{
+  "generated_at_utc": "2026-11-26T02:39:53.595750+00:00",
+  "data_source": "Finam technical H1; existing archived dataset",
+  "test": "Final chronological 20% per symbol, untouched by this evaluation; prior 80% used only for indicator warmup/history. This is not fresh future data and may overlap earlier strategy research.",
+  "strategy_frozen": "20-bar breakout; LONG only above SMA50 with SMA50 rising vs previous bar; SHORT only below SMA50 with SMA50 falling; next H1 open entry; max 24 H1 bars; no overlapping ticker trades.",
+  "costs": "5 and 10 bps per side illustrative, not verified fees/spread",
+  "summary": {
+    "5": {
+      "trades": 437,
+      "win_rate_pct": 46.910755148741416,
+      "mean_net_return_pct": 0.0477672845115064,
+      "median_net_return_pct": -0.231010106515173,
+      "total_compounded_return_pct": 23.212834191172927,
+      "profit_factor": 1.0487915130845122,
+      "max_drawdown_pct": 52.23611990205864,
+      "mean_holding_bars": 23.73913043478261,
+      "active_tickers": 44,
+      "positive_tickers": 19,
+      "median_ticker_compounded_return_pct": -1.3027763708186924
+    },
+    "10": {
+      "trades": 437,
+      "win_rate_pct": 44.16475972540046,
+      "mean_net_return_pct": -0.052232715488493585,
+      "median_net_return_pct": -0.331010106515173,
+      "total_compounded_return_pct": -20.408029129368078,
+      "profit_factor": 0.9494702702167376,
+      "max_drawdown_pct": 64.8530515280308,
+      "mean_holding_bars": 23.73913043478261,
+      "active_tickers": 44,
+      "positive_tickers": 16,
+      "median_ticker_compounded_return_pct": -2.362687785832435
+    }
+  },
+  "symbols": {
+    "AFKS": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-22T11:00:00+00:00",
+          "exit_time": "2026-10-23T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 7.631,
+          "exit_price": 7.786,
+          "gross_return": -0.02010835088076776,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T15:00:00+00:00",
+          "exit_time": "2026-10-28T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 7.875,
+          "exit_price": 8.022,
+          "gross_return": 0.01849458263616431,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T05:00:00+00:00",
+          "exit_time": "2026-10-29T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 8.022,
+          "exit_price": 8.146,
+          "gross_return": 0.015339241878359753,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T08:00:00+00:00",
+          "exit_time": "2026-11-02T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 8.297,
+          "exit_price": 8.358,
+          "gross_return": 0.007325160343575434,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T10:00:00+00:00",
+          "exit_time": "2026-11-05T06:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 8.059,
+          "exit_price": 8.169,
+          "gross_return": -0.013557023017358163,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T09:00:00+00:00",
+          "exit_time": "2026-11-06T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 8.4,
+          "exit_price": 9.011,
+          "gross_return": 0.07021434740363226,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T09:00:00+00:00",
+          "exit_time": "2026-11-12T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 8.513,
+          "exit_price": 8.933,
+          "gross_return": -0.04815787781778194,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T06:00:00+00:00",
+          "exit_time": "2026-11-16T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 9.113,
+          "exit_price": 8.874,
+          "gross_return": -0.026576312557271876,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T07:00:00+00:00",
+          "exit_time": "2026-11-18T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 8.705,
+          "exit_price": 8.78,
+          "gross_return": -0.008578834426872737,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T11:00:00+00:00",
+          "exit_time": "2026-11-20T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 8.651,
+          "exit_price": 7.882,
+          "gross_return": 0.09309324242542535,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": 0.7748817598710463,
+          "median_net_return_pct": -0.1626837041648651,
+          "total_compounded_return_pct": 8.056945571584517,
+          "profit_factor": 1.6352614627910451,
+          "max_drawdown_pct": 8.269295358199775,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": 0.6748817598710463,
+          "median_net_return_pct": -0.26268370416486514,
+          "total_compounded_return_pct": 6.981760998590136,
+          "profit_factor": 1.5314933616900048,
+          "max_drawdown_pct": 8.544075096433057,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 419
+    },
+    "AFLT": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-22T06:00:00+00:00",
+          "exit_time": "2026-10-23T12:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 35.69,
+          "exit_price": 35.75,
+          "gross_return": -0.0016797316379477548,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T12:00:00+00:00",
+          "exit_time": "2026-10-28T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 36.84,
+          "exit_price": 38.16,
+          "gross_return": 0.035203635192979484,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T11:00:00+00:00",
+          "exit_time": "2026-11-03T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 36.95,
+          "exit_price": 37.25,
+          "gross_return": -0.00808629743135762,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T14:00:00+00:00",
+          "exit_time": "2026-11-06T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 38.38,
+          "exit_price": 38.42,
+          "gross_return": 0.001041666760856704,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T15:00:00+00:00",
+          "exit_time": "2026-11-12T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 37.33,
+          "exit_price": 38.63,
+          "gross_return": -0.03423188375169751,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T09:00:00+00:00",
+          "exit_time": "2026-11-13T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 39.14,
+          "exit_price": 39.28,
+          "gross_return": 0.003570521518334907,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T18:00:00+00:00",
+          "exit_time": "2026-11-20T07:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 38.5,
+          "exit_price": 36.29,
+          "gross_return": 0.05911602006875963,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T08:00:00+00:00",
+          "exit_time": "2026-11-23T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 36.29,
+          "exit_price": 36.22,
+          "gross_return": 0.001930768769711623,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T18:00:00+00:00",
+          "exit_time": "2026-11-25T07:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 35.25,
+          "exit_price": 34.2,
+          "gross_return": 0.03023988518971812,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 66.66666666666666,
+          "mean_net_return_pct": 0.8678287186595286,
+          "median_net_return_pct": 0.0930768769711623,
+          "total_compounded_return_pct": 8.123573344952817,
+          "profit_factor": 2.661873474612121,
+          "max_drawdown_pct": 4.331061751648844,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": 0.7678287186595287,
+          "median_net_return_pct": -0.006923123028837702,
+          "total_compounded_return_pct": 7.1548270820597,
+          "profit_factor": 2.3543153018641574,
+          "max_drawdown_pct": 4.617638486359313,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "ALRS": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T14:00:00+00:00",
+          "exit_time": "2026-10-26T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 21.14,
+          "exit_price": 21.51,
+          "gross_return": 0.017350962837547054,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T05:00:00+00:00",
+          "exit_time": "2026-10-30T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 21.01,
+          "exit_price": 20.57,
+          "gross_return": 0.021164811192043272,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T13:00:00+00:00",
+          "exit_time": "2026-11-03T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 20.24,
+          "exit_price": 20.4,
+          "gross_return": -0.007874056430905866,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-04T11:00:00+00:00",
+          "exit_time": "2026-11-06T05:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 20.65,
+          "exit_price": 23.27,
+          "gross_return": 0.11944965790715871,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T05:00:00+00:00",
+          "exit_time": "2026-11-17T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 23.05,
+          "exit_price": 23.64,
+          "gross_return": -0.025274423095239956,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T13:00:00+00:00",
+          "exit_time": "2026-11-18T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 24.35,
+          "exit_price": 24.05,
+          "gross_return": -0.012396852976828682,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T14:00:00+00:00",
+          "exit_time": "2026-11-20T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 23.35,
+          "exit_price": 21.97,
+          "gross_return": 0.0609190977183876,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 21.86,
+          "exit_price": 21.93,
+          "gross_return": -0.0031970796814044166,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 8,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": 2.0267764683844716,
+          "median_net_return_pct": 0.6076941578071318,
+          "total_compounded_return_pct": 17.602736347966875,
+          "profit_factor": 4.074226429082067,
+          "max_drawdown_pct": 3.889467445245999,
+          "mean_holding_bars": 23.875
+        },
+        "10": {
+          "trades": 8,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": 1.9267764683844713,
+          "median_net_return_pct": 0.5076941578071318,
+          "total_compounded_return_pct": 16.66566772935156,
+          "profit_factor": 3.716523875824806,
+          "max_drawdown_pct": 4.081496417373714,
+          "mean_holding_bars": 23.875
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "BSPB": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-22T08:00:00+00:00",
+          "exit_time": "2026-10-23T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 254.3,
+          "exit_price": 257.08,
+          "gross_return": -0.010872648075011409,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T06:00:00+00:00",
+          "exit_time": "2026-10-27T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 258.76,
+          "exit_price": 262.09,
+          "gross_return": 0.012786965049143463,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T06:00:00+00:00",
+          "exit_time": "2026-10-29T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 263.32,
+          "exit_price": 258.26,
+          "gross_return": -0.01940319318117044,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T13:00:00+00:00",
+          "exit_time": "2026-10-30T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 258.22,
+          "exit_price": 257.83,
+          "gross_return": 0.0015114817333545189,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T04:00:00+00:00",
+          "exit_time": "2026-11-03T10:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 258.35,
+          "exit_price": 250.72,
+          "gross_return": 0.02997847612548299,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T17:00:00+00:00",
+          "exit_time": "2026-11-09T06:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 254.92,
+          "exit_price": 257.47,
+          "gross_return": 0.009953438016111019,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T14:00:00+00:00",
+          "exit_time": "2026-11-12T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 255.75,
+          "exit_price": 255.59,
+          "gross_return": -0.0006258067243782369,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T08:00:00+00:00",
+          "exit_time": "2026-11-16T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 258.65,
+          "exit_price": 255.46,
+          "gross_return": -0.012409954834893233,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T07:00:00+00:00",
+          "exit_time": "2026-11-18T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 252.3,
+          "exit_price": 253.43,
+          "gross_return": -0.004468795129891289,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T15:00:00+00:00",
+          "exit_time": "2026-11-20T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 253.01,
+          "exit_price": 248.0,
+          "gross_return": 0.020000267473118005,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T09:00:00+00:00",
+          "exit_time": "2026-11-23T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 244.02,
+          "exit_price": 243.82,
+          "gross_return": 0.0008199410101880874,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 238.4,
+          "exit_price": 241.89,
+          "gross_return": -0.014533142173845659,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 12,
+          "win_rate_pct": 41.66666666666667,
+          "mean_net_return_pct": 0.006141910735065117,
+          "median_net_return_pct": -0.09029328570950748,
+          "total_compounded_return_pct": 0.07373009610331938,
+          "profit_factor": 1.0107605571585585,
+          "max_drawdown_pct": 2.029576774331118,
+          "mean_holding_bars": 23.916666666666668
+        },
+        "10": {
+          "trades": 12,
+          "win_rate_pct": 33.33333333333333,
+          "mean_net_return_pct": -0.09385808926493494,
+          "median_net_return_pct": -0.19029328570950746,
+          "total_compounded_return_pct": -1.1199780914606716,
+          "profit_factor": 0.8517681383356397,
+          "max_drawdown_pct": 2.3692220540338926,
+          "mean_holding_bars": 23.916666666666668
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 416
+    },
+    "CBOM": {
+      "status": "OK",
+      "bars": 2161,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-26T17:00:00+00:00",
+          "exit_time": "2026-10-28T06:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 10.394,
+          "exit_price": 10.49,
+          "gross_return": 0.009193705821955675,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T07:00:00+00:00",
+          "exit_time": "2026-11-02T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.277,
+          "exit_price": 10.25,
+          "gross_return": 0.0026306830585188174,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T15:00:00+00:00",
+          "exit_time": "2026-11-04T06:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.132,
+          "exit_price": 10.498,
+          "gross_return": -0.03548603069067924,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T09:00:00+00:00",
+          "exit_time": "2026-11-06T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 10.774,
+          "exit_price": 11.0,
+          "gross_return": 0.020759448540028612,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T08:00:00+00:00",
+          "exit_time": "2026-11-10T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 11.577,
+          "exit_price": 10.903,
+          "gross_return": -0.0599823904993467,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T16:00:00+00:00",
+          "exit_time": "2026-11-12T05:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.813,
+          "exit_price": 10.834,
+          "gross_return": -0.0019402232723070266,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T09:00:00+00:00",
+          "exit_time": "2026-11-16T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 11.354,
+          "exit_price": 10.782,
+          "gross_return": -0.05169202771905747,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T12:00:00+00:00",
+          "exit_time": "2026-11-19T18:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.583,
+          "exit_price": 10.08,
+          "gross_return": 0.04869567746836483,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 9.765,
+          "exit_price": 9.819,
+          "gross_return": -0.005514719858511001,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": -0.9148430794559277,
+          "median_net_return_pct": -0.29402232723070265,
+          "total_compounded_return_pct": -7.903742354434396,
+          "profit_factor": 0.4841607936504596,
+          "max_drawdown_pct": 12.483358631687521,
+          "mean_holding_bars": 23.88888888888889
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": -1.0148430794559278,
+          "median_net_return_pct": -0.39402232723070263,
+          "total_compounded_return_pct": -8.728889939373586,
+          "profit_factor": 0.4451559114903762,
+          "max_drawdown_pct": 12.919849701498562,
+          "mean_holding_bars": 23.88888888888889
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 404
+    },
+    "CHMF": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T09:00:00+00:00",
+          "exit_time": "2026-10-22T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 719.8,
+          "exit_price": 702.4,
+          "gross_return": 0.02447035332402344,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T15:00:00+00:00",
+          "exit_time": "2026-10-30T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 717.2,
+          "exit_price": 689.2,
+          "gross_return": -0.039823237077203255,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T06:00:00+00:00",
+          "exit_time": "2026-11-02T12:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 684.8,
+          "exit_price": 683.4,
+          "gross_return": 0.0020464851463408164,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T13:00:00+00:00",
+          "exit_time": "2026-11-03T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 683.0,
+          "exit_price": 676.6,
+          "gross_return": 0.009414603224181873,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T05:00:00+00:00",
+          "exit_time": "2026-11-09T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 698.0,
+          "exit_price": 712.6,
+          "gross_return": 0.02070115040936318,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T08:00:00+00:00",
+          "exit_time": "2026-11-12T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 687.4,
+          "exit_price": 702.4,
+          "gross_return": -0.021586677905173407,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T06:00:00+00:00",
+          "exit_time": "2026-11-16T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 719.2,
+          "exit_price": 698.4,
+          "gross_return": -0.029347478632018118,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T07:00:00+00:00",
+          "exit_time": "2026-11-18T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 693.2,
+          "exit_price": 695.2,
+          "gross_return": -0.002881016109731189,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T11:00:00+00:00",
+          "exit_time": "2026-11-20T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 687.2,
+          "exit_price": 637.8,
+          "gross_return": 0.07460061609408845,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T06:00:00+00:00",
+          "exit_time": "2026-11-25T12:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 626.8,
+          "exit_price": 615.8,
+          "gross_return": 0.017705274991465778,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 60.0,
+          "mean_net_return_pct": 0.45300073465337576,
+          "median_net_return_pct": 0.4730544185261345,
+          "total_compounded_return_pct": 4.63417922125009,
+          "profit_factor": 1.4639575100959903,
+          "max_drawdown_pct": 6.61842882149311,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 60.0,
+          "mean_net_return_pct": 0.35300073465337567,
+          "median_net_return_pct": 0.3730544185261345,
+          "total_compounded_return_pct": 3.593051742479303,
+          "profit_factor": 1.3473103678142102,
+          "max_drawdown_pct": 7.269817300232939,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "CNRU": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T10:00:00+00:00",
+          "exit_time": "2026-10-22T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 672.4,
+          "exit_price": 671.2,
+          "gross_return": -0.0017862463814639926,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T05:00:00+00:00",
+          "exit_time": "2026-10-27T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 674.8,
+          "exit_price": 691.6,
+          "gross_return": 0.024591403137322332,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T09:00:00+00:00",
+          "exit_time": "2026-10-29T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 711.4,
+          "exit_price": 698.6,
+          "gross_return": -0.018156527141623156,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T16:00:00+00:00",
+          "exit_time": "2026-11-03T05:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 741.0,
+          "exit_price": 745.2,
+          "gross_return": 0.005652013431346623,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T11:00:00+00:00",
+          "exit_time": "2026-11-05T07:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 751.2,
+          "exit_price": 757.8,
+          "gross_return": 0.008747570690447194,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T08:00:00+00:00",
+          "exit_time": "2026-11-06T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 758.0,
+          "exit_price": 932.0,
+          "gross_return": 0.20664942904321953,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T17:00:00+00:00",
+          "exit_time": "2026-11-13T06:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 898.6,
+          "exit_price": 903.8,
+          "gross_return": -0.005770100341119554,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T15:00:00+00:00",
+          "exit_time": "2026-11-18T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 919.2,
+          "exit_price": 923.2,
+          "gross_return": 0.004342169219289248,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 907.4,
+          "exit_price": 903.2,
+          "gross_return": 0.0046393543944111765,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-25T17:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 881.4,
+          "exit_price": 894.4,
+          "gross_return": -0.014641549992948187,
+          "holding_bars": 3
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 60.0,
+          "mean_net_return_pct": 2.042675160588812,
+          "median_net_return_pct": 0.3490761806850212,
+          "total_compounded_return_pct": 22.662625178906627,
+          "profit_factor": 5.605347072407761,
+          "max_drawdown_pct": 1.8974206938999427,
+          "mean_holding_bars": 21.9
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 60.0,
+          "mean_net_return_pct": 1.942675160588812,
+          "median_net_return_pct": 0.24907618068502121,
+          "total_compounded_return_pct": 21.442111665613027,
+          "profit_factor": 5.017574826923223,
+          "max_drawdown_pct": 1.9954742382627308,
+          "mean_holding_bars": 21.9
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 417
+    },
+    "DOMRF": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T06:00:00+00:00",
+          "exit_time": "2026-10-22T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2148.3,
+          "exit_price": 2100.9,
+          "gross_return": -0.022311007351422073,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T19:00:00+00:00",
+          "exit_time": "2026-10-28T08:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2137.7,
+          "exit_price": 2129.1,
+          "gross_return": -0.004031129486188033,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T05:00:00+00:00",
+          "exit_time": "2026-10-30T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2150.1,
+          "exit_price": 2124.0,
+          "gross_return": -0.012213249306153785,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T05:00:00+00:00",
+          "exit_time": "2026-11-03T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2148.7,
+          "exit_price": 2082.6,
+          "gross_return": -0.031245894987886994,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T13:00:00+00:00",
+          "exit_time": "2026-11-05T09:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2079.3,
+          "exit_price": 2078.0,
+          "gross_return": 0.0006254059328761254,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T11:00:00+00:00",
+          "exit_time": "2026-11-09T17:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2107.3,
+          "exit_price": 2156.5,
+          "gross_return": 0.02307902988473059,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T18:00:00+00:00",
+          "exit_time": "2026-11-11T07:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2157.0,
+          "exit_price": 2124.8,
+          "gross_return": -0.01504068710704156,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T14:00:00+00:00",
+          "exit_time": "2026-11-12T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2138.3,
+          "exit_price": 2160.0,
+          "gross_return": 0.01009710088262101,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T15:00:00+00:00",
+          "exit_time": "2026-11-17T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2176.5,
+          "exit_price": 2148.5,
+          "gross_return": -0.012948157777302424,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T10:00:00+00:00",
+          "exit_time": "2026-11-18T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2168.9,
+          "exit_price": 2173.0,
+          "gross_return": 0.0018885746878681546,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2145.1,
+          "exit_price": 2136.5,
+          "gross_return": 0.0040171952379771045,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T08:00:00+00:00",
+          "exit_time": "2026-11-24T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2113.0,
+          "exit_price": 2130.9,
+          "gross_return": -0.008435687055817235,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-25T13:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2164.8,
+          "exit_price": 2159.6,
+          "gross_return": -0.002404959072391825,
+          "holding_bars": 7
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 13,
+          "win_rate_pct": 30.76923076923077,
+          "mean_net_return_pct": -0.6301805039856226,
+          "median_net_return_pct": -0.5031129486188033,
+          "total_compounded_return_pct": -7.865752953337557,
+          "profit_factor": 0.29983155327965144,
+          "max_drawdown_pct": 7.865752953337557,
+          "mean_holding_bars": 22.692307692307693
+        },
+        "10": {
+          "trades": 13,
+          "win_rate_pct": 23.076923076923077,
+          "mean_net_return_pct": -0.7301805039856227,
+          "median_net_return_pct": -0.6031129486188033,
+          "total_compounded_return_pct": -9.05574644819971,
+          "profit_factor": 0.24733681874174757,
+          "max_drawdown_pct": 9.055746448199697,
+          "mean_holding_bars": 22.692307692307693
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "ENPG": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T14:00:00+00:00",
+          "exit_time": "2026-10-26T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 322.25,
+          "exit_price": 334.5,
+          "gross_return": 0.037309237748986306,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T06:00:00+00:00",
+          "exit_time": "2026-10-28T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 337.55,
+          "exit_price": 335.25,
+          "gross_return": -0.006837125326091594,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T08:00:00+00:00",
+          "exit_time": "2026-10-30T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 326.45,
+          "exit_price": 328.9,
+          "gross_return": -0.007476955562368804,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T05:00:00+00:00",
+          "exit_time": "2026-11-10T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 328.15,
+          "exit_price": 324.7,
+          "gross_return": -0.010569141810931446,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T08:00:00+00:00",
+          "exit_time": "2026-11-12T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 320.35,
+          "exit_price": 323.9,
+          "gross_return": -0.011020678092253,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T06:00:00+00:00",
+          "exit_time": "2026-11-16T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 333.2,
+          "exit_price": 336.0,
+          "gross_return": 0.00836824967051658,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T14:00:00+00:00",
+          "exit_time": "2026-11-19T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 334.25,
+          "exit_price": 318.1,
+          "gross_return": 0.04952341722695409,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T07:00:00+00:00",
+          "exit_time": "2026-11-23T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 309.2,
+          "exit_price": 302.5,
+          "gross_return": 0.021907039242370696,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T15:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 294.7,
+          "exit_price": 297.4,
+          "gross_return": -0.009120144282405564,
+          "holding_bars": 22
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": 0.7009322090530807,
+          "median_net_return_pct": -0.7837125326091595,
+          "total_compounded_return_pct": 6.511619746929553,
+          "profit_factor": 2.2610715251314524,
+          "max_drawdown_pct": 3.9118225306563095,
+          "mean_holding_bars": 23.77777777777778
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": 0.6009322090530806,
+          "median_net_return_pct": -0.8837125326091594,
+          "total_compounded_return_pct": 5.557315977710431,
+          "profit_factor": 1.9829139014042332,
+          "max_drawdown_pct": 4.295407559030392,
+          "mean_holding_bars": 23.77777777777778
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 409
+    },
+    "FLOT": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T08:00:00+00:00",
+          "exit_time": "2026-10-26T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 87.41,
+          "exit_price": 92.58,
+          "gross_return": -0.057463443010727935,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T16:00:00+00:00",
+          "exit_time": "2026-11-02T05:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 89.46,
+          "exit_price": 89.17,
+          "gross_return": 0.0032469378579138824,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T04:00:00+00:00",
+          "exit_time": "2026-11-04T12:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 87.16,
+          "exit_price": 84.33,
+          "gross_return": 0.03300783648986887,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 83.22,
+          "exit_price": 84.85,
+          "gross_return": -0.019397288125439963,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T09:00:00+00:00",
+          "exit_time": "2026-11-11T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 83.8,
+          "exit_price": 81.8,
+          "gross_return": 0.024155763879336038,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T08:00:00+00:00",
+          "exit_time": "2026-11-18T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 81.71,
+          "exit_price": 84.17,
+          "gross_return": 0.029662169826868846,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T08:00:00+00:00",
+          "exit_time": "2026-11-20T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 85.67,
+          "exit_price": 78.67,
+          "gross_return": -0.0852408176348015,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T15:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 78.87,
+          "exit_price": 79.07,
+          "gross_return": -0.0025326086729359626,
+          "holding_bars": 22
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 8,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": -1.0320181173739715,
+          "median_net_return_pct": -0.06428354075110401,
+          "total_compounded_return_pct": -7.924514370581193,
+          "profit_factor": 0.5104108761750654,
+          "max_drawdown_pct": 8.586171850525908,
+          "mean_holding_bars": 23.75
+        },
+        "10": {
+          "trades": 8,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": -1.1320181173739716,
+          "median_net_return_pct": -0.16428354075110402,
+          "total_compounded_return_pct": -8.658179681495405,
+          "profit_factor": 0.47541407372208966,
+          "max_drawdown_pct": 8.768816800992738,
+          "mean_holding_bars": 23.75
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 418
+    },
+    "GAZP": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T12:00:00+00:00",
+          "exit_time": "2026-10-26T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 112.08,
+          "exit_price": 114.4,
+          "gross_return": 0.02048817691694597,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T10:00:00+00:00",
+          "exit_time": "2026-10-28T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 116.05,
+          "exit_price": 117.15,
+          "gross_return": 0.009434032233358714,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T07:00:00+00:00",
+          "exit_time": "2026-11-03T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 117.68,
+          "exit_price": 112.66,
+          "gross_return": -0.04359464282661423,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-04T08:00:00+00:00",
+          "exit_time": "2026-11-05T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 111.95,
+          "exit_price": 112.47,
+          "gross_return": -0.004634176371166513,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T09:00:00+00:00",
+          "exit_time": "2026-11-12T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 111.47,
+          "exit_price": 117.47,
+          "gross_return": -0.052427485434262525,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T13:00:00+00:00",
+          "exit_time": "2026-11-18T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 116.61,
+          "exit_price": 116.01,
+          "gross_return": -0.005158639244926037,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T11:00:00+00:00",
+          "exit_time": "2026-11-20T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 114.37,
+          "exit_price": 108.59,
+          "gross_return": 0.05185948456431629,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T05:00:00+00:00",
+          "exit_time": "2026-11-24T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 107.57,
+          "exit_price": 106.45,
+          "gross_return": 0.01046640710442552,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 103.02,
+          "exit_price": 103.31,
+          "gross_return": -0.0028110327239150327,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": -0.28197639757597603,
+          "median_net_return_pct": -0.38110327239150327,
+          "total_compounded_return_pct": -2.5058564343676037,
+          "profit_factor": 0.7766542780003677,
+          "max_drawdown_pct": 10.400006977130465,
+          "mean_holding_bars": 23.88888888888889
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": -0.38197639757597607,
+          "median_net_return_pct": -0.4811032723915033,
+          "total_compounded_return_pct": -3.3793670325777736,
+          "profit_factor": 0.710199428768441,
+          "max_drawdown_pct": 10.75769110405605,
+          "mean_holding_bars": 23.88888888888889
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "GMKN": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 114.82,
+          "exit_price": 113.76,
+          "gross_return": 0.00927471868455989,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T12:00:00+00:00",
+          "exit_time": "2026-10-26T18:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 112.92,
+          "exit_price": 115.66,
+          "gross_return": -0.02397524934478364,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T11:00:00+00:00",
+          "exit_time": "2026-10-28T17:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 116.1,
+          "exit_price": 115.28,
+          "gross_return": -0.007087937012579061,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T08:00:00+00:00",
+          "exit_time": "2026-10-30T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 114.34,
+          "exit_price": 114.7,
+          "gross_return": -0.0031435582994998558,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T13:00:00+00:00",
+          "exit_time": "2026-11-03T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 113.12,
+          "exit_price": 111.74,
+          "gross_return": 0.012274458117259987,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T07:00:00+00:00",
+          "exit_time": "2026-11-06T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 114.94,
+          "exit_price": 116.12,
+          "gross_return": 0.010213886076833833,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T13:00:00+00:00",
+          "exit_time": "2026-11-11T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 118.48,
+          "exit_price": 122.0,
+          "gross_return": 0.0292768747737131,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T07:00:00+00:00",
+          "exit_time": "2026-11-17T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 118.58,
+          "exit_price": 117.98,
+          "gross_return": 0.0050727197042923725,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T09:00:00+00:00",
+          "exit_time": "2026-11-19T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 116.66,
+          "exit_price": 112.24,
+          "gross_return": 0.03862428553128608,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T07:00:00+00:00",
+          "exit_time": "2026-11-23T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 111.1,
+          "exit_price": 110.3,
+          "gross_return": 0.007226770386127551,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T16:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 108.86,
+          "exit_price": 108.74,
+          "gross_return": 0.0011029412882794032,
+          "holding_bars": 21
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 72.72727272727273,
+          "mean_net_return_pct": 0.6169082718680877,
+          "median_net_return_pct": 0.6226770386127551,
+          "total_compounded_return_pct": 7.021537140414358,
+          "profit_factor": 2.8238604460380627,
+          "max_drawdown_pct": 3.6523078948920507,
+          "mean_holding_bars": 23.727272727272727
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 63.63636363636363,
+          "mean_net_return_pct": 0.5169082718680879,
+          "median_net_return_pct": 0.5226770386127552,
+          "total_compounded_return_pct": 5.850751359066719,
+          "profit_factor": 2.3833247837339884,
+          "max_drawdown_pct": 3.9409178398325304,
+          "mean_holding_bars": 23.727272727272727
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "HEAD": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T08:00:00+00:00",
+          "exit_time": "2026-10-22T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2703.0,
+          "exit_price": 2646.0,
+          "gross_return": 0.021313201601546632,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T14:00:00+00:00",
+          "exit_time": "2026-10-27T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2711.0,
+          "exit_price": 2730.0,
+          "gross_return": 0.006984038680339818,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T14:00:00+00:00",
+          "exit_time": "2026-10-30T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2693.0,
+          "exit_price": 2684.0,
+          "gross_return": 0.0033475947200265156,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2684.0,
+          "exit_price": 2741.0,
+          "gross_return": -0.02101459821121328,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T14:00:00+00:00",
+          "exit_time": "2026-11-09T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2767.0,
+          "exit_price": 2784.0,
+          "gross_return": 0.006125041667384385,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T09:00:00+00:00",
+          "exit_time": "2026-11-16T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2722.0,
+          "exit_price": 2685.0,
+          "gross_return": 0.013686176268446286,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T14:00:00+00:00",
+          "exit_time": "2026-11-19T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2688.0,
+          "exit_price": 2648.0,
+          "gross_return": 0.01499278458614128,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T08:00:00+00:00",
+          "exit_time": "2026-11-24T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2572.0,
+          "exit_price": 2563.0,
+          "gross_return": 0.0035053589934388846,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-25T16:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2602.0,
+          "exit_price": 2597.0,
+          "gross_return": -0.0019234474097021884,
+          "holding_bars": 4
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 77.77777777777779,
+          "mean_net_return_pct": 0.42240167662675926,
+          "median_net_return_pct": 0.5125041667384385,
+          "total_compounded_return_pct": 3.8748009454514065,
+          "profit_factor": 2.524423825118208,
+          "max_drawdown_pct": 2.177404540212376,
+          "mean_holding_bars": 21.77777777777778
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 77.77777777777779,
+          "mean_net_return_pct": 0.3224016766267592,
+          "median_net_return_pct": 0.4125041667384385,
+          "total_compounded_return_pct": 2.9441220739380602,
+          "profit_factor": 2.077143876906919,
+          "max_drawdown_pct": 2.2751782406741325,
+          "mean_holding_bars": 21.77777777777778
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "IRAO": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T08:00:00+00:00",
+          "exit_time": "2026-10-22T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2.6985,
+          "exit_price": 2.6845,
+          "gross_return": -0.005201572196073396,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T13:00:00+00:00",
+          "exit_time": "2026-10-26T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2.747,
+          "exit_price": 2.87,
+          "gross_return": 0.043802622658393055,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T06:00:00+00:00",
+          "exit_time": "2026-10-30T12:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2.7805,
+          "exit_price": 2.8075,
+          "gross_return": -0.009663639984979518,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T15:00:00+00:00",
+          "exit_time": "2026-11-03T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2.814,
+          "exit_price": 2.722,
+          "gross_return": -0.033240054462923,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2.6645,
+          "exit_price": 2.807,
+          "gross_return": -0.052099874625045485,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T12:00:00+00:00",
+          "exit_time": "2026-11-09T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2.807,
+          "exit_price": 2.826,
+          "gross_return": 0.006745986882590328,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T08:00:00+00:00",
+          "exit_time": "2026-11-12T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2.74,
+          "exit_price": 2.882,
+          "gross_return": -0.050526577177351394,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T05:00:00+00:00",
+          "exit_time": "2026-11-18T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2.82,
+          "exit_price": 2.84,
+          "gross_return": -0.007067167223092353,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T11:00:00+00:00",
+          "exit_time": "2026-11-20T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2.7665,
+          "exit_price": 2.6625,
+          "gross_return": 0.03831745232048396,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2.6015,
+          "exit_price": 2.595,
+          "gross_return": 0.0025016851303691265,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 40.0,
+          "mean_net_return_pct": -0.7643113867762866,
+          "median_net_return_pct": -0.7134369709582875,
+          "total_compounded_return_pct": -7.358329362813909,
+          "profit_factor": 0.5333842573760761,
+          "max_drawdown_pct": 14.088400104880169,
+          "mean_holding_bars": 23.9
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 40.0,
+          "mean_net_return_pct": -0.8643113867762867,
+          "median_net_return_pct": -0.8134369709582874,
+          "total_compounded_return_pct": -8.280129387408719,
+          "profit_factor": 0.4909793527981228,
+          "max_drawdown_pct": 14.60232638363668,
+          "mean_holding_bars": 23.9
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "LKOH": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 6011.5,
+          "exit_price": 6062.5,
+          "gross_return": -0.00844795483077475,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T14:00:00+00:00",
+          "exit_time": "2026-10-26T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 6130.0,
+          "exit_price": 6165.5,
+          "gross_return": 0.005774486380327962,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T05:00:00+00:00",
+          "exit_time": "2026-10-28T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 6184.5,
+          "exit_price": 6312.0,
+          "gross_return": 0.020406421710645672,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T07:00:00+00:00",
+          "exit_time": "2026-11-02T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 6223.0,
+          "exit_price": 6081.0,
+          "gross_return": 0.023082949449108187,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T14:00:00+00:00",
+          "exit_time": "2026-11-03T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 6080.5,
+          "exit_price": 6046.5,
+          "gross_return": 0.0056073371957240095,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5900.0,
+          "exit_price": 6061.5,
+          "gross_return": -0.027004943292827224,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T14:00:00+00:00",
+          "exit_time": "2026-11-11T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5909.5,
+          "exit_price": 6029.0,
+          "gross_return": -0.020019934037110377,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T17:00:00+00:00",
+          "exit_time": "2026-11-16T06:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 6058.5,
+          "exit_price": 6007.5,
+          "gross_return": -0.008453556060953262,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T05:00:00+00:00",
+          "exit_time": "2026-11-18T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5954.5,
+          "exit_price": 5949.5,
+          "gross_return": 0.0008400538128423908,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5908.0,
+          "exit_price": 5766.0,
+          "gross_return": 0.024328765452922962,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T08:00:00+00:00",
+          "exit_time": "2026-11-24T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5692.0,
+          "exit_price": 5804.5,
+          "gross_return": -0.019571798568347454,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-25T16:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 5934.0,
+          "exit_price": 5937.0,
+          "gross_return": 0.000505433419908285,
+          "holding_bars": 4
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 12,
+          "win_rate_pct": 41.66666666666667,
+          "mean_net_return_pct": -0.12460616140444669,
+          "median_net_return_pct": -0.03272563836246621,
+          "total_compounded_return_pct": -1.4841502284432373,
+          "profit_factor": 0.8322794548814587,
+          "max_drawdown_pct": 5.695226717726453,
+          "mean_holding_bars": 22.333333333333332
+        },
+        "10": {
+          "trades": 12,
+          "win_rate_pct": 41.66666666666667,
+          "mean_net_return_pct": -0.22460616140444664,
+          "median_net_return_pct": -0.1327256383624662,
+          "total_compounded_return_pct": -2.659275572169284,
+          "profit_factor": 0.719688167959525,
+          "max_drawdown_pct": 6.140948323961994,
+          "mean_holding_bars": 22.333333333333332
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "MAGN": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 22.835,
+          "exit_price": 23.0,
+          "gross_return": -0.007199769292187418,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T13:00:00+00:00",
+          "exit_time": "2026-10-26T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 23.63,
+          "exit_price": 23.605,
+          "gross_return": -0.001058537200566306,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T07:00:00+00:00",
+          "exit_time": "2026-10-30T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 23.07,
+          "exit_price": 22.645,
+          "gross_return": 0.018593995177485147,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T11:00:00+00:00",
+          "exit_time": "2026-11-03T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 22.205,
+          "exit_price": 22.175,
+          "gross_return": 0.0013519605484222515,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T05:00:00+00:00",
+          "exit_time": "2026-11-09T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 22.595,
+          "exit_price": 23.01,
+          "gross_return": 0.01820026118403168,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T14:00:00+00:00",
+          "exit_time": "2026-11-10T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 23.155,
+          "exit_price": 22.39,
+          "gross_return": -0.03359630932205181,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T09:00:00+00:00",
+          "exit_time": "2026-11-12T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 22.145,
+          "exit_price": 23.015,
+          "gross_return": -0.03853443989404337,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T06:00:00+00:00",
+          "exit_time": "2026-11-16T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 23.23,
+          "exit_price": 22.525,
+          "gross_return": -0.030818743287916256,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T13:00:00+00:00",
+          "exit_time": "2026-11-18T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 22.825,
+          "exit_price": 22.88,
+          "gross_return": 0.0024067400305650593,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 22.245,
+          "exit_price": 21.305,
+          "gross_return": 0.04317547730612985,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T05:00:00+00:00",
+          "exit_time": "2026-11-25T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 20.96,
+          "exit_price": 20.6,
+          "gross_return": 0.01732478365730602,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 54.54545454545454,
+          "mean_net_return_pct": -0.19231437357113781,
+          "median_net_return_pct": 0.035196054842225155,
+          "total_compounded_return_pct": -2.0932392469429018,
+          "profit_factor": 0.817959024476369,
+          "max_drawdown_pct": 10.052992309003251,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 45.45454545454545,
+          "mean_net_return_pct": -0.2923143735711379,
+          "median_net_return_pct": -0.06480394515777485,
+          "total_compounded_return_pct": -3.164311915588025,
+          "profit_factor": 0.7361260527007402,
+          "max_drawdown_pct": 10.322428974999774,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "MDMG": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-22T07:00:00+00:00",
+          "exit_time": "2026-10-23T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1284.3,
+          "exit_price": 1289.7,
+          "gross_return": -0.004195810351335524,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T09:00:00+00:00",
+          "exit_time": "2026-10-30T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1284.0,
+          "exit_price": 1292.4,
+          "gross_return": -0.006520749700436785,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-04T11:00:00+00:00",
+          "exit_time": "2026-11-06T05:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1293.3,
+          "exit_price": 1297.7,
+          "gross_return": 0.0033963753219861787,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T07:00:00+00:00",
+          "exit_time": "2026-11-09T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1305.0,
+          "exit_price": 1300.0,
+          "gross_return": -0.003838776307165713,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T18:00:00+00:00",
+          "exit_time": "2026-11-11T07:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1306.0,
+          "exit_price": 1281.1,
+          "gross_return": -0.019249946973988432,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T05:00:00+00:00",
+          "exit_time": "2026-11-17T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1296.1,
+          "exit_price": 1288.4,
+          "gross_return": -0.005958616972285533,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T11:00:00+00:00",
+          "exit_time": "2026-11-20T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1281.4,
+          "exit_price": 1248.5,
+          "gross_return": 0.02601039948509334,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1247.2,
+          "exit_price": 1253.1,
+          "gross_return": -0.004719442427672372,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 8,
+          "win_rate_pct": 25.0,
+          "mean_net_return_pct": -0.2884570990725605,
+          "median_net_return_pct": -0.5457626389503948,
+          "total_compounded_return_pct": -2.281234032347279,
+          "profit_factor": 0.5428874817599392,
+          "max_drawdown_pct": 4.148256327598654,
+          "mean_holding_bars": 23.875
+        },
+        "10": {
+          "trades": 8,
+          "win_rate_pct": 25.0,
+          "mean_net_return_pct": -0.3884570990725605,
+          "median_net_return_pct": -0.6457626389503949,
+          "total_compounded_return_pct": -3.059865481594881,
+          "profit_factor": 0.4498100427099512,
+          "max_drawdown_pct": 4.72164490373993,
+          "mean_holding_bars": 23.875
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "MOEX": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 154.97,
+          "exit_price": 154.09,
+          "gross_return": 0.005694702505481559,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T14:00:00+00:00",
+          "exit_time": "2026-10-27T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 156.68,
+          "exit_price": 163.14,
+          "gross_return": 0.04040321907480364,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T07:00:00+00:00",
+          "exit_time": "2026-10-29T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 164.5,
+          "exit_price": 165.0,
+          "gross_return": 0.003034903695154111,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T05:00:00+00:00",
+          "exit_time": "2026-11-03T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 167.4,
+          "exit_price": 160.64,
+          "gross_return": -0.04122032155201072,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T05:00:00+00:00",
+          "exit_time": "2026-11-09T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 163.55,
+          "exit_price": 161.42,
+          "gross_return": -0.01310909008816681,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T15:00:00+00:00",
+          "exit_time": "2026-11-12T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 159.08,
+          "exit_price": 165.09,
+          "gross_return": -0.03708355940028717,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T17:00:00+00:00",
+          "exit_time": "2026-11-16T06:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 166.64,
+          "exit_price": 166.16,
+          "gross_return": -0.0028846173848596107,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T14:00:00+00:00",
+          "exit_time": "2026-11-17T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 163.52,
+          "exit_price": 164.92,
+          "gross_return": -0.008525200823359407,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T14:00:00+00:00",
+          "exit_time": "2026-11-19T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 163.85,
+          "exit_price": 162.04,
+          "gross_return": 0.011108156810333863,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T07:00:00+00:00",
+          "exit_time": "2026-11-23T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 160.03,
+          "exit_price": 160.12,
+          "gross_return": -0.000562236466474111,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 156.6,
+          "exit_price": 161.05,
+          "gross_return": -0.0280200922205053,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.7469466895444541,
+          "median_net_return_pct": -0.38846173848596105,
+          "total_compounded_return_pct": -7.887924265045154,
+          "profit_factor": 0.40635045094153593,
+          "max_drawdown_pct": 12.040786431345635,
+          "mean_holding_bars": 23.90909090909091
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.8469466895444542,
+          "median_net_return_pct": -0.48846173848596103,
+          "total_compounded_return_pct": -8.895604695007686,
+          "profit_factor": 0.35927883988848347,
+          "max_drawdown_pct": 12.741652935925835,
+          "mean_holding_bars": 23.90909090909091
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "MTSS": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-22T07:00:00+00:00",
+          "exit_time": "2026-10-23T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 174.65,
+          "exit_price": 175.15,
+          "gross_return": -0.0028587783906548155,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T09:00:00+00:00",
+          "exit_time": "2026-10-27T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 177.7,
+          "exit_price": 176.1,
+          "gross_return": -0.009044719658445203,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T12:00:00+00:00",
+          "exit_time": "2026-10-29T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 179.75,
+          "exit_price": 177.95,
+          "gross_return": -0.010064384644954412,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T08:00:00+00:00",
+          "exit_time": "2026-11-02T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 176.2,
+          "exit_price": 175.8,
+          "gross_return": 0.0022727282510023442,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T13:00:00+00:00",
+          "exit_time": "2026-11-05T09:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 174.95,
+          "exit_price": 176.0,
+          "gross_return": -0.00598377622445471,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T05:00:00+00:00",
+          "exit_time": "2026-11-09T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 178.15,
+          "exit_price": 178.65,
+          "gross_return": 0.0028026924175737454,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T13:00:00+00:00",
+          "exit_time": "2026-11-12T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 179.35,
+          "exit_price": 182.5,
+          "gross_return": 0.017410969044254553,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T06:00:00+00:00",
+          "exit_time": "2026-11-16T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 183.55,
+          "exit_price": 183.0,
+          "gross_return": -0.0030009571014224185,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T05:00:00+00:00",
+          "exit_time": "2026-11-19T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 184.6,
+          "exit_price": 182.85,
+          "gross_return": -0.009525177473361538,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 180.6,
+          "exit_price": 175.7,
+          "gross_return": 0.027506645789833587,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T09:00:00+00:00",
+          "exit_time": "2026-11-24T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 173.35,
+          "exit_price": 172.0,
+          "gross_return": 0.007818195317579348,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 45.45454545454545,
+          "mean_net_return_pct": 0.05757670297227709,
+          "median_net_return_pct": -0.38587783906548156,
+          "total_compounded_return_pct": 0.6353535949856548,
+          "profit_factor": 1.1362680293302743,
+          "max_drawdown_pct": 3.0213108074064743,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 45.45454545454545,
+          "mean_net_return_pct": -0.04242329702772288,
+          "median_net_return_pct": -0.48587783906548154,
+          "total_compounded_return_pct": -0.4655691186856936,
+          "profit_factor": 0.9110754785517816,
+          "max_drawdown_pct": 3.5351414221498234,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "NLMK": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 76.1,
+          "exit_price": 74.48,
+          "gross_return": 0.02151763189882844,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T08:00:00+00:00",
+          "exit_time": "2026-10-26T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 74.14,
+          "exit_price": 77.94,
+          "gross_return": -0.049984102187976956,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T14:00:00+00:00",
+          "exit_time": "2026-10-30T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 74.36,
+          "exit_price": 74.98,
+          "gross_return": -0.008303248454522712,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T05:00:00+00:00",
+          "exit_time": "2026-11-03T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 75.86,
+          "exit_price": 73.88,
+          "gross_return": -0.026447380929713757,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T08:00:00+00:00",
+          "exit_time": "2026-11-06T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 75.12,
+          "exit_price": 75.7,
+          "gross_return": 0.007691325543395494,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T05:00:00+00:00",
+          "exit_time": "2026-11-10T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 77.22,
+          "exit_price": 76.24,
+          "gross_return": -0.012772231490143626,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T15:00:00+00:00",
+          "exit_time": "2026-11-12T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 75.72,
+          "exit_price": 76.78,
+          "gross_return": -0.013901863231529667,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T12:00:00+00:00",
+          "exit_time": "2026-11-18T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 76.38,
+          "exit_price": 76.28,
+          "gross_return": -0.00131010106515173,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 73.3,
+          "exit_price": 69.5,
+          "gross_return": 0.053233856321859306,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T05:00:00+00:00",
+          "exit_time": "2026-11-24T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 69.08,
+          "exit_price": 67.46,
+          "gross_return": 0.023730423644973735,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 66.38,
+          "exit_price": 67.9,
+          "gross_return": -0.02264022827282214,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.3653265292982147,
+          "median_net_return_pct": -0.9303248454522711,
+          "total_compounded_return_pct": -3.938917250859675,
+          "profit_factor": 0.7177145506066078,
+          "max_drawdown_pct": 10.598041940384947,
+          "mean_holding_bars": 23.90909090909091
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.46532652929821466,
+          "median_net_return_pct": -1.030324845452271,
+          "total_compounded_return_pct": -4.989798716671501,
+          "profit_factor": 0.6572964140948526,
+          "max_drawdown_pct": 11.22167040071035,
+          "mean_holding_bars": 23.90909090909091
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 419
+    },
+    "NVTK": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T11:00:00+00:00",
+          "exit_time": "2026-10-22T17:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1161.8,
+          "exit_price": 1142.5,
+          "gross_return": -0.016751682790072348,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T12:00:00+00:00",
+          "exit_time": "2026-10-26T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1169.0,
+          "exit_price": 1187.3,
+          "gross_return": 0.015533139199678093,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T10:00:00+00:00",
+          "exit_time": "2026-10-28T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1194.3,
+          "exit_price": 1202.4,
+          "gross_return": 0.006759319764383582,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T08:00:00+00:00",
+          "exit_time": "2026-10-30T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1186.0,
+          "exit_price": 1184.6,
+          "gross_return": 0.0011811357148059913,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T14:00:00+00:00",
+          "exit_time": "2026-11-03T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1139.3,
+          "exit_price": 1130.4,
+          "gross_return": 0.007842486333752266,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1112.1,
+          "exit_price": 1143.2,
+          "gross_return": -0.027581227790861414,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T10:00:00+00:00",
+          "exit_time": "2026-11-10T16:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1120.0,
+          "exit_price": 1106.3,
+          "gross_return": 0.012307571248275096,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T08:00:00+00:00",
+          "exit_time": "2026-11-12T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1095.0,
+          "exit_price": 1124.6,
+          "gross_return": -0.026673053607500056,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T08:00:00+00:00",
+          "exit_time": "2026-11-16T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1147.2,
+          "exit_price": 1131.2,
+          "gross_return": -0.01404517470304764,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T15:00:00+00:00",
+          "exit_time": "2026-11-20T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1105.3,
+          "exit_price": 1062.9,
+          "gross_return": 0.039115769777373605,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T07:00:00+00:00",
+          "exit_time": "2026-11-23T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1035.2,
+          "exit_price": 1028.4,
+          "gross_return": 0.006590448354901702,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1010.6,
+          "exit_price": 1022.2,
+          "gross_return": -0.011412953476371062,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 12,
+          "win_rate_pct": 58.333333333333336,
+          "mean_net_return_pct": -0.15945184978901822,
+          "median_net_return_pct": 0.2885792034853847,
+          "total_compounded_return_pct": -1.895232475086972,
+          "profit_factor": 0.8114187834518629,
+          "max_drawdown_pct": 5.8227823827237675,
+          "mean_holding_bars": 23.916666666666668
+        },
+        "10": {
+          "trades": 12,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": -0.2594518497890182,
+          "median_net_return_pct": 0.18857920348538468,
+          "total_compounded_return_pct": -3.065454311737692,
+          "profit_factor": 0.7097934010583772,
+          "max_drawdown_pct": 6.198738839005211,
+          "mean_holding_bars": 23.916666666666668
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "OZON": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3507.5,
+          "exit_price": 3485.0,
+          "gross_return": 0.006435488781991729,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T12:00:00+00:00",
+          "exit_time": "2026-10-26T18:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3427.0,
+          "exit_price": 3533.5,
+          "gross_return": -0.030603638256300098,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T05:00:00+00:00",
+          "exit_time": "2026-10-28T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3557.5,
+          "exit_price": 3744.5,
+          "gross_return": 0.05123004572541442,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T15:00:00+00:00",
+          "exit_time": "2026-10-30T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3794.0,
+          "exit_price": 3861.0,
+          "gross_return": 0.01750534576927684,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T05:00:00+00:00",
+          "exit_time": "2026-11-02T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3859.0,
+          "exit_price": 3757.5,
+          "gross_return": -0.02665423991048918,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T13:00:00+00:00",
+          "exit_time": "2026-11-03T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3719.0,
+          "exit_price": 3780.0,
+          "gross_return": -0.01626919468856327,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T05:00:00+00:00",
+          "exit_time": "2026-11-10T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3825.0,
+          "exit_price": 3739.5,
+          "gross_return": -0.022606554628913936,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T09:00:00+00:00",
+          "exit_time": "2026-11-12T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3706.0,
+          "exit_price": 3809.0,
+          "gross_return": -0.027413559633298924,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T10:00:00+00:00",
+          "exit_time": "2026-11-17T16:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3688.0,
+          "exit_price": 3714.0,
+          "gross_return": -0.007025157236166753,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T15:00:00+00:00",
+          "exit_time": "2026-11-20T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3681.5,
+          "exit_price": 3562.5,
+          "gross_return": 0.032857732231865576,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T07:00:00+00:00",
+          "exit_time": "2026-11-23T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3501.0,
+          "exit_price": 3599.0,
+          "gross_return": -0.027607387124365102,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.5559192633595337,
+          "median_net_return_pct": -1.726919468856327,
+          "total_compounded_return_pct": -5.931892572029051,
+          "profit_factor": 0.6297904202752787,
+          "max_drawdown_pct": 9.964730230499272,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.6559192633595337,
+          "median_net_return_pct": -1.826919468856327,
+          "total_compounded_return_pct": -6.960971443419717,
+          "profit_factor": 0.5809546318247861,
+          "max_drawdown_pct": 10.413783011867135,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "PHOR": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T13:00:00+00:00",
+          "exit_time": "2026-10-26T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 5710.0,
+          "exit_price": 5668.0,
+          "gross_return": -0.007382701839484869,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T10:00:00+00:00",
+          "exit_time": "2026-10-29T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 5734.0,
+          "exit_price": 5474.0,
+          "gross_return": -0.04640375684269082,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T09:00:00+00:00",
+          "exit_time": "2026-11-03T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5353.0,
+          "exit_price": 5213.0,
+          "gross_return": 0.02650164562527542,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T06:00:00+00:00",
+          "exit_time": "2026-11-09T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 5266.0,
+          "exit_price": 5222.0,
+          "gross_return": -0.008390590797180601,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T15:00:00+00:00",
+          "exit_time": "2026-11-12T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5140.0,
+          "exit_price": 5230.0,
+          "gross_return": -0.017358198609757732,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T05:00:00+00:00",
+          "exit_time": "2026-11-13T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 5231.0,
+          "exit_price": 5293.0,
+          "gross_return": 0.011782728487376475,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T05:00:00+00:00",
+          "exit_time": "2026-11-17T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 5366.0,
+          "exit_price": 5273.0,
+          "gross_return": -0.017483291455099623,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T04:00:00+00:00",
+          "exit_time": "2026-11-19T10:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 5302.0,
+          "exit_price": 5216.0,
+          "gross_return": -0.01635328324248193,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T11:00:00+00:00",
+          "exit_time": "2026-11-20T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 5215.0,
+          "exit_price": 5065.0,
+          "gross_return": 0.029184950752089055,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T08:00:00+00:00",
+          "exit_time": "2026-11-24T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 4994.0,
+          "exit_price": 4975.0,
+          "gross_return": 0.0038118212470254235,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T15:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 4972.0,
+          "exit_price": 4950.0,
+          "gross_return": 0.004434597067865753,
+          "holding_bars": 22
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 45.45454545454545,
+          "mean_net_return_pct": -0.4423279964278496,
+          "median_net_return_pct": -0.838270183948487,
+          "total_compounded_return_pct": -4.749133947418549,
+          "profit_factor": 0.5923989558741466,
+          "max_drawdown_pct": 7.972933274836979,
+          "mean_holding_bars": 23.818181818181817
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 45.45454545454545,
+          "mean_net_return_pct": -0.5423279964278496,
+          "median_net_return_pct": -0.9382701839484869,
+          "total_compounded_return_pct": -5.791151868438482,
+          "profit_factor": 0.5241667682493474,
+          "max_drawdown_pct": 8.70621277979856,
+          "mean_holding_bars": 23.818181818181817
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 419
+    },
+    "PLZL": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1133.2,
+          "exit_price": 1099.0,
+          "gross_return": 0.030644813552740128,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T07:00:00+00:00",
+          "exit_time": "2026-10-30T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1059.0,
+          "exit_price": 1061.6,
+          "gross_return": -0.0024521374165911093,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T08:00:00+00:00",
+          "exit_time": "2026-11-05T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1036.4,
+          "exit_price": 1078.2,
+          "gross_return": -0.03953981432961342,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1078.2,
+          "exit_price": 1070.4,
+          "gross_return": -0.007260573643604287,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T05:00:00+00:00",
+          "exit_time": "2026-11-10T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1083.6,
+          "exit_price": 1123.0,
+          "gross_return": 0.0357148445275033,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T08:00:00+00:00",
+          "exit_time": "2026-11-17T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1086.6,
+          "exit_price": 1082.6,
+          "gross_return": 0.003687999754545217,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T15:00:00+00:00",
+          "exit_time": "2026-11-20T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1057.2,
+          "exit_price": 1027.4,
+          "gross_return": 0.02859256469696656,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T13:00:00+00:00",
+          "exit_time": "2026-11-23T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 999.4,
+          "exit_price": 1038.8,
+          "gross_return": -0.03866638087848871,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1007.2,
+          "exit_price": 1007.8,
+          "gross_return": -0.0005955335163603129,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": 0.01250869718997067,
+          "median_net_return_pct": -0.1595533516360313,
+          "total_compounded_return_pct": 0.11264166783615526,
+          "profit_factor": 1.012038597992885,
+          "max_drawdown_pct": 5.091083253290369,
+          "mean_holding_bars": 23.88888888888889
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": -0.08749130281002931,
+          "median_net_return_pct": -0.25955335163603127,
+          "total_compounded_return_pct": -0.784329681553686,
+          "profit_factor": 0.920070425512089,
+          "max_drawdown_pct": 5.37538334017513,
+          "mean_holding_bars": 23.88888888888889
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "POSI": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T13:00:00+00:00",
+          "exit_time": "2026-10-26T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1168.4,
+          "exit_price": 1183.2,
+          "gross_return": 0.012587340883004141,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T12:00:00+00:00",
+          "exit_time": "2026-10-28T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1216.6,
+          "exit_price": 1242.2,
+          "gross_return": 0.02082391823859781,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T05:00:00+00:00",
+          "exit_time": "2026-11-03T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1258.0,
+          "exit_price": 1270.6,
+          "gross_return": 0.009966071572046873,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T12:00:00+00:00",
+          "exit_time": "2026-11-05T08:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1271.0,
+          "exit_price": 1281.0,
+          "gross_return": 0.007837030707280146,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T12:00:00+00:00",
+          "exit_time": "2026-11-09T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1344.0,
+          "exit_price": 1315.6,
+          "gross_return": -0.021357406768192984,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T13:00:00+00:00",
+          "exit_time": "2026-11-11T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1359.6,
+          "exit_price": 1321.8,
+          "gross_return": -0.028196094785608448,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T08:00:00+00:00",
+          "exit_time": "2026-11-16T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1259.6,
+          "exit_price": 1302.6,
+          "gross_return": -0.03356805688543164,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T05:00:00+00:00",
+          "exit_time": "2026-11-18T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1309.2,
+          "exit_price": 1289.0,
+          "gross_return": -0.01554953968783811,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T08:00:00+00:00",
+          "exit_time": "2026-11-20T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1253.4,
+          "exit_price": 1255.4,
+          "gross_return": -0.0015943880928562435,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T11:00:00+00:00",
+          "exit_time": "2026-11-24T17:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1301.8,
+          "exit_price": 1288.8,
+          "gross_return": -0.01003636927552236,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 40.0,
+          "mean_net_return_pct": -0.6908749409452082,
+          "median_net_return_pct": -0.6815378684189302,
+          "total_compounded_return_pct": -6.675497692225885,
+          "profit_factor": 0.40596395646306943,
+          "max_drawdown_pct": 10.979353097772353,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 40.0,
+          "mean_net_return_pct": -0.7908749409452082,
+          "median_net_return_pct": -0.7815378684189302,
+          "total_compounded_return_pct": -7.604092005464391,
+          "profit_factor": 0.3533418297364814,
+          "max_drawdown_pct": 11.511877807483426,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "RAGR": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T06:00:00+00:00",
+          "exit_time": "2026-10-22T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 75.9,
+          "exit_price": 72.52,
+          "gross_return": -0.045554298514934054,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-22T15:00:00+00:00",
+          "exit_time": "2026-10-26T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 72.28,
+          "exit_price": 74.3,
+          "gross_return": -0.02756348599968575,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T07:00:00+00:00",
+          "exit_time": "2026-10-30T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 73.72,
+          "exit_price": 72.38,
+          "gross_return": 0.01834411466602619,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T18:00:00+00:00",
+          "exit_time": "2026-11-04T09:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 71.82,
+          "exit_price": 70.7,
+          "gross_return": 0.015717415895409596,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 70.0,
+          "exit_price": 70.96,
+          "gross_return": -0.013621095951964916,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T15:00:00+00:00",
+          "exit_time": "2026-11-12T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 70.24,
+          "exit_price": 71.14,
+          "gross_return": -0.01273181719344795,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T06:00:00+00:00",
+          "exit_time": "2026-11-17T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 73.02,
+          "exit_price": 72.86,
+          "gross_return": -0.0021935846470730433,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 70.92,
+          "exit_price": 66.62,
+          "gross_return": 0.06254764844047347,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 65.96,
+          "exit_price": 65.66,
+          "gross_return": 0.0045585856179515254,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": -0.10551686319161034,
+          "median_net_return_pct": -0.31935846470730433,
+          "total_compounded_return_pct": -0.9451568163666768,
+          "profit_factor": 0.910968156520261,
+          "max_drawdown_pct": 7.236578105254699,
+          "mean_holding_bars": 23.88888888888889
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 44.44444444444444,
+          "mean_net_return_pct": -0.20551686319161036,
+          "median_net_return_pct": -0.4193584647073043,
+          "total_compounded_return_pct": -1.8326506920034347,
+          "profit_factor": 0.834356006190281,
+          "max_drawdown_pct": 7.836199492546736,
+          "mean_holding_bars": 23.88888888888889
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "RENI": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T10:00:00+00:00",
+          "exit_time": "2026-10-22T16:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 70.92,
+          "exit_price": 69.7,
+          "gross_return": 0.017352163439528872,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T11:00:00+00:00",
+          "exit_time": "2026-10-26T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 68.98,
+          "exit_price": 70.5,
+          "gross_return": -0.021796102309528106,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T09:00:00+00:00",
+          "exit_time": "2026-10-28T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 71.04,
+          "exit_price": 71.64,
+          "gross_return": 0.008410478508596293,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T15:00:00+00:00",
+          "exit_time": "2026-11-03T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 72.66,
+          "exit_price": 71.18,
+          "gross_return": -0.020579146711009102,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T10:00:00+00:00",
+          "exit_time": "2026-11-05T06:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 69.34,
+          "exit_price": 68.12,
+          "gross_return": 0.017751084462389845,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T08:00:00+00:00",
+          "exit_time": "2026-11-16T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 70.8,
+          "exit_price": 71.52,
+          "gross_return": 0.010118130165584686,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T14:00:00+00:00",
+          "exit_time": "2026-11-19T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 70.3,
+          "exit_price": 68.5,
+          "gross_return": 0.02593805354843961,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T09:00:00+00:00",
+          "exit_time": "2026-11-23T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 66.66,
+          "exit_price": 68.18,
+          "gross_return": -0.0225461938301636,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T13:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 65.98,
+          "exit_price": 64.96,
+          "gross_return": 0.015579969947013037,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 66.66666666666666,
+          "mean_net_return_pct": 0.23587152467612807,
+          "median_net_return_pct": 0.9118130165584687,
+          "total_compounded_return_pct": 2.1455363412409056,
+          "profit_factor": 1.312543967411206,
+          "max_drawdown_pct": 3.6289914236019176,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 66.66666666666666,
+          "mean_net_return_pct": 0.1358715246761282,
+          "median_net_return_pct": 0.8118130165584686,
+          "total_compounded_return_pct": 1.2303510255827543,
+          "profit_factor": 1.1724222848454176,
+          "max_drawdown_pct": 3.917671213136976,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 417
+    },
+    "ROSN": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T14:00:00+00:00",
+          "exit_time": "2026-10-26T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 387.45,
+          "exit_price": 388.9,
+          "gross_return": 0.0037354329517423333,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T10:00:00+00:00",
+          "exit_time": "2026-10-28T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 391.35,
+          "exit_price": 389.7,
+          "gross_return": -0.004225087906183656,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T07:00:00+00:00",
+          "exit_time": "2026-10-30T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 384.55,
+          "exit_price": 385.85,
+          "gross_return": -0.003374873400549331,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T09:00:00+00:00",
+          "exit_time": "2026-11-03T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 382.05,
+          "exit_price": 369.25,
+          "gross_return": 0.03407756868208655,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 354.4,
+          "exit_price": 363.2,
+          "gross_return": -0.02452742799621242,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T11:00:00+00:00",
+          "exit_time": "2026-11-10T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 356.95,
+          "exit_price": 347.75,
+          "gross_return": 0.026111885144917194,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T20:00:00+00:00",
+          "exit_time": "2026-11-16T09:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 358.5,
+          "exit_price": 351.25,
+          "gross_return": -0.020430439391719495,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T06:00:00+00:00",
+          "exit_time": "2026-11-18T12:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 349.95,
+          "exit_price": 353.15,
+          "gross_return": -0.009102608719382493,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T10:00:00+00:00",
+          "exit_time": "2026-11-20T16:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 349.6,
+          "exit_price": 332.2,
+          "gross_return": 0.05105244660218605,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T08:00:00+00:00",
+          "exit_time": "2026-11-24T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 325.95,
+          "exit_price": 321.2,
+          "gross_return": 0.014680013297941765,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": 0.5799690926482649,
+          "median_net_return_pct": -0.0819720224403499,
+          "total_compounded_return_pct": 5.971172041693795,
+          "profit_factor": 1.8700349339832683,
+          "max_drawdown_pct": 3.1443626649656045,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": 0.4799690926482651,
+          "median_net_return_pct": -0.1819720224403499,
+          "total_compounded_return_pct": 4.916741262083435,
+          "profit_factor": 1.6697825326896178,
+          "max_drawdown_pct": 3.5310114013015657,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "RTKM": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 42.58,
+          "exit_price": 42.33,
+          "gross_return": 0.005888604932501099,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T12:00:00+00:00",
+          "exit_time": "2026-10-27T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 43.64,
+          "exit_price": 44.29,
+          "gross_return": 0.01478475697023678,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T07:00:00+00:00",
+          "exit_time": "2026-10-29T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 44.85,
+          "exit_price": 43.08,
+          "gross_return": -0.04026473621661737,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T14:00:00+00:00",
+          "exit_time": "2026-10-30T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 43.08,
+          "exit_price": 43.23,
+          "gross_return": -0.003475846391352544,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T14:00:00+00:00",
+          "exit_time": "2026-11-03T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 44.72,
+          "exit_price": 43.07,
+          "gross_return": -0.03759412978082451,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T09:00:00+00:00",
+          "exit_time": "2026-11-06T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 43.89,
+          "exit_price": 44.3,
+          "gross_return": 0.009298173350947176,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T06:00:00+00:00",
+          "exit_time": "2026-11-10T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 46.39,
+          "exit_price": 46.8,
+          "gross_return": 0.008799284159948623,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T07:00:00+00:00",
+          "exit_time": "2026-11-13T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 46.91,
+          "exit_price": 46.37,
+          "gross_return": -0.011578173936997156,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T10:00:00+00:00",
+          "exit_time": "2026-11-18T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 46.88,
+          "exit_price": 47.57,
+          "gross_return": 0.014611165175432893,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 45.45,
+          "exit_price": 44.43,
+          "gross_return": 0.02269790367567083,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T12:00:00+00:00",
+          "exit_time": "2026-11-25T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 45.79,
+          "exit_price": 44.5,
+          "gross_return": -0.028576537496809582,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 54.54545454545454,
+          "mean_net_return_pct": -0.5128139596169433,
+          "median_net_return_pct": 0.48886049325010994,
+          "total_compounded_return_pct": -5.484801672531036,
+          "profit_factor": 0.5540375325214779,
+          "max_drawdown_pct": 8.087643743964353,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 54.54545454545454,
+          "mean_net_return_pct": -0.6128139596169434,
+          "median_net_return_pct": 0.3888604932501099,
+          "total_compounded_return_pct": -6.518771593724281,
+          "profit_factor": 0.48733872582171117,
+          "max_drawdown_pct": 8.362967620424898,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "RUAL": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-22T09:00:00+00:00",
+          "exit_time": "2026-10-23T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 25.125,
+          "exit_price": 25.225,
+          "gross_return": -0.003972199860432945,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T07:00:00+00:00",
+          "exit_time": "2026-10-30T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 24.89,
+          "exit_price": 24.855,
+          "gross_return": 0.0014071768328646629,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T11:00:00+00:00",
+          "exit_time": "2026-11-03T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 24.275,
+          "exit_price": 23.31,
+          "gross_return": 0.040564561129722884,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T05:00:00+00:00",
+          "exit_time": "2026-11-09T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 24.125,
+          "exit_price": 24.595,
+          "gross_return": 0.019294523022253394,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T18:00:00+00:00",
+          "exit_time": "2026-11-11T07:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 24.945,
+          "exit_price": 24.32,
+          "gross_return": -0.025374344215034383,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T09:00:00+00:00",
+          "exit_time": "2026-11-12T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 23.995,
+          "exit_price": 24.9,
+          "gross_return": -0.03702232816045305,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T05:00:00+00:00",
+          "exit_time": "2026-11-20T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 24.225,
+          "exit_price": 22.045,
+          "gross_return": 0.094299338966929,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 21.935,
+          "exit_price": 22.345,
+          "gross_return": -0.01851904776723753,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 8,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": 0.7834709993576504,
+          "median_net_return_pct": -0.22825115137841412,
+          "total_compounded_return_pct": 6.468361504274545,
+          "profit_factor": 1.7051315853311144,
+          "max_drawdown_pct": 6.236700735334826,
+          "mean_holding_bars": 23.875
+        },
+        "10": {
+          "trades": 8,
+          "win_rate_pct": 37.5,
+          "mean_net_return_pct": 0.6834709993576504,
+          "median_net_return_pct": -0.3282511513784141,
+          "total_compounded_return_pct": 5.620012532649854,
+          "profit_factor": 1.5849084859007385,
+          "max_drawdown_pct": 6.424039932220878,
+          "mean_holding_bars": 23.875
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 419
+    },
+    "SBER": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T11:00:00+00:00",
+          "exit_time": "2026-10-26T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 290.0,
+          "exit_price": 295.91,
+          "gross_return": -0.02017443105568093,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T09:00:00+00:00",
+          "exit_time": "2026-10-28T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 296.83,
+          "exit_price": 298.6,
+          "gross_return": 0.005945300752802587,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T11:00:00+00:00",
+          "exit_time": "2026-11-03T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 290.76,
+          "exit_price": 292.17,
+          "gross_return": -0.004837640024783041,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 290.23,
+          "exit_price": 294.16,
+          "gross_return": -0.01345012490456896,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T08:00:00+00:00",
+          "exit_time": "2026-11-10T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 296.12,
+          "exit_price": 292.72,
+          "gross_return": -0.011548256863946157,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T11:00:00+00:00",
+          "exit_time": "2026-11-12T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 291.05,
+          "exit_price": 298.81,
+          "gross_return": -0.026312846183045243,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T07:00:00+00:00",
+          "exit_time": "2026-11-16T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 300.39,
+          "exit_price": 295.2,
+          "gross_return": -0.017428537661503724,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 294.97,
+          "exit_price": 287.02,
+          "gross_return": 0.027321756510501487,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 285.9,
+          "exit_price": 287.78,
+          "gross_return": -0.0065542000070054176,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 22.22222222222222,
+          "mean_net_return_pct": -0.8448775493025489,
+          "median_net_return_pct": -1.254825686394616,
+          "total_compounded_return_pct": -7.321991951067297,
+          "profit_factor": 0.2913820901853197,
+          "max_drawdown_pct": 9.045111753321356,
+          "mean_holding_bars": 23.88888888888889
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 22.22222222222222,
+          "mean_net_return_pct": -0.9448775493025487,
+          "median_net_return_pct": -1.3548256863946158,
+          "total_compounded_return_pct": -8.152351799269375,
+          "profit_factor": 0.25604122151465936,
+          "max_drawdown_pct": 9.679572766787302,
+          "mean_holding_bars": 23.88888888888889
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "SBERP": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-23T11:00:00+00:00",
+          "exit_time": "2026-10-26T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 289.8,
+          "exit_price": 295.54,
+          "gross_return": -0.019613161588905983,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T06:00:00+00:00",
+          "exit_time": "2026-10-28T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 296.03,
+          "exit_price": 299.11,
+          "gross_return": 0.010350598171536496,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T16:00:00+00:00",
+          "exit_time": "2026-11-02T05:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 294.62,
+          "exit_price": 297.35,
+          "gross_return": -0.009223505765810495,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T11:00:00+00:00",
+          "exit_time": "2026-11-03T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 290.82,
+          "exit_price": 292.24,
+          "gross_return": -0.004870863401687551,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 290.19,
+          "exit_price": 294.71,
+          "gross_return": -0.015455941118409042,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T08:00:00+00:00",
+          "exit_time": "2026-11-10T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 296.37,
+          "exit_price": 292.79,
+          "gross_return": -0.012153045226027434,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T11:00:00+00:00",
+          "exit_time": "2026-11-12T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 291.21,
+          "exit_price": 298.87,
+          "gross_return": -0.025964039844382385,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T07:00:00+00:00",
+          "exit_time": "2026-11-16T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 300.12,
+          "exit_price": 295.06,
+          "gross_return": -0.017003669188107123,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 294.55,
+          "exit_price": 287.49,
+          "gross_return": 0.0242606909439158,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 286.03,
+          "exit_price": 288.27,
+          "gross_return": -0.007800840533645274,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 20.0,
+          "mean_net_return_pct": -0.8747377755152299,
+          "median_net_return_pct": -1.1688275495918965,
+          "total_compounded_return_pct": -8.375710253196033,
+          "profit_factor": 0.2715682309265916,
+          "max_drawdown_pct": 9.691051043013987,
+          "mean_holding_bars": 23.9
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 20.0,
+          "mean_net_return_pct": -0.97473777551523,
+          "median_net_return_pct": -1.2688275495918964,
+          "total_compounded_return_pct": -9.287387168791128,
+          "profit_factor": 0.2389918662028142,
+          "max_drawdown_pct": 10.410640439278819,
+          "mean_holding_bars": 23.9
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "SNGS": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-26T09:00:00+00:00",
+          "exit_time": "2026-10-27T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 17.61,
+          "exit_price": 18.11,
+          "gross_return": 0.027997349387207264,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T14:00:00+00:00",
+          "exit_time": "2026-11-03T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 17.69,
+          "exit_price": 17.25,
+          "gross_return": 0.025187364694325216,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 16.835,
+          "exit_price": 17.55,
+          "gross_return": -0.041593897298836925,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T15:00:00+00:00",
+          "exit_time": "2026-11-12T04:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 17.165,
+          "exit_price": 17.695,
+          "gross_return": -0.030409686887771334,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T16:00:00+00:00",
+          "exit_time": "2026-11-16T05:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 17.79,
+          "exit_price": 17.71,
+          "gross_return": -0.004507049883001525,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T11:00:00+00:00",
+          "exit_time": "2026-11-20T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 17.17,
+          "exit_price": 16.265,
+          "gross_return": 0.05414811498406943,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T08:00:00+00:00",
+          "exit_time": "2026-11-24T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 15.905,
+          "exit_price": 15.66,
+          "gross_return": 0.015523834638450336,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 7,
+          "win_rate_pct": 57.14285714285714,
+          "mean_net_return_pct": 0.5620861376348922,
+          "median_net_return_pct": 1.4523834638450337,
+          "total_compounded_return_pct": 4.013033730694349,
+          "profit_factor": 1.494852419363124,
+          "max_drawdown_pct": 7.643180137212763,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 7,
+          "win_rate_pct": 57.14285714285714,
+          "mean_net_return_pct": 0.4620861376348922,
+          "median_net_return_pct": 1.3523834638450336,
+          "total_compounded_return_pct": 3.2874848782185273,
+          "profit_factor": 1.3920225556278458,
+          "max_drawdown_pct": 7.919835406405904,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 418
+    },
+    "SNGSP": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 40.705,
+          "exit_price": 40.545,
+          "gross_return": 0.003938466629420295,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T11:00:00+00:00",
+          "exit_time": "2026-10-26T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 40.345,
+          "exit_price": 41.28,
+          "gross_return": -0.022910649872837377,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T05:00:00+00:00",
+          "exit_time": "2026-10-28T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 41.425,
+          "exit_price": 41.165,
+          "gross_return": -0.00629618256223724,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T05:00:00+00:00",
+          "exit_time": "2026-11-03T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 41.315,
+          "exit_price": 41.42,
+          "gross_return": 0.0025382258142905277,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T07:00:00+00:00",
+          "exit_time": "2026-11-06T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 42.165,
+          "exit_price": 42.19,
+          "gross_return": 0.0005927331096423887,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T15:00:00+00:00",
+          "exit_time": "2026-11-10T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 42.61,
+          "exit_price": 43.555,
+          "gross_return": 0.02193553975903474,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T08:00:00+00:00",
+          "exit_time": "2026-11-16T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 43.645,
+          "exit_price": 42.665,
+          "gross_return": -0.02270981619876498,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T17:00:00+00:00",
+          "exit_time": "2026-11-18T06:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 42.445,
+          "exit_price": 41.965,
+          "gross_return": 0.011373182655140132,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T14:00:00+00:00",
+          "exit_time": "2026-11-23T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 41.02,
+          "exit_price": 41.065,
+          "gross_return": -0.0010964245479209006,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 40.71,
+          "exit_price": 42.175,
+          "gross_return": -0.035353865917144525,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 40.0,
+          "mean_net_return_pct": -0.5798879113137695,
+          "median_net_return_pct": -0.1251845719139256,
+          "total_compounded_return_pct": -5.633947525563476,
+          "profit_factor": 0.38161256051566256,
+          "max_drawdown_pct": 5.91083201456227,
+          "mean_holding_bars": 23.9
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 40.0,
+          "mean_net_return_pct": -0.6798879113137695,
+          "median_net_return_pct": -0.2251845719139256,
+          "total_compounded_return_pct": -6.572905436118859,
+          "profit_factor": 0.3185734683902805,
+          "max_drawdown_pct": 6.75383532128633,
+          "mean_holding_bars": 23.9
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "SVCB": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-22T11:00:00+00:00",
+          "exit_time": "2026-10-23T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.125,
+          "exit_price": 10.325,
+          "gross_return": -0.019560525854493572,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T07:00:00+00:00",
+          "exit_time": "2026-10-27T13:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 10.405,
+          "exit_price": 10.875,
+          "gross_return": 0.04418011712915012,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T14:00:00+00:00",
+          "exit_time": "2026-10-28T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 10.87,
+          "exit_price": 10.74,
+          "gross_return": -0.012031612052399372,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T11:00:00+00:00",
+          "exit_time": "2026-11-02T17:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 10.8,
+          "exit_price": 10.575,
+          "gross_return": -0.021053409197832492,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T18:00:00+00:00",
+          "exit_time": "2026-11-04T09:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.575,
+          "exit_price": 10.63,
+          "gross_return": -0.0051874674215150116,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T08:00:00+00:00",
+          "exit_time": "2026-11-09T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.425,
+          "exit_price": 10.545,
+          "gross_return": -0.011445046245872658,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T13:00:00+00:00",
+          "exit_time": "2026-11-12T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 10.635,
+          "exit_price": 11.065,
+          "gross_return": 0.039636524850812406,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T05:00:00+00:00",
+          "exit_time": "2026-11-16T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 11.11,
+          "exit_price": 10.85,
+          "gross_return": -0.0236805236650701,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T17:00:00+00:00",
+          "exit_time": "2026-11-18T06:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 11.34,
+          "exit_price": 11.485,
+          "gross_return": 0.012705537841455491,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T08:00:00+00:00",
+          "exit_time": "2026-11-23T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 10.9,
+          "exit_price": 11.185,
+          "gross_return": -0.02581080570699501,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 30.0,
+          "mean_net_return_pct": -0.32247210322760206,
+          "median_net_return_pct": -1.2738329149136014,
+          "total_compounded_return_pct": -3.1732813153848016,
+          "profit_factor": 0.7436004874811513,
+          "max_drawdown_pct": 5.338877334018539,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 30.0,
+          "mean_net_return_pct": -0.42247210322760204,
+          "median_net_return_pct": -1.3738329149136015,
+          "total_compounded_return_pct": -4.136723263819253,
+          "profit_factor": 0.6818000724648754,
+          "max_drawdown_pct": 6.093145221040508,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "T": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 269.78,
+          "exit_price": 268.88,
+          "gross_return": 0.003341628624683349,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T12:00:00+00:00",
+          "exit_time": "2026-10-27T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 272.72,
+          "exit_price": 276.46,
+          "gross_return": 0.01362051720656332,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T05:00:00+00:00",
+          "exit_time": "2026-10-29T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 278.24,
+          "exit_price": 276.54,
+          "gross_return": -0.006128574645500993,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T05:00:00+00:00",
+          "exit_time": "2026-11-03T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 278.5,
+          "exit_price": 269.9,
+          "gross_return": -0.03136653934337988,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T12:00:00+00:00",
+          "exit_time": "2026-11-05T08:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 269.9,
+          "exit_price": 272.52,
+          "gross_return": -0.009660485881508358,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T05:00:00+00:00",
+          "exit_time": "2026-11-09T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 275.54,
+          "exit_price": 271.48,
+          "gross_return": -0.0148443367808954,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T08:00:00+00:00",
+          "exit_time": "2026-11-11T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 273.74,
+          "exit_price": 279.66,
+          "gross_return": 0.02139582882958429,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T15:00:00+00:00",
+          "exit_time": "2026-11-13T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 279.68,
+          "exit_price": 290.36,
+          "gross_return": 0.037475439949469364,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T15:00:00+00:00",
+          "exit_time": "2026-11-19T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 292.62,
+          "exit_price": 293.0,
+          "gross_return": 0.0012977700670509854,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 286.48,
+          "exit_price": 278.06,
+          "gross_return": 0.02983180794878011,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 277.56,
+          "exit_price": 280.4,
+          "gross_return": -0.010180029129086719,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 54.54545454545454,
+          "mean_net_return_pct": 0.2162093349614551,
+          "median_net_return_pct": 0.029777006705098537,
+          "total_compounded_return_pct": 2.4068098498184476,
+          "profit_factor": 1.3081502641947094,
+          "max_drawdown_pct": 6.386907640569171,
+          "mean_holding_bars": 23.90909090909091
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 45.45454545454545,
+          "mean_net_return_pct": 0.11620933496145514,
+          "median_net_return_pct": -0.07022299329490146,
+          "total_compounded_return_pct": 1.2865078985575984,
+          "profit_factor": 1.154231276521378,
+          "max_drawdown_pct": 6.760612102809922,
+          "mean_holding_bars": 23.90909090909091
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "TATN": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 613.1,
+          "exit_price": 619.4,
+          "gross_return": -0.0102232127704601,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T11:00:00+00:00",
+          "exit_time": "2026-10-26T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 615.1,
+          "exit_price": 639.1,
+          "gross_return": -0.03827608044191357,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T06:00:00+00:00",
+          "exit_time": "2026-10-28T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 642.7,
+          "exit_price": 641.4,
+          "gross_return": -0.002024765118186019,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T13:00:00+00:00",
+          "exit_time": "2026-11-02T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 647.3,
+          "exit_price": 622.1,
+          "gross_return": -0.039709014030490326,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T10:00:00+00:00",
+          "exit_time": "2026-11-05T06:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 606.9,
+          "exit_price": 593.4,
+          "gross_return": 0.022495324985088,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T10:00:00+00:00",
+          "exit_time": "2026-11-11T16:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 591.0,
+          "exit_price": 598.1,
+          "gross_return": -0.01194194664441311,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T16:00:00+00:00",
+          "exit_time": "2026-11-16T05:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 603.8,
+          "exit_price": 601.0,
+          "gross_return": -0.0046480827375307765,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T05:00:00+00:00",
+          "exit_time": "2026-11-18T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 582.5,
+          "exit_price": 581.7,
+          "gross_return": 0.0013743345231397393,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T14:00:00+00:00",
+          "exit_time": "2026-11-19T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 577.9,
+          "exit_price": 565.9,
+          "gross_return": 0.020983459175254193,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T14:00:00+00:00",
+          "exit_time": "2026-11-23T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 555.7,
+          "exit_price": 554.5,
+          "gross_return": 0.0021617734954539067,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 545.5,
+          "exit_price": 555.3,
+          "gross_return": -0.017805702974435907,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.8055810230772179,
+          "median_net_return_pct": -0.5648082737530776,
+          "total_compounded_return_pct": -8.480114782654624,
+          "profit_factor": 0.3267893548929261,
+          "max_drawdown_pct": 8.992937478925212,
+          "mean_holding_bars": 23.90909090909091
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 27.27272727272727,
+          "mean_net_return_pct": -0.905581023077218,
+          "median_net_return_pct": -0.6648082737530776,
+          "total_compounded_return_pct": -9.481316813442643,
+          "profit_factor": 0.28466273004011255,
+          "max_drawdown_pct": 9.481316813442609,
+          "mean_holding_bars": 23.90909090909091
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "TATNP": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 594.9,
+          "exit_price": 600.3,
+          "gross_return": -0.0090362060639373,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T11:00:00+00:00",
+          "exit_time": "2026-10-26T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 595.8,
+          "exit_price": 619.8,
+          "gross_return": -0.03949180507446599,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T06:00:00+00:00",
+          "exit_time": "2026-10-28T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 623.1,
+          "exit_price": 625.9,
+          "gross_return": 0.00448359438047949,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T13:00:00+00:00",
+          "exit_time": "2026-10-30T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 630.1,
+          "exit_price": 631.0,
+          "gross_return": 0.001427325593203235,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T09:00:00+00:00",
+          "exit_time": "2026-11-03T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 622.2,
+          "exit_price": 598.1,
+          "gross_return": 0.039503620413025374,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 580.4,
+          "exit_price": 587.3,
+          "gross_return": -0.011818241518440907,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-09T20:00:00+00:00",
+          "exit_time": "2026-11-11T09:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 582.0,
+          "exit_price": 563.9,
+          "gross_return": 0.03159351691830139,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T05:00:00+00:00",
+          "exit_time": "2026-11-18T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 570.2,
+          "exit_price": 570.1,
+          "gross_return": 0.00017539244103546647,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T14:00:00+00:00",
+          "exit_time": "2026-11-19T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 566.4,
+          "exit_price": 558.8,
+          "gross_return": 0.013508914996703255,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T14:00:00+00:00",
+          "exit_time": "2026-11-23T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 546.7,
+          "exit_price": 548.2,
+          "gross_return": -0.002739977967731939,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 539.6,
+          "exit_price": 548.7,
+          "gross_return": -0.01672371973132902,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 11,
+          "win_rate_pct": 45.45454545454545,
+          "mean_net_return_pct": -0.0010689601196085953,
+          "median_net_return_pct": -0.08246075589645335,
+          "total_compounded_return_pct": -0.011757870023965111,
+          "profit_factor": 0.9986268906383116,
+          "max_drawdown_pct": 4.927270265456796,
+          "mean_holding_bars": 23.90909090909091
+        },
+        "10": {
+          "trades": 11,
+          "win_rate_pct": 36.36363636363637,
+          "mean_net_return_pct": -0.10106896011960861,
+          "median_net_return_pct": -0.18246075589645336,
+          "total_compounded_return_pct": -1.1056013646668417,
+          "profit_factor": 0.8794282689846601,
+          "max_drawdown_pct": 5.117225706166694,
+          "mean_holding_bars": 23.90909090909091
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "TRNFP": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T11:00:00+00:00",
+          "exit_time": "2026-10-22T17:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1062.2,
+          "exit_price": 1053.0,
+          "gross_return": 0.008698995854323304,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T12:00:00+00:00",
+          "exit_time": "2026-10-28T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1074.4,
+          "exit_price": 1074.2,
+          "gross_return": -0.000186167737668905,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T16:00:00+00:00",
+          "exit_time": "2026-11-02T05:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1062.2,
+          "exit_price": 1073.0,
+          "gross_return": -0.010116234642399734,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T09:00:00+00:00",
+          "exit_time": "2026-11-03T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1058.0,
+          "exit_price": 1038.4,
+          "gross_return": 0.01869926646841903,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T14:00:00+00:00",
+          "exit_time": "2026-11-12T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1047.8,
+          "exit_price": 1062.6,
+          "gross_return": 0.014026007042723578,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T09:00:00+00:00",
+          "exit_time": "2026-11-16T15:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1072.4,
+          "exit_price": 1075.4,
+          "gross_return": 0.0027935580137735494,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T05:00:00+00:00",
+          "exit_time": "2026-11-19T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 1085.6,
+          "exit_price": 1063.4,
+          "gross_return": -0.020661507450421165,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1059.6,
+          "exit_price": 1039.8,
+          "gross_return": 0.018863091448299188,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T19:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 1036.6,
+          "exit_price": 1043.2,
+          "gross_return": -0.0063467854167824495,
+          "holding_bars": 18
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 55.55555555555556,
+          "mean_net_return_pct": 0.18633581755851544,
+          "median_net_return_pct": 0.17935580137735493,
+          "total_compounded_return_pct": 1.6911633163885664,
+          "profit_factor": 1.4059535546396724,
+          "max_drawdown_pct": 2.1428581869186494,
+          "mean_holding_bars": 23.333333333333332
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 55.55555555555556,
+          "mean_net_return_pct": 0.0863358175585155,
+          "median_net_return_pct": 0.07935580137735493,
+          "total_compounded_return_pct": 0.780049010928896,
+          "profit_factor": 1.1714876264392384,
+          "max_drawdown_pct": 2.24066641646627,
+          "mean_holding_bars": 23.333333333333332
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 419
+    },
+    "UGLD": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T08:00:00+00:00",
+          "exit_time": "2026-10-22T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 0.7345,
+          "exit_price": 0.7342,
+          "gross_return": -0.00040852455119816974,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T08:00:00+00:00",
+          "exit_time": "2026-10-26T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 0.7265,
+          "exit_price": 0.7104,
+          "gross_return": 0.022410291332377322,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T07:00:00+00:00",
+          "exit_time": "2026-10-29T13:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 0.7024,
+          "exit_price": 0.6792,
+          "gross_return": 0.033587407323769365,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T05:00:00+00:00",
+          "exit_time": "2026-11-02T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 0.673,
+          "exit_price": 0.6711,
+          "gross_return": 0.002827172480534179,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T09:00:00+00:00",
+          "exit_time": "2026-11-05T05:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 0.6611,
+          "exit_price": 0.6953,
+          "gross_return": -0.05043829276543966,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T10:00:00+00:00",
+          "exit_time": "2026-11-11T16:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 0.681,
+          "exit_price": 0.68,
+          "gross_return": 0.0014695079793599947,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T08:00:00+00:00",
+          "exit_time": "2026-11-16T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 0.6949,
+          "exit_price": 0.6842,
+          "gross_return": -0.015517677776777258,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T10:00:00+00:00",
+          "exit_time": "2026-11-18T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 0.6934,
+          "exit_price": 0.6805,
+          "gross_return": -0.01877921115940235,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T14:00:00+00:00",
+          "exit_time": "2026-11-20T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 0.6623,
+          "exit_price": 0.6545,
+          "gross_return": 0.01184704014097918,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 0.652,
+          "exit_price": 0.6444,
+          "gross_return": 0.011724910623833684,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 60.0,
+          "mean_net_return_pct": -0.11277376371963718,
+          "median_net_return_pct": 0.11483402299470868,
+          "total_compounded_return_pct": -1.1214025131941474,
+          "profit_factor": 0.8734921752077444,
+          "max_drawdown_pct": 8.356640903512627,
+          "mean_holding_bars": 23.9
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 50.0,
+          "mean_net_return_pct": -0.21277376371963713,
+          "median_net_return_pct": 0.014834022994708682,
+          "total_compounded_return_pct": -2.105260996836955,
+          "profit_factor": 0.7728576623645078,
+          "max_drawdown_pct": 8.72248216957824,
+          "mean_holding_bars": 23.9
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 418
+    },
+    "VKCO": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 134.2,
+          "exit_price": 131.05,
+          "gross_return": 0.023752294768165864,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T04:00:00+00:00",
+          "exit_time": "2026-10-28T10:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 137.75,
+          "exit_price": 145.4,
+          "gross_return": 0.05404811706639525,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T08:00:00+00:00",
+          "exit_time": "2026-11-02T14:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 152.05,
+          "exit_price": 205.0,
+          "gross_return": 0.29880056501503444,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-05T05:00:00+00:00",
+          "exit_time": "2026-11-06T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 223.3,
+          "exit_price": 234.05,
+          "gross_return": 0.04701860889996742,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T04:00:00+00:00",
+          "exit_time": "2026-11-12T10:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 218.9,
+          "exit_price": 237.9,
+          "gross_return": -0.08323541278009469,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T08:00:00+00:00",
+          "exit_time": "2026-11-20T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 228.45,
+          "exit_price": 205.5,
+          "gross_return": 0.10587133407299114,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 207.15,
+          "exit_price": 209.95,
+          "gross_return": -0.013426238606791286,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 7,
+          "win_rate_pct": 71.42857142857143,
+          "mean_net_return_pct": 6.083275263366688,
+          "median_net_return_pct": 4.601860889996742,
+          "total_compounded_return_pct": 53.08593868023821,
+          "profit_factor": 5.316056567569969,
+          "max_drawdown_pct": 8.078516429791597,
+          "mean_holding_bars": 23.857142857142858
+        },
+        "10": {
+          "trades": 7,
+          "win_rate_pct": 71.42857142857143,
+          "mean_net_return_pct": 5.9832752633666875,
+          "median_net_return_pct": 4.501860889996742,
+          "total_compounded_return_pct": 52.01807897885493,
+          "profit_factor": 5.160762938667946,
+          "max_drawdown_pct": 8.170391967936446,
+          "mean_holding_bars": 23.857142857142858
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 419
+    },
+    "VTBR": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-26T14:00:00+00:00",
+          "exit_time": "2026-10-27T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 57.585,
+          "exit_price": 58.07,
+          "gross_return": 0.008387062263087738,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-30T09:00:00+00:00",
+          "exit_time": "2026-11-02T15:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 57.365,
+          "exit_price": 55.725,
+          "gross_return": 0.029005481979173735,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T10:00:00+00:00",
+          "exit_time": "2026-11-05T06:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 55.14,
+          "exit_price": 55.37,
+          "gross_return": -0.004162525239225106,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T19:00:00+00:00",
+          "exit_time": "2026-11-10T08:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 57.005,
+          "exit_price": 57.3,
+          "gross_return": 0.005161640435010697,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T15:00:00+00:00",
+          "exit_time": "2026-11-12T04:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 57.755,
+          "exit_price": 58.685,
+          "gross_return": 0.015974231811443616,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-12T05:00:00+00:00",
+          "exit_time": "2026-11-13T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 58.685,
+          "exit_price": 62.255,
+          "gross_return": 0.05905469585228852,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T08:00:00+00:00",
+          "exit_time": "2026-11-20T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 60.405,
+          "exit_price": 56.245,
+          "gross_return": 0.071354734726738,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T04:00:00+00:00",
+          "exit_time": "2026-11-24T10:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 55.715,
+          "exit_price": 56.12,
+          "gross_return": -0.007242844735242886,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-24T14:00:00+00:00",
+          "exit_time": "2026-11-25T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 55.49,
+          "exit_price": 57.295,
+          "gross_return": -0.03201053554060167,
+          "holding_bars": 23
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 9,
+          "win_rate_pct": 66.66666666666666,
+          "mean_net_return_pct": 1.5169104616963627,
+          "median_net_return_pct": 0.7387062263087738,
+          "total_compounded_return_pct": 14.628002866346801,
+          "profit_factor": 3.9412749797232465,
+          "max_drawdown_pct": 4.041404101324727,
+          "mean_holding_bars": 23.88888888888889
+        },
+        "10": {
+          "trades": 9,
+          "win_rate_pct": 66.66666666666666,
+          "mean_net_return_pct": 1.4169104616963628,
+          "median_net_return_pct": 0.6387062263087738,
+          "total_compounded_return_pct": 13.60097937864353,
+          "profit_factor": 3.580584939676641,
+          "max_drawdown_pct": 4.233129503811125,
+          "mean_holding_bars": 23.88888888888889
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "X5": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T06:00:00+00:00",
+          "exit_time": "2026-10-22T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2252.0,
+          "exit_price": 2222.0,
+          "gross_return": -0.013411019060005651,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-23T13:00:00+00:00",
+          "exit_time": "2026-10-26T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2252.0,
+          "exit_price": 2286.0,
+          "gross_return": 0.014984855095174885,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-27T10:00:00+00:00",
+          "exit_time": "2026-10-28T16:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2305.0,
+          "exit_price": 2351.5,
+          "gross_return": 0.019972745954353686,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T05:00:00+00:00",
+          "exit_time": "2026-11-03T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2418.5,
+          "exit_price": 2270.5,
+          "gross_return": -0.06314744172503206,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-03T12:00:00+00:00",
+          "exit_time": "2026-11-05T08:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2270.0,
+          "exit_price": 2336.0,
+          "gross_return": -0.028660233472669366,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-06T05:00:00+00:00",
+          "exit_time": "2026-11-09T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2410.0,
+          "exit_price": 2343.0,
+          "gross_return": -0.028194587976905036,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T05:00:00+00:00",
+          "exit_time": "2026-11-11T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2324.5,
+          "exit_price": 2333.0,
+          "gross_return": -0.0036500308907905102,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T13:00:00+00:00",
+          "exit_time": "2026-11-12T19:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2350.5,
+          "exit_price": 2380.5,
+          "gross_return": 0.012682478170388294,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-13T05:00:00+00:00",
+          "exit_time": "2026-11-16T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 2395.5,
+          "exit_price": 2360.0,
+          "gross_return": -0.014930358303521062,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-17T05:00:00+00:00",
+          "exit_time": "2026-11-18T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2349.5,
+          "exit_price": 2371.0,
+          "gross_return": -0.009109267522535026,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-18T14:00:00+00:00",
+          "exit_time": "2026-11-19T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2345.0,
+          "exit_price": 2317.5,
+          "gross_return": 0.011796383440369538,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-20T10:00:00+00:00",
+          "exit_time": "2026-11-23T16:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 2237.5,
+          "exit_price": 2333.0,
+          "gross_return": -0.04179582187241952,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 12,
+          "win_rate_pct": 33.33333333333333,
+          "mean_net_return_pct": -1.2955191513632653,
+          "median_net_return_pct": -1.2260143291270338,
+          "total_compounded_return_pct": -14.398065017795913,
+          "profit_factor": 0.26285817158774794,
+          "max_drawdown_pct": 15.971056427354991,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 12,
+          "win_rate_pct": 33.33333333333333,
+          "mean_net_return_pct": -1.3955191513632654,
+          "median_net_return_pct": -1.3260143291270339,
+          "total_compounded_return_pct": -15.41914947783799,
+          "profit_factor": 0.23497831813525524,
+          "max_drawdown_pct": 16.723923933880666,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    },
+    "YDEX": {
+      "status": "OK",
+      "bars": 2162,
+      "holdout_start": "2026-10-21T05:00:00+00:00",
+      "holdout_end": "2026-11-25T19:00:00+00:00",
+      "holdout_bars": 433,
+      "trades": [
+        {
+          "entry_time": "2026-10-21T14:00:00+00:00",
+          "exit_time": "2026-10-22T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3433.0,
+          "exit_price": 3395.5,
+          "gross_return": 0.010983488903845935,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-26T12:00:00+00:00",
+          "exit_time": "2026-10-27T18:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3476.5,
+          "exit_price": 3531.5,
+          "gross_return": 0.015696669309904335,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-28T05:00:00+00:00",
+          "exit_time": "2026-10-29T11:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3560.5,
+          "exit_price": 3497.5,
+          "gross_return": -0.017852556882543235,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-10-29T13:00:00+00:00",
+          "exit_time": "2026-10-30T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3439.0,
+          "exit_price": 3478.5,
+          "gross_return": -0.01142043493142986,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-02T14:00:00+00:00",
+          "exit_time": "2026-11-03T20:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3418.5,
+          "exit_price": 3423.5,
+          "gross_return": -0.0014615612072689773,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-10T05:00:00+00:00",
+          "exit_time": "2026-11-11T11:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3383.0,
+          "exit_price": 3395.0,
+          "gross_return": -0.0035408712120881328,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-11T14:00:00+00:00",
+          "exit_time": "2026-11-12T20:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3461.5,
+          "exit_price": 3426.5,
+          "gross_return": -0.010162689092201697,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-16T06:00:00+00:00",
+          "exit_time": "2026-11-17T12:00:00+00:00",
+          "direction": "LONG",
+          "entry_price": 3472.0,
+          "exit_price": 3418.5,
+          "gross_return": -0.015528938426392155,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-19T13:00:00+00:00",
+          "exit_time": "2026-11-20T19:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3372.0,
+          "exit_price": 3278.5,
+          "gross_return": 0.028120039418071948,
+          "holding_bars": 24
+        },
+        {
+          "entry_time": "2026-11-23T08:00:00+00:00",
+          "exit_time": "2026-11-24T14:00:00+00:00",
+          "direction": "SHORT",
+          "entry_price": 3250.0,
+          "exit_price": 3254.5,
+          "gross_return": -0.0013836576886587697,
+          "holding_bars": 24
+        }
+      ],
+      "stats": {
+        "5": {
+          "trades": 10,
+          "win_rate_pct": 30.0,
+          "mean_net_return_pct": -0.16550511808760612,
+          "median_net_return_pct": -0.3501216209678555,
+          "total_compounded_return_pct": -1.6414304556678028,
+          "profit_factor": 0.757858960876654,
+          "max_drawdown_pct": 6.383829132830164,
+          "mean_holding_bars": 24.0
+        },
+        "10": {
+          "trades": 10,
+          "win_rate_pct": 30.0,
+          "mean_net_return_pct": -0.2655051180876061,
+          "median_net_return_pct": -0.45012162096785546,
+          "total_compounded_return_pct": -2.620114574827914,
+          "profit_factor": 0.6476408516140544,
+          "max_drawdown_pct": 6.943844432090521,
+          "mean_holding_bars": 24.0
+        }
+      },
+      "duplicates": 0,
+      "invalid_ohlc": 0,
+      "weekend_bars_excluded": 420
+    }
+  },
+  "limitations": [
+    "same archive as previous research; holdout is chronologically reserved for this run but not truly independent fresh data",
+    "no actual spread, order-book fills, slippage, borrow, taxes or market impact",
+    "H1 technical candles, 24 bars not necessarily 24 clock hours",
+    "no portfolio allocation; aggregated trade sequence is diagnostic only",
+    "research-only, no production signals or orders"
+  ]
+}\n
