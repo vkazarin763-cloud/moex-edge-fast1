@@ -1,0 +1,44 @@
+name: SMA50 breakout — chronological holdout research
+
+on:
+  push:
+    branches:
+      - research/price-forecast-24h-v1
+    paths:
+      - "research_agent/price_forecast_24h/evaluate_sma50_holdout.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sma50-holdout-research
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile
+        run: python -m py_compile research_agent/price_forecast_24h/evaluate_sma50_holdout.py
+      - name: Evaluate chronological holdout
+        run: python -m research_agent.price_forecast_24h.evaluate_sma50_holdout
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research_agent/price_forecast_24h/reports/sma50-breakout-holdout-*
+          git commit -m "research: add SMA50 breakout holdout report"
+          git push origin HEAD:research/price-forecast-24h-v1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sma50-breakout-holdout
+          path: research_agent/price_forecast_24h/reports/sma50-breakout-holdout-*
+          retention-days: 30
