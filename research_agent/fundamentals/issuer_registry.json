@@ -218,17 +218,38 @@
       "e_disclosure_search_url": "https://e-disclosure.ru/poisk-po-kompaniyam",
       "report_candidates": [
         {
-          "source_url": "https://e-disclosure.ru/poisk-po-kompaniyam",
+          "source_url": "https://ir.mts.ru/news_and_events/corporate_releases/details/742458",
           "source_type": "issuer_ir",
           "report_type": "financial_results_release",
           "period": "2026-09-30",
           "publication_date": "2026-11-20",
-          "listing_evidence": "Official MTS IR page contains financial/operating results release for Q3 and 9 months 2026 dated 20.11.2026 and a financial reporting section.",
-          "status": "issuer_page_verified_release_not_financial_statement_downloaded"
+          "listing_evidence": "Official MTS IR release dated 20.11.2026 for Q3 and 9M 2026 inspected. Consolidated revenue, OIBDA, net profit and net debt metrics extracted from release; release is not a substitute for full IFRS statement.",
+          "status": "issuer_release_verified_metrics_extracted"
         }
       ],
-      "latest_verified_report": null,
-      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted."
+      "latest_verified_report": {
+        "source_url": "https://ir.mts.ru/news_and_events/corporate_releases/details/742458",
+        "report_type": "issuer_financial_results_release",
+        "period": "2026-09-30",
+        "publication_date": "2026-11-20",
+        "verification_status": "issuer_release_verified_not_full_financial_statement",
+        "extracted_metrics": {
+          "currency": "RUB",
+          "unit": "billion",
+          "revenue_9m_2026": 647.2,
+          "revenue_9m_2025": 584.7,
+          "revenue_yoy_pct": 10.7,
+          "oibda_9m_2026": 238,
+          "oibda_9m_2025": 207.9,
+          "oibda_yoy_pct": 14.5,
+          "net_profit_attributable_9m_2026": 85.2,
+          "net_profit_attributable_9m_2025": 13.7,
+          "net_debt_2026_09_30": 495.3,
+          "net_debt_to_ltm_oibda": 1.6
+        },
+        "notes": "Net profit growth is partly attributed by issuer to sale of a subsidiary stake and lower financial expenses; do not extrapolate as recurring operating growth."
+      },
+      "notes": "Issuer identity and official IR release verified; headline metrics extracted. Full IFRS statement still to be verified separately."
     },
     {
       "ticker": "NLMK",
@@ -325,6 +346,15 @@
           "publication_date": "2026-08-31",
           "listing_evidence": "Interfax disclosure listing shows interim consolidated IFRS statements for 6 months 2026 posted 31.08.2026.",
           "status": "listing_verified_document_not_downloaded"
+        },
+        {
+          "source_url": "https://rosneft.ru/press/releases/item/224606",
+          "source_type": "issuer_ir_press_release",
+          "report_type": "IFRS_financial_results_release",
+          "period": "2026-06-30",
+          "publication_date": "2026-08-28",
+          "listing_evidence": "Official Rosneft search result identifies its own release 'Results for 1H 2026 under IFRS'; issuer snippet reports EBITDA RUB 1,296bn and attributable net profit RUB 200bn. Direct page fetch currently unreachable; figures retained as search-snippet evidence only.",
+          "status": "issuer_release_search_verified_fetch_pending"
         }
       ],
       "latest_verified_report": null,
