@@ -396,3 +396,14 @@ This section is the current project state and supersedes older dated status note
 - This is output-only: no formulas, cohort, holdout, H1 semantics, data sources, scanner trigger behavior, or production/execution configuration changed.
 - Important correction to older text above: the first scanner execution was real and inspected (40 SHORT signals across 27 symbols), but it predates PR #81's output-payload fix. Do not imply that its artifact already contains the now-added `parameters` object. To validate the corrected serialized output on actual market data, run a fresh MTF collection and allow the successful collector workflow to trigger the scanner; alternatively manually dispatch the read-only scanner workflow with a valid source run ID. GitHub MCP cannot dispatch `workflow_dispatch`.
 - Current next steps: continue code/workflow audit and wait for a fresh validated MTF collection. After it completes, inspect the newly generated signal artifact and verify that each signal contains numerical `parameters`. Keep prospective holdout sealed; no tuning or profitability claims. All work remains in `moex-edge-fast1`; production repo and broker/order endpoints remain untouched.
+
+
+## 2026-11-26 — CURRENT OPTIONS DATA HANDOFF (research only)
+- Current research branch: `research/finam-option-history-probe` in `vkazarin763-cloud/moex-edge-fast1`.
+- Read-only Finam probe workflow: run 45885560779 (SUCCESS), artifact 15149226606. Existing `FINAM_API_SECRET` was used without exposing it; no new secret was added.
+- Finam option chains and actual option OHLCV/trade-print history are accessible. Sampled 2026-12-16 contracts exist for SBER, GAZP, ROSN, MOEX. 2027-01-20 options were much thinner.
+- Current best displayed book in the sample: GAZP PUT `GZ100CX6@RTSX`, bid 3.22 / ask 3.23, 0.31% spread, best sizes 100/194, OI 225568. Last trade was ~173 minutes old at probe time; treat as watchlist only.
+- Current OrderBook/LatestTrades are point-in-time endpoints. Historical bars/trade prints are not historical executable bid/ask. Strict trade-print proxy has very few observations; all completed 1-session outcomes were negative and longer-horizon averages were dominated by one ROSN outlier. No profitable strategy has been demonstrated.
+- Detailed report: `docs/FINAM_OPTIONS_HISTORY_RESEARCH_2026-11-26.md`.
+- Next evidence needed: a genuine historical bid/ask/order-book source or a separately approved forward data-capture experiment. Do not silently substitute trade prints for executable prices.
+- Safety: no account, portfolio, order, cancel, SL/TP, Telegram, or scheduler endpoints were called. Do not merge or activate any signals based on this research. Keep PR draft and production workflows untouched.
