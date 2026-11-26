@@ -1,0 +1,40 @@
+name: Finam Options Historical Bars Probe (Read Only)
+
+on:
+  push:
+    branches:
+      - research/finam-option-history-probe
+    paths:
+      - "research/finam_option_history_probe.py"
+      - ".github/workflows/finam-option-history-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: finam-options-history-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install read-only probe dependency
+        run: pip install requests
+      - name: Probe option chains and historical OHLCV bars
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+        run: python research/finam_option_history_probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finam-options-history-probe
+          path: finam-options-history-probe.json
+          if-no-files-found: warn
+          retention-days: 30
