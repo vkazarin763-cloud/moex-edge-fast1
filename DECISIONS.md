@@ -167,3 +167,11 @@
 - Live-trial guardrails remain: manual workflow choice must be explicitly `LIVE_ONE_MIN_LOT`; read-only audit must pass; at most one new order per workflow run; minimum full exchange lot; maximum 10 open positions; scheduled scanner workflow remains hard-pinned to DRY_RUN. A single manual workflow dispatch is not a continuous all-day service; further executions require separate manual dispatches unless a separately reviewed schedule is configured.
 - No live dispatch was performed by the assistant. The current repository variable `FINAM_DRY_RUN` was not re-read in this checkpoint; the successful run above explicitly used true.
 - Before each live dispatch, independently verify Finam has no unexpected open positions/orders and confirm the instrument's actual minimum lot and available funds. If any order outcome is ambiguous or protection (SL/TP) is not confirmed, stop further runs and reconcile in Finam manually. Never blindly retry an ambiguous order.
+
+
+## 2026-11-26 — options history evidence and safety decision
+- Existing Finam API secret may be used for read-only market-data research; never print or expose it. The isolated probe used session auth plus market-data GET endpoints only.
+- Actual option OHLCV bars and recent trade prints are available from Finam for sampled MOEX options. Current OrderBook is available, but historical bid/ask/order-book history is not provided by the tested endpoints.
+- Actual trade prints are not executable ask/bid prices. No fees, slippage, queue position or fill probability were simulated. The small strict trade-print sample is not profitability evidence.
+- GAZP PUT GZ100CX6@RTSX is a current-liquidity watchlist candidate only; it is not an approved trade or live signal.
+- No options strategy is approved. Do not activate signals, Telegram delivery, order execution or schedules from this research. Keep PR draft and separate from production/live trading.
