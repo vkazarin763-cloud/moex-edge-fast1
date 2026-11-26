@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "collector": "telegram_public_preview_smartlab",
-  "collected_at_utc": "2026-11-26T04:03:34.744991+00:00",
+  "collected_at_utc": "2026-11-26T04:07:54.439009+00:00",
   "source": {
     "channel": "@newssmartlab",
     "url": "https://t.me/s/newssmartlab",
@@ -12,16 +12,16 @@
     "max_pages": 5,
     "page_urls": [
       "https://t.me/s/newssmartlab",
-      "https://t.me/s/newssmartlab?before=137843",
-      "https://t.me/s/newssmartlab?before=137818",
-      "https://t.me/s/newssmartlab?before=137793",
-      "https://t.me/s/newssmartlab?before=137772"
+      "https://t.me/s/newssmartlab?before=137845",
+      "https://t.me/s/newssmartlab?before=137820",
+      "https://t.me/s/newssmartlab?before=137795",
+      "https://t.me/s/newssmartlab?before=137774"
     ],
     "unique_posts_seen": 100
   },
   "universe_size": 44,
   "preview_posts_seen": 100,
-  "ticker_matched_posts": 34,
+  "ticker_matched_posts": 33,
   "reporting_related_posts": 6,
   "linked_articles_checked": 20,
   "articles_with_candidate_document_links": 3,
@@ -54,23 +54,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vesti.ru%2Fns%2Falekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla&s=2948903366",
-              "anchor_text": "www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla"
+              "resolved_url": "https://www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla",
+              "anchor_text": "www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-              "anchor_text": "📈 график акций Лукойл"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379636.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379636.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -106,23 +121,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130653&s=1352614771",
-              "anchor_text": "www.kommersant.ru/doc/9130653"
+              "resolved_url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130653&s=1352614771",
+              "anchor_text": "www.kommersant.ru/doc/9130653",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.CNRU",
-              "anchor_text": "📈 график акций Циан (CIAN)"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.CNRU",
+              "anchor_text": "📈 график акций Циан (CIAN)",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379638.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379638.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -158,23 +188,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.businesswire.com%2Fnews%2Fhome%2F20261125144720%2Fen%2FAmerican-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio&s=2164802708",
-              "anchor_text": "www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio"
+              "resolved_url": "https://www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio",
+              "anchor_text": "www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-              "anchor_text": "📈 график акций Лукойл"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379650.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379650.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -210,23 +255,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/faa4af.jpg",
-              "anchor_text": ""
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/faa4af.jpg",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.CNRU",
-              "anchor_text": "📈 график акций Циан (CIAN)"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.CNRU",
+              "anchor_text": "📈 график акций Циан (CIAN)",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379653.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379653.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -263,143 +323,45 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130623&s=2215742104",
-              "anchor_text": "www.kommersant.ru/doc/9130623"
+              "resolved_url": "https://www.kommersant.ru/doc/9130623",
+              "anchor_text": "www.kommersant.ru/doc/9130623",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.ROSN",
-              "anchor_text": "📈 график акций Роснефть"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.ROSN",
+              "anchor_text": "📈 график акций Роснефть",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-              "anchor_text": "📈 график акций Лукойл"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379657.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379657.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
-            }
-          ],
-          "candidate_primary_document_links": [],
-          "verification_status": "article_not_primary_source"
-        }
-      ]
-    },
-    {
-      "channel": "@newssmartlab",
-      "post_id": null,
-      "published_at": "2026-11-25T13:43:57+00:00",
-      "post_url": "https://t.me/newssmartlab/137819",
-      "tickers": [
-        "MOEX"
-      ],
-      "topic_tags": [],
-      "reporting_related": false,
-      "text": "Мосбиржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках #MOEX Для участия в розыгрыше с 1 по 31 декабря 2026 года необходимо сформировать на Московской бирже портфель паев инвестиционных фондов (ПИФ) на сумму не менее 20 тыс. рублей или портфель фьючерсных контрактов на сумму не менее 20 тыс. рублей. Читать далее 👉 https://smartlab.news/i/212404 мы в max",
-      "linked_articles": [
-        {
-          "url": "https://smartlab.news/i/212404",
-          "text": "https://smartlab.news/i/212404"
-        }
-      ],
-      "verification_status": "unverified_news_lead",
-      "primary_document_url": null,
-      "article_details": [
-        {
-          "url": "https://smartlab.news/i/212404",
-          "fetch_status": "ok",
-          "title": "Мосбиржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках Мосбиржа проведет розыгрыш билетов в Большой театр сред... | smartlab.news",
-          "description": "Московская биржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках. Участвовать в розыгрыше пригласите...",
-          "outbound_links": [
-            {
-              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
-              "anchor_text": "на сайте биржи"
-            },
-            {
-              "url": "https://smart-lab.ru#_ftn1",
-              "anchor_text": "[1]"
-            },
-            {
-              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
-              "anchor_text": "сайте"
-            },
-            {
-              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106345&s=949823020",
-              "anchor_text": "www.moex.com/n106345"
-            },
-            {
-              "url": "https://smart-lab.ru/profile/Nordstream",
-              "anchor_text": "Nordstream"
-            },
-            {
-              "url": "https://smart-lab.ru/gg/MOEX.MOEX",
-              "anchor_text": "📈 график акций Московская биржа"
-            },
-            {
-              "url": "https://smart-lab.ru/blog/1379519.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
-            },
-            {
-              "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
-            }
-          ],
-          "candidate_primary_document_links": [],
-          "verification_status": "article_not_primary_source"
-        }
-      ]
-    },
-    {
-      "channel": "@newssmartlab",
-      "post_id": null,
-      "published_at": "2026-11-25T13:48:22+00:00",
-      "post_url": "https://t.me/newssmartlab/137820",
-      "tickers": [
-        "MOEX"
-      ],
-      "topic_tags": [],
-      "reporting_related": false,
-      "text": "Московская биржа проведет XIV Биржевой форум 15 апреля 2027 года #MOEX Читать далее 👉 https://smartlab.news/i/212405 мы в max",
-      "linked_articles": [
-        {
-          "url": "https://smartlab.news/i/212405",
-          "text": "https://smartlab.news/i/212405"
-        }
-      ],
-      "verification_status": "unverified_news_lead",
-      "primary_document_url": null,
-      "article_details": [
-        {
-          "url": "https://smartlab.news/i/212405",
-          "fetch_status": "ok",
-          "title": "Московская биржа проведет XIV Биржевой форум 15 апреля 2027 года Московская биржа проведет XIV Биржевой форум 15 апреля... | smartlab.news",
-          "description": "Московская биржа проведет XIV Биржевой форум, ключевое мероприятие для профессионального финансового сообщества, 15 апреля 2027 года.\nБиржевой форум – ведущая...",
-          "outbound_links": [
-            {
-              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106346&s=1325659356",
-              "anchor_text": "www.moex.com/n106346"
-            },
-            {
-              "url": "https://smart-lab.ru/profile/Nordstream",
-              "anchor_text": "Nordstream"
-            },
-            {
-              "url": "https://smart-lab.ru/gg/MOEX.MOEX",
-              "anchor_text": "📈 график акций Московская биржа"
-            },
-            {
-              "url": "https://smart-lab.ru/blog/1379521.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
-            },
-            {
-              "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -435,23 +397,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fgazprom%2F2609&s=2951167633",
-              "anchor_text": "t.me/gazprom/2609"
+              "resolved_url": "https://t.me/gazprom/2609",
+              "anchor_text": "t.me/gazprom/2609",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.GAZP",
-              "anchor_text": "📈 график акций Газпром"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "anchor_text": "📈 график акций Газпром",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379537.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379537.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -487,27 +464,45 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vedomosti.ru%2Finvestments%2Fnews%2F2026%2F11%2F25%2F1415279-oborot-yurent&s=1201390238",
-              "anchor_text": "www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent"
+              "resolved_url": "https://www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent",
+              "anchor_text": "www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.MTSS",
-              "anchor_text": "📈 график акций МТС"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.MTSS",
+              "anchor_text": "📈 график акций МТС",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.WUSH",
-              "anchor_text": "📈 график акций Вуш Холдинг | WHOOSH"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.WUSH",
+              "anchor_text": "📈 график акций Вуш Холдинг | WHOOSH",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379556.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379556.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -545,27 +540,45 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fdomresearch%2F1032&s=270218856",
-              "anchor_text": "t.me/domresearch/1032"
+              "resolved_url": "https://t.me/domresearch/1032",
+              "anchor_text": "t.me/domresearch/1032",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2Fdomresearch%2FAaITDrEbeQw&s=1029355103",
-              "anchor_text": "max.ru/domresearch/AaITDrEbeQw"
+              "resolved_url": "https://max.ru/domresearch/AaITDrEbeQw",
+              "anchor_text": "max.ru/domresearch/AaITDrEbeQw",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Makla_News",
-              "anchor_text": "Makla_News"
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.DOMRF",
-              "anchor_text": "📈 график акций ДОМ.РФ"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+              "anchor_text": "📈 график акций ДОМ.РФ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379572.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379572.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -601,27 +614,45 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/5a0162.jpg",
-              "anchor_text": ""
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/5a0162.jpg",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.reuters.com%2Fbusiness%2Fenergy%2Fboehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25%2F&s=1018180804",
-              "anchor_text": "www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/"
+              "resolved_url": "https://www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/",
+              "anchor_text": "www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-              "anchor_text": "📈 график акций Лукойл"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379587.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379587.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -637,7 +668,9 @@
       "tickers": [
         "YDEX"
       ],
-      "topic_tags": [],
+      "topic_tags": [
+        "ownership_change"
+      ],
       "reporting_related": false,
       "text": "ЯНДЕКС 24.11.2026 Буланцева О.С. и Мордавченков А.А получили совместное право распоряжаться 6,8% голосов в Яндексе Калин Александр Борисович - утратил право Объем акций: 25 819 212 / 6,80% акций компании #YDEX Читать далее 👉 https://smartlab.news/i/212432 мы в max",
       "linked_articles": [
@@ -657,45 +690,75 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
-              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+              "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+              "source_domain_classification": "known_disclosure_operator_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
-              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+              "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+              "source_domain_classification": "known_disclosure_operator_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
-              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+              "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+              "source_domain_classification": "known_disclosure_operator_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.YDEX",
-              "anchor_text": "📈 график акций Яндекс"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "anchor_text": "📈 график акций Яндекс",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379588.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379588.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
-              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+              "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+              "source_domain_classification": "known_disclosure_operator_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
-              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+              "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+              "source_domain_classification": "known_disclosure_operator_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
-              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+              "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+              "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+              "source_domain_classification": "known_disclosure_operator_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "verification_status": "article_not_primary_source"
@@ -730,23 +793,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28354711&s=2797653262",
-              "anchor_text": "tass.ru/ekonomika/28354711"
+              "resolved_url": "https://tass.ru/ekonomika/28354711",
+              "anchor_text": "tass.ru/ekonomika/28354711",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Makla_News",
-              "anchor_text": "Makla_News"
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.SBER",
-              "anchor_text": "📈 график акций Сбербанк"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379592.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379592.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -782,23 +860,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/0cb3bd.jpg",
-              "anchor_text": ""
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/0cb3bd.jpg",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-              "anchor_text": "📈 график акций Лукойл"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+              "anchor_text": "📈 график акций Лукойл",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379600.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379600.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -841,53 +934,89 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
-              "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+              "resolved_url": "https://cbr.ru/Collection/Collection/File/64547/razv_bs_26_10.pdf",
+              "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Frenk",
-              "anchor_text": "Илья"
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.SBER",
-              "anchor_text": "📈 график акций Сбербанк"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.VTBR",
-              "anchor_text": "📈 график акций ВТБ"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "anchor_text": "📈 график акций ВТБ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.SVCB",
-              "anchor_text": "📈 график акций Совкомбанк"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SVCB",
+              "anchor_text": "📈 график акций Совкомбанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.BSPB",
-              "anchor_text": "📈 график акций Банк Санкт-Петербург"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.BSPB",
+              "anchor_text": "📈 график акций Банк Санкт-Петербург",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.CBOM",
-              "anchor_text": "📈 график акций МКБ"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.CBOM",
+              "anchor_text": "📈 график акций МКБ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.T",
-              "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.T",
+              "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.MBNK",
-              "anchor_text": "📈 график акций МТС Банк"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.MBNK",
+              "anchor_text": "📈 график акций МТС Банк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379607.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379607.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
-              "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+              "resolved_url": "https://cbr.ru/Collection/Collection/File/64547/razv_bs_26_10.pdf",
+              "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "verification_status": "article_not_primary_source"
@@ -922,23 +1051,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F1131319&s=110484285",
-              "anchor_text": "www.interfax.ru/business/1131319"
+              "resolved_url": "https://www.interfax.ru/business/1131319",
+              "anchor_text": "www.interfax.ru/business/1131319",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Makla_News",
-              "anchor_text": "Makla_News"
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.AFLT",
-              "anchor_text": "📈 график акций Аэрофлот"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.AFLT",
+              "anchor_text": "📈 график акций Аэрофлот",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379461.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379461.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -976,27 +1120,45 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/uploads/2026/images/04/14/71/2026/11/25/294062.png",
-              "anchor_text": ""
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/14/71/2026/11/25/294062.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fsovcombankinvest%2F2517&s=3107125713",
-              "anchor_text": "Источник"
+              "resolved_url": "https://t.me/sovcombankinvest/2517",
+              "anchor_text": "Источник",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/editor2",
-              "anchor_text": "Редактор Боб"
+              "resolved_url": "https://smart-lab.ru/profile/editor2",
+              "anchor_text": "Редактор Боб",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.GAZP",
-              "anchor_text": "📈 график акций Газпром"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "anchor_text": "📈 график акций Газпром",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379462.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379462.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -1033,33 +1195,54 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
-              "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+              "resolved_url": "https://cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+              "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Makla_News",
-              "anchor_text": "Makla_News"
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.SBER",
-              "anchor_text": "📈 график акций Сбербанк"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.VTBR",
-              "anchor_text": "📈 график акций ВТБ"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "anchor_text": "📈 график акций ВТБ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379479.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379479.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
-              "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+              "resolved_url": "https://cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+              "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "verification_status": "article_not_primary_source"
@@ -1096,23 +1279,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/e74883.png",
-              "anchor_text": ""
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/e74883.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/Nordstream",
-              "anchor_text": "Nordstream"
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.VTBR",
-              "anchor_text": "📈 график акций ВТБ"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "anchor_text": "📈 график акций ВТБ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379490.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379490.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -1148,23 +1346,38 @@
           "outbound_links": [
             {
               "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2FSberInvestmentsPRO%2FAaIR70bpUPw&s=315092310",
-              "anchor_text": "Источник"
+              "resolved_url": "https://max.ru/SberInvestmentsPRO/AaIR70bpUPw",
+              "anchor_text": "Источник",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/profile/editor2",
-              "anchor_text": "Редактор Боб"
+              "resolved_url": "https://smart-lab.ru/profile/editor2",
+              "anchor_text": "Редактор Боб",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/gg/MOEX.IRAO",
-              "anchor_text": "📈 график акций ИнтерРАО"
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.IRAO",
+              "anchor_text": "📈 график акций ИнтерРАО",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://smart-lab.ru/blog/1379499.php#comments",
-              "anchor_text": "Комментировать на смартлабе"
+              "resolved_url": "https://smart-lab.ru/blog/1379499.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             },
             {
               "url": "https://www.liveinternet.ru/click",
-              "anchor_text": ""
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
             }
           ],
           "candidate_primary_document_links": [],
@@ -1191,7 +1404,67 @@
       ],
       "verification_status": "unverified_news_lead",
       "primary_document_url": null,
-      "article_details": []
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212398",
+          "fetch_status": "ok",
+          "title": "Решетников: В России будет почти 100% покрытие интернетом Решетников: В России будет почти 100% покрытие интернет... | smartlab.news",
+          "description": "В России будет почти стопроцентное покрытие интернетом, заявил министр экономического развития Максим Решетников на «правительственном часе» в Госдуме.\nОно буд...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.pnp.ru%2Fsocial%2Freshetnikov-uroven-pokrytiya-internetom-v-rossii-dostignet-pochti-100.html&s=1103250090",
+              "resolved_url": "https://www.pnp.ru/social/reshetnikov-uroven-pokrytiya-internetom-v-rossii-dostignet-pochti-100.html",
+              "anchor_text": "www.pnp.ru/social/reshetnikov-uroven-pokrytiya-internetom-v-rossii-dostignet-pochti-100.html",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/69a1bd.png",
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/69a1bd.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fduma.gov.ru%2Fmultimedia%2Fphoto%2F133824%2F&s=997424306",
+              "resolved_url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fduma.gov.ru%2Fmultimedia%2Fphoto%2F133824%2F&s=997424306",
+              "anchor_text": "пресс-служба Госдумы",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.RTKM",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.RTKM",
+              "anchor_text": "📈 график акций Ростелеком",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379510.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379510.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
     },
     {
       "channel": "@newssmartlab",
@@ -1212,24 +1485,85 @@
       ],
       "verification_status": "unverified_news_lead",
       "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212400",
+          "fetch_status": "ok",
+          "title": "Новак: Проект «Восточного нефтехимического комплекса» (ВНХК) Роснефти снова актуален. Обсуждаются меры его реализации и необходимая господдержка Новак: Проект «Восточного нефтехимического комплекса» (... | smartlab.news",
+          "description": "«Что касается ВНХК: этот проект у нас один из приоритетных на Дальнем Востоке. Он требует мер государственной поддержки. Эти все вопросы обсуждаются сегодня» —...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.ROSN",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.ROSN",
+              "anchor_text": "📈 график акций Роснефть",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379514.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379514.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T13:43:50+00:00",
+      "post_url": "https://t.me/newssmartlab/137818",
+      "tickers": [
+        "RAGR"
+      ],
+      "topic_tags": [
+        "guidance"
+      ],
+      "reporting_related": false,
+      "text": "С начала года в России собрано 142,5 млн тонн зерна в бункерном весе. Прогноз урожая сохраняется на уровне 140 млн тонн в чистом весе — Министр сельского хозяйства Оксаны Лут #RAGR Уборочная кампания еще не завершена - предстоит собрать кукурузу Читать далее 👉 https://smartlab.news/i/212403 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212403",
+          "text": "https://smartlab.news/i/212403"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
       "article_details": []
     },
     {
       "channel": "@newssmartlab",
       "post_id": null,
-      "published_at": "2026-11-25T10:19:12+00:00",
-      "post_url": "https://t.me/newssmartlab/137774",
+      "published_at": "2026-11-25T13:43:57+00:00",
+      "post_url": "https://t.me/newssmartlab/137819",
       "tickers": [
-        "LKOH",
-        "ROSN"
+        "MOEX"
       ],
       "topic_tags": [],
       "reporting_related": false,
-      "text": "Российская нефть теряет ценовое преимущество в Индии на фоне роста поставок с Ближнего Востока — Bloomberg #ROSN #LKOH Читать далее 👉 https://smartlab.news/i/212350 мы в max",
+      "text": "Мосбиржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках #MOEX Для участия в розыгрыше с 1 по 31 декабря 2026 года необходимо сформировать на Московской бирже портфель паев инвестиционных фондов (ПИФ) на сумму не менее 20 тыс. рублей или портфель фьючерсных контрактов на сумму не менее 20 тыс. рублей. Читать далее 👉 https://smartlab.news/i/212404 мы в max",
       "linked_articles": [
         {
-          "url": "https://smartlab.news/i/212350",
-          "text": "https://smartlab.news/i/212350"
+          "url": "https://smartlab.news/i/212404",
+          "text": "https://smartlab.news/i/212404"
         }
       ],
       "verification_status": "unverified_news_lead",
@@ -1350,28 +1684,6 @@
     {
       "channel": "@newssmartlab",
       "post_id": null,
-      "published_at": "2026-11-25T08:52:41+00:00",
-      "post_url": "https://t.me/newssmartlab/137753",
-      "tickers": [
-        "SBER",
-        "VTBR"
-      ],
-      "topic_tags": [],
-      "reporting_related": false,
-      "text": "НРА ожидает прибыль банковского сектора РФ по итогам 2026 года на уровне 4,4-4,8 млрд руб #SBER #VTBR Читать далее 👉 https://smartlab.news/i/212326 мы в max",
-      "linked_articles": [
-        {
-          "url": "https://smartlab.news/i/212326",
-          "text": "https://smartlab.news/i/212326"
-        }
-      ],
-      "verification_status": "unverified_news_lead",
-      "primary_document_url": null,
-      "article_details": []
-    },
-    {
-      "channel": "@newssmartlab",
-      "post_id": null,
       "published_at": "2026-11-25T09:34:13+00:00",
       "post_url": "https://t.me/newssmartlab/137760",
       "tickers": [
@@ -1478,6 +1790,28 @@
       "verification_status": "unverified_news_lead",
       "primary_document_url": null,
       "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-25T10:10:58+00:00",
+      "post_url": "https://t.me/newssmartlab/137772",
+      "tickers": [
+        "CHMF",
+        "NLMK"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Минфин РФ не планирует вводить акциз на импортную сталь — замминистра финансов РФ Алексей Сазанов #NLMK #CHMF Читать далее 👉 https://smartlab.news/i/212347 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212347",
+          "text": "https://smartlab.news/i/212347"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
     }
   ],
   "articles": [
@@ -1489,23 +1823,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vesti.ru%2Fns%2Falekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla&s=2948903366",
-          "anchor_text": "www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla"
+          "resolved_url": "https://www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla",
+          "anchor_text": "www.vesti.ru/ns/alekperov-vyskazalsya-o-prodazhe-zarubezhnykh-aktivov-lukojla",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-          "anchor_text": "📈 график акций Лукойл"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379636.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379636.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1519,23 +1868,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130653&s=1352614771",
-          "anchor_text": "www.kommersant.ru/doc/9130653"
+          "resolved_url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130653&s=1352614771",
+          "anchor_text": "www.kommersant.ru/doc/9130653",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.CNRU",
-          "anchor_text": "📈 график акций Циан (CIAN)"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.CNRU",
+          "anchor_text": "📈 график акций Циан (CIAN)",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379638.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379638.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1549,23 +1913,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.businesswire.com%2Fnews%2Fhome%2F20261125144720%2Fen%2FAmerican-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio&s=2164802708",
-          "anchor_text": "www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio"
+          "resolved_url": "https://www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio",
+          "anchor_text": "www.businesswire.com/news/home/20261125144720/en/American-Led-Consortium-Announces-Agreement-to-Acquire-LUKOIL-Internationals-Global-Energy-Portfolio",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-          "anchor_text": "📈 график акций Лукойл"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379650.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379650.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1579,23 +1958,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/faa4af.jpg",
-          "anchor_text": ""
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/faa4af.jpg",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.CNRU",
-          "anchor_text": "📈 график акций Циан (CIAN)"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.CNRU",
+          "anchor_text": "📈 график акций Циан (CIAN)",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379653.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379653.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1609,99 +2003,45 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.kommersant.ru%2Fdoc%2F9130623&s=2215742104",
-          "anchor_text": "www.kommersant.ru/doc/9130623"
+          "resolved_url": "https://www.kommersant.ru/doc/9130623",
+          "anchor_text": "www.kommersant.ru/doc/9130623",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.ROSN",
-          "anchor_text": "📈 график акций Роснефть"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.ROSN",
+          "anchor_text": "📈 график акций Роснефть",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-          "anchor_text": "📈 график акций Лукойл"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379657.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379657.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
-        }
-      ],
-      "candidate_primary_document_links": [],
-      "verification_status": "article_not_primary_source"
-    },
-    {
-      "url": "https://smartlab.news/i/212404",
-      "fetch_status": "ok",
-      "title": "Мосбиржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках Мосбиржа проведет розыгрыш билетов в Большой театр сред... | smartlab.news",
-      "description": "Московская биржа проведет розыгрыш билетов в Большой театр среди частных инвесторов, торгующих на фондовом и срочном рынках. Участвовать в розыгрыше пригласите...",
-      "outbound_links": [
-        {
-          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
-          "anchor_text": "на сайте биржи"
-        },
-        {
-          "url": "https://smart-lab.ru#_ftn1",
-          "anchor_text": "[1]"
-        },
-        {
-          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fru%2Fpromo-newyear2027%3Fysclid%3Dmwvud5y6b5515927741&s=2296636310",
-          "anchor_text": "сайте"
-        },
-        {
-          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106345&s=949823020",
-          "anchor_text": "www.moex.com/n106345"
-        },
-        {
-          "url": "https://smart-lab.ru/profile/Nordstream",
-          "anchor_text": "Nordstream"
-        },
-        {
-          "url": "https://smart-lab.ru/gg/MOEX.MOEX",
-          "anchor_text": "📈 график акций Московская биржа"
-        },
-        {
-          "url": "https://smart-lab.ru/blog/1379519.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
-        },
-        {
-          "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
-        }
-      ],
-      "candidate_primary_document_links": [],
-      "verification_status": "article_not_primary_source"
-    },
-    {
-      "url": "https://smartlab.news/i/212405",
-      "fetch_status": "ok",
-      "title": "Московская биржа проведет XIV Биржевой форум 15 апреля 2027 года Московская биржа проведет XIV Биржевой форум 15 апреля... | smartlab.news",
-      "description": "Московская биржа проведет XIV Биржевой форум, ключевое мероприятие для профессионального финансового сообщества, 15 апреля 2027 года.\nБиржевой форум – ведущая...",
-      "outbound_links": [
-        {
-          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.moex.com%2Fn106346&s=1325659356",
-          "anchor_text": "www.moex.com/n106346"
-        },
-        {
-          "url": "https://smart-lab.ru/profile/Nordstream",
-          "anchor_text": "Nordstream"
-        },
-        {
-          "url": "https://smart-lab.ru/gg/MOEX.MOEX",
-          "anchor_text": "📈 график акций Московская биржа"
-        },
-        {
-          "url": "https://smart-lab.ru/blog/1379521.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
-        },
-        {
-          "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1715,23 +2055,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fgazprom%2F2609&s=2951167633",
-          "anchor_text": "t.me/gazprom/2609"
+          "resolved_url": "https://t.me/gazprom/2609",
+          "anchor_text": "t.me/gazprom/2609",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.GAZP",
-          "anchor_text": "📈 график акций Газпром"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "anchor_text": "📈 график акций Газпром",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379537.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379537.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1745,27 +2100,45 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.vedomosti.ru%2Finvestments%2Fnews%2F2026%2F11%2F25%2F1415279-oborot-yurent&s=1201390238",
-          "anchor_text": "www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent"
+          "resolved_url": "https://www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent",
+          "anchor_text": "www.vedomosti.ru/investments/news/2026/11/25/1415279-oborot-yurent",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.MTSS",
-          "anchor_text": "📈 график акций МТС"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.MTSS",
+          "anchor_text": "📈 график акций МТС",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.WUSH",
-          "anchor_text": "📈 график акций Вуш Холдинг | WHOOSH"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.WUSH",
+          "anchor_text": "📈 график акций Вуш Холдинг | WHOOSH",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379556.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379556.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1779,27 +2152,45 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fdomresearch%2F1032&s=270218856",
-          "anchor_text": "t.me/domresearch/1032"
+          "resolved_url": "https://t.me/domresearch/1032",
+          "anchor_text": "t.me/domresearch/1032",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2Fdomresearch%2FAaITDrEbeQw&s=1029355103",
-          "anchor_text": "max.ru/domresearch/AaITDrEbeQw"
+          "resolved_url": "https://max.ru/domresearch/AaITDrEbeQw",
+          "anchor_text": "max.ru/domresearch/AaITDrEbeQw",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Makla_News",
-          "anchor_text": "Makla_News"
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.DOMRF",
-          "anchor_text": "📈 график акций ДОМ.РФ"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+          "anchor_text": "📈 график акций ДОМ.РФ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379572.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379572.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1813,27 +2204,45 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/5a0162.jpg",
-          "anchor_text": ""
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/5a0162.jpg",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.reuters.com%2Fbusiness%2Fenergy%2Fboehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25%2F&s=1018180804",
-          "anchor_text": "www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/"
+          "resolved_url": "https://www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/",
+          "anchor_text": "www.reuters.com/business/energy/boehly-signs-us-backed-share-swap-deal-buy-lukoil-global-assets-2026-11-25/",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-          "anchor_text": "📈 график акций Лукойл"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379587.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379587.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1847,45 +2256,75 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
-          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+          "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+          "source_domain_classification": "known_disclosure_operator_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
-          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+          "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+          "source_domain_classification": "known_disclosure_operator_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
-          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+          "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+          "source_domain_classification": "known_disclosure_operator_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.YDEX",
-          "anchor_text": "📈 график акций Яндекс"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "anchor_text": "📈 график акций Яндекс",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379588.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379588.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DnG1WGxCUAkGqEeK56boalQ-B-B&s=2104886710",
-          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B"
+          "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=nG1WGxCUAkGqEeK56boalQ-B-B",
+          "source_domain_classification": "known_disclosure_operator_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqtzDba5kKUWXjBx-CMIzTVw-B-B&s=1480187141",
-          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B"
+          "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qtzDba5kKUWXjBx-CMIzTVw-B-B",
+          "source_domain_classification": "known_disclosure_operator_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fe-disclosure.ru%2Fportal%2Fevent.aspx%3FEventId%3DqfksE0TM5E-CDI-CUP84DeiA-B-B&s=770541486",
-          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B"
+          "resolved_url": "https://e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+          "anchor_text": "e-disclosure.ru/portal/event.aspx?EventId=qfksE0TM5E-CDI-CUP84DeiA-B-B",
+          "source_domain_classification": "known_disclosure_operator_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "verification_status": "article_not_primary_source"
@@ -1898,23 +2337,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28354711&s=2797653262",
-          "anchor_text": "tass.ru/ekonomika/28354711"
+          "resolved_url": "https://tass.ru/ekonomika/28354711",
+          "anchor_text": "tass.ru/ekonomika/28354711",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Makla_News",
-          "anchor_text": "Makla_News"
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.SBER",
-          "anchor_text": "📈 график акций Сбербанк"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379592.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379592.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1928,23 +2382,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/0cb3bd.jpg",
-          "anchor_text": ""
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/25/0cb3bd.jpg",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.LKOH",
-          "anchor_text": "📈 график акций Лукойл"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.LKOH",
+          "anchor_text": "📈 график акций Лукойл",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379600.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379600.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -1958,53 +2427,89 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
-          "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+          "resolved_url": "https://cbr.ru/Collection/Collection/File/64547/razv_bs_26_10.pdf",
+          "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Frenk",
-          "anchor_text": "Илья"
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.SBER",
-          "anchor_text": "📈 график акций Сбербанк"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.VTBR",
-          "anchor_text": "📈 график акций ВТБ"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "anchor_text": "📈 график акций ВТБ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.SVCB",
-          "anchor_text": "📈 график акций Совкомбанк"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SVCB",
+          "anchor_text": "📈 график акций Совкомбанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.BSPB",
-          "anchor_text": "📈 график акций Банк Санкт-Петербург"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.BSPB",
+          "anchor_text": "📈 график акций Банк Санкт-Петербург",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.CBOM",
-          "anchor_text": "📈 график акций МКБ"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.CBOM",
+          "anchor_text": "📈 график акций МКБ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.T",
-          "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.T",
+          "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.MBNK",
-          "anchor_text": "📈 график акций МТС Банк"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.MBNK",
+          "anchor_text": "📈 график акций МТС Банк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379607.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379607.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64547%2Frazv_bs_26_10.pdf&s=323445265",
-          "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»"
+          "resolved_url": "https://cbr.ru/Collection/Collection/File/64547/razv_bs_26_10.pdf",
+          "anchor_text": "«О развитии банковского сектора Российской Федерации в октябре 2026 года»",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "verification_status": "article_not_primary_source"
@@ -2017,23 +2522,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F1131319&s=110484285",
-          "anchor_text": "www.interfax.ru/business/1131319"
+          "resolved_url": "https://www.interfax.ru/business/1131319",
+          "anchor_text": "www.interfax.ru/business/1131319",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Makla_News",
-          "anchor_text": "Makla_News"
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.AFLT",
-          "anchor_text": "📈 график акций Аэрофлот"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.AFLT",
+          "anchor_text": "📈 график акций Аэрофлот",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379461.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379461.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -2047,27 +2567,45 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/uploads/2026/images/04/14/71/2026/11/25/294062.png",
-          "anchor_text": ""
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/14/71/2026/11/25/294062.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fsovcombankinvest%2F2517&s=3107125713",
-          "anchor_text": "Источник"
+          "resolved_url": "https://t.me/sovcombankinvest/2517",
+          "anchor_text": "Источник",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/editor2",
-          "anchor_text": "Редактор Боб"
+          "resolved_url": "https://smart-lab.ru/profile/editor2",
+          "anchor_text": "Редактор Боб",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.GAZP",
-          "anchor_text": "📈 график акций Газпром"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "anchor_text": "📈 график акций Газпром",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379462.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379462.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -2081,33 +2619,54 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
-          "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+          "resolved_url": "https://cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+          "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Makla_News",
-          "anchor_text": "Makla_News"
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.SBER",
-          "anchor_text": "📈 график акций Сбербанк"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.VTBR",
-          "anchor_text": "📈 график акций ВТБ"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "anchor_text": "📈 график акций ВТБ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379479.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379479.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64546%2Fdrknb_44_2026.pdf&s=892669474",
-          "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf"
+          "resolved_url": "https://cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+          "anchor_text": "cbr.ru/Collection/Collection/File/64546/drknb_44_2026.pdf",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "verification_status": "article_not_primary_source"
@@ -2120,23 +2679,38 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/e74883.png",
-          "anchor_text": ""
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/e74883.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/Nordstream",
-          "anchor_text": "Nordstream"
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.VTBR",
-          "anchor_text": "📈 график акций ВТБ"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "anchor_text": "📈 график акций ВТБ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379490.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379490.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -2150,23 +2724,135 @@
       "outbound_links": [
         {
           "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2FSberInvestmentsPRO%2FAaIR70bpUPw&s=315092310",
-          "anchor_text": "Источник"
+          "resolved_url": "https://max.ru/SberInvestmentsPRO/AaIR70bpUPw",
+          "anchor_text": "Источник",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/profile/editor2",
-          "anchor_text": "Редактор Боб"
+          "resolved_url": "https://smart-lab.ru/profile/editor2",
+          "anchor_text": "Редактор Боб",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/gg/MOEX.IRAO",
-          "anchor_text": "📈 график акций ИнтерРАО"
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.IRAO",
+          "anchor_text": "📈 график акций ИнтерРАО",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://smart-lab.ru/blog/1379499.php#comments",
-          "anchor_text": "Комментировать на смартлабе"
+          "resolved_url": "https://smart-lab.ru/blog/1379499.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         },
         {
           "url": "https://www.liveinternet.ru/click",
-          "anchor_text": ""
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212398",
+      "fetch_status": "ok",
+      "title": "Решетников: В России будет почти 100% покрытие интернетом Решетников: В России будет почти 100% покрытие интернет... | smartlab.news",
+      "description": "В России будет почти стопроцентное покрытие интернетом, заявил министр экономического развития Максим Решетников на «правительственном часе» в Госдуме.\nОно буд...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.pnp.ru%2Fsocial%2Freshetnikov-uroven-pokrytiya-internetom-v-rossii-dostignet-pochti-100.html&s=1103250090",
+          "resolved_url": "https://www.pnp.ru/social/reshetnikov-uroven-pokrytiya-internetom-v-rossii-dostignet-pochti-100.html",
+          "anchor_text": "www.pnp.ru/social/reshetnikov-uroven-pokrytiya-internetom-v-rossii-dostignet-pochti-100.html",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/69a1bd.png",
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/25/69a1bd.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fduma.gov.ru%2Fmultimedia%2Fphoto%2F133824%2F&s=997424306",
+          "resolved_url": "https://smart-lab.ru/r.php?u=http%3A%2F%2Fduma.gov.ru%2Fmultimedia%2Fphoto%2F133824%2F&s=997424306",
+          "anchor_text": "пресс-служба Госдумы",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.RTKM",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.RTKM",
+          "anchor_text": "📈 график акций Ростелеком",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379510.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379510.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212400",
+      "fetch_status": "ok",
+      "title": "Новак: Проект «Восточного нефтехимического комплекса» (ВНХК) Роснефти снова актуален. Обсуждаются меры его реализации и необходимая господдержка Новак: Проект «Восточного нефтехимического комплекса» (... | smartlab.news",
+      "description": "«Что касается ВНХК: этот проект у нас один из приоритетных на Дальнем Востоке. Он требует мер государственной поддержки. Эти все вопросы обсуждаются сегодня» —...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.ROSN",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.ROSN",
+          "anchor_text": "📈 график акций Роснефть",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379514.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379514.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
         }
       ],
       "candidate_primary_document_links": [],
@@ -2177,7 +2863,7 @@
     "Telegram public preview pagination is best-effort and not a guaranteed complete archive.",
     "Ticker matching uses explicit tags/tokens only; company-name fuzzy matching is disabled.",
     "Smart-Lab article pages and outbound links are discovery evidence, not proof of issuer authenticity.",
-    "Candidate document links require manual/automated issuer-domain verification before figures are used.",
+    "Candidate links are unwrapped and classified by known disclosure-operator/regulator domain; page content and issuer identity are not verified by this collector.",
     "Missing publication timestamps and document fields remain null.",
     "No bot token, account session, paid API, Finam AI Screener, or broker endpoint is used."
   ]
