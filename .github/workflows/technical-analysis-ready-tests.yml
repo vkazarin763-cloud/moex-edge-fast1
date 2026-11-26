@@ -1,0 +1,36 @@
+name: Technical Analysis Ready Libraries — Isolated Tests
+
+on:
+  push:
+    branches:
+      - feature/technical-analysis-ready-libraries-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: technical-analysis-ready-tests
+  cancel-in-progress: false
+
+jobs:
+  isolated-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout development repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-ta-research.txt
+      - name: Install pinned research dependency
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ta-research.txt pandas
+      - name: Compile and run isolated tests
+        run: |
+          python -m compileall -q research_agent/technical_analysis_ready.py tests/test_technical_analysis_ready.py
+          python -m unittest tests.test_technical_analysis_ready -v
