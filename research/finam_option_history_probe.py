@@ -103,14 +103,27 @@ def quote_summary(api: FinamReadOnly, symbol: str) -> dict:
 
 
 def timestamp_value(item):
-    if not isinstance(item, dict):
-        return None
-    try:
-        seconds = int(item.get("seconds"))
-        nanos = int(item.get("nanos", 0))
-        return datetime.fromtimestamp(seconds + nanos / 1_000_000_000, tz=timezone.utc)
-    except (TypeError, ValueError, OverflowError, OSError):
-        return None
+    if isinstance(item, datetime):
+        return item.astimezone(timezone.utc) if item.tzinfo else item.replace(tzinfo=timezone.utc)
+    if isinstance(item, str):
+        try:
+            parsed = datetime.fromisoformat(item.replace("Z", "+00:00"))
+            return parsed.astimezone(timezone.utc) if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        except ValueError:
+            return None
+    if isinstance(item, (int, float)):
+        try:
+            return datetime.fromtimestamp(float(item), tz=timezone.utc)
+        except (ValueError, OverflowError, OSError):
+            return None
+    if isinstance(item, dict):
+        try:
+            seconds = int(item.get("seconds"))
+            nanos = int(item.get("nanos", 0))
+            return datetime.fromtimestamp(seconds + nanos / 1_000_000_000, tz=timezone.utc)
+        except (TypeError, ValueError, OverflowError, OSError):
+            return None
+    return None
 
 
 def orderbook_summary(api: FinamReadOnly, symbol: str) -> dict:
