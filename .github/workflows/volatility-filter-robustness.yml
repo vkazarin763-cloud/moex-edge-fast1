@@ -40,3 +40,5 @@ jobs:
           name: volatility-filter-robustness
           path: research_agent/price_forecast_24h/reports/volatility-filter-robustness-*
           retention-days: 30
+
+# Run frozen-candidate validation after workflow registration.
