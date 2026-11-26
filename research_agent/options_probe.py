@@ -124,9 +124,10 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
     # Explicit expiries in the intended 20–60 day horizon. The default-chain
     # response previously returned a 2030 date for every underlying.
     expiry_dates = (
-        (2026, 12, 18),
-        (2027, 1, 15),
-        (2027, 1, 22),
+        (2026, 12, 2),
+        (2026, 12, 16),
+        (2027, 1, 20),
+        (2027, 3, 17),
     )
     expiry_results = []
     all_samples = []
@@ -185,7 +186,7 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
                         row["quote_error"] = f"{type(exc).__name__}: {exc}"
 
                     # One diagnostics contract per underlying, not per expiry.
-                    if year == 2026 and month == 12 and day == 18 and option_index == 0:
+                    if year == 2026 and month == 12 and day == 16 and option_index == 0:
                         try:
                             book = request_json(
                                 session, "GET",
