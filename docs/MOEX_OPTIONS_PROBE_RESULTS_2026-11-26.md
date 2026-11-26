@@ -76,3 +76,30 @@ This evidence is not enough for a credible historical profitability backtest: th
 ## Bounded next decision
 
 Do not repeat the broad scan. If continuing with existing free read-only access, the only useful next check is to capture a small number of time-separated snapshots for `ME190CX6@RTSX` and verify whether its best bid/ask and depth persist and whether recent trades appear. If that cannot be established, stop this Finam options-data route. No paid data source, account endpoint, order, or production workflow is involved.
+
+
+## Time-separated candidate snapshot — ME190CX6@RTSX
+
+A second targeted read-only snapshot was captured by GitHub Actions run `45881511766` at 2026-11-26T19:09:42Z, approximately 6 minutes 29 seconds after the previous targeted snapshot (19:03:12Z). Code revision: `12d346efcb8b726162f5b2ea155bbff9ccd6f5b5`.
+
+| Metric | First targeted snapshot (19:03Z) | Second snapshot (19:09Z) |
+|---|---:|---:|
+| Bid | 27.34 | 27.45 |
+| Ask | 28.48 | 28.59 |
+| Spread | 4.085% | 4.069% |
+| Quote age at capture | 0 sec | 0 sec |
+| Displayed best bid/ask size | 1000 / 1000 | 1000 / 1000 |
+| Open interest | 60 | 60 |
+| Latest trade timestamp | 2026-11-18 19:36Z | 2026-11-18 19:36Z |
+
+In the second snapshot, the two best book rows were timestamped 19:07:41Z (about 2 minutes before capture). A third row remained an old bid at 5.15, timestamped 05:22:45Z. The latest-trades endpoint still returned only the same trade from 2026-11-18, roughly eight days old.
+
+**Interpretation:** the displayed quote and top-of-book levels were broadly stable across two snapshots separated by about 6.5 minutes, with a small price move and nearly unchanged spread. This is limited evidence of quote/book persistence, not proof of executable depth or ongoing trading. The displayed 1000x1000 sizes and open interest 60 do not establish that a real order of meaningful size could be filled; no recent trade has been observed.
+
+## Final status for this bounded check
+
+- The second snapshot workflow completed successfully, including all read-only data requests and artifact upload.
+- All five GitHub Actions workflows on revision `12d346efcb8b726162f5b2ea155bbff9ccd6f5b5` completed successfully.
+- No account/order/cancel/SLTP endpoints were called.
+- `ME190CX6@RTSX` remains a watchlist candidate only. Do not generate signals or claim profitability. A historical sequence of executable bid/ask data and evidence of recent trading activity are still missing.
+- Stop repeating short-interval snapshots: this bounded check has established only short-term quote/book persistence. Further progress requires a legitimate source of historical executable option quotes/trades, not more repeated snapshots.
