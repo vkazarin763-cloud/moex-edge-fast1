@@ -177,3 +177,11 @@
 
 ## 2026-11-21 — Finam mode safety observation
 - Safety CI run 44864354084 reported derived `FINAM_DRY_RUN=live`. No order was sent. Scheduled and standard manual executor workflows hardcode DRY_RUN; two separate manual workflows remain live-capable behind explicit confirmations. Recorded in handoff; no configuration was changed.
+
+
+## 2026-11-26 — Finam option history probe (research branch)
+- Added isolated read-only workflow and script to test Finam option chains, current quotes/orderbooks, latest trade prints, and M5/H1/D1 option bars for SBER, GAZP, ROSN and MOEX.
+- Added a strict exploratory trade-print replay against underlying EMA20/EMA50 D1/H1 direction, with entry/exit delay limits, non-overlapping trades, and a 5% historical moneyness filter.
+- Added report `docs/FINAM_OPTIONS_HISTORY_RESEARCH_2026-11-26.md`.
+- Workflow run 45885560779 succeeded; artifact 15149226606. No broker account/order endpoints were called.
+- Research only; no live strategy approved and no production configuration changed.
