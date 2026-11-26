@@ -66,7 +66,7 @@ def matched_tickers(text):
     found=[]
     for ticker in UNIVERSE:
         e=re.escape(ticker)
-        patterns=[r"(?<![A-Za-z0-9_])#"+e+r"(?![A-Za-z0-9_])",r"(?<![A-Za-z0-9_])\\$"+e+r"(?![A-Za-z0-9_])"]
+        patterns=[r"(?<![A-Za-z0-9_])#"+e+r"(?![A-Za-z0-9_])",r"(?<![A-Za-z0-9_])\$"+e+r"(?![A-Za-z0-9_])"]
         if len(ticker)>=3: patterns.append(r"(?<![A-Za-zА-Яа-яЁё0-9_])"+e+r"(?![A-Za-zА-Яа-яЁё0-9_])")
         if any(re.search(p,text,re.IGNORECASE) for p in patterns): found.append(ticker)
     return sorted(found)
