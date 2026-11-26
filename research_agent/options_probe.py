@@ -17,7 +17,7 @@ import requests
 BASE_URL = "https://api.finam.ru"
 UNDERLYINGS = ("GAZP@MISX", "SBER@MISX", "ROSN@MISX", "MOEX@MISX")
 MAX_OPTION_QUOTES_PER_UNDERLYING = 12
-TIMEOUT = 25
+TIMEOUT = 12
 
 
 def decimal_value(value: Any) -> float | None:
@@ -157,7 +157,7 @@ def probe_underlying(session: requests.Session, underlying: str) -> dict[str, An
                         }
                     # A small GET-only diagnostic sample checks whether missing top quotes
                     # are a quote endpoint issue, a contract metadata issue, or an empty book.
-                    if option_index < 2:
+                    if option_index < 1:
                         encoded_symbol = requests.utils.quote(str(symbol), safe="@")
                         try:
                             asset = request_json(session, "GET", f"/v1/assets/{encoded_symbol}")
