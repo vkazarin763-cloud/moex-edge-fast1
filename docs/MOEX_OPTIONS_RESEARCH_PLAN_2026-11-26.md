@@ -89,6 +89,30 @@ The MOEX options desk currently lists stock-option exercise dates including 2026
 
 Official live board: https://www.moex.com/ru/derivatives/optionsdesk.aspx?c4=on&c6=on&c7=on&code=GAZP&sby=1&sid=1&submit=submit
 
+## Explicit-expiry contract probe — 2026-11-26
+
+The corrected read-only query used exchange-listed expiries (2026-12-02, 2026-12-16, 2027-01-20, 2027-03-17). It returned:
+
+| Underlying | Dec 2 | Dec 16 | Jan 20 | Mar 17 |
+|---|---:|---:|---:|---:|
+| GAZP | 28 | 98 | 64 | 126 |
+| SBER | 24 | 34 | 24 | 34 |
+| ROSN | 30 | 120 | 72 | 162 |
+| MOEX | 24 | 24 | 0 | 0 |
+| **Total** | **106** | **276** | **160** | **322** |
+
+Total: **864 contract records** across the four requested expiry dates. A near-ATM sample of 4 contracts per underlying/expiry (64 contracts) returned positive, non-crossed bid/ask for all 64. This establishes that Finam can return real two-sided quote fields for listed option contracts; it does not establish that all quotes are fresh or executable.
+
+The sample's quoted spreads were often too wide:
+- Dec 16 GAZP: approximately 10.8–35.3%; SBER: 9.5–36.1%; ROSN: 33.3–69.9%; MOEX: 29.7–108.2%.
+- Jan 20 GAZP: approximately 29.1–116.6%; SBER: 25.4–104.3%; ROSN: 131–158%; MOEX: no contracts returned.
+- Mar 17 GAZP/SBER/ROSN samples mostly had spreads of roughly 39–164%; MOEX had no contracts.
+- Dec 2 is only six days from expiry and is not eligible for the primary 20–60 day strategy window.
+
+Only one sampled Dec 16 contract (SBER 290 CALL) was below the preliminary 10% spread ceiling (about 9.55%). Many quote timestamps were several hours older than the 18:48 UTC probe, so positive bid/ask alone is not enough. The probe code was extended to calculate quote age and mark quotes older than 5 minutes / 30 minutes. The subsequent CI run is responsible for validating those fields and the additional stale-quote unit test.
+
+Interpretation: the Finam route is viable for contract discovery and can return two-sided quotes, but the tested near-ATM sample is generally too wide/stale to justify entries. No candidate currently passes enough evidence for a strategy backtest. The next step is a bounded, broader contract-level liquidity screen on Dec 16 and Jan 20 only, with quote age, spread, displayed sizes, trades and open interest all considered; do not generate signals or use theoretical prices as executable substitutes.
+
 ## Candidate strategy to evaluate first
 
 **Trend-confirmed long premium breakout** (one ruleset, no parameter mining):
