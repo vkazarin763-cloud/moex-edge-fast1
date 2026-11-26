@@ -19,6 +19,7 @@ import requests
 BASE = "https://api.finam.ru"
 UNDERLYINGS = ["SBER@MISX", "GAZP@MISX", "ROSN@MISX", "MOEX@MISX"]
 TIMEOUT = 20
+TARGET_EXPIRIES = ["2026-12-16", "2027-01-20"]
 
 
 class ProbeError(RuntimeError):
@@ -127,6 +128,18 @@ def bar_summary(api: FinamReadOnly, symbol: str, timeframe: str, start: str, end
             continue
         valid.append((bar, opening, high, low, close, volume))
     timestamps = [str(item[0].get("timestamp")) for item in valid if item[0].get("timestamp")]
+    series = [
+        {
+            "timestamp": str(bar.get("timestamp")),
+            "open": str(opening),
+            "high": str(high),
+            "low": str(low),
+            "close": str(close),
+            "volume": str(volume),
+            "is_data_snapshot": bool(bar.get("is_data_snapshot")),
+        }
+        for bar, opening, high, low, close, volume in valid
+    ]
     return {
         "http_status": status,
         "available": True,
@@ -139,6 +152,7 @@ def bar_summary(api: FinamReadOnly, symbol: str, timeframe: str, start: str, end
         "last_close": str(valid[-1][4]) if valid else None,
         "max_volume": str(max((item[5] for item in valid), default=Decimal("0"))),
         "snapshot_bars": sum(bool(item[0].get("is_data_snapshot")) for item in valid),
+        "series": series,
     }
 
 
@@ -198,6 +212,7 @@ def probe_contracts(
         results.append({
             **contract,
             "latest_quote": quote_summary(api, symbol),
+            "historical_m5": bar_summary(api, symbol, "TIME_FRAME_M5", h1_start, end),
             "historical_h1": bar_summary(api, symbol, "TIME_FRAME_H1", h1_start, end),
             "historical_d1": bar_summary(api, symbol, "TIME_FRAME_D", d1_start, end),
         })
@@ -261,19 +276,21 @@ def main():
                 "option_type_values": sorted({
                     str(o.get("type", "UNKNOWN")) for o in options if isinstance(o, dict)
                 }),
-                "selected_contracts": probe_contracts(api, contracts, h1_start, d1_start, end),
+                "default_chain_nearest_expiry_contracts": contracts,
+                "targeted_expiry_probes": [],
             })
-            if underlying == "MOEX@MISX":
+            for expiry in TARGET_EXPIRIES:
+                year, month, day = expiry.split("-")
                 targeted_status, targeted_chain = api.get(
                     f"/v1/assets/{quote(underlying, safe='')}/options",
                     params={
-                        "expiration_date.year": "2026",
-                        "expiration_date.month": "12",
-                        "expiration_date.day": "16",
+                        "expiration_date.year": year,
+                        "expiration_date.month": month,
+                        "expiration_date.day": day,
                     },
                 )
                 targeted = {
-                    "requested_expiry": "2026-12-16",
+                    "requested_expiry": expiry,
                     "http_status": targeted_status,
                     "chain_contract_count": 0,
                     "selected_contracts": [],
@@ -289,7 +306,7 @@ def main():
                     targeted["selected_contracts"] = probe_contracts(
                         api, targeted_contracts, h1_start, d1_start, end
                     )
-                item["targeted_expiry_probe"] = targeted
+                item["targeted_expiry_probes"].append(targeted)
         except ProbeError as exc:
             item.update({"status": "error", "error": str(exc)})
         report["underlyings"][underlying] = item
@@ -302,16 +319,22 @@ def main():
             name: {
                 "status": value.get("status"),
                 "chain_count": value.get("chain_contract_count"),
-                "selected": [
+                "targeted_expiries": [
                     {
-                        "symbol": c.get("symbol"),
-                        "type": c.get("type"),
-                        "h1_status": c.get("historical_h1", {}).get("http_status"),
-                        "h1_bars": c.get("historical_h1", {}).get("valid_ohlc_bars"),
-                        "d1_status": c.get("historical_d1", {}).get("http_status"),
-                        "d1_bars": c.get("historical_d1", {}).get("valid_ohlc_bars"),
+                        "expiry": probe.get("requested_expiry"),
+                        "chain_count": probe.get("chain_contract_count"),
+                        "selected": [
+                            {
+                                "symbol": c.get("symbol"),
+                                "type": c.get("type"),
+                                "m5_bars": c.get("historical_m5", {}).get("valid_ohlc_bars"),
+                                "h1_bars": c.get("historical_h1", {}).get("valid_ohlc_bars"),
+                                "d1_bars": c.get("historical_d1", {}).get("valid_ohlc_bars"),
+                            }
+                            for c in probe.get("selected_contracts", [])
+                        ],
                     }
-                    for c in value.get("selected_contracts", [])
+                    for probe in value.get("targeted_expiry_probes", [])
                 ],
                 "error": value.get("error"),
             }
