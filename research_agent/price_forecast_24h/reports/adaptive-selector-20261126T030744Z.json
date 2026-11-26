@@ -1,0 +1,192 @@
+{
+  "created_utc": "2026-11-26T03:07:44.010383+00:00",
+  "data_source": "Finam technical H1 archive",
+  "symbols_evaluated": 44,
+  "symbols_excluded": {},
+  "protocol": {
+    "selector": "At each candidate signal, use only hypothetical candidate trades whose exits are strictly before the current signal bar. Maintain a rolling history of up to 100 completed candidate trades per ticker/rule/joint regime. Require at least 30 observations. Score each rule by mean net return after 10 bps per side; require mean > 0 and profit factor > 1.0. Select highest score; deterministic tie-break by PF then rule name. If no rule qualifies, no trade.",
+    "regime": "Ticker-specific causal trend-strength and ATR/close volatility ranks; low/mid/high terciles from up to 120 prior observations, at least 60 prior observations, current bar excluded.",
+    "candidate_streams": "Six predeclared rules; one non-overlapping hypothetical trade per ticker/rule at a time; next H1 open entry, close after at most 12 H1 bars.",
+    "execution": "At most one selected trade per ticker at a time across all rules; no overlapping selected trades. Signal on completed H1 close, entry next H1 open.",
+    "walk_forward": "First half of first 80% is warm-up/training only. Remaining first 80% is three chronological evaluation folds. Final 20% is later holdout. Selector state carries forward causally; at each decision only completed prior outcomes are available.",
+    "costs": "Selector training threshold uses 10 bps per side (20 bps round-trip). Reported performance uses 5 and 10 bps per side; illustrative only.",
+    "tie_break": "Higher rolling mean net return, then higher PF, then alphabetical rule name."
+  },
+  "aggregate": {
+    "development_fold_1": {
+      "trades": 0,
+      "5bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "10bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "long_trades": 0,
+      "short_trades": 0,
+      "selected_rules": {
+        "long_breakout_20": 0,
+        "long_ema20_pullback": 0,
+        "long_momentum_10": 0,
+        "short_breakdown_20": 0,
+        "short_ema20_failed_bounce": 0,
+        "short_momentum_10": 0
+      }
+    },
+    "development_fold_2": {
+      "trades": 0,
+      "5bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "10bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "long_trades": 0,
+      "short_trades": 0,
+      "selected_rules": {
+        "long_breakout_20": 0,
+        "long_ema20_pullback": 0,
+        "long_momentum_10": 0,
+        "short_breakdown_20": 0,
+        "short_ema20_failed_bounce": 0,
+        "short_momentum_10": 0
+      }
+    },
+    "development_fold_3": {
+      "trades": 0,
+      "5bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "10bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "long_trades": 0,
+      "short_trades": 0,
+      "selected_rules": {
+        "long_breakout_20": 0,
+        "long_ema20_pullback": 0,
+        "long_momentum_10": 0,
+        "short_breakdown_20": 0,
+        "short_ema20_failed_bounce": 0,
+        "short_momentum_10": 0
+      }
+    },
+    "holdout": {
+      "trades": 0,
+      "5bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "10bps": {
+        "trades": 0,
+        "win_rate_pct": null,
+        "mean_net_return_pct": null,
+        "median_net_return_pct": null,
+        "total_compounded_return_pct": null,
+        "profit_factor": null,
+        "max_drawdown_pct": null,
+        "mean_holding_bars": null
+      },
+      "long_trades": 0,
+      "short_trades": 0,
+      "selected_rules": {
+        "long_breakout_20": 0,
+        "long_ema20_pullback": 0,
+        "long_momentum_10": 0,
+        "short_breakdown_20": 0,
+        "short_ema20_failed_bounce": 0,
+        "short_momentum_10": 0
+      }
+    }
+  },
+  "activity_by_period": {
+    "development_fold_1": {
+      "eligible_signals": 1533,
+      "selected_trades": 0,
+      "no_trade_signals": 1533,
+      "no_trade_pct": 100.0
+    },
+    "development_fold_2": {
+      "eligible_signals": 1555,
+      "selected_trades": 0,
+      "no_trade_signals": 1555,
+      "no_trade_pct": 100.0
+    },
+    "development_fold_3": {
+      "eligible_signals": 1508,
+      "selected_trades": 0,
+      "no_trade_signals": 1508,
+      "no_trade_pct": 100.0
+    },
+    "holdout": {
+      "eligible_signals": 2261,
+      "selected_trades": 0,
+      "no_trade_signals": 2261,
+      "no_trade_pct": 100.0
+    }
+  },
+  "candidate_trade_counts": {
+    "long_breakout_20": 1495,
+    "long_ema20_pullback": 1767,
+    "long_momentum_10": 1875,
+    "short_breakdown_20": 1704,
+    "short_ema20_failed_bounce": 2368,
+    "short_momentum_10": 2082
+  },
+  "limitations": [
+    "Diagnostic only: the same historical archive and final 20% have been examined in earlier experiments; this is not an independent confirmatory sample.",
+    "Candidate training outcomes are hypothetical per-rule streams and may overlap across rules; selected evaluation trades themselves do not overlap per ticker.",
+    "Ticker-specific regimes are not a common MOEX-wide market regime.",
+    "Actual spreads, commissions, slippage, short borrow availability/cost, taxes and market impact are not modeled; cost assumptions are illustrative.",
+    "Finam H1 bars are technical data; 12 bars do not necessarily equal 12 clock hours.",
+    "Pooled trade-chain metrics are diagnostics, not portfolio returns.",
+    "Research only: no production, real signals, Telegram notifications, cron changes, secrets or broker orders."
+  ]
+}
