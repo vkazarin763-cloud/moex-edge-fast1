@@ -390,6 +390,7 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
     horizons = (1, 3, 5)
     max_entry_delay_hours = 24
     max_exit_delay_hours = 24
+    max_historical_moneyness_pct = 5.0
     observations = {method: {h: [] for h in horizons} for method in methods}
     per_asset = {}
     today = now.date()
@@ -420,13 +421,19 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
         )
         contracts = expiry_probe.get("selected_contracts", []) if expiry_probe else []
         option_by_type = {
-            contract.get("type"): _parsed_series(
-                contract.get("latest_trades", {}).get("series", []), "price"
-            )
+            contract.get("type"): {
+                "trades": _parsed_series(
+                    contract.get("latest_trades", {}).get("series", []), "price"
+                ),
+                "strike": decimal_value(contract.get("strike")),
+                "symbol": contract.get("symbol"),
+            }
             for contract in contracts
         }
-        call_trades = option_by_type.get("TYPE_CALL", [])
-        put_trades = option_by_type.get("TYPE_PUT", [])
+        call_data = option_by_type.get("TYPE_CALL", {})
+        put_data = option_by_type.get("TYPE_PUT", {})
+        call_trades = call_data.get("trades", [])
+        put_trades = put_data.get("trades", [])
         asset_result["option_trade_counts"] = {
             "CALL": len(call_trades), "PUT": len(put_trades)
         }
@@ -456,8 +463,14 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
             for method, direction in events.items():
                 if direction is None:
                     continue
-                option_trades = call_trades if direction == "LONG" else put_trades
-                if len(option_trades) < 2:
+                option_data = call_data if direction == "LONG" else put_data
+                option_trades = option_data.get("trades", [])
+                strike = option_data.get("strike")
+                if len(option_trades) < 2 or strike is None:
+                    continue
+                underlying_close = d1[index]["_price"]
+                moneyness_pct = float(abs(strike / underlying_close - 1) * 100)
+                if moneyness_pct > max_historical_moneyness_pct:
                     continue
                 entry_candidates = [
                     trade for trade in option_trades
@@ -508,6 +521,10 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
                         "method": method,
                         "direction": direction,
                         "option_type": "CALL" if direction == "LONG" else "PUT",
+                        "option_symbol": option_data.get("symbol"),
+                        "option_strike": str(strike),
+                        "underlying_close_at_signal": str(underlying_close),
+                        "historical_moneyness_pct": round(moneyness_pct, 4),
                         "entry_timestamp": entry["_timestamp"].isoformat(),
                         "entry_trade_price": str(entry["_price"]),
                         "entry_trade_size": entry.get("size"),
@@ -546,6 +563,7 @@ def option_trade_price_replay(underlyings: dict, now: datetime, signal_days: int
         "signal_window_sessions": signal_days,
         "max_entry_delay_hours": max_entry_delay_hours,
         "max_exit_delay_after_target_hours": max_exit_delay_hours,
+        "max_historical_moneyness_pct": max_historical_moneyness_pct,
         "overlap_policy": "One active trade per underlying/method/horizon; a trade print cannot be reused as a second entry.",
         "entry": "First actual option trade print within 24 hours after the signal day's last completed underlying H1 bar.",
         "exit": "First actual option trade print within 24 hours after the target day's last completed underlying H1 bar.",
