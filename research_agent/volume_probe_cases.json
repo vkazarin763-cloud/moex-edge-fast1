@@ -1,0 +1,161 @@
+{
+  "baseline_run_id": 45378870392,
+  "source": "research_report.json session_scope_comparison_diagnostics",
+  "note": "Frozen diagnostic baselines for 22 volume mismatches; development data only, all dates before frozen holdout 2026-11-20.",
+  "cases": [
+    {
+      "ticker": "SBER",
+      "trade_date": "2025-08-01",
+      "raw_volume": 25320049,
+      "total_session_history_volume": 18473506,
+      "morning_plus_main_history_volume": 14992306
+    },
+    {
+      "ticker": "SBERP",
+      "trade_date": "2025-08-01",
+      "raw_volume": 1982869,
+      "total_session_history_volume": 1532239,
+      "morning_plus_main_history_volume": 1086938
+    },
+    {
+      "ticker": "AFKS",
+      "trade_date": "2025-10-27",
+      "raw_volume": 109020598,
+      "total_session_history_volume": 122514100,
+      "morning_plus_main_history_volume": 109425500
+    },
+    {
+      "ticker": "AFLT",
+      "trade_date": "2025-10-27",
+      "raw_volume": 14781105,
+      "total_session_history_volume": 16195770,
+      "morning_plus_main_history_volume": 14772730
+    },
+    {
+      "ticker": "ALRS",
+      "trade_date": "2025-10-27",
+      "raw_volume": 7417377,
+      "total_session_history_volume": 7907040,
+      "morning_plus_main_history_volume": 6866890
+    },
+    {
+      "ticker": "BSPB",
+      "trade_date": "2025-10-27",
+      "raw_volume": 486226,
+      "total_session_history_volume": 498430,
+      "morning_plus_main_history_volume": 458780
+    },
+    {
+      "ticker": "CBOM",
+      "trade_date": "2025-10-27",
+      "raw_volume": 12635007,
+      "total_session_history_volume": 12863400,
+      "morning_plus_main_history_volume": 11604700
+    },
+    {
+      "ticker": "FLOT",
+      "trade_date": "2025-10-27",
+      "raw_volume": 1897264,
+      "total_session_history_volume": 2008450,
+      "morning_plus_main_history_volume": 1866340
+    },
+    {
+      "ticker": "GAZP",
+      "trade_date": "2025-10-27",
+      "raw_volume": 44070553,
+      "total_session_history_volume": 46407070,
+      "morning_plus_main_history_volume": 41776710
+    },
+    {
+      "ticker": "GMKN",
+      "trade_date": "2025-10-27",
+      "raw_volume": 28347576,
+      "total_session_history_volume": 28917960,
+      "morning_plus_main_history_volume": 26203350
+    },
+    {
+      "ticker": "IRAO",
+      "trade_date": "2025-10-27",
+      "raw_volume": 149393517,
+      "total_session_history_volume": 153909600,
+      "morning_plus_main_history_volume": 138945600
+    },
+    {
+      "ticker": "MAGN",
+      "trade_date": "2025-10-27",
+      "raw_volume": 23393660,
+      "total_session_history_volume": 26461400,
+      "morning_plus_main_history_volume": 23162140
+    },
+    {
+      "ticker": "MOEX",
+      "trade_date": "2025-10-27",
+      "raw_volume": 5370130,
+      "total_session_history_volume": 5826160,
+      "morning_plus_main_history_volume": 5512360
+    },
+    {
+      "ticker": "MTSS",
+      "trade_date": "2025-10-27",
+      "raw_volume": 3073081,
+      "total_session_history_volume": 3171640,
+      "morning_plus_main_history_volume": 2867630
+    },
+    {
+      "ticker": "NLMK",
+      "trade_date": "2025-10-27",
+      "raw_volume": 6377769,
+      "total_session_history_volume": 6646500,
+      "morning_plus_main_history_volume": 5969970
+    },
+    {
+      "ticker": "RENI",
+      "trade_date": "2025-10-27",
+      "raw_volume": 1240479,
+      "total_session_history_volume": 1306080,
+      "morning_plus_main_history_volume": 1148570
+    },
+    {
+      "ticker": "RTKM",
+      "trade_date": "2025-10-27",
+      "raw_volume": 12234111,
+      "total_session_history_volume": 12501960,
+      "morning_plus_main_history_volume": 11376500
+    },
+    {
+      "ticker": "RUAL",
+      "trade_date": "2025-10-27",
+      "raw_volume": 20861301,
+      "total_session_history_volume": 21345240,
+      "morning_plus_main_history_volume": 18114570
+    },
+    {
+      "ticker": "SNGS",
+      "trade_date": "2025-10-27",
+      "raw_volume": 22697391,
+      "total_session_history_volume": 24330000,
+      "morning_plus_main_history_volume": 22322700
+    },
+    {
+      "ticker": "SNGSP",
+      "trade_date": "2025-10-27",
+      "raw_volume": 19898705,
+      "total_session_history_volume": 21711080,
+      "morning_plus_main_history_volume": 19562930
+    },
+    {
+      "ticker": "SVCB",
+      "trade_date": "2025-10-27",
+      "raw_volume": 67877289,
+      "total_session_history_volume": 71163000,
+      "morning_plus_main_history_volume": 63171200
+    },
+    {
+      "ticker": "UGLD",
+      "trade_date": "2025-10-27",
+      "raw_volume": 553019261,
+      "total_session_history_volume": 560273000,
+      "morning_plus_main_history_volume": 511518000
+    }
+  ]
+}

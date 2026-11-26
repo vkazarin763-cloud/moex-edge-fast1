@@ -35,40 +35,102 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install official Russian NCA certificates for MOEX
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://gu-st.ru/content/downloads/Russian_Trusted_Root_CA.cer \
+            --output /tmp/russian_trusted_root_ca.cer
+          curl --fail --silent --show-error --location \
+            https://gu-st.ru/content/downloads/Russian_Trusted_Sub_CA_2024.cer \
+            --output /tmp/russian_trusted_sub_ca.cer
+
+          convert_cert() {
+            local source="$1"
+            local target="$2"
+            if openssl x509 -in "$source" -noout >/dev/null 2>&1; then
+              cp "$source" "$target"
+            else
+              openssl x509 -inform DER -in "$source" -out "$target"
+            fi
+          }
+          convert_cert /tmp/russian_trusted_root_ca.cer /tmp/russian_trusted_root_ca.crt
+          convert_cert /tmp/russian_trusted_sub_ca.cer /tmp/russian_trusted_sub_ca.crt
+
+          root_fp="$(openssl x509 -in /tmp/russian_trusted_root_ca.crt -noout -fingerprint -sha256 | cut -d= -f2)"
+          sub_fp="$(openssl x509 -in /tmp/russian_trusted_sub_ca.crt -noout -fingerprint -sha256 | cut -d= -f2)"
+          expected_root="D2:6D:2D:02:31:B7:C3:9F:92:CC:73:85:12:BA:54:10:35:19:E4:40:5D:68:B5:BD:70:3E:97:88:CA:8E:CF:31"
+          expected_sub="21:55:78:50:36:C9:00:DB:B5:F1:BB:2A:15:69:C8:0C:55:59:5B:D6:BF:94:86:7A:29:BB:DD:BC:7D:88:A3:F2"
+          echo "Russian Trusted Root CA SHA256: $root_fp"
+          echo "Russian Trusted Sub CA SHA256: $sub_fp"
+          test "$root_fp" = "$expected_root"
+          test "$sub_fp" = "$expected_sub"
+
+          sudo install -m 0644 /tmp/russian_trusted_root_ca.crt /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
+          sudo install -m 0644 /tmp/russian_trusted_sub_ca.crt /usr/local/share/ca-certificates/russian_trusted_sub_ca.crt
+          sudo update-ca-certificates
+      - name: Diagnose MOEX ISS TLS trust chain
+        continue-on-error: true
+        run: |
+          set +e
+          for host in iss.moex.com www.python.org; do
+            echo "=== TLS certificate chain: ${host} ==="
+            timeout 20 openssl s_client -connect "${host}:443" -servername "${host}" -showcerts </dev/null >"/tmp/${host}.tls.out" 2>"/tmp/${host}.tls.err"
+            awk -v prefix="/tmp/${host}.cert" '
+              /-----BEGIN CERTIFICATE-----/ { n++; file=sprintf("%s-%02d.pem", prefix, n) }
+              file { print > file }
+              /-----END CERTIFICATE-----/ { close(file); file="" }
+            ' "/tmp/${host}.tls.out"
+            for cert in /tmp/"${host}".cert-*.pem; do
+              [ -f "$cert" ] || continue
+              openssl x509 -in "$cert" -noout -subject -issuer -dates -fingerprint -sha256
+            done
+            echo "--- OpenSSL verification diagnostics ---"
+            grep -E "verify error|Verify return code|CONNECTED|depth=" "/tmp/${host}.tls.err" "/tmp/${host}.tls.out" | tail -12 || true
+            echo "--- Python urllib trust test ---"
+            HOST="$host" python - <<'PY'
+          import os
+          import ssl
+          import urllib.request
+
+          host = os.environ["HOST"]
+          print("Default CA paths:", ssl.get_default_verify_paths())
+          try:
+              with urllib.request.urlopen(f"https://{host}/", timeout=15) as response:
+                  print(f"{host}: HTTP {response.status}")
+          except Exception as exc:
+              print(f"{host}: {type(exc).__name__}: {exc}")
+          PY
+          done
       - name: Resolve and validate research date range
         id: dates
         env:
           INPUT_FROM: ${{ github.event.inputs.date_from }}
           INPUT_TILL: ${{ github.event.inputs.date_till }}
         run: |
+          set -euo pipefail
           END="${INPUT_TILL:-$(date -u +%F)}"
           START="${INPUT_FROM:-$(date -u -d '3 years ago' +%F)}"
-          export START END
-          python - <<'PY'
-          import os
+          python - "$START" "$END" <<'PY'
+          import sys
           from datetime import date
-          from pathlib import Path
 
-          start = date.fromisoformat(os.environ["START"])
-          end = date.fromisoformat(os.environ["END"])
-          if start.isoformat() != os.environ["START"] or end.isoformat() != os.environ["END"]:
+          start = date.fromisoformat(sys.argv[1])
+          end = date.fromisoformat(sys.argv[2])
+          if start.isoformat() != sys.argv[1] or end.isoformat() != sys.argv[2]:
               raise SystemExit("Dates must use YYYY-MM-DD")
           if start > end:
               raise SystemExit("date_from must not be after date_till")
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
-              output.write(f"date_from={start.isoformat()}\n")
-              output.write(f"date_till={end.isoformat()}\n")
           PY
+          printf 'date_from=%s\n' "$START" >> "$GITHUB_OUTPUT"
+          printf 'date_till=%s\n' "$END" >> "$GITHUB_OUTPUT"
       - name: Run read-only research across MOEX first-listing universe
         env:
           DATE_FROM: ${{ steps.dates.outputs.date_from }}
           DATE_TILL: ${{ steps.dates.outputs.date_till }}
         run: |
           set +e
-          python -m research_agent.cli \
-            --from "$DATE_FROM" \
-            --till "$DATE_TILL" \
-            --output research_report.json
+          python -m research_agent.cli --from "$DATE_FROM" --till "$DATE_TILL" --output research_report.json
           research_exit=$?
           set -e
           if [ "$research_exit" -eq 3 ] && [ -s research_report.json ] && [ -s strategy_registry.json ]; then

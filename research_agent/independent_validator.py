@@ -284,6 +284,10 @@ def _audit_raw_session_provenance(
         "history_trade_dates_without_raw_fragments",
         "trading_days_reconciled",
         "trading_days_mismatched",
+        "documented_corporate_action_mismatch_dates",
+        "unexplained_mismatch_dates",
+        "morning_main_volume_disambiguated_dates",
+        "total_session_volume_disambiguated_dates",
         "unassigned_raw_candles",
         "raw_candles",
         "mapped_raw_candles",
@@ -356,6 +360,9 @@ def _audit_raw_session_provenance(
 
     if counts["trading_days_reconciled"] + counts["trading_days_mismatched"] != counts["history_dates_with_raw_fragments"]:
         errors.append(f"{ticker}: reconciled and mismatched trading-day counts do not cover raw/history matched dates")
+    if (counts["documented_corporate_action_mismatch_dates"]
+            + counts["unexplained_mismatch_dates"] != counts["trading_days_mismatched"]):
+        errors.append(f"{ticker}: documented and unexplained mismatch counts do not sum to mismatched trading days")
 
     expected_missing = counts["positive_trade_history_dates"] - counts["history_dates_with_raw_fragments"]
     if expected_missing < 0 or counts["history_trade_dates_without_raw_fragments"] != expected_missing:
@@ -382,23 +389,84 @@ def _audit_raw_session_provenance(
 
     expected_complete = (
         counts["raw_candles"] > 0
-        and counts["trading_days_mismatched"] == 0
+        and counts["unexplained_mismatch_dates"] == 0
         and counts["unassigned_raw_candles"] == 0
         and expected_missing == 0
     )
     if audit.get("complete") is not expected_complete:
         errors.append(f"{ticker}: raw session reconciliation complete flag is inconsistent")
     expected_reconciliation_status = (
+        "RECONCILED_WITH_DOCUMENTED_CORPORATE_ACTIONS"
+        if expected_complete and counts["documented_corporate_action_mismatch_dates"] else
         "RECONCILED" if expected_complete else
         "NO_RAW_CANDLES" if counts["raw_candles"] == 0 else
         "RECONCILIATION_WITH_CAVEATS"
     )
+    scope_diagnostics = audit.get("session_scope_comparison_diagnostics", [])
+    if not isinstance(scope_diagnostics, list):
+        errors.append(f"{ticker}: session_scope_comparison_diagnostics must be a list")
+    else:
+        seen_scope_dates = set()
+        allowed_scopes = {"MORNING_PLUS_MAIN", "TOTAL_SESSION", "TOTAL_SESSION_FALLBACK"}
+        for item in scope_diagnostics:
+            if not isinstance(item, dict):
+                errors.append(f"{ticker}: session-scope diagnostic entry must be an object")
+                continue
+            day = item.get("trade_date")
+            if not isinstance(day, str) or day in seen_scope_dates:
+                errors.append(f"{ticker}: session-scope diagnostic dates must be unique ISO strings")
+            else:
+                seen_scope_dates.add(day)
+            if item.get("selected_scope") not in allowed_scopes:
+                errors.append(f"{ticker}: session-scope diagnostic has an invalid selected_scope")
+            if not isinstance(item.get("selection_reason"), str) or not item.get("selection_reason"):
+                errors.append(f"{ticker}: session-scope diagnostic is missing selection_reason")
+            for field in (
+                "raw_aggregated_ohlcv", "total_session_ohlcv",
+                "morning_plus_main_ohlcv", "selected_ohlcv",
+            ):
+                values = item.get(field)
+                if values is not None and (
+                    not isinstance(values, dict)
+                    or any(
+                        key in values and values[key] is not None
+                        and (not isinstance(values[key], (int, float))
+                             or isinstance(values[key], bool)
+                             or not math.isfinite(values[key]))
+                        for key in ("open", "high", "low", "close", "volume")
+                    )
+                ):
+                    errors.append(f"{ticker}: session-scope diagnostic {field} is malformed")
+            for field in (
+                "raw_ohlc_matches_total_session",
+                "raw_ohlc_matches_morning_plus_main",
+            ):
+                if not isinstance(item.get(field), bool):
+                    errors.append(f"{ticker}: session-scope diagnostic {field} must be boolean")
+            for field in ("raw_volume_matches_total_session", "raw_volume_matches_morning_plus_main"):
+                audit_volume = item.get(field)
+                if audit_volume is not None:
+                    if not isinstance(audit_volume, dict) or not isinstance(audit_volume.get("matches"), bool):
+                        errors.append(f"{ticker}: session-scope diagnostic {field} is malformed")
+                    else:
+                        for number_field in (
+                            "history_volume", "raw_volume",
+                            "difference_history_minus_raw", "history_to_raw_ratio",
+                        ):
+                            number = audit_volume.get(number_field)
+                            if number is not None and (
+                                not isinstance(number, (int, float))
+                                or isinstance(number, bool) or not math.isfinite(number)
+                            ):
+                                errors.append(f"{ticker}: session-scope diagnostic {field}.{number_field} is invalid")
+
     if audit.get("status") != expected_reconciliation_status:
         errors.append(f"{ticker}: raw session reconciliation status is inconsistent")
-    if counts["trading_days_mismatched"] or counts["unassigned_raw_candles"] or expected_missing:
+    if counts["unexplained_mismatch_dates"] or counts["unassigned_raw_candles"] or expected_missing:
         warnings.append(
             f"{ticker}: raw calendar candles do not fully reconcile to TQBR history "
-            f"(missing dates={max(expected_missing, 0)}, mismatched days={counts['trading_days_mismatched']}, "
+            f"(missing dates={max(expected_missing, 0)}, unexplained mismatched days={counts['unexplained_mismatch_dates']}, "
+            f"documented corporate-action basis dates={counts['documented_corporate_action_mismatch_dates']}, "
             f"unassigned candles={counts['unassigned_raw_candles']})"
         )
     return 1
