@@ -214,14 +214,9 @@ def simulate_segment(ticker, bars, signals, breadth, rule, start, end, period):
 
 
 def metric_summary(trades):
-    if not trades:
-        return {"trades": 0, "long_trades": 0, "short_trades": 0,
-                "mean_net_return_pct": None, "median_net_return_pct": None,
-                "win_rate_pct": None, "profit_factor": None, "max_drawdown_pct": None}
     result = {}
     for cost in COSTS:
-        s = stats(trades, cost)
-        result[str(cost)] = s
+        result[str(cost)] = stats(trades, cost)
     return {
         "trades": len(trades),
         "long_trades": sum(t["direction"] == "LONG" for t in trades),
