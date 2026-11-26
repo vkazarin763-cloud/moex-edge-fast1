@@ -1,0 +1,2944 @@
+{
+  "schema_version": 2,
+  "collector": "telegram_public_preview_smartlab",
+  "collected_at_utc": "2026-11-26T18:04:07.445828+00:00",
+  "source": {
+    "channel": "@newssmartlab",
+    "url": "https://t.me/s/newssmartlab",
+    "access_method": "public_web_preview_no_auth"
+  },
+  "pagination": {
+    "pages_fetched": 5,
+    "max_pages": 5,
+    "page_urls": [
+      "https://t.me/s/newssmartlab",
+      "https://t.me/s/newssmartlab?before=137965",
+      "https://t.me/s/newssmartlab?before=137944",
+      "https://t.me/s/newssmartlab?before=137923",
+      "https://t.me/s/newssmartlab?before=137901"
+    ],
+    "unique_posts_seen": 100
+  },
+  "universe_size": 44,
+  "preview_posts_seen": 100,
+  "ticker_matched_posts": 28,
+  "reporting_related_posts": 6,
+  "linked_articles_checked": 20,
+  "articles_with_candidate_document_links": 3,
+  "posts": [
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T15:09:41+00:00",
+      "post_url": "https://t.me/newssmartlab/137968",
+      "tickers": [
+        "SBER",
+        "VTBR"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Широкая денежная масса М2Х на 1 ноября составила ₽151,4 трлн (+₽0,7 трлн м/м, +0,5% м/м, +10,0% г/г). Рост в октябре замедлился. Основной вклад внесли депозиты организаций — Обзор ЦБ РФ #SBER #VTBR - Денежная масса М2: ₽138,4 трлн (+₽0,8 трлн м/м, +0,6% м/м, +12,2% г/г). - Кредит экономике: ₽170,8 трлн (+₽2,8 трлн м/м, +1,7% м/м, +9,7% г/г). Остаётся основным источником расширения денежного предложения; вклад бюджетных операций в октябре снизился - Депозиты организаций выросли на 0,8% м/м (после снижения на 0,7% месяцем ранее), в основном за счёт срочных депозитов (+3,3%) - Рублевые средства населения увеличились на 0,3% м/м; доля срочных депозитов остаётся высокой - 68,0% Читать далее 👉 https://smartlab.news/i/212589 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212589",
+          "text": "https://smartlab.news/i/212589"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212589",
+          "fetch_status": "ok",
+          "title": "Широкая денежная масса М2Х на 1 ноября составила ₽151,4 трлн (+₽0,7 трлн м/м, +0,5% м/м, +10,0% г/г). Рост в октябре замедлился. Основной вклад внесли депозиты организаций — Обзор ЦБ РФ Широкая денежная масса М2Х на 1 ноября составила ₽151,4... | smartlab.news",
+          "description": "Главное из материала «Денежные агрегаты и кредит экономике» от Банка России:\r\n\r\n\nШирокая денежная масса М2Х на 1 ноября 2026 г. составила ₽151,4 трлн (+₽0,...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fpress%2Fevent%2F%3Fid%3D33016&s=911136271",
+              "resolved_url": "https://cbr.ru/press/event/?id=33016",
+              "anchor_text": "Анонс на сайте ЦБ",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64552%2Fcredit_m2x_2026-11.pdf&s=381191566",
+              "resolved_url": "https://cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+              "anchor_text": "cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+              "anchor_text": "📈 график акций ВТБ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380105.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380105.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64552%2Fcredit_m2x_2026-11.pdf&s=381191566",
+              "resolved_url": "https://cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+              "anchor_text": "cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T15:23:12+00:00",
+      "post_url": "https://t.me/newssmartlab/137972",
+      "tickers": [
+        "SBER",
+        "YDEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Путин предложил обновить Нацстратегию развития ИИ до 2036 года #YDEX #SBER Читать далее 👉 https://smartlab.news/i/212594 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212594",
+          "text": "https://smartlab.news/i/212594"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212594",
+          "fetch_status": "ok",
+          "title": "Путин предложил обновить Нацстратегию развития ИИ до 2036 года Путин предложил обновить Нацстратегию развития ИИ до 20... | smartlab.news",
+          "description": "Путин предложил обновить Нацстратегию развития ИИ до 2036 года.\r\n\r\nВнедрение ИИ в России должно быть все более массовым, охватывать все сферы.\r\n\r\ntass.ru/ekonom...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359119&s=2751496778",
+              "resolved_url": "https://tass.ru/ekonomika/28359119",
+              "anchor_text": "tass.ru/ekonomika/28359119",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "anchor_text": "📈 график акций Яндекс",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380115.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380115.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T15:29:59+00:00",
+      "post_url": "https://t.me/newssmartlab/137973",
+      "tickers": [
+        "SBER"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Сбер за 200 лет прошел путь от сберкассы до нейросети — Путин #SBER Читать далее 👉 https://smartlab.news/i/212595 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212595",
+          "text": "https://smartlab.news/i/212595"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212595",
+          "fetch_status": "ok",
+          "title": "Сбер за 200 лет прошел путь от сберкассы до нейросети — Путин Сбер за 200 лет прошел путь от сберкассы до нейросети —... | smartlab.news",
+          "description": "Сбербанк за два столетия своего существования смог пройти путь от сберегательной кассы для населения до IT-гиганта, развивающего ИИ. Это отметил президент Росси...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359177&s=3990130313",
+              "resolved_url": "https://tass.ru/ekonomika/28359177",
+              "anchor_text": "tass.ru/ekonomika/28359177",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380120.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380120.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T15:32:53+00:00",
+      "post_url": "https://t.me/newssmartlab/137975",
+      "tickers": [
+        "YDEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Путин предложил разработать систему государственно-частного партнерства для быстрого возведения ЦОД #YDEX Читать далее 👉 https://smartlab.news/i/212597 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212597",
+          "text": "https://smartlab.news/i/212597"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212597",
+          "fetch_status": "ok",
+          "title": "Путин предложил разработать систему государственно-частного партнерства для быстрого возведения ЦОД Путин предложил разработать систему государственно-част... | smartlab.news",
+          "description": "Путин предложил разработать систему государственно-частного партнерства для быстрого возведения ЦОД.\r\n\r\ntass.ru/ekonomika/28359191",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359191&s=4161742809",
+              "resolved_url": "https://tass.ru/ekonomika/28359191",
+              "anchor_text": "tass.ru/ekonomika/28359191",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "anchor_text": "📈 график акций Яндекс",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380122.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380122.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T16:56:10+00:00",
+      "post_url": "https://t.me/newssmartlab/137982",
+      "tickers": [
+        "AFKS"
+      ],
+      "topic_tags": [
+        "debt",
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "Выручка АФК Система за 9М 2026 г. выросла на 5,9% г/г — до 1,01 трлн руб., скорректированная OIBDA — на 12,7% до 311,6 млрд руб Выручка за 3 кв. 2026 г. выросла на 5,1% г/г — до 373,3 млрд руб. Чистый долг корпоративного центра за III квартал снизился на 26,1% кв/кв, до 244,3 млрд руб. #AFKS Читать далее 👉 https://smartlab.news/i/212605 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212605",
+          "text": "https://smartlab.news/i/212605"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212605",
+          "fetch_status": "ok",
+          "title": "Выручка АФК Система за 9М 2026 г. выросла на 5,9% г/г — до 1,01 трлн руб., скорректированная OIBDA — на 12,7% до 311,6 млрд руб Выручка АФК Система за 9М 2026 г. выросла на 5,9% г/г —... | smartlab.news",
+          "description": "◾ ПАО АФК «Система» публичная российская инвестиционная компания, объявляет неаудированные консолидированные финансовые результаты, подготовленные в соответс...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/26/60ebb9.jpg",
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/26/60ebb9.jpg",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2Fdca%2Flutght1qbbvaptamarw6c16yxn0oqcoa%2FBriefing-Book-3Q2026_RUS.pdf&s=1058040400",
+              "resolved_url": "https://www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+              "anchor_text": "www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2F0f8%2Ff8hligk1b1wuuqxtfiixkzl49cnde8ci%2FPresentation-3Q-2026-RUS.pdf&s=52423337",
+              "resolved_url": "https://www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+              "anchor_text": "www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.AFKS",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.AFKS",
+              "anchor_text": "📈 график акций АФК Система",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380154.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380154.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2Fdca%2Flutght1qbbvaptamarw6c16yxn0oqcoa%2FBriefing-Book-3Q2026_RUS.pdf&s=1058040400",
+              "resolved_url": "https://www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+              "anchor_text": "www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2F0f8%2Ff8hligk1b1wuuqxtfiixkzl49cnde8ci%2FPresentation-3Q-2026-RUS.pdf&s=52423337",
+              "resolved_url": "https://www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+              "anchor_text": "www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T17:55:14+00:00",
+      "post_url": "https://t.me/newssmartlab/137985",
+      "tickers": [
+        "SBER"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Греф: - Риск пузыря на рынке ИИ существует — скорость внедрения технологии отстает от затрат на ее разработку. - Мировые инвестиции в ИИ беспрецедентны, таких объемов не было никогда в истории. - Пузырь на мировом рынке ИИ не несет рисков финансового кризиса. #SBER Читать далее 👉 https://smartlab.news/i/212610 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212610",
+          "text": "https://smartlab.news/i/212610"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212610",
+          "fetch_status": "ok",
+          "title": "Греф: риск пузыря на рынке ИИ существует — скорость внедрения технологии отстает от затрат на ее разработку Греф: риск пузыря на рынке ИИ существует — скорость вне... | smartlab.news",
+          "description": "Греф:\r\n\r\n\nРиск пузыря на рынке ИИ существует — скорость внедрения технологии отстает от затрат на ее разработку.\nМировые инвестиции в ИИ беспрецедентны, таких...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359729&s=3775440178",
+              "resolved_url": "https://tass.ru/ekonomika/28359729",
+              "anchor_text": "tass.ru/ekonomika/28359729",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Frenk",
+              "resolved_url": "https://smart-lab.ru/profile/Frenk",
+              "anchor_text": "Илья",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380171.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380171.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T12:55:25+00:00",
+      "post_url": "https://t.me/newssmartlab/137946",
+      "tickers": [
+        "VKCO"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Россети планируют потратить 1,6 млрд руб на закупку лицензий на программное обеспечение VK Private Cloud и VK Object Storage — CNews #VKCO #FEES Читать далее 👉 https://smartlab.news/i/212562 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212562",
+          "text": "https://smartlab.news/i/212562"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212562",
+          "fetch_status": "ok",
+          "title": "Россети планируют потратить 1,6 млрд руб на закупку лицензий на программное обеспечение VK Private Cloud и VK Object Storage — CNews Россети планируют потратить 1,6 млрд руб на закупку лиц... | smartlab.news",
+          "description": "Как выяснил CNews, «Россети» планируют потратить 1,6 млрд руб. на закупку лицензий на программное обеспечение VK Private Cloud и VK Object Storage для размещени...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fbiz.cnews.ru%2Fnews%2Ftop%2F2026-11-19_odna_iz_krupnejshih_v_mire&s=4035873746",
+              "resolved_url": "https://biz.cnews.ru/news/top/2026-11-19_odna_iz_krupnejshih_v_mire",
+              "anchor_text": "biz.cnews.ru/news/top/2026-11-19_odna_iz_krupnejshih_v_mire",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.VKCO",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.VKCO",
+              "anchor_text": "📈 график акций ВК | VK",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.FEES",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.FEES",
+              "anchor_text": "📈 график акций Россети (ФСК)",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380029.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380029.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T14:17:53+00:00",
+      "post_url": "https://t.me/newssmartlab/137960",
+      "tickers": [
+        "DOMRF"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "ДОМ.PФ и Альфа-Банк заместили выпуск ипотечных ценных бумаг (ИЦБ) объемом ₽40,8 млрд с плавающим купоном и ставкой КС + 1% — Компания #DOMRF - В их покрытие вошли более 6,6 тыс. льготных ипотечных кредитов на покупку 320,6 тыс. кв. м жилья - До 2030 года ДОМ.PФ планирует секьюритизировать 10% совокупного ипотечного портфеля в России Читать далее 👉 https://smartlab.news/i/212577 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212577",
+          "text": "https://smartlab.news/i/212577"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212577",
+          "fetch_status": "ok",
+          "title": "ДОМ.РФ и Альфа-Банк заместили выпуск ипотечных ценных бумаг (ИЦБ) объемом ₽40,8 млрд с плавающим купоном и ставкой КС + 1% — Компания ДОМ.РФ и Альфа-Банк заместили выпуск ипотечных ценных б... | smartlab.news",
+          "description": "ДОМ.РФ и Альфа-Банк разместили выпуск ипотечных ценных бумаг (ИЦБ) объёмом 40,8 млрд рублей. В покрытие облигаций включено более 6,6 тыс. кредитов, выданных по...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fxn--d1aqf.xn--p1ai%2Fmedia%2Fnews%2Fdom-rf-sekyuritiziroval-ipotechnye-kredity-alfa-banka-na-40-8-mlrd-rubley%2F&s=3462503174",
+              "resolved_url": "https://xn--d1aqf.xn--p1ai/media/news/dom-rf-sekyuritiziroval-ipotechnye-kredity-alfa-banka-na-40-8-mlrd-rubley/",
+              "anchor_text": "xn--d1aqf.xn--p1ai/media/news/dom-rf-sekyuritiziroval-ipotechnye-kredity-alfa-banka-na-40-8-mlrd-rubley/",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+              "anchor_text": "📈 график акций ДОМ.РФ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.alfa-bank",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.alfa-bank",
+              "anchor_text": "📈 график акций Альфа-Банк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380077.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380077.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T10:57:10+00:00",
+      "post_url": "https://t.me/newssmartlab/137925",
+      "tickers": [
+        "NVTK"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Экспорт СПГ из Катара достиг самого высокого уровня с начала американо-иранской войны, несмотря на напряженность в Ормузском проливе — Bloomberg #NVTK Читать далее 👉 https://smartlab.news/i/212537 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212537",
+          "text": "https://smartlab.news/i/212537"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212537",
+          "fetch_status": "ok",
+          "title": "Экспорт СПГ из Катара достиг самого высокого уровня с начала американо-иранской войны, несмотря на напряженность в Ормузском проливе — Bloomberg Экспорт СПГ из Катара достиг самого высокого уровня с н... | smartlab.news",
+          "description": "Экспорт сжиженного природного газа из Катара достиг самого высокого уровня с начала американо-иранской войны, несмотря на перебои в Ормузском проливе, и увелич...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/878438.png",
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/878438.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.bloomberg.com%2Fnews%2Farticles%2F2026-11-26%2Fqatar-has-boosted-lng-exports-to-their-highest-since-february&s=2724294625",
+              "resolved_url": "https://www.bloomberg.com/news/articles/2026-11-26/qatar-has-boosted-lng-exports-to-their-highest-since-february",
+              "anchor_text": "www.bloomberg.com/news/articles/2026-11-26/qatar-has-boosted-lng-exports-to-their-highest-since-february",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.NVTK",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.NVTK",
+              "anchor_text": "📈 график акций НОВАТЭК",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379962.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379962.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T11:22:37+00:00",
+      "post_url": "https://t.me/newssmartlab/137931",
+      "tickers": [
+        "POSI"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Темпы роста отечественной IT-отрасли замедляются, хотя за 1п 2026г рост на 30% — глава Минцифр Максут Шадаев #ASTR #POSI \"Мы слышим сигналы рынка, что \"айтишные\" бюджеты сокращаются, но пока статистика этого не чувствует и живёт ещё немножко старыми цифрами\", - сказал Шадаев. Читать далее 👉 https://smartlab.news/i/212543 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212543",
+          "text": "https://smartlab.news/i/212543"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212543",
+          "fetch_status": "ok",
+          "title": "Темпы роста отечественной IT-отрасли замедляются, хотя за 1п 2026г рост на 30% — глава Минцифр Максут Шадаев Темпы роста отечественной IT-отрасли замедляются, хотя... | smartlab.news",
+          "description": "Темпы роста отечественной IT-отрасли замедляются, хотя за 1п 2026г рост на 30% г/г, сообщил глава Минцифр Максут Шадаев.\n«Мы слышим сигналы рынка, что „айтишны...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F&s=512513708",
+              "resolved_url": "https://www.interfax.ru/business/",
+              "anchor_text": "www.interfax.ru/business/",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.ASTR",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.ASTR",
+              "anchor_text": "📈 график акций Группа Астра",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.POSI",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.POSI",
+              "anchor_text": "📈 график акций Группа Позитив",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.IVAT",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.IVAT",
+              "anchor_text": "📈 график акций IVA Technologies",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379979.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379979.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T11:26:56+00:00",
+      "post_url": "https://t.me/newssmartlab/137932",
+      "tickers": [
+        "SBER",
+        "YDEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Российские пользователи и компании всё чаще будут выбирать отечественные ИИ-решения, а правительство создаст стимулы для внедрения ИИ-агентов в разные сферы — Глава \"Минцифры\" Максут Шадаев #SBER #YDEX \"Нам очень важно, чтобы ИИ стал не только уделом крупных корпораций, но и пошел в массы\" Читать далее 👉 https://smartlab.news/i/212544 мы в maxР",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212544",
+          "text": "https://smartlab.news/i/212544"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212544",
+          "fetch_status": "ok",
+          "title": "Российские пользователи и компании всё чаще будут выбирать отечественные ИИ-решения, а правительство создаст стимулы для внедрения ИИ-агентов в разные сферы — Глава \"Минцифры\" Максут Шадаев Российские пользователи и компании всё чаще будут выбир... | smartlab.news",
+          "description": "«С ИИ все будет хорошо. Он будет активно внедряться. Причем я думаю, что все чаще наши компании, наши пользователи, будут выбирать российские решения. ИИ будет...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28357067&s=1077849615",
+              "resolved_url": "https://tass.ru/ekonomika/28357067",
+              "anchor_text": "tass.ru/ekonomika/28357067",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "anchor_text": "📈 график акций Яндекс",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379982.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379982.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T11:31:37+00:00",
+      "post_url": "https://t.me/newssmartlab/137933",
+      "tickers": [
+        "BSPB",
+        "CBOM",
+        "SVCB",
+        "T"
+      ],
+      "topic_tags": [
+        "financial_report"
+      ],
+      "reporting_related": true,
+      "text": "Прибыль банков по РСБУ за 10 месяцев 2026 года: 📉 МКБ — ₽21,41 млрд (-26% г/г) 📉 Банк Санкт-Петербург — ₽25,6 млрд (-29% г/г) 📈 МТС-Банк — ₽12,96 млрд (+3% г/г) 📈 Росдорбанк — ₽331,9 млн (рост в 3,1 раза г/г) 📈 Совкомбанк — ₽100 млрд (рост в 5,3 раза г/г) 📈 Т-банк — ₽160,54 млрд (рост в 2,4 раза г/г) 📈 ВТБ — ₽413,82 млрд (рост в 1,55 раза г/г) #T #SVCB #BSPB #CBOM Читать далее 👉 https://smartlab.news/i/212546 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212546",
+          "text": "https://smartlab.news/i/212546"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212546",
+          "fetch_status": "ok",
+          "title": "Чистая прибыль Совкомбанка по РСБУ за 10 мес 2026 г выросла в 5,3 раза г/г до ₽100 млрд, прибыль Т-Банка увеличилась в 2,4 раза г/г до ₽160,54 млрд Чистая прибыль Совкомбанка по РСБУ за 10 мес 2026 г выр... | smartlab.news",
+          "description": "Прибыль банков по РСБУ за 10 месяцев 2026 года:\n📉МКБ — ₽21,409 млрд (-26% г/г)\r\n📉Банк Санкт-Петербург — ₽25,604 млрд (-29% г/г)\r\n📈МТС-Банк — ₽12,957 млрд (+...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D1978%26dt%3D2026-11-01&s=2978102004",
+              "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=1978&dt=2026-11-01",
+              "anchor_text": "МКБ",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D436%26dt%3D2026-11-01&s=141046495",
+              "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=436&dt=2026-11-01",
+              "anchor_text": "Банк Санкт-Петербург",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D2268%26dt%3D2026-11-01&s=1970775318",
+              "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=2268&dt=2026-11-01",
+              "anchor_text": "МТС-Банк",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D1573%26dt%3D2026-11-01&s=495248940",
+              "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=1573&dt=2026-11-01",
+              "anchor_text": "Росдорбанк",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D963%26dt%3D2026-11-01&s=3236008723",
+              "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=963&dt=2026-11-01",
+              "anchor_text": "Совкомбанк",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D2673%26dt%3D2026-11-01&s=3125971559",
+              "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=2673&dt=2026-11-01",
+              "anchor_text": "Т-банк",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D1000%26dt%3D2026-11-01&s=979649595",
+              "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=1000&dt=2026-11-01",
+              "anchor_text": "📈ВТБ",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2F&s=3661815409",
+              "resolved_url": "https://cbr.ru/",
+              "anchor_text": "cbr.ru/",
+              "source_domain_classification": "known_regulator_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/e34fe5.png",
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/e34fe5.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/c29b22.png",
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/c29b22.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fkuzmlab&s=1367276488",
+              "resolved_url": "https://t.me/kuzmlab",
+              "anchor_text": "Источник графиков",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.T",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.T",
+              "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SVCB",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SVCB",
+              "anchor_text": "📈 график акций Совкомбанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.BSPB",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.BSPB",
+              "anchor_text": "📈 график акций Банк Санкт-Петербург",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.CBOM",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.CBOM",
+              "anchor_text": "📈 график акций МКБ",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379985.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379985.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T11:39:02+00:00",
+      "post_url": "https://t.me/newssmartlab/137934",
+      "tickers": [
+        "CHMF",
+        "NLMK"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Выплавка стали в РФ в 2026 году снизится на 4,4%, до 65 млн тонн, из-за сдержанного спроса в строительстве, энергетике и машиностроении — Глава Минпромторга РФ Антон Алиханов #CHMF #NLMK Читать далее 👉 https://smartlab.news/i/212547 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212547",
+          "text": "https://smartlab.news/i/212547"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212547",
+          "fetch_status": "ok",
+          "title": "Выплавка стали в РФ в 2026 году снизится на 4,4%, до 65 млн тонн, из-за сдержанного спроса в строительстве, энергетике и машиностроении — Глава Минпромторга РФ Антон Алиханов Выплавка стали в РФ в 2026 году снизится на 4,4%, до 65... | smartlab.news",
+          "description": "«По нашим оценкам, объем выплавки стали в России по итогам 2026 года составит порядка 65 млн тонн. На внутреннем рынке сохраняется непростая ситуация, связанна...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28357901&s=2712677234",
+              "resolved_url": "https://tass.ru/ekonomika/28357901",
+              "anchor_text": "tass.ru/ekonomika/28357901",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.CHMF",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.CHMF",
+              "anchor_text": "📈 график акций Северсталь",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.NLMK",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.NLMK",
+              "anchor_text": "📈 график акций НЛМК",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379987.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379987.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T11:49:56+00:00",
+      "post_url": "https://t.me/newssmartlab/137936",
+      "tickers": [
+        "RTKM"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Сергей Боярский предложил активнее внедрять российскую мобильную операционную систему (ОС) \"Аврора\" в государственный и корпоративный секторы для обеспечения национальной безопасности #RTKM Читать далее 👉 https://smartlab.news/i/212549 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212549",
+          "text": "https://smartlab.news/i/212549"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212549",
+          "fetch_status": "ok",
+          "title": "Сергей Боярский предложил активнее внедрять российскую мобильную операционную систему (ОС) \"Аврора\" в государственный и корпоративный секторы для обеспечения национальной безопасности Сергей Боярский предложил активнее внедрять российскую... | smartlab.news",
+          "description": "Депутат Госдумы Сергей Боярский предложил активнее внедрять российскую мобильную операционную систему (ОС) «Аврора» в государственный и корпоративный секторы дл...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Frussia%2F1131541&s=3132861555",
+              "resolved_url": "https://www.interfax.ru/russia/1131541",
+              "anchor_text": "www.interfax.ru/russia/1131541",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.RTKM",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.RTKM",
+              "anchor_text": "📈 график акций Ростелеком",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379993.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379993.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T12:16:49+00:00",
+      "post_url": "https://t.me/newssmartlab/137938",
+      "tickers": [
+        "YDEX"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Яндекс занял 62-е место в международном рейтинге Corporate Startup Activity Index 2026, обогнав Apple и Huawei #YDEX Читать далее 👉 https://smartlab.news/i/212552 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212552",
+          "text": "https://smartlab.news/i/212552"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212552",
+          "fetch_status": "ok",
+          "title": "Яндекс занял 62-е место в международном рейтинге Corporate Startup Activity Index 2026, обогнав Apple и Huawei Яндекс занял 62-е место в международном рейтинге Corpor... | smartlab.news",
+          "description": "Яндекс занял 62-е место в международном рейтинге Corporate Startup Activity Index 2026, обогнав Apple и Huawei.\r\n\n«В «Яндексе» мы поддерживаем стартапы с помощ...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/a831a6.png",
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/a831a6.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.startupblink.com%2Fcorporate-report-2026.pdf&s=2225511957",
+              "resolved_url": "https://www.startupblink.com/corporate-report-2026.pdf",
+              "anchor_text": "www.startupblink.com/corporate-report-2026.pdf",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fiz.ru%2F2208312%2F2026-11-26%2Fiandeks-operedil-apple-i-huawei-v-reitinge-mirovykh-liderov-po-podderzhke-tekhnologicheskikh%3Fysclid%3Dmwx7s23kvz224460987&s=2296376926",
+              "resolved_url": "https://iz.ru/2208312/2026-11-26/iandeks-operedil-apple-i-huawei-v-reitinge-mirovykh-liderov-po-podderzhke-tekhnologicheskikh?ysclid=mwx7s23kvz224460987",
+              "anchor_text": "iz.ru/2208312/2026-11-26/iandeks-operedil-apple-i-huawei-v-reitinge-mirovykh-liderov-po-podderzhke-tekhnologicheskikh?ysclid=mwx7s23kvz224460987",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+              "anchor_text": "📈 график акций Яндекс",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380010.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380010.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.startupblink.com%2Fcorporate-report-2026.pdf&s=2225511957",
+              "resolved_url": "https://www.startupblink.com/corporate-report-2026.pdf",
+              "anchor_text": "www.startupblink.com/corporate-report-2026.pdf",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T12:23:20+00:00",
+      "post_url": "https://t.me/newssmartlab/137939",
+      "tickers": [
+        "AFLT"
+      ],
+      "topic_tags": [
+        "guidance",
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "МНЕНИЕ: СберИнвестиции прогнозируют рост выручки Аэрофлота на 10,5% и чистой прибыли на 1,2% г/г в 3кв26 и сохраняют рекомендацию покупать с целевой ценой 45 рублей (апсайд — 31%) #AFLT Читать далее 👉 https://smartlab.news/i/212554 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212554",
+          "text": "https://smartlab.news/i/212554"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212554",
+          "fetch_status": "ok",
+          "title": "МНЕНИЕ: СберИнвестиции прогнозируют рост выручки Аэрофлота на 10,5% и чистой прибыли на 1,2% г/г в 3кв26 и сохраняют рекомендацию покупать с целевой ценой 45 рублей (апсайд — 31%) МНЕНИЕ: СберИнвестиции прогнозируют рост выручки Аэрофл... | smartlab.news",
+          "description": "30 ноября компания опубликует результаты за третий квартал.\nАналитики СберИнвестиций прогнозируют рост выручки Аэрофлота за третий квартал на 10,5% год к году...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2FSberInvestmentsPRO%2FAaIW3myCaQU&s=2240569783",
+              "resolved_url": "https://max.ru/SberInvestmentsPRO/AaIW3myCaQU",
+              "anchor_text": "Источник",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/editor2",
+              "resolved_url": "https://smart-lab.ru/profile/editor2",
+              "anchor_text": "Редактор Боб",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.AFLT",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.AFLT",
+              "anchor_text": "📈 график акций Аэрофлот",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380014.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380014.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T12:42:07+00:00",
+      "post_url": "https://t.me/newssmartlab/137943",
+      "tickers": [
+        "GAZP"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "📉 Акции Газпрома не дают разбогатеть российским инвесторам (-2,5% и 100,5 руб) и тянут за собой весь рынок - индекс Мосбиржи 2325 п. и минус 1,3% на 15:40 мск #GAZP Читать далее 👉 https://smartlab.news/i/212559 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212559",
+          "text": "https://smartlab.news/i/212559"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212559",
+          "fetch_status": "ok",
+          "title": "📉Акции Газпрома не дают разбогатеть российским инвесторам (-2,5% и 100,5 руб) и тянут за собой весь рынок - индекс Мосбиржи 2325 п. и минус 1,3% на 15:40 мск 📉Акции Газпрома не дают разбогатеть российским инвесто... | smartlab.news",
+          "description": "📉Акции Газпрома не дают разбогатеть российским инвесторам (-2,5% и 100,5 руб) и тянут за собой весь рынок — индекс Мосбиржи 2325 п. и минус 1,3% на 15:40 мск...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/56b05a.png",
+              "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/56b05a.png",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "anchor_text": "📈 график акций Газпром",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1380021.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1380021.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T09:21:49+00:00",
+      "post_url": "https://t.me/newssmartlab/137903",
+      "tickers": [
+        "SBER"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Сейчас большую часть кода пишет ИИ, в разы быстрее и качественнее, чем люди — старший вице-президент Сбербанка Антон Фролов #SBER - Ежемесячная аудитория ИИ-сервисов Сбера — 25 млн чел, ежедневная — около 2 млн - Технология развивается намного быстрее, чем общество успевает к ней адаптироваться - В России бизнес пока осторожен в отношении ИИ-агентов - Для нас сейчас эта история (ИИ) не про заработок — это вопрос национальной стратегии - Пока люди массово не готовы платить за ИИ-помощника. Читать далее 👉 https://smartlab.news/i/212510 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212510",
+          "text": "https://smartlab.news/i/212510"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212510",
+          "fetch_status": "ok",
+          "title": "Сейчас большую часть кода пишет ИИ, в разы быстрее и качественнее, чем люди — старший вице-президент Сбербанка Антон Фролов Сейчас большую часть кода пишет ИИ, в разы быстрее и ка... | smartlab.news",
+          "description": " Старший вице-президент Сбербанка Антон Фролов в интервью Forbes:\r\n\r\n\r\n\nЕжемесячная аудитория ИИ-сервисов Сбера — 25 млн чел, ежедневная — около 2 млн\nТехнолог...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.forbes.ru%2Ftekhnologii%2F573052-starsij-vice-prezident-sberbanka-forbes-ii-stanet-kommunal-noj-uslugoj%3Futm_source%3Dforbes%26utm_campaign%3Dlnews&s=875574508",
+              "resolved_url": "https://www.forbes.ru/tekhnologii/573052-starsij-vice-prezident-sberbanka-forbes-ii-stanet-kommunal-noj-uslugoj?utm_source=forbes&utm_campaign=lnews",
+              "anchor_text": "www.forbes.ru/tekhnologii/573052-starsij-vice-prezident-sberbanka-forbes-ii-stanet-kommunal-noj-uslugoj?utm_source=forbes&utm_campaign=lnews",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+              "anchor_text": "📈 график акций Сбербанк",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379895.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379895.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T09:22:02+00:00",
+      "post_url": "https://t.me/newssmartlab/137904",
+      "tickers": [
+        "OZON"
+      ],
+      "topic_tags": [
+        "guidance",
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "Ozon запустил инвестиционное направление бизнеса в рамках финтех-вертикали — Компания #OZON В приложении Ozon Банка розничные клиенты могут открыть инвестиционный счёт и получить доступ к широкой линейке инструментов - всем акциям фондовой секции Мосбиржи, более тысячи облигаций, десяткам БПИФ и ЗПИФ МНЕНИЕ: По прогнозам старшего аналитика \"Эйлер\" по электронной коммерции Николая Ковалева, финтех-направление Озон займет 20% от общей выручки и 35% от EBITDA компании в 2027г. Развитие сегмента положительно сказывается на рентабельности и становится дополнительным фактором устойчивости Читать далее 👉 https://smartlab.news/i/212511 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212511",
+          "text": "https://smartlab.news/i/212511"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212511",
+          "fetch_status": "ok",
+          "title": "Ozon запустил инвестиционное направление бизнеса в рамках финтех-вертикали: в приложении Ozon Банка розничные клиенты могут открыть инвестиционный счёт и получить доступ к широкой линейке инструментов Ozon запустил инвестиционное направление бизнеса в рамк... | smartlab.news",
+          "description": "Ozon в рамках финтех-вертикали запустил инвестиционное направление бизнеса. В приложении Ozon Банка розничные клиенты могут открыть инвестиционный счет и получ...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcorp.ozon.ru%2Fru%2Fsth%2Fozon-zapustil-investitsionnoe-napravlenie-biznesa-30599896&s=435877459",
+              "resolved_url": "https://corp.ozon.ru/ru/sth/ozon-zapustil-investitsionnoe-napravlenie-biznesa-30599896",
+              "anchor_text": "corp.ozon.ru/ru/sth/ozon-zapustil-investitsionnoe-napravlenie-biznesa-30599896",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Makla_News",
+              "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+              "anchor_text": "Makla_News",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.OZON",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.OZON",
+              "anchor_text": "📈 график акций OZON | ОЗОН",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379896.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379896.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T09:32:59+00:00",
+      "post_url": "https://t.me/newssmartlab/137906",
+      "tickers": [
+        "GAZP",
+        "ROSN"
+      ],
+      "topic_tags": [
+        "guidance"
+      ],
+      "reporting_related": false,
+      "text": "Добыча нефти на Сахалине по итогам 2026 года прогнозируется с ростом на 24% г/г, по газу рост на 10,5% — губернатор региона Валерий Лимаренко #ROSN #GAZP Читать далее 👉 https://smartlab.news/i/212513 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212513",
+          "text": "https://smartlab.news/i/212513"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": [
+        {
+          "url": "https://smartlab.news/i/212513",
+          "fetch_status": "ok",
+          "title": "Добыча нефти на Сахалине по итогам 2026 года прогнозируется с ростом на 24% г/г, по газу рост на 10,5% — губернатор региона Валерий Лимаренко Добыча нефти на Сахалине по итогам 2026 года прогнозиру... | smartlab.news",
+          "description": "Добыча нефти на Сахалине по итогам 2026 года прогнозируется с ростом на 24% г/г, по газу рост на 10,5% до 21 млрд кубов, сообщил губернатор региона Валерий Лима...",
+          "outbound_links": [
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F&s=512513708",
+              "resolved_url": "https://www.interfax.ru/business/",
+              "anchor_text": "www.interfax.ru/business/",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.finmarket.ru%2Fnews%2F6758251&s=2944061379",
+              "resolved_url": "https://www.finmarket.ru/news/6758251",
+              "anchor_text": "www.finmarket.ru/news/6758251",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/profile/Nordstream",
+              "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+              "anchor_text": "Nordstream",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.ROSN",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.ROSN",
+              "anchor_text": "📈 график акций Роснефть",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+              "anchor_text": "📈 график акций Газпром",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://smart-lab.ru/blog/1379902.php#comments",
+              "resolved_url": "https://smart-lab.ru/blog/1379902.php#comments",
+              "anchor_text": "Комментировать на смартлабе",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            },
+            {
+              "url": "https://www.liveinternet.ru/click",
+              "resolved_url": "https://www.liveinternet.ru/click",
+              "anchor_text": "",
+              "source_domain_classification": "unverified_domain",
+              "content_verification_status": "not_fetched"
+            }
+          ],
+          "candidate_primary_document_links": [],
+          "verification_status": "article_not_primary_source"
+        }
+      ]
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T09:49:02+00:00",
+      "post_url": "https://t.me/newssmartlab/137908",
+      "tickers": [
+        "CHMF",
+        "VTBR"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Суд оставил в силе признание незаконным требование Минпромторга к ВТБ о возврате субсидии по экспортным кредитам «Северстали» на ₽40 млрд #VTBR #CHMF Читать далее 👉 https://smartlab.news/i/212516 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212516",
+          "text": "https://smartlab.news/i/212516"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T06:48:29+00:00",
+      "post_url": "https://t.me/newssmartlab/137880",
+      "tickers": [
+        "OZON"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Маркетплейсы опасаются потери клиентов и рекламных доходов из-за развития ИИ-агентов — РБК #OZON Читать далее 👉 https://smartlab.news/i/212481 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212481",
+          "text": "https://smartlab.news/i/212481"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T06:49:48+00:00",
+      "post_url": "https://t.me/newssmartlab/137881",
+      "tickers": [
+        "MOEX"
+      ],
+      "topic_tags": [
+        "financial_report",
+        "revenue_profit"
+      ],
+      "reporting_related": true,
+      "text": "🖨️ Московская биржа МСФО за III кв 2026 года: 📈 Чистая прибыль ₽20,8 млрд (+20,7% г/г) 📈 Чистая прибыль за 9М ₽53,7 млрд (+18,9% г/г) #MOEX Читать далее 👉 https://smartlab.news/i/212482 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212482",
+          "text": "https://smartlab.news/i/212482"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T07:04:40+00:00",
+      "post_url": "https://t.me/newssmartlab/137882",
+      "tickers": [
+        "LKOH"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Алекперов: Сегодня на первом плане - геологоразведка и наращивание запасов нефти, на втором - развитие газохимии #LKOH Читать далее 👉 https://smartlab.news/i/212485 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212485",
+          "text": "https://smartlab.news/i/212485"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T07:07:02+00:00",
+      "post_url": "https://t.me/newssmartlab/137883",
+      "tickers": [
+        "DOMRF"
+      ],
+      "topic_tags": [
+        "dividends"
+      ],
+      "reporting_related": true,
+      "text": "МНЕНИЕ: СберИнвестиции сохраняют рекомендацию покупать акции ДОМ.РФ с таргетом 2750 ₽ (потенциал роста 28%) и ожидают двузначную дивидендную доходность в ближайшие годы #DOMRF Читать далее 👉 https://smartlab.news/i/212486 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212486",
+          "text": "https://smartlab.news/i/212486"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T07:48:16+00:00",
+      "post_url": "https://t.me/newssmartlab/137890",
+      "tickers": [
+        "GMKN"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "📉 Фьючерс на палладий опустился ниже $850 за тройскую унцию впервые с августа 2024 года #GMKN Читать далее 👉 https://smartlab.news/i/212494 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212494",
+          "text": "https://smartlab.news/i/212494"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T08:20:59+00:00",
+      "post_url": "https://t.me/newssmartlab/137896",
+      "tickers": [
+        "SBER",
+        "VTBR"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Признаков кризиса ликвидности в банковском секторе я не вижу — Анатолий Аксаков #VTBR #SBER Читать далее 👉 https://smartlab.news/i/212501 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212501",
+          "text": "https://smartlab.news/i/212501"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    },
+    {
+      "channel": "@newssmartlab",
+      "post_id": null,
+      "published_at": "2026-11-26T08:48:59+00:00",
+      "post_url": "https://t.me/newssmartlab/137899",
+      "tickers": [
+        "MDMG"
+      ],
+      "topic_tags": [],
+      "reporting_related": false,
+      "text": "Россия находится в тройке лидеров, в пятерке мы точно находимся, по внедрению ИИ в медицину — глава Минздрава Мурашко #PRMD #MDMG #GEMC Читать далее 👉 https://smartlab.news/i/212504 мы в max",
+      "linked_articles": [
+        {
+          "url": "https://smartlab.news/i/212504",
+          "text": "https://smartlab.news/i/212504"
+        }
+      ],
+      "verification_status": "unverified_news_lead",
+      "primary_document_url": null,
+      "article_details": []
+    }
+  ],
+  "articles": [
+    {
+      "url": "https://smartlab.news/i/212589",
+      "fetch_status": "ok",
+      "title": "Широкая денежная масса М2Х на 1 ноября составила ₽151,4 трлн (+₽0,7 трлн м/м, +0,5% м/м, +10,0% г/г). Рост в октябре замедлился. Основной вклад внесли депозиты организаций — Обзор ЦБ РФ Широкая денежная масса М2Х на 1 ноября составила ₽151,4... | smartlab.news",
+      "description": "Главное из материала «Денежные агрегаты и кредит экономике» от Банка России:\r\n\r\n\nШирокая денежная масса М2Х на 1 ноября 2026 г. составила ₽151,4 трлн (+₽0,...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fpress%2Fevent%2F%3Fid%3D33016&s=911136271",
+          "resolved_url": "https://cbr.ru/press/event/?id=33016",
+          "anchor_text": "Анонс на сайте ЦБ",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64552%2Fcredit_m2x_2026-11.pdf&s=381191566",
+          "resolved_url": "https://cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+          "anchor_text": "cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.VTBR",
+          "anchor_text": "📈 график акций ВТБ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380105.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380105.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2FCollection%2FCollection%2FFile%2F64552%2Fcredit_m2x_2026-11.pdf&s=381191566",
+          "resolved_url": "https://cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+          "anchor_text": "cbr.ru/Collection/Collection/File/64552/credit_m2x_2026-11.pdf",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212594",
+      "fetch_status": "ok",
+      "title": "Путин предложил обновить Нацстратегию развития ИИ до 2036 года Путин предложил обновить Нацстратегию развития ИИ до 20... | smartlab.news",
+      "description": "Путин предложил обновить Нацстратегию развития ИИ до 2036 года.\r\n\r\nВнедрение ИИ в России должно быть все более массовым, охватывать все сферы.\r\n\r\ntass.ru/ekonom...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359119&s=2751496778",
+          "resolved_url": "https://tass.ru/ekonomika/28359119",
+          "anchor_text": "tass.ru/ekonomika/28359119",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "anchor_text": "📈 график акций Яндекс",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380115.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380115.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212595",
+      "fetch_status": "ok",
+      "title": "Сбер за 200 лет прошел путь от сберкассы до нейросети — Путин Сбер за 200 лет прошел путь от сберкассы до нейросети —... | smartlab.news",
+      "description": "Сбербанк за два столетия своего существования смог пройти путь от сберегательной кассы для населения до IT-гиганта, развивающего ИИ. Это отметил президент Росси...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359177&s=3990130313",
+          "resolved_url": "https://tass.ru/ekonomika/28359177",
+          "anchor_text": "tass.ru/ekonomika/28359177",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380120.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380120.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212597",
+      "fetch_status": "ok",
+      "title": "Путин предложил разработать систему государственно-частного партнерства для быстрого возведения ЦОД Путин предложил разработать систему государственно-част... | smartlab.news",
+      "description": "Путин предложил разработать систему государственно-частного партнерства для быстрого возведения ЦОД.\r\n\r\ntass.ru/ekonomika/28359191",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359191&s=4161742809",
+          "resolved_url": "https://tass.ru/ekonomika/28359191",
+          "anchor_text": "tass.ru/ekonomika/28359191",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "anchor_text": "📈 график акций Яндекс",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380122.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380122.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212605",
+      "fetch_status": "ok",
+      "title": "Выручка АФК Система за 9М 2026 г. выросла на 5,9% г/г — до 1,01 трлн руб., скорректированная OIBDA — на 12,7% до 311,6 млрд руб Выручка АФК Система за 9М 2026 г. выросла на 5,9% г/г —... | smartlab.news",
+      "description": "◾ ПАО АФК «Система» публичная российская инвестиционная компания, объявляет неаудированные консолидированные финансовые результаты, подготовленные в соответс...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/26/60ebb9.jpg",
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/04/85/04/2026/11/26/60ebb9.jpg",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2Fdca%2Flutght1qbbvaptamarw6c16yxn0oqcoa%2FBriefing-Book-3Q2026_RUS.pdf&s=1058040400",
+          "resolved_url": "https://www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+          "anchor_text": "www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2F0f8%2Ff8hligk1b1wuuqxtfiixkzl49cnde8ci%2FPresentation-3Q-2026-RUS.pdf&s=52423337",
+          "resolved_url": "https://www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+          "anchor_text": "www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.AFKS",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.AFKS",
+          "anchor_text": "📈 график акций АФК Система",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380154.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380154.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2Fdca%2Flutght1qbbvaptamarw6c16yxn0oqcoa%2FBriefing-Book-3Q2026_RUS.pdf&s=1058040400",
+          "resolved_url": "https://www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+          "anchor_text": "www.sistema.ru/upload/iblock/dca/lutght1qbbvaptamarw6c16yxn0oqcoa/Briefing-Book-3Q2026_RUS.pdf",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.sistema.ru%2Fupload%2Fiblock%2F0f8%2Ff8hligk1b1wuuqxtfiixkzl49cnde8ci%2FPresentation-3Q-2026-RUS.pdf&s=52423337",
+          "resolved_url": "https://www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+          "anchor_text": "www.sistema.ru/upload/iblock/0f8/f8hligk1b1wuuqxtfiixkzl49cnde8ci/Presentation-3Q-2026-RUS.pdf",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212610",
+      "fetch_status": "ok",
+      "title": "Греф: риск пузыря на рынке ИИ существует — скорость внедрения технологии отстает от затрат на ее разработку Греф: риск пузыря на рынке ИИ существует — скорость вне... | smartlab.news",
+      "description": "Греф:\r\n\r\n\nРиск пузыря на рынке ИИ существует — скорость внедрения технологии отстает от затрат на ее разработку.\nМировые инвестиции в ИИ беспрецедентны, таких...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28359729&s=3775440178",
+          "resolved_url": "https://tass.ru/ekonomika/28359729",
+          "anchor_text": "tass.ru/ekonomika/28359729",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Frenk",
+          "resolved_url": "https://smart-lab.ru/profile/Frenk",
+          "anchor_text": "Илья",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380171.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380171.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212562",
+      "fetch_status": "ok",
+      "title": "Россети планируют потратить 1,6 млрд руб на закупку лицензий на программное обеспечение VK Private Cloud и VK Object Storage — CNews Россети планируют потратить 1,6 млрд руб на закупку лиц... | smartlab.news",
+      "description": "Как выяснил CNews, «Россети» планируют потратить 1,6 млрд руб. на закупку лицензий на программное обеспечение VK Private Cloud и VK Object Storage для размещени...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fbiz.cnews.ru%2Fnews%2Ftop%2F2026-11-19_odna_iz_krupnejshih_v_mire&s=4035873746",
+          "resolved_url": "https://biz.cnews.ru/news/top/2026-11-19_odna_iz_krupnejshih_v_mire",
+          "anchor_text": "biz.cnews.ru/news/top/2026-11-19_odna_iz_krupnejshih_v_mire",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.VKCO",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.VKCO",
+          "anchor_text": "📈 график акций ВК | VK",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.FEES",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.FEES",
+          "anchor_text": "📈 график акций Россети (ФСК)",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380029.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380029.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212577",
+      "fetch_status": "ok",
+      "title": "ДОМ.РФ и Альфа-Банк заместили выпуск ипотечных ценных бумаг (ИЦБ) объемом ₽40,8 млрд с плавающим купоном и ставкой КС + 1% — Компания ДОМ.РФ и Альфа-Банк заместили выпуск ипотечных ценных б... | smartlab.news",
+      "description": "ДОМ.РФ и Альфа-Банк разместили выпуск ипотечных ценных бумаг (ИЦБ) объёмом 40,8 млрд рублей. В покрытие облигаций включено более 6,6 тыс. кредитов, выданных по...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fxn--d1aqf.xn--p1ai%2Fmedia%2Fnews%2Fdom-rf-sekyuritiziroval-ipotechnye-kredity-alfa-banka-na-40-8-mlrd-rubley%2F&s=3462503174",
+          "resolved_url": "https://xn--d1aqf.xn--p1ai/media/news/dom-rf-sekyuritiziroval-ipotechnye-kredity-alfa-banka-na-40-8-mlrd-rubley/",
+          "anchor_text": "xn--d1aqf.xn--p1ai/media/news/dom-rf-sekyuritiziroval-ipotechnye-kredity-alfa-banka-na-40-8-mlrd-rubley/",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.DOMRF",
+          "anchor_text": "📈 график акций ДОМ.РФ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.alfa-bank",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.alfa-bank",
+          "anchor_text": "📈 график акций Альфа-Банк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380077.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380077.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212537",
+      "fetch_status": "ok",
+      "title": "Экспорт СПГ из Катара достиг самого высокого уровня с начала американо-иранской войны, несмотря на напряженность в Ормузском проливе — Bloomberg Экспорт СПГ из Катара достиг самого высокого уровня с н... | smartlab.news",
+      "description": "Экспорт сжиженного природного газа из Катара достиг самого высокого уровня с начала американо-иранской войны, несмотря на перебои в Ормузском проливе, и увелич...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/878438.png",
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/878438.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.bloomberg.com%2Fnews%2Farticles%2F2026-11-26%2Fqatar-has-boosted-lng-exports-to-their-highest-since-february&s=2724294625",
+          "resolved_url": "https://www.bloomberg.com/news/articles/2026-11-26/qatar-has-boosted-lng-exports-to-their-highest-since-february",
+          "anchor_text": "www.bloomberg.com/news/articles/2026-11-26/qatar-has-boosted-lng-exports-to-their-highest-since-february",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.NVTK",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.NVTK",
+          "anchor_text": "📈 график акций НОВАТЭК",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379962.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379962.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212543",
+      "fetch_status": "ok",
+      "title": "Темпы роста отечественной IT-отрасли замедляются, хотя за 1п 2026г рост на 30% — глава Минцифр Максут Шадаев Темпы роста отечественной IT-отрасли замедляются, хотя... | smartlab.news",
+      "description": "Темпы роста отечественной IT-отрасли замедляются, хотя за 1п 2026г рост на 30% г/г, сообщил глава Минцифр Максут Шадаев.\n«Мы слышим сигналы рынка, что „айтишны...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F&s=512513708",
+          "resolved_url": "https://www.interfax.ru/business/",
+          "anchor_text": "www.interfax.ru/business/",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.ASTR",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.ASTR",
+          "anchor_text": "📈 график акций Группа Астра",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.POSI",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.POSI",
+          "anchor_text": "📈 график акций Группа Позитив",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.IVAT",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.IVAT",
+          "anchor_text": "📈 график акций IVA Technologies",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379979.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379979.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212544",
+      "fetch_status": "ok",
+      "title": "Российские пользователи и компании всё чаще будут выбирать отечественные ИИ-решения, а правительство создаст стимулы для внедрения ИИ-агентов в разные сферы — Глава \"Минцифры\" Максут Шадаев Российские пользователи и компании всё чаще будут выбир... | smartlab.news",
+      "description": "«С ИИ все будет хорошо. Он будет активно внедряться. Причем я думаю, что все чаще наши компании, наши пользователи, будут выбирать российские решения. ИИ будет...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28357067&s=1077849615",
+          "resolved_url": "https://tass.ru/ekonomika/28357067",
+          "anchor_text": "tass.ru/ekonomika/28357067",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "anchor_text": "📈 график акций Яндекс",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379982.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379982.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212546",
+      "fetch_status": "ok",
+      "title": "Чистая прибыль Совкомбанка по РСБУ за 10 мес 2026 г выросла в 5,3 раза г/г до ₽100 млрд, прибыль Т-Банка увеличилась в 2,4 раза г/г до ₽160,54 млрд Чистая прибыль Совкомбанка по РСБУ за 10 мес 2026 г выр... | smartlab.news",
+      "description": "Прибыль банков по РСБУ за 10 месяцев 2026 года:\n📉МКБ — ₽21,409 млрд (-26% г/г)\r\n📉Банк Санкт-Петербург — ₽25,604 млрд (-29% г/г)\r\n📈МТС-Банк — ₽12,957 млрд (+...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D1978%26dt%3D2026-11-01&s=2978102004",
+          "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=1978&dt=2026-11-01",
+          "anchor_text": "МКБ",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D436%26dt%3D2026-11-01&s=141046495",
+          "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=436&dt=2026-11-01",
+          "anchor_text": "Банк Санкт-Петербург",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D2268%26dt%3D2026-11-01&s=1970775318",
+          "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=2268&dt=2026-11-01",
+          "anchor_text": "МТС-Банк",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D1573%26dt%3D2026-11-01&s=495248940",
+          "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=1573&dt=2026-11-01",
+          "anchor_text": "Росдорбанк",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D963%26dt%3D2026-11-01&s=3236008723",
+          "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=963&dt=2026-11-01",
+          "anchor_text": "Совкомбанк",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D2673%26dt%3D2026-11-01&s=3125971559",
+          "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=2673&dt=2026-11-01",
+          "anchor_text": "Т-банк",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2Fbanking_sector%2Fcredit%2Fcoinfo%2Ff102%3Fregnum%3D1000%26dt%3D2026-11-01&s=979649595",
+          "resolved_url": "https://cbr.ru/banking_sector/credit/coinfo/f102?regnum=1000&dt=2026-11-01",
+          "anchor_text": "📈ВТБ",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcbr.ru%2F&s=3661815409",
+          "resolved_url": "https://cbr.ru/",
+          "anchor_text": "cbr.ru/",
+          "source_domain_classification": "known_regulator_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/e34fe5.png",
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/e34fe5.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/c29b22.png",
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/c29b22.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ft.me%2Fkuzmlab&s=1367276488",
+          "resolved_url": "https://t.me/kuzmlab",
+          "anchor_text": "Источник графиков",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.T",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.T",
+          "anchor_text": "📈 график акций Т-Технологии | Тинькофф | ТКС",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SVCB",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SVCB",
+          "anchor_text": "📈 график акций Совкомбанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.BSPB",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.BSPB",
+          "anchor_text": "📈 график акций Банк Санкт-Петербург",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.CBOM",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.CBOM",
+          "anchor_text": "📈 график акций МКБ",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379985.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379985.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212547",
+      "fetch_status": "ok",
+      "title": "Выплавка стали в РФ в 2026 году снизится на 4,4%, до 65 млн тонн, из-за сдержанного спроса в строительстве, энергетике и машиностроении — Глава Минпромторга РФ Антон Алиханов Выплавка стали в РФ в 2026 году снизится на 4,4%, до 65... | smartlab.news",
+      "description": "«По нашим оценкам, объем выплавки стали в России по итогам 2026 года составит порядка 65 млн тонн. На внутреннем рынке сохраняется непростая ситуация, связанна...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Ftass.ru%2Fekonomika%2F28357901&s=2712677234",
+          "resolved_url": "https://tass.ru/ekonomika/28357901",
+          "anchor_text": "tass.ru/ekonomika/28357901",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.CHMF",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.CHMF",
+          "anchor_text": "📈 график акций Северсталь",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.NLMK",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.NLMK",
+          "anchor_text": "📈 график акций НЛМК",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379987.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379987.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212549",
+      "fetch_status": "ok",
+      "title": "Сергей Боярский предложил активнее внедрять российскую мобильную операционную систему (ОС) \"Аврора\" в государственный и корпоративный секторы для обеспечения национальной безопасности Сергей Боярский предложил активнее внедрять российскую... | smartlab.news",
+      "description": "Депутат Госдумы Сергей Боярский предложил активнее внедрять российскую мобильную операционную систему (ОС) «Аврора» в государственный и корпоративный секторы дл...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Frussia%2F1131541&s=3132861555",
+          "resolved_url": "https://www.interfax.ru/russia/1131541",
+          "anchor_text": "www.interfax.ru/russia/1131541",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.RTKM",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.RTKM",
+          "anchor_text": "📈 график акций Ростелеком",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379993.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379993.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212552",
+      "fetch_status": "ok",
+      "title": "Яндекс занял 62-е место в международном рейтинге Corporate Startup Activity Index 2026, обогнав Apple и Huawei Яндекс занял 62-е место в международном рейтинге Corpor... | smartlab.news",
+      "description": "Яндекс занял 62-е место в международном рейтинге Corporate Startup Activity Index 2026, обогнав Apple и Huawei.\r\n\n«В «Яндексе» мы поддерживаем стартапы с помощ...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/a831a6.png",
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/a831a6.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.startupblink.com%2Fcorporate-report-2026.pdf&s=2225511957",
+          "resolved_url": "https://www.startupblink.com/corporate-report-2026.pdf",
+          "anchor_text": "www.startupblink.com/corporate-report-2026.pdf",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fiz.ru%2F2208312%2F2026-11-26%2Fiandeks-operedil-apple-i-huawei-v-reitinge-mirovykh-liderov-po-podderzhke-tekhnologicheskikh%3Fysclid%3Dmwx7s23kvz224460987&s=2296376926",
+          "resolved_url": "https://iz.ru/2208312/2026-11-26/iandeks-operedil-apple-i-huawei-v-reitinge-mirovykh-liderov-po-podderzhke-tekhnologicheskikh?ysclid=mwx7s23kvz224460987",
+          "anchor_text": "iz.ru/2208312/2026-11-26/iandeks-operedil-apple-i-huawei-v-reitinge-mirovykh-liderov-po-podderzhke-tekhnologicheskikh?ysclid=mwx7s23kvz224460987",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.YDEX",
+          "anchor_text": "📈 график акций Яндекс",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380010.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380010.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.startupblink.com%2Fcorporate-report-2026.pdf&s=2225511957",
+          "resolved_url": "https://www.startupblink.com/corporate-report-2026.pdf",
+          "anchor_text": "www.startupblink.com/corporate-report-2026.pdf",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212554",
+      "fetch_status": "ok",
+      "title": "МНЕНИЕ: СберИнвестиции прогнозируют рост выручки Аэрофлота на 10,5% и чистой прибыли на 1,2% г/г в 3кв26 и сохраняют рекомендацию покупать с целевой ценой 45 рублей (апсайд — 31%) МНЕНИЕ: СберИнвестиции прогнозируют рост выручки Аэрофл... | smartlab.news",
+      "description": "30 ноября компания опубликует результаты за третий квартал.\nАналитики СберИнвестиций прогнозируют рост выручки Аэрофлота за третий квартал на 10,5% год к году...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fmax.ru%2FSberInvestmentsPRO%2FAaIW3myCaQU&s=2240569783",
+          "resolved_url": "https://max.ru/SberInvestmentsPRO/AaIW3myCaQU",
+          "anchor_text": "Источник",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/editor2",
+          "resolved_url": "https://smart-lab.ru/profile/editor2",
+          "anchor_text": "Редактор Боб",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.AFLT",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.AFLT",
+          "anchor_text": "📈 график акций Аэрофлот",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380014.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380014.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212559",
+      "fetch_status": "ok",
+      "title": "📉Акции Газпрома не дают разбогатеть российским инвесторам (-2,5% и 100,5 руб) и тянут за собой весь рынок - индекс Мосбиржи 2325 п. и минус 1,3% на 15:40 мск 📉Акции Газпрома не дают разбогатеть российским инвесто... | smartlab.news",
+      "description": "📉Акции Газпрома не дают разбогатеть российским инвесторам (-2,5% и 100,5 руб) и тянут за собой весь рынок — индекс Мосбиржи 2325 п. и минус 1,3% на 15:40 мск...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/56b05a.png",
+          "resolved_url": "https://smart-lab.ru/uploads/2026/images/03/02/71/2026/11/26/56b05a.png",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "anchor_text": "📈 график акций Газпром",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1380021.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1380021.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212510",
+      "fetch_status": "ok",
+      "title": "Сейчас большую часть кода пишет ИИ, в разы быстрее и качественнее, чем люди — старший вице-президент Сбербанка Антон Фролов Сейчас большую часть кода пишет ИИ, в разы быстрее и ка... | smartlab.news",
+      "description": " Старший вице-президент Сбербанка Антон Фролов в интервью Forbes:\r\n\r\n\r\n\nЕжемесячная аудитория ИИ-сервисов Сбера — 25 млн чел, ежедневная — около 2 млн\nТехнолог...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.forbes.ru%2Ftekhnologii%2F573052-starsij-vice-prezident-sberbanka-forbes-ii-stanet-kommunal-noj-uslugoj%3Futm_source%3Dforbes%26utm_campaign%3Dlnews&s=875574508",
+          "resolved_url": "https://www.forbes.ru/tekhnologii/573052-starsij-vice-prezident-sberbanka-forbes-ii-stanet-kommunal-noj-uslugoj?utm_source=forbes&utm_campaign=lnews",
+          "anchor_text": "www.forbes.ru/tekhnologii/573052-starsij-vice-prezident-sberbanka-forbes-ii-stanet-kommunal-noj-uslugoj?utm_source=forbes&utm_campaign=lnews",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.SBER",
+          "anchor_text": "📈 график акций Сбербанк",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379895.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379895.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212511",
+      "fetch_status": "ok",
+      "title": "Ozon запустил инвестиционное направление бизнеса в рамках финтех-вертикали: в приложении Ozon Банка розничные клиенты могут открыть инвестиционный счёт и получить доступ к широкой линейке инструментов Ozon запустил инвестиционное направление бизнеса в рамк... | smartlab.news",
+      "description": "Ozon в рамках финтех-вертикали запустил инвестиционное направление бизнеса. В приложении Ozon Банка розничные клиенты могут открыть инвестиционный счет и получ...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fcorp.ozon.ru%2Fru%2Fsth%2Fozon-zapustil-investitsionnoe-napravlenie-biznesa-30599896&s=435877459",
+          "resolved_url": "https://corp.ozon.ru/ru/sth/ozon-zapustil-investitsionnoe-napravlenie-biznesa-30599896",
+          "anchor_text": "corp.ozon.ru/ru/sth/ozon-zapustil-investitsionnoe-napravlenie-biznesa-30599896",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Makla_News",
+          "resolved_url": "https://smart-lab.ru/profile/Makla_News",
+          "anchor_text": "Makla_News",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.OZON",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.OZON",
+          "anchor_text": "📈 график акций OZON | ОЗОН",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379896.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379896.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    },
+    {
+      "url": "https://smartlab.news/i/212513",
+      "fetch_status": "ok",
+      "title": "Добыча нефти на Сахалине по итогам 2026 года прогнозируется с ростом на 24% г/г, по газу рост на 10,5% — губернатор региона Валерий Лимаренко Добыча нефти на Сахалине по итогам 2026 года прогнозиру... | smartlab.news",
+      "description": "Добыча нефти на Сахалине по итогам 2026 года прогнозируется с ростом на 24% г/г, по газу рост на 10,5% до 21 млрд кубов, сообщил губернатор региона Валерий Лима...",
+      "outbound_links": [
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.interfax.ru%2Fbusiness%2F&s=512513708",
+          "resolved_url": "https://www.interfax.ru/business/",
+          "anchor_text": "www.interfax.ru/business/",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/r.php?u=https%3A%2F%2Fwww.finmarket.ru%2Fnews%2F6758251&s=2944061379",
+          "resolved_url": "https://www.finmarket.ru/news/6758251",
+          "anchor_text": "www.finmarket.ru/news/6758251",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/profile/Nordstream",
+          "resolved_url": "https://smart-lab.ru/profile/Nordstream",
+          "anchor_text": "Nordstream",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.ROSN",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.ROSN",
+          "anchor_text": "📈 график акций Роснефть",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "resolved_url": "https://smart-lab.ru/gg/MOEX.GAZP",
+          "anchor_text": "📈 график акций Газпром",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://smart-lab.ru/blog/1379902.php#comments",
+          "resolved_url": "https://smart-lab.ru/blog/1379902.php#comments",
+          "anchor_text": "Комментировать на смартлабе",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        },
+        {
+          "url": "https://www.liveinternet.ru/click",
+          "resolved_url": "https://www.liveinternet.ru/click",
+          "anchor_text": "",
+          "source_domain_classification": "unverified_domain",
+          "content_verification_status": "not_fetched"
+        }
+      ],
+      "candidate_primary_document_links": [],
+      "verification_status": "article_not_primary_source"
+    }
+  ],
+  "limitations": [
+    "Telegram public preview pagination is best-effort and not a guaranteed complete archive.",
+    "Ticker matching uses explicit tags/tokens only; company-name fuzzy matching is disabled.",
+    "Smart-Lab article pages and outbound links are discovery evidence, not proof of issuer authenticity.",
+    "Candidate links are unwrapped and classified by known disclosure-operator/regulator domain; page content and issuer identity are not verified by this collector.",
+    "Missing publication timestamps and document fields remain null.",
+    "No bot token, account session, paid API, Finam AI Screener, or broker endpoint is used."
+  ]
+}
