@@ -102,6 +102,93 @@ def quote_summary(api: FinamReadOnly, symbol: str) -> dict:
     }
 
 
+def timestamp_value(item):
+    if not isinstance(item, dict):
+        return None
+    try:
+        seconds = int(item.get("seconds"))
+        nanos = int(item.get("nanos", 0))
+        return datetime.fromtimestamp(seconds + nanos / 1_000_000_000, tz=timezone.utc)
+    except (TypeError, ValueError, OverflowError, OSError):
+        return None
+
+
+def orderbook_summary(api: FinamReadOnly, symbol: str) -> dict:
+    status, data = api.get(f"/v1/instruments/{quote(symbol, safe='')}/orderbook")
+    if status != 200 or not data:
+        return {"http_status": status, "available": False}
+    book = data.get("orderbook") if isinstance(data.get("orderbook"), dict) else {}
+    rows = book.get("rows") if isinstance(book.get("rows"), list) else []
+    levels = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        price = decimal_value(row.get("price"))
+        buy_size = decimal_value(row.get("buy_size")) or Decimal("0")
+        sell_size = decimal_value(row.get("sell_size")) or Decimal("0")
+        stamp = timestamp_value(row.get("timestamp"))
+        if price is None or price <= 0:
+            continue
+        levels.append((price, buy_size, sell_size, stamp))
+    bids = [row for row in levels if row[1] > 0]
+    asks = [row for row in levels if row[2] > 0]
+    best_bid = max((row[0] for row in bids), default=None)
+    best_ask = min((row[0] for row in asks), default=None)
+    best_bid_size = sum((row[1] for row in bids if row[0] == best_bid), Decimal("0")) if best_bid is not None else Decimal("0")
+    best_ask_size = sum((row[2] for row in asks if row[0] == best_ask), Decimal("0")) if best_ask is not None else Decimal("0")
+    stamps = [row[3] for row in levels if row[3] is not None]
+    spread_pct = None
+    if best_bid is not None and best_ask is not None and (best_bid + best_ask) > 0:
+        spread_pct = float((best_ask - best_bid) / ((best_bid + best_ask) / 2) * 100)
+    return {
+        "http_status": status,
+        "available": True,
+        "rows_received": len(rows),
+        "valid_levels": len(levels),
+        "bid_levels": len(bids),
+        "ask_levels": len(asks),
+        "best_bid": str(best_bid) if best_bid is not None else None,
+        "best_bid_size": str(best_bid_size),
+        "best_ask": str(best_ask) if best_ask is not None else None,
+        "best_ask_size": str(best_ask_size),
+        "spread_pct": round(spread_pct, 4) if spread_pct is not None else None,
+        "latest_level_timestamp": max(stamps).isoformat() if stamps else None,
+    }
+
+
+def latest_trades_summary(api: FinamReadOnly, symbol: str, now: datetime) -> dict:
+    status, data = api.get(f"/v1/instruments/{quote(symbol, safe='')}/trades/latest")
+    if status != 200 or not data:
+        return {"http_status": status, "available": False}
+    trades = data.get("trades") if isinstance(data.get("trades"), list) else []
+    parsed = []
+    for trade in trades:
+        if not isinstance(trade, dict):
+            continue
+        stamp = timestamp_value(trade.get("timestamp"))
+        price = decimal_value(trade.get("price"))
+        size = decimal_value(trade.get("size"))
+        if stamp is None:
+            continue
+        parsed.append((stamp, trade, price, size))
+    parsed.sort(key=lambda item: item[0])
+    latest = parsed[-1] if parsed else None
+    return {
+        "http_status": status,
+        "available": True,
+        "trades_received": len(trades),
+        "valid_timestamped_trades": len(parsed),
+        "oldest_trade_timestamp": parsed[0][0].isoformat() if parsed else None,
+        "latest_trade_timestamp": latest[0].isoformat() if latest else None,
+        "latest_trade_age_minutes": round((now - latest[0]).total_seconds() / 60, 2) if latest else None,
+        "latest_trade_price": str(latest[2]) if latest and latest[2] is not None else None,
+        "latest_trade_size": str(latest[3]) if latest and latest[3] is not None else None,
+        "latest_trade_side": latest[1].get("side") if latest else None,
+        "latest_trade_open_interest": value_of(latest[1].get("open_interest")) if latest else None,
+        "snapshot_trade_count": sum(bool(item[1].get("is_data_snapshot")) for item in parsed),
+    }
+
+
 def bar_summary(api: FinamReadOnly, symbol: str, timeframe: str, start: str, end: str) -> dict:
     status, data = api.get(
         f"/v1/instruments/{quote(symbol, safe='')}/bars",
@@ -212,6 +299,8 @@ def probe_contracts(
         results.append({
             **contract,
             "latest_quote": quote_summary(api, symbol),
+            "current_orderbook": orderbook_summary(api, symbol),
+            "latest_trades": latest_trades_summary(api, symbol, datetime.now(timezone.utc)),
             "historical_m5": bar_summary(api, symbol, "TIME_FRAME_M5", h1_start, end),
             "historical_h1": bar_summary(api, symbol, "TIME_FRAME_H1", h1_start, end),
             "historical_d1": bar_summary(api, symbol, "TIME_FRAME_D", d1_start, end),
