@@ -59,8 +59,6 @@ DEFAULT_TICKERS = [
 ]
 
 
-
-
 class RefreshingFinamClient:
     """Refresh a short-lived Finam access token once after HTTP 401."""
 
@@ -268,9 +266,17 @@ def collect_multi_timeframe(
             # provider failure visible; fallback candles are never mislabeled.
             moex_error = f"{type(exc).__name__}: {exc}"
             try:
-                daily_start = current - timedelta(days=365)
+                # Finam D1 bars are timestamped at the start of the exchange
+                # session (e.g. 05:00 UTC), not at 00:00 UTC. A rolling
+                # current-time boundary can therefore reject the first bar
+                # inside the 365-calendar-day lookback by several hours.
+                # Use UTC-midnight boundaries spanning exactly 365 days.
+                # The current UTC date is excluded from the request; the
+                # completion filter below remains a second safety check.
+                daily_end = current.replace(hour=0, minute=0, second=0, microsecond=0)
+                daily_start = daily_end - timedelta(days=365)
                 raw_daily = client.fetch_bars(
-                    f"{ticker}@MISX", "TIME_FRAME_D", daily_start, current
+                    f"{ticker}@MISX", "TIME_FRAME_D", daily_start, daily_end
                 )
                 eligible_daily = [
                     bar for bar in raw_daily if bar.is_data_snapshot is not True
