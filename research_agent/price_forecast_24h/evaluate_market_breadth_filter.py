@@ -233,12 +233,18 @@ def ticker_equal_weight_summary(by_ticker, cost_key):
            if isinstance(v[cost_key]["profit_factor"], (int, float))]
     dds = [v[cost_key]["max_drawdown_pct"] for v in active
            if v[cost_key]["max_drawdown_pct"] is not None]
+    trade_count = sum(v["trades"] for v in active)
+    weighted_mean = (
+        sum(v[cost_key]["mean_net_return_pct"] * v["trades"] for v in active) / trade_count
+        if trade_count else None
+    )
     return {
-        "ticker_trade_count_sum": sum(v["trades"] for v in by_ticker.values()),
+        "ticker_trade_count_sum": trade_count,
         "tickers_with_trades": len(active),
         "tickers_positive_mean": sum(x > 0 for x in means),
         "mean_ticker_mean_net_return_pct": statistics.fmean(means) if means else None,
         "median_ticker_mean_net_return_pct": statistics.median(means) if means else None,
+        "trade_weighted_mean_net_return_pct": weighted_mean,
         "mean_ticker_profit_factor": statistics.fmean(pfs) if pfs else None,
         "mean_ticker_max_drawdown_pct": statistics.fmean(dds) if dds else None,
     }
