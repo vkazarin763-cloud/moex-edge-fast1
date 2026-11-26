@@ -43,9 +43,10 @@ execution, and live signal generation. All collectors are read-only.
 
 ## Workflow and safety
 
-The GitHub Actions workflow is manual-only until free-source access and
-coverage are verified. It runs tests and stores research snapshots on
-`research/price-forecast-24h-v1`. No scheduled polling is enabled.
+The GitHub Actions workflow can be started manually and also validates changes
+pushed to `research/price-forecast-24h-v1` when collector, tests, docs, or the
+workflow itself change. It stores research snapshots on that branch. No
+scheduled polling is enabled.
 
 No production signals, live orders, Telegram notification bot, secrets,
 cron-job.org schedule, or Finam settings are changed by this module.
