@@ -1,0 +1,42 @@
+name: Direction-specific LONG SHORT entry mechanics
+on:
+  push:
+    branches:
+      - research/price-forecast-24h-v1
+    paths:
+      - "research_agent/price_forecast_24h/evaluate_direction_mechanics.py"
+      - ".github/workflows/direction-entry-mechanics.yml"
+permissions:
+  contents: write
+concurrency:
+  group: price-forecast-24h-research-write
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/price-forecast-24h-v1
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile
+        run: python -m py_compile research_agent/price_forecast_24h/evaluate_direction_mechanics.py
+      - name: Compare predeclared LONG and SHORT mechanics
+        run: python -m research_agent.price_forecast_24h.evaluate_direction_mechanics
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research_agent/price_forecast_24h/reports/direction-specific-entry-mechanics-*
+          git commit -m "research: report direction-specific entry mechanics"
+          git pull --rebase origin research/price-forecast-24h-v1
+          git push origin HEAD:research/price-forecast-24h-v1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: direction-specific-entry-mechanics
+          path: research_agent/price_forecast_24h/reports/direction-specific-entry-mechanics-*
+          retention-days: 30
