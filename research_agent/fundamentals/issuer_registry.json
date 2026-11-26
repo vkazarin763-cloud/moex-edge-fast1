@@ -124,7 +124,10 @@
           "period": "2026-09-30",
           "publication_date": "2026-11-02",
           "listing_evidence": "Interfax listing rechecked 26.11.2026: 9M 2026 interim RAS statements, ZIP 2.15 MB, posted 02.11.2026. Official Gazprom Capital reporting page also lists 9M 2026 accounting statements (~2 MB). Archive not downloaded or inspected.",
-          "status": "listing_verified_document_not_downloaded"
+          "status": "listing_verified_document_not_downloaded",
+          "download_url": "https://www.e-disclosure.ru/portal/FileLoad.ashx?Fileid=1949029",
+          "file_id": "1949029",
+          "download_attempt_status": "direct_download_url_identified_not_downloaded"
         },
         {
           "source_url": "https://e-disclosure.ru/portal/files.aspx?id=934&type=3",
@@ -137,7 +140,22 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. 9M 2026 RAS filing listing verified; archive not downloaded/inspected, so no figures promoted to verified."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. 9M 2026 RAS filing listing verified; archive not downloaded/inspected, so no figures promoted to verified.",
+      "secondary_leads": [
+        {
+          "source_url": "https://www.interfax.ru/business/1126538",
+          "source_type": "secondary_media_lead",
+          "period": "2026-09-30",
+          "currency": "RUB",
+          "unit": "billion",
+          "revenue_9m_2026": 4444,
+          "net_profit_9m_2026": 114.794,
+          "gross_profit_9m_2026": 1457,
+          "profit_from_sales_9m_2026": 373,
+          "verification_status": "secondary_only_not_primary_verified",
+          "notes": "Interfax article reports issuer-disclosed RAS figures; primary archive not inspected. Net profit influenced by non-cash revaluation of financial investments."
+        }
+      ]
     },
     {
       "ticker": "GMKN",
@@ -183,7 +201,10 @@
           "period": "2026-09-30",
           "publication_date": "2026-10-30",
           "listing_evidence": "Interfax listing rechecked 26.11.2026: 9M 2026 interim RAS statements, ZIP 993.75 KB, posted 30.10.2026. Document not downloaded or inspected.",
-          "status": "listing_verified_document_not_downloaded"
+          "status": "listing_verified_document_not_downloaded",
+          "download_url": "https://www.e-disclosure.ru/portal/FileLoad.ashx?Fileid=1948894",
+          "file_id": "1948894",
+          "download_attempt_status": "direct_download_url_identified_not_downloaded"
         },
         {
           "source_url": "https://e-disclosure.ru/portal/files.aspx?attempt=2&id=17&type=4",
@@ -196,7 +217,22 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. 9M 2026 RAS filing listing verified; archive not downloaded/inspected, so no figures promoted to verified."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. 9M 2026 RAS filing listing verified; archive not downloaded/inspected, so no figures promoted to verified.",
+      "secondary_leads": [
+        {
+          "source_url": "https://www.kommersant.ru/doc/9077656",
+          "source_type": "secondary_media_lead",
+          "period": "2026-09-30",
+          "currency": "RUB",
+          "unit": "billion",
+          "revenue_9m_2026": 1968,
+          "net_profit_9m_2026": 457.5,
+          "gross_profit_9m_2026": 696.77,
+          "profit_before_tax_9m_2026": 552.37,
+          "verification_status": "secondary_only_not_primary_verified",
+          "notes": "Kommersant reports figures from company RAS statement; primary archive not inspected."
+        }
+      ]
     },
     {
       "ticker": "MAGN",
@@ -616,7 +652,10 @@
           "period": "2026-09-30",
           "publication_date": "2026-11-06",
           "listing_evidence": "Interfax listing rechecked 26.11.2026: 9M 2026 interim RAS statements, ZIP 10.65 MB, posted 06.11.2026. Document not downloaded or inspected.",
-          "status": "listing_verified_document_not_downloaded"
+          "status": "listing_verified_document_not_downloaded",
+          "download_url": "https://www.e-disclosure.ru/portal/FileLoad.ashx?Fileid=1949477",
+          "file_id": "1949477",
+          "download_attempt_status": "blocked_by_rotating_image_captcha"
         },
         {
           "source_url": "https://e-disclosure.ru/portal/files.aspx?id=118&type=3",
@@ -629,7 +668,20 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and 9M 2026 RAS filing listing verified. Financial figures from media reports are not yet extracted from the primary statement; do not treat as primary-source verified."
+      "notes": "Issuer identity and 9M 2026 RAS filing listing verified. Financial figures from media reports are not yet extracted from the primary statement; do not treat as primary-source verified. Automated archive access attempted; blocked by rotating-image CAPTCHA, so primary document remains uninspected.",
+      "secondary_leads": [
+        {
+          "source_url": "https://www.kommersant.ru/",
+          "source_type": "secondary_media_lead",
+          "period": "2026-09-30",
+          "currency": "RUB",
+          "unit": "billion",
+          "revenue_9m_2026_approx": 1330,
+          "net_profit_9m_2026_approx": 299.3,
+          "verification_status": "secondary_only_not_primary_verified",
+          "notes": "Media-reported approximate values only; not promoted to verified metrics."
+        }
+      ]
     },
     {
       "ticker": "TATNP",
