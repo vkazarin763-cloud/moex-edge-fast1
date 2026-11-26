@@ -42,6 +42,24 @@ Official references:
 - MOEX explanation of options: https://www.moex.com/msn/en-what-are-options
 - MOEX stock-options FAQ (European, cash-settled; exercise only at expiry): https://www.moex.com/a8167
 
+## Data-access and licensing gate
+
+The official MOEX ISS documentation states that unauthenticated market data is delayed (typically 15 minutes), historical data under `/iss/history` is subscriber-only except for indices, and ISS information is for familiarization only; use for profit-making or other non-familiarization purposes requires an agreement with MOEX. Therefore a free public ISS endpoint must not silently become the production data source for a profitable trading system.
+
+Before replay, use one of these lawful/usable routes:
+1. A data entitlement/provider agreement that explicitly permits algorithmic/research use of the required option market data; or
+2. An existing connected provider feed whose terms permit this use and whose API exposes actual option-contract quotes/trades.
+
+The user's existing Finam AI Screener is a stock screener integration; it must not be assumed to provide option-chain or historical option bid/ask data. Do not repeat its setup or invent an options API capability.
+
+The exchange publishes a daily theoretical option price/volatility table (`/iss/history/engines/futures/markets/options/volat`), but theoretical prices are not executable bid/ask and cannot replace real quotes in the performance replay.
+
+Official data references:
+- MOEX ISS API overview and usage restrictions: https://www.moex.com/a2193
+- MOEX ISS developer manual (historical access limitations): https://www.moex.com/files/4be999zbzp80bx2bgmwayrtyx0
+- MOEX theoretical options price/volatility publication: https://fs.moex.com/f/21878/informacija-o-teoreticheskoy-cene-opcionov.pdf
+- MOEX historical data service description: https://www.moex.com/a2863
+
 ## Candidate strategy to evaluate first
 
 **Trend-confirmed long premium breakout** (one ruleset, no parameter mining):
