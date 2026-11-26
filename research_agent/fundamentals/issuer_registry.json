@@ -1,0 +1,454 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-26",
+  "purpose": "research-only issuer financial report discovery",
+  "source_priority": [
+    "issuer_investor_relations",
+    "interfax_e_disclosure",
+    "smartlab_lead_only",
+    "moex_cci_if_free_access"
+  ],
+  "status": "not_yet_verified",
+  "companies": [
+    {
+      "ticker": "AFKS",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "AFLT",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "ALRS",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "BSPB",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "CBOM",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "CHMF",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "CNRU",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "DOMRF",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "ENPG",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "FLOT",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "GAZP",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "GMKN",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "HEAD",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "IRAO",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "LKOH",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "MAGN",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "MDMG",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "MOEX",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "MTSS",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "NLMK",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "NVTK",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "OZON",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "PHOR",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "PLZL",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "POSI",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "RAGR",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "RENI",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "ROSN",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "RTKM",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "RUAL",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "SBER",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "SBERP",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "SNGS",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "SNGSP",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "SVCB",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "T",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "TATN",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "TATNP",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "TRNFP",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "UGLD",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "VKCO",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "VTBR",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "X5",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    },
+    {
+      "ticker": "YDEX",
+      "issuer_name": null,
+      "issuer_identity_verified": false,
+      "issuer_ir_url": null,
+      "e_disclosure_search_url": "https://www.e-disclosure.ru/poisk-po-kompaniyam",
+      "report_candidates": [],
+      "latest_verified_report": null,
+      "notes": "Search by ticker/issuer name; confirm legal issuer identity before accepting document."
+    }
+  ]
+}
