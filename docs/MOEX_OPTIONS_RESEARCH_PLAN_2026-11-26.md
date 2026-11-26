@@ -109,7 +109,13 @@ The sample's quoted spreads were often too wide:
 - Mar 17 GAZP/SBER/ROSN samples mostly had spreads of roughly 39–164%; MOEX had no contracts.
 - Dec 2 is only six days from expiry and is not eligible for the primary 20–60 day strategy window.
 
-Only one sampled Dec 16 contract (SBER 290 CALL) was below the preliminary 10% spread ceiling (about 9.55%). Many quote timestamps were several hours older than the 18:48 UTC probe, so positive bid/ask alone is not enough. The probe code was extended to calculate quote age and mark quotes older than 5 minutes / 30 minutes. The subsequent CI run is responsible for validating those fields and the additional stale-quote unit test.
+The freshness-enhanced repeat run (18:51:11 UTC) measured quote ages:
+- For the primary Dec 16 sample, only 4/16 quotes were updated within five minutes; 11/16 were older than 30 minutes.
+- Only 1/16 Dec 16 samples (SBER 290 CALL) passed the initial 10% spread ceiling (about 9.55%); it was also within five minutes of the probe. No sampled GAZP, ROSN or MOEX Dec 16 contract passed the spread ceiling.
+- Jan 20 quotes were fresher in the sample (10/12 within five minutes), but every sampled spread was at least about 25%, and some open-interest fields were zero/low.
+- March 17 also showed very wide spreads, despite some fresh quote timestamps.
+
+The probe now records quote age and flags quotes older than 5 minutes / 30 minutes. The added stale-quote unit test and the read-only Finam probe both passed in GitHub Actions.
 
 Interpretation: the Finam route is viable for contract discovery and can return two-sided quotes, but the tested near-ATM sample is generally too wide/stale to justify entries. No candidate currently passes enough evidence for a strategy backtest. The next step is a bounded, broader contract-level liquidity screen on Dec 16 and Jan 20 only, with quote age, spread, displayed sizes, trades and open interest all considered; do not generate signals or use theoretical prices as executable substitutes.
 
