@@ -3,7 +3,7 @@ from __future__ import annotations
 import gzip,json,math,statistics
 from datetime import datetime,timezone
 from pathlib import Path
-from research_agent.price_forecast_24h.evaluate_ohlc_strategies import clean_bars,indicators,stats,HORIZON
+from research_agent.price_forecast_24h.evaluate_ohlc_strategies import clean_bars,indicators,stats
 
 ROOT=Path("research_agent/price_forecast_24h")
 COSTS=(5,10)
@@ -26,7 +26,7 @@ def calc_trade(bars,signal_i,end,direction,exit_variant,sma50,mean):
     gross=direction*math.log(exit_price/entry)
     return {"entry_time":bars[entry_i]["timestamp"],"exit_time":bars[exit_i]["timestamp"],
       "direction":"LONG" if direction==1 else "SHORT","entry_price":entry,"exit_price":exit_price,
-      "gross_return":gross,"holding_bars":exit_i-entry_i+1,"variant":exit_variant}
+      "gross_return":gross,"holding_bars":exit_i-entry_i+1,"exit_index":exit_i,"variant":exit_variant}
 
 def signals(bars,variant):
     ph,pl,mean,sd,sma50,rsi=indicators(bars)
@@ -64,7 +64,9 @@ def eval_symbol(rows):
                 if sig[i]:
                     t=calc_trade(bars,i,b,sig[i],v,sma,mean)
                     if t: t["fold"]=fi;result[v].append(t)
-                    i+=HORIZON
+                    # No overlapping positions per ticker: the next signal must occur
+                    # strictly after the actual exit bar, including early SMA50 exits.
+                    i=(t["exit_index"]+1) if t else i+1
                 else:i+=1
     return {"status":"OK","bars":len(bars),"development_period_end":bars[cutoff-1]["timestamp"],
       "folds":foldmeta,"variants":{v:{str(c):stats(ts,c) for c in COSTS} for v,ts in result.items()},
@@ -87,7 +89,7 @@ def main():
       "design":"Chronological development folds entirely inside first 80% per ticker. Final 20% excluded. No parameter tuning on final segment.",
       "variants":"20-bar breakout + SMA50 direction/slope filter; exits after 12/24/36 bars or cross of SMA50 (max 36 bars).",
       "costs_bps_each_side":COSTS,"summary":summary,"symbols":per,
-      "limitations":["archive overlaps prior research; development folds are not independent fresh data","fees/spread/slippage/borrow/taxes not modeled; costs are illustrative","H1 bars; horizons measured in trading bars","research only; no signals or orders"]}
+      "limitations":["archive overlaps prior research; development folds are not independent fresh data","fees/spread/slippage/borrow/taxes not modeled; costs are illustrative","H1 bars; horizons measured in trading bars","one open trade per ticker; next entry only after prior exit","research only; no signals or orders"]}
     out=ROOT/"reports";out.mkdir(exist_ok=True,parents=True)
     path=out/f"sma50-exit-robustness-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.json"
     path.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
