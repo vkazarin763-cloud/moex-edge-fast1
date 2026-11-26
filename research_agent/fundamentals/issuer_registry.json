@@ -120,18 +120,6 @@
         {
           "source_url": "https://e-disclosure.ru/portal/files.aspx?id=934&type=3",
           "source_type": "interfax_e_disclosure",
-          "report_type": "interim_RAS_all_forms",
-          "period": "2026-09-30",
-          "publication_date": "2026-11-02",
-          "listing_evidence": "Interfax listing rechecked 26.11.2026: 9M 2026 interim RAS statements, ZIP 2.15 MB, posted 02.11.2026. Official Gazprom Capital reporting page also lists 9M 2026 accounting statements (~2 MB). Archive not downloaded or inspected.",
-          "status": "listing_verified_document_not_downloaded",
-          "download_url": "https://www.e-disclosure.ru/portal/FileLoad.ashx?Fileid=1949029",
-          "file_id": "1949029",
-          "download_attempt_status": "direct_download_url_identified_not_downloaded"
-        },
-        {
-          "source_url": "https://e-disclosure.ru/portal/files.aspx?id=934&type=3",
-          "source_type": "interfax_e_disclosure",
           "report_type": "interim_RAS",
           "period": "2026-09-30",
           "publication_date": "2026-11-02",
@@ -140,7 +128,7 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. 9M 2026 RAS filing listing verified; archive not downloaded/inspected, so no figures promoted to verified.",
+      "notes": "Issuer identity and Interfax 9M 2026 RAS filing listing verified. Secondary media report quotes issuer-disclosed figures, but the primary PJSC Gazprom archive remains uninspected. Important: the similarly named Gazprom Capital page links to statements of ООО «Газпром капитал» (INN 7726588547), a separate legal entity; those figures must not be attributed to PJSC Gazprom.",
       "secondary_leads": [
         {
           "source_url": "https://www.interfax.ru/business/1126538",
@@ -668,18 +656,20 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and 9M 2026 RAS filing listing verified. Financial figures from media reports are not yet extracted from the primary statement; do not treat as primary-source verified. Automated archive access attempted; blocked by rotating-image CAPTCHA, so primary document remains uninspected.",
+      "notes": "Issuer identity and 9M 2026 RAS filing listing verified at Interfax and SKRIN. SKRIN exposes the direct PDF download link, but automated retrieval failed because the 12.05 MB document exceeds the web reader limit; Interfax download remains blocked by rotating-image CAPTCHA. Secondary figures retained separately and are not primary-source verified.",
       "secondary_leads": [
         {
-          "source_url": "https://www.kommersant.ru/",
+          "source_url": "https://www.kommersant.ru/doc/9061987",
           "source_type": "secondary_media_lead",
           "period": "2026-09-30",
           "currency": "RUB",
           "unit": "billion",
-          "revenue_9m_2026_approx": 1330,
-          "net_profit_9m_2026_approx": 299.3,
+          "revenue_9m_2026": 1331,
+          "net_profit_9m_2026": 299.27,
+          "gross_profit_9m_2026": 556.35,
+          "profit_from_sales_9m_2026": 480.32,
           "verification_status": "secondary_only_not_primary_verified",
-          "notes": "Media-reported approximate values only; not promoted to verified metrics."
+          "notes": "Kommersant states that the values are from Tatneft RAS report. Independent official copy not inspected; do not promote to primary-verified metrics."
         }
       ]
     },
