@@ -29,3 +29,20 @@ Only these eight issuers are in the current research scope: TATN, LKOH, GAZP, RO
 - Distinguish reported net profit from adjusted/normalized profit and flag one-off effects.
 - No Finam AI Screener, paid data, production trading, broker orders, Telegram, or scheduled workflow changes are part of this research task.
 - Next work within this fixed scope: obtain and inspect primary 9M 2026 RAS statements for TATN, LKOH, and GAZP; locate 9M 2026 IFRS update for NVTK; parse complete statements for issuers where only results releases have been inspected.
+
+
+## Follow-up verification — 2026-11-26
+
+- TATN: found the direct issuer-disclosure PDF link on SKRIN's public disclosure page for ПАО «Татнефть», 9M 2026 RAS. This resolves the earlier uncertainty about the location of the file and bypasses the Interfax CAPTCHA at the link-discovery stage. However, the PDF content could not be extracted by the available reader; do not promote the Kommersant figures to primary-verified yet.
+  - Disclosure page: https://disclosure.skrin.ru/disclosure/1644003838/8
+  - Direct PDF: https://disclosure.skrin.ru/disclosure_docs/1644003838/b891d05d742a49d7903c96344fd986e7/Бухотчетность%20ПАО%20Татнефть%209мес%202026.pdf
+- GAZP: Interfax page reconfirmed the 9M 2026 RAS all-forms filing, posted 02.11.2026 (ZIP 2.15 MB). Vedomosti independently reports that the figures are from PJSC Gazprom's RAS statement: revenue about RUB 4.4tn, net profit RUB 114.8bn, gross profit RUB 1.46tn, sales profit RUB 372.9bn. Still secondary corroboration; primary archive not inspected.
+  - Filing: https://www.e-disclosure.ru/portal/files.aspx?id=934&type=3
+  - Secondary report: https://www.vedomosti.ru/business/news/2026/11/02/1242018-pribil-gazproma
+- LKOH: Interfax page reconfirmed the 9M 2026 RAS all-forms filing, posted 30.10.2026 (ZIP 993.75 KB). Kommersant provides the previously recorded secondary figures; primary ZIP remains unread.
+  - Filing: https://e-disclosure.ru/portal/files.aspx?attempt=1&id=17&type=3
+  - Secondary report: https://www.kommersant.ru/doc/9077656
+- NVTK: official financial-results page currently lists only 6 months 2026 under 2026. No 9M 2026 IFRS statement was listed on the page at the time checked; retain 1H 2026 as the latest issuer-verified period.
+  - https://www.novatek.ru/ru/investors/results/
+
+No metrics were promoted from secondary to primary-verified in this update.
