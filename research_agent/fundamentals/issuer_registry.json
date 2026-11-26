@@ -120,6 +120,15 @@
         {
           "source_url": "https://e-disclosure.ru/portal/files.aspx?id=934&type=3",
           "source_type": "interfax_e_disclosure",
+          "report_type": "interim_RAS_all_forms",
+          "period": "2026-09-30",
+          "publication_date": "2026-11-02",
+          "listing_evidence": "Interfax listing rechecked 26.11.2026: 9M 2026 interim RAS statements, ZIP 2.15 MB, posted 02.11.2026. Official Gazprom Capital reporting page also lists 9M 2026 accounting statements (~2 MB). Archive not downloaded or inspected.",
+          "status": "listing_verified_document_not_downloaded"
+        },
+        {
+          "source_url": "https://e-disclosure.ru/portal/files.aspx?id=934&type=3",
+          "source_type": "interfax_e_disclosure",
           "report_type": "interim_RAS",
           "period": "2026-09-30",
           "publication_date": "2026-11-02",
@@ -128,7 +137,7 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. Additional 9M 2026 RAS filing listing rechecked; archive itself has not yet been downloaded and inspected, so no metrics promoted to verified."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. 9M 2026 RAS filing listing verified; archive not downloaded/inspected, so no figures promoted to verified."
     },
     {
       "ticker": "GMKN",
@@ -173,7 +182,7 @@
           "report_type": "interim_RAS_all_forms",
           "period": "2026-09-30",
           "publication_date": "2026-10-30",
-          "listing_evidence": "Interfax disclosure listing rechecked: LUKOIL interim RAS statements for 9M 2026, published 30.10.2026; ZIP 993.75 KB. Document not downloaded or inspected.",
+          "listing_evidence": "Interfax listing rechecked 26.11.2026: 9M 2026 interim RAS statements, ZIP 993.75 KB, posted 30.10.2026. Document not downloaded or inspected.",
           "status": "listing_verified_document_not_downloaded"
         },
         {
@@ -187,7 +196,7 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. Additional 9M 2026 RAS filing listing rechecked; archive itself has not yet been downloaded and inspected, so no metrics promoted to verified."
+      "notes": "Issuer identity and source/listing verified. Candidate metadata is not a downloaded/inspected financial statement; no figures extracted. 9M 2026 RAS filing listing verified; archive not downloaded/inspected, so no figures promoted to verified."
     },
     {
       "ticker": "MAGN",
@@ -601,13 +610,13 @@
       "e_disclosure_search_url": "https://e-disclosure.ru/portal/files.aspx?id=118&type=3",
       "report_candidates": [
         {
-          "source_url": "https://tatneft.ru/aktsioneram-i-investoram/raskritie-informatsii/financial-and-accounting-reporting",
-          "source_type": "issuer_ir_reporting_page",
+          "source_url": "https://e-disclosure.ru/portal/files.aspx?attempt=1&id=118&type=3",
+          "source_type": "interfax_e_disclosure",
           "report_type": "interim_RAS_all_forms",
           "period": "2026-09-30",
-          "publication_date": "2026-10-27",
-          "listing_evidence": "Official Tatneft reporting-page search result lists 9M 2026 accounting statements, 11.50 MB; Interfax e-disclosure independently lists same filing posted 06.11.2026. Downloaded archive not inspected.",
-          "status": "issuer_listing_and_interfax_listing_verified_document_not_downloaded"
+          "publication_date": "2026-11-06",
+          "listing_evidence": "Interfax listing rechecked 26.11.2026: 9M 2026 interim RAS statements, ZIP 10.65 MB, posted 06.11.2026. Document not downloaded or inspected.",
+          "status": "listing_verified_document_not_downloaded"
         },
         {
           "source_url": "https://e-disclosure.ru/portal/files.aspx?id=118&type=3",
@@ -620,7 +629,7 @@
         }
       ],
       "latest_verified_report": null,
-      "notes": "Issuer identity and 9M 2026 RAS filing listing verified. Financial figures from media reports are not yet extracted from the primary statement; do not treat as primary-source verified. Additional 9M 2026 RAS filing listing rechecked; archive itself has not yet been downloaded and inspected, so no metrics promoted to verified."
+      "notes": "Issuer identity and 9M 2026 RAS filing listing verified. Financial figures from media reports are not yet extracted from the primary statement; do not treat as primary-source verified."
     },
     {
       "ticker": "TATNP",
