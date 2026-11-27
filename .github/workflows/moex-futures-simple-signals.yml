@@ -35,8 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           cert=/tmp/russian_trusted_root_ca.cer
-          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \\
-            https://gu-st.ru/content/Other/doc/russian_trusted_root_ca.cer -o "$cert"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 https://gu-st.ru/content/Other/doc/russian_trusted_root_ca.cer -o "$cert"
           fingerprint="$(openssl x509 -in "$cert" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
           expected="D26D2D0231B7C39F92CC738512BA54103519E4405D68B5BD703E9788CA8ECF31"
           if [ "$fingerprint" != "$expected" ]; then
