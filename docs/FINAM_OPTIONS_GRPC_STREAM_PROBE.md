@@ -8,12 +8,12 @@ GitHub Actions → **Finam Options gRPC Stream Probe (Read Only)** → Run workf
 Default capture is 180 seconds (allowed 30–300). The artifact is retained for 30 days.
 
 The default option set includes both CALL and PUT for GAZP and SBER:
-- \`GZ100CL6@RTSX\` — GAZP CALL
-- \`GZ100CX6@RTSX\` — GAZP PUT
-- \`SR290CL6@RTSX\` — SBER CALL
-- \`SR290CX6@RTSX\` — SBER PUT
+- `GZ100CL6@RTSX` — GAZP CALL
+- `GZ100CX6@RTSX` — GAZP PUT
+- `SR290CL6@RTSX` — SBER CALL
+- `SR290CX6@RTSX` — SBER PUT
 
-\`SBER@MISX\` remains a control symbol for the underlying share quote stream.
+`SBER@MISX` remains a control symbol for the underlying share quote stream.
 
 ## Metrics
 
@@ -23,7 +23,7 @@ The JSONL artifact preserves raw gRPC envelopes and adds normalized per-instrume
 - fresh unique quote updates (provider timestamp no more than 60 seconds old at client receipt) vs stale updates;
 - per-instrument order-book snapshots, delta messages, delta row counts, action counts, and row timestamp ages;
 - trade event counts;
-- unary \`LastQuote\` snapshots and token market-data entitlements.
+- unary `LastQuote` snapshots and token market-data entitlements.
 
 Counts are per instrument item, not per gRPC envelope. A repeated quote snapshot or an old quote repeated by the server is not treated as fresh market activity. The 60-second threshold is a diagnostic convention, not a guarantee of executable prices. Provider timestamps are retained separately from client receipt timestamps.
 
@@ -36,8 +36,8 @@ Counts are per instrument item, not per gRPC envelope. A repeated quote snapshot
 
 ## SDK and safety
 
-Uses the official Finam Python SDK pinned to published \`finam-sdk==2.24.0\` and the existing \`FINAM_API_SECRET\` repository secret. A separate import check runs before connection.
+Uses the official Finam Python SDK pinned to published `finam-sdk==2.24.0` and the existing `FINAM_API_SECRET` repository secret. A separate import check runs before connection.
 
-Only token metadata and market-data RPCs are called. No balances, positions, account IDs, orders, cancellations, or execution APIs are queried. The JWT and secret are never written to the artifact. The token details response reports \`readonly\`; this probe itself does not invoke trading APIs.
+Only token metadata and market-data RPCs are called. No balances, positions, account IDs, orders, cancellations, or execution APIs are queried. The JWT and secret are never written to the artifact. The token details response reports `readonly`; this probe itself does not invoke trading APIs.
 
 A successful stream does not prove fillability, profitability, or suitability for live trading. All strategy and live-execution work remains out of scope.
