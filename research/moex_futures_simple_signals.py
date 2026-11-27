@@ -7,6 +7,7 @@ This scanner only reads public MOEX ISS data. It never contacts Finam accounts
 or places, modifies, or cancels orders.
 """
 import json
+import ssl
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -26,6 +27,11 @@ ASSETS = [
 MOSCOW = ZoneInfo("Europe/Moscow")
 SESSION = requests.Session()
 SESSION.headers["User-Agent"] = "moex-futures-simple-signals/1.0"
+# Prefer the runner's operating-system CA store. This keeps TLS verification
+# enabled while allowing certificates installed in the system trust store.
+SYSTEM_CA_BUNDLE = ssl.get_default_verify_paths().cafile
+if SYSTEM_CA_BUNDLE:
+    SESSION.verify = SYSTEM_CA_BUNDLE
 
 
 def iss_json(path, params=None):
