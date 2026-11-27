@@ -1,6 +1,6 @@
 {
   "status": "INSUFFICIENT_DATA",
-  "generated_at_utc": "2026-11-27T20:09:06.597256+00:00",
+  "generated_at_utc": "2026-11-27T20:11:04.843229+00:00",
   "source": "Yahoo Finance chart API; Stooq CSV fallback",
   "eligible_assets": [],
   "common_daily_bars": 0,
@@ -67,7 +67,7 @@
     "status": "DATA_INSUFFICIENT",
     "start_date": "2026-11-27",
     "last_processed_date": "2026-11-27",
-    "updated_at_utc": "2026-11-27T20:09:06.597350+00:00",
+    "updated_at_utc": "2026-11-27T20:11:04.843283+00:00",
     "nav_index": 100.0,
     "high_watermark": 100.0,
     "max_drawdown": 0.0,
@@ -84,54 +84,72 @@
   "holdings": [],
   "cash_weight": 1.0,
   "ai_review": {
-    "status": "LOCAL_FALLBACK_AFTER_PROVIDER_FAILURE",
+    "status": "LLM_COMPLETE",
     "agents_expected": 3,
     "agents_completed": 3,
-    "llm_agents_completed": 0,
-    "local_agents_completed": 3,
-    "provider_diagnostics": {
-      "market_analyst": "provider_http_403:",
-      "portfolio_researcher": "provider_http_403:",
-      "risk_auditor": "provider_http_403:"
-    },
+    "llm_agents_completed": 3,
+    "local_agents_completed": 0,
+    "provider_diagnostics": {},
     "reviews": {
       "market_analyst": {
         "status": "COMPLETED",
-        "engine": "local_deterministic",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "Forward paper status: DATA_INSUFFICIENT. Prospective holdings: 0; asset classes: none. Cash weight: 1.0.",
+          "summary": "The portfolio is currently 100% cash with no holdings. No market breadth or asset‑class concentration can be determined from the available data.",
           "risks": [
-            "Market data status is not READY; portfolio marks may be unavailable."
+            "Liquidity risk due to lack of diversification",
+            "Potential concentration risk if future positions are added without diversification"
           ],
           "questions": [
-            "Are the ETF proxies and their exchange calendars representative of the intended global universe?"
+            "What asset classes are intended for future allocation?",
+            "Which securities will be considered for inclusion?",
+            "What is the target diversification strategy?"
           ]
         }
       },
       "portfolio_researcher": {
         "status": "COMPLETED",
-        "engine": "local_deterministic",
+        "engine": "llm",
+        "provider": "openrouter",
+        "model": "openrouter/free",
         "review": {
-          "summary": "Historical backtest: UNKNOWN to UNKNOWN; total return UNKNOWN; SPY benchmark UNKNOWN. Forward paper NAV index: 100.0.",
+          "summary": "The deterministic strategy cannot be evaluated because all required market data is blocked by the Finam account allowlist, resulting in INSUFFICIENT_DATA for both historical backtest and paper portfolio. No performance, holdings, or model weights are available. The portfolio remains 100% cash with zero rebalances.",
           "risks": [
-            "Historical backtest is not independent out-of-sample approval."
+            "Complete data outage for all 14 universe symbols prevents signal generation, backtesting, and paper trading.",
+            "No historical performance or benchmark comparison exists to validate the strategy.",
+            "Strategy logic, risk parameters, and target allocations are unknown (portfolio_model is null).",
+            "Operational risk: dependency on a single data provider with account-level restrictions."
           ],
           "questions": [
-            "Does the strategy remain robust after a longer prospective paper-trading period and stressed transaction costs?"
+            "What is the deterministic strategy's rule set (selection, weighting, rebalance frequency, risk controls)?",
+            "How will data access be restored or alternative providers integrated?",
+            "What are the target asset classes, universe, and constraints once data is available?",
+            "What is the expected timeline for first valid backtest and paper portfolio initialization?"
           ]
         }
       },
       "risk_auditor": {
         "status": "COMPLETED",
-        "engine": "local_deterministic",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "Forward paper maximum drawdown: 0.0; historical backtest maximum drawdown: UNKNOWN; stale instruments: 0; data errors: 14.",
+          "summary": "The portfolio is in an initial state with no holdings and all assets in cash. No performance data, backtest, or benchmark information is available. Several key symbols are blocked, preventing data retrieval. The portfolio has no concentration or drawdown data, and the model is undefined.",
           "risks": [
-            "Some requested instruments failed data validation or download.",
-            "Options and futures are excluded from NAV pending executable quotes and contract-level risk modeling."
+            "Data insufficiency: lack of performance, backtest, and benchmark metrics.",
+            "Stale or missing market data: many symbols are blocked, preventing accurate valuation.",
+            "No concentration analysis: holdings are empty, so concentration risk cannot be assessed.",
+            "Drawdown risk unknown: max_drawdown is 0.0 but with no trades, this is not meaningful.",
+            "Potential for unrecognized errors: data_errors list indicates multiple blocked symbols, which may affect future portfolio construction."
           ],
           "questions": [
-            "Are transaction costs, dividends, currency exposure and ETF liquidity sufficiently represented?"
+            "What is the intended strategy or model for this portfolio?",
+            "When will the blocked symbols be unblocked or replaced with accessible data sources?",
+            "How will performance and drawdown be tracked once the portfolio starts trading?",
+            "What mechanisms are in place to handle data errors and ensure data integrity?",
+            "When is the first rebalance scheduled, and what criteria will trigger it?"
           ]
         }
       }
