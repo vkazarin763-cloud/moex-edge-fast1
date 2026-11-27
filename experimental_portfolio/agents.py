@@ -3,7 +3,7 @@
 LLM text is commentary only. It never creates or changes portfolio positions.
 """
 from __future__ import annotations
-import json,os,re,urllib.error,urllib.request
+import json,os,re,time,urllib.error,urllib.request
 from typing import Any
 
 OPENROUTER_URL="https://openrouter.ai/api/v1/chat/completions"
@@ -14,25 +14,37 @@ ROLES={
  "risk_auditor":"Act as a skeptical independent risk auditor. Look for data gaps, stale prices, concentration and drawdown limitations.",
 }
 def _request(url:str,key:str,model:str,prompt:str)->dict[str,Any]:
-    body={"model":model,"temperature":0.1,"max_tokens":450,"response_format":{"type":"json_object"},
+    body={"model":model,"temperature":0.1,"max_completion_tokens":450,
+      "reasoning_format":"hidden","reasoning_effort":"low",
+      "response_format":{"type":"json_object"},
       "messages":[{"role":"system","content":"You are a read-only portfolio research reviewer. Never invent prices, facts or performance. Do not instruct the user to trade or place orders. Never change portfolio weights. Return JSON with keys summary (string), risks (array), questions (array)."},
       {"role":"user","content":prompt}]}
     req=urllib.request.Request(url,data=json.dumps(body).encode(),headers={"Authorization":f"Bearer {key}",
-      "Content-Type":"application/json","HTTP-Referer":"https://github.com","X-Title":"Experimental Paper Portfolio"},method="POST")
-    try:
-        with urllib.request.urlopen(req,timeout=35) as response: result=json.loads(response.read().decode())
-    except urllib.error.HTTPError as exc:
-        detail=""
+      "Content-Type":"application/json","User-Agent":"MOEX-EDGE-Portfolio-Research/1.0"},method="POST")
+    for attempt in range(4):
         try:
-            parsed=json.loads(exc.read().decode("utf-8","replace"))
-            err=parsed.get("error",{})
-            if isinstance(err,dict): detail=str(err.get("message") or err.get("code") or "")
-            elif isinstance(err,str): detail=err
-        except Exception: pass
-        detail=re.sub(r"(?i)bearer\s+\S+","Bearer [redacted]",detail)
-        detail=re.sub(r"(?i)(api[_ -]?key|token)\s*[:=]\s*\S+",r"\1=[redacted]",detail)
-        raise RuntimeError(f"provider_http_{exc.code}:{detail[:160]}") from None
-    except Exception as exc: raise RuntimeError(f"provider_request_failed:{type(exc).__name__}") from None
+            with urllib.request.urlopen(req,timeout=45) as response: result=json.loads(response.read().decode())
+            break
+        except urllib.error.HTTPError as exc:
+            raw=""
+            try: raw=exc.read().decode("utf-8","replace")
+            except Exception: pass
+            detail=""
+            try:
+                payload=json.loads(raw)
+                err=payload.get("error",{})
+                if isinstance(err,dict): detail=str(err.get("message") or err.get("code") or payload.get("message") or "")
+                elif isinstance(err,str): detail=err
+                else: detail=str(payload.get("message") or "")
+            except Exception: detail=raw[:200]
+            detail=re.sub(r"(?i)bearer\\s+\\S+","Bearer [redacted]",detail)
+            detail=re.sub(r"(?i)(api[_ -]?key|token)\\s*[:=]\\s*\\S+",r"\\1=[redacted]",detail)
+            if exc.code==429 and attempt<3:
+                try: delay=max(1.0,min(float(exc.headers.get("Retry-After","2")),30.0))
+                except (TypeError,ValueError): delay=min(2**attempt,30.0)
+                time.sleep(delay); continue
+            raise RuntimeError(f"provider_http_{exc.code}:{detail[:180]}") from None
+        except Exception as exc: raise RuntimeError(f"provider_request_failed:{type(exc).__name__}") from None
     try: parsed=json.loads(result["choices"][0]["message"]["content"])
     except (KeyError,IndexError,TypeError,json.JSONDecodeError): raise RuntimeError("provider_returned_invalid_json") from None
     if not isinstance(parsed,dict) or not isinstance(parsed.get("summary"),str) or not isinstance(parsed.get("risks",[]),list) or not isinstance(parsed.get("questions",[]),list):
