@@ -19,7 +19,12 @@ from finam_trade_api.market_data import (
     SubscribeQuoteRequest,
 )
 
-DEFAULT_SYMBOLS = ("GZ100CX6@RTSX", "SR290CX6@RTSX")
+DEFAULT_SYMBOLS = (
+    "GZ100CL6@RTSX",
+    "GZ100CX6@RTSX",
+    "SR290CL6@RTSX",
+    "SR290CX6@RTSX",
+)
 DEFAULT_CONTROL_SYMBOL = "SBER@MISX"
 
 
@@ -48,7 +53,7 @@ async def main() -> None:
     secret = os.environ.get("FINAM_API_SECRET", "")
     if not secret:
         raise RuntimeError("FINAM_API_SECRET_missing")
-    duration = int(os.environ.get("CAPTURE_SECONDS", "120"))
+    duration = int(os.environ.get("CAPTURE_SECONDS", "180"))
     if not 30 <= duration <= 300:
         raise ValueError("CAPTURE_SECONDS_must_be_30_to_300")
     symbols = tuple(
@@ -56,11 +61,11 @@ async def main() -> None:
         for item in os.environ.get("OPTION_SYMBOLS", ",".join(DEFAULT_SYMBOLS)).split(",")
         if item.strip()
     )
-    if not symbols or len(symbols) > 4:
-        raise ValueError("OPTION_SYMBOLS_must_contain_1_to_4_symbols")
+    if not symbols or len(symbols) > 4 or len(set(symbols)) != len(symbols):
+        raise ValueError("OPTION_SYMBOLS_must_contain_1_to_4_unique_symbols")
     control_symbol = os.environ.get("CONTROL_SYMBOL", DEFAULT_CONTROL_SYMBOL).strip()
-    if not control_symbol:
-        raise ValueError("CONTROL_SYMBOL_must_not_be_empty")
+    if not control_symbol or control_symbol in symbols:
+        raise ValueError("CONTROL_SYMBOL_must_be_nonempty_and_distinct")
 
     output = Path("finam-options-grpc-streams.jsonl")
     counts: Counter[str] = Counter()
