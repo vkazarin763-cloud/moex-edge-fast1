@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only Finam option history collector: nearby expiries/strikes, OHLCV only."""
-import json, os, re, sys
+import json, os, re, sys, time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import quote
@@ -41,6 +41,8 @@ class API:
         if not token:raise RuntimeError("auth_token_missing")
         self.s.headers["Authorization"]="Bearer "+token
     def get(self,path,params=None):
+        # Stay below Finam REST limit of 200 requests/minute across the expanded probe.
+        time.sleep(0.36)
         try:r=self.s.get(BASE+path,params=params,timeout=TIMEOUT)
         except requests.RequestException as e:raise RuntimeError("network_"+type(e).__name__) from None
         if r.status_code!=200:return r.status_code,None
