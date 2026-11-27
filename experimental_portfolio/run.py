@@ -19,7 +19,7 @@ def main()->int:
     start=end-timedelta(days=365*args.years+30)
     allowlist=load_finam_allowlist()
     approved=set(allowlist["allowed_symbols"])
-    history,errors=download_universe(start,end)
+    history,errors=download_universe(start,end,approved)
     history={s:r for s,r in history.items() if s in approved}
     errors={**errors,**{s:"blocked_by_finam_account_allowlist" for s in [x["symbol"] for x in UNIVERSE if x["symbol"] not in approved]}}
     report=build_report(history,errors,allowed_symbols=approved)
