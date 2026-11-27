@@ -40,6 +40,8 @@ jobs:
           )
           print("Finam SDK imports OK")
           PY
+      - name: Compile probe before connecting
+        run: python -m py_compile research/finam_options_grpc_stream_probe.py
       - name: Capture per-instrument gRPC market-data quality
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
