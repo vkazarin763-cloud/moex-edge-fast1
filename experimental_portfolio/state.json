@@ -1,10 +1,25 @@
 {
-  "updated_at_utc": "2026-11-27T19:51:26.540388+00:00",
-  "status": "INSUFFICIENT_DATA",
-  "portfolio_index": null,
-  "holdings": [],
-  "cash_weight": null,
-  "ai_review_status": "FAILED",
+  "updated_at_utc": "2026-11-27T19:55:01.473723+00:00",
+  "status": "READY",
+  "portfolio_index": 131.4578,
+  "holdings": [
+    {
+      "symbol": "DBC.US",
+      "weight": 0.5,
+      "latest_close": 29.549999237060547,
+      "adjusted_close": 29.549999237060547,
+      "asset_class": "commodities"
+    },
+    {
+      "symbol": "SHY.US",
+      "weight": 0.5,
+      "latest_close": 81.62000274658203,
+      "adjusted_close": 81.62000274658203,
+      "asset_class": "cash_proxy"
+    }
+  ],
+  "cash_weight": 0.0,
+  "ai_review_status": "LOCAL_FALLBACK_AFTER_PROVIDER_FAILURE",
   "safety": {
     "paper_only": true,
     "broker_access": false,

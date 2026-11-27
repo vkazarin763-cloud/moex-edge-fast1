@@ -1,24 +1,172 @@
 {
-  "status": "INSUFFICIENT_DATA",
-  "generated_at_utc": "2026-11-27T19:51:26.540388+00:00",
-  "source": "Stooq public daily CSV",
-  "eligible_assets": [],
-  "common_daily_bars": 0,
-  "data_errors": {
-    "SPY.US": "ValueError:provider returned no OHLCV CSV header",
-    "QQQ.US": "ValueError:provider returned no OHLCV CSV header",
-    "IWM.US": "ValueError:provider returned no OHLCV CSV header",
-    "EFA.US": "ValueError:provider returned no OHLCV CSV header",
-    "EEM.US": "ValueError:provider returned no OHLCV CSV header",
-    "VGK.US": "ValueError:provider returned no OHLCV CSV header",
-    "EWJ.US": "ValueError:provider returned no OHLCV CSV header",
-    "INDA.US": "ValueError:provider returned no OHLCV CSV header",
-    "TLT.US": "ValueError:provider returned no OHLCV CSV header",
-    "IEF.US": "ValueError:provider returned no OHLCV CSV header",
-    "GLD.US": "ValueError:provider returned no OHLCV CSV header",
-    "DBC.US": "ValueError:provider returned no OHLCV CSV header",
-    "VNQ.US": "ValueError:provider returned no OHLCV CSV header",
-    "SHY.US": "ValueError:provider returned no OHLCV CSV header"
+  "status": "READY",
+  "generated_at_utc": "2026-11-27T19:55:01.473723+00:00",
+  "source": "Yahoo Finance chart API; Stooq CSV fallback",
+  "providers_used": [
+    "Yahoo Finance"
+  ],
+  "provider_by_symbol": {
+    "SPY.US": "Yahoo Finance",
+    "QQQ.US": "Yahoo Finance",
+    "IWM.US": "Yahoo Finance",
+    "EFA.US": "Yahoo Finance",
+    "EEM.US": "Yahoo Finance",
+    "VGK.US": "Yahoo Finance",
+    "EWJ.US": "Yahoo Finance",
+    "INDA.US": "Yahoo Finance",
+    "TLT.US": "Yahoo Finance",
+    "IEF.US": "Yahoo Finance",
+    "GLD.US": "Yahoo Finance",
+    "DBC.US": "Yahoo Finance",
+    "VNQ.US": "Yahoo Finance",
+    "SHY.US": "Yahoo Finance"
+  },
+  "market_scope": "US-listed global equity, bond, gold, commodity and real-estate ETF proxies",
+  "portfolio_model": {
+    "name": "Global 63-session momentum + 200-session trend",
+    "initial_nav_index": 100.0,
+    "currency": "NOT_APPLICABLE_INDEX_UNITS",
+    "rebalance": "monthly, using prior completed daily close",
+    "selection": "up to four assets with positive 63-session momentum and close above 200-session SMA",
+    "weighting": "equal weight; uninvested share remains cash",
+    "estimated_one_way_transaction_cost": 0.001,
+    "cost_assumption_note": "Provisional modeling assumption, not a verified broker tariff or executable spread."
+  },
+  "period": {
+    "from": "2024-08-16",
+    "till": "2026-11-27",
+    "common_daily_bars": 773,
+    "assets_included": [
+      "DBC.US",
+      "EEM.US",
+      "EFA.US",
+      "EWJ.US",
+      "GLD.US",
+      "IEF.US",
+      "INDA.US",
+      "IWM.US",
+      "QQQ.US",
+      "SHY.US",
+      "SPY.US",
+      "TLT.US",
+      "VGK.US",
+      "VNQ.US"
+    ]
+  },
+  "performance": {
+    "observations": 573,
+    "total_return": 0.314578,
+    "cagr": 0.127418,
+    "max_drawdown": -0.142611,
+    "annualized_volatility": 0.143417,
+    "sharpe_rf0": 0.9106,
+    "ending_nav_index": 131.4578
+  },
+  "benchmark_spy_buy_and_hold": {
+    "observations": 573,
+    "total_return": 0.35139,
+    "cagr": 0.141154,
+    "max_drawdown": -0.187552,
+    "annualized_volatility": 0.169186,
+    "sharpe_rf0": 0.8669,
+    "ending_nav_index": 135.139
+  },
+  "holdings": [
+    {
+      "symbol": "DBC.US",
+      "weight": 0.5,
+      "latest_close": 29.549999237060547,
+      "adjusted_close": 29.549999237060547,
+      "asset_class": "commodities"
+    },
+    {
+      "symbol": "SHY.US",
+      "weight": 0.5,
+      "latest_close": 81.62000274658203,
+      "adjusted_close": 81.62000274658203,
+      "asset_class": "cash_proxy"
+    }
+  ],
+  "cash_weight": 0.0,
+  "rebalance_count": 28,
+  "cumulative_turnover": 10.75,
+  "latest_prices": {
+    "SPY.US": {
+      "date": "2026-11-27",
+      "close": 728.3200073242188,
+      "adjusted_close": 728.3200073242188
+    },
+    "QQQ.US": {
+      "date": "2026-11-27",
+      "close": 650.989990234375,
+      "adjusted_close": 650.989990234375
+    },
+    "IWM.US": {
+      "date": "2026-11-27",
+      "close": 273.7900085449219,
+      "adjusted_close": 273.7900085449219
+    },
+    "EFA.US": {
+      "date": "2026-11-27",
+      "close": 100.5199966430664,
+      "adjusted_close": 100.5199966430664
+    },
+    "EEM.US": {
+      "date": "2026-11-27",
+      "close": 58.099998474121094,
+      "adjusted_close": 58.099998474121094
+    },
+    "VGK.US": {
+      "date": "2026-11-27",
+      "close": 85.91000366210938,
+      "adjusted_close": 85.91000366210938
+    },
+    "EWJ.US": {
+      "date": "2026-11-27",
+      "close": 89.06999969482422,
+      "adjusted_close": 89.06999969482422
+    },
+    "INDA.US": {
+      "date": "2026-11-27",
+      "close": 52.77000045776367,
+      "adjusted_close": 52.77000045776367
+    },
+    "TLT.US": {
+      "date": "2026-11-27",
+      "close": 81.2699966430664,
+      "adjusted_close": 81.2699966430664
+    },
+    "IEF.US": {
+      "date": "2026-11-27",
+      "close": 91.66000366210938,
+      "adjusted_close": 91.66000366210938
+    },
+    "GLD.US": {
+      "date": "2026-11-27",
+      "close": 334.3999938964844,
+      "adjusted_close": 334.3999938964844
+    },
+    "DBC.US": {
+      "date": "2026-11-27",
+      "close": 29.549999237060547,
+      "adjusted_close": 29.549999237060547
+    },
+    "VNQ.US": {
+      "date": "2026-11-27",
+      "close": 96.23999786376953,
+      "adjusted_close": 96.23999786376953
+    },
+    "SHY.US": {
+      "date": "2026-11-27",
+      "close": 81.62000274658203,
+      "adjusted_close": 81.62000274658203
+    }
+  },
+  "stale_symbols": [],
+  "data_errors": {},
+  "derivatives": {
+    "status": "RESEARCH_ONLY_NOT_IN_NAV",
+    "reason": "Options need historical executable bid/ask, contract, expiry and liquidity data; futures need expiry/roll, multiplier and margin modeling. Existing MOEX scanners remain separate."
   },
   "safety": {
     "paper_only": true,
@@ -27,7 +175,13 @@
     "llm_can_change_weights": false,
     "real_trading_authorized": false
   },
-  "message": "Not enough synchronized validated history; no performance is reported.",
+  "limitations": [
+    "Daily closes are not live quotes or executable bid/ask.",
+    "Dividend-adjusted close is used when the provider supplies it; Stooq fallback is price-only.",
+    "US-listed ETF proxies are not direct ownership of every underlying market.",
+    "The 100-point NAV is a normalized research index, not user capital or currency.",
+    "Historical results are not a forecast or proof of profitability."
+  ],
   "universe_requested": [
     "SPY.US",
     "QQQ.US",
@@ -45,25 +199,57 @@
     "SHY.US"
   ],
   "ai_review": {
-    "status": "FAILED",
+    "status": "LOCAL_FALLBACK_AFTER_PROVIDER_FAILURE",
     "agents_expected": 3,
-    "agents_completed": 0,
+    "agents_completed": 3,
+    "llm_agents_completed": 0,
+    "local_agents_completed": 3,
+    "provider_diagnostics": {
+      "market_analyst": "provider_http_403:",
+      "portfolio_researcher": "provider_http_403:",
+      "risk_auditor": "provider_http_403:"
+    },
     "reviews": {
       "market_analyst": {
-        "status": "FAILED",
-        "error": "provider_http_403"
+        "status": "COMPLETED",
+        "engine": "local_deterministic",
+        "review": {
+          "summary": "Portfolio status: READY. Current holdings: 2; represented asset classes: cash_proxy, commodities. Cash weight: 0.0.",
+          "risks": [],
+          "questions": [
+            "Are the ETF proxies and their exchange calendars representative of the intended global universe?"
+          ]
+        }
       },
       "portfolio_researcher": {
-        "status": "FAILED",
-        "error": "provider_http_403"
+        "status": "COMPLETED",
+        "engine": "local_deterministic",
+        "review": {
+          "summary": "Model: Global 63-session momentum + 200-session trend. Backtest observations: 573; total return: 0.314578; SPY benchmark return: 0.35139.",
+          "risks": [
+            "The strategy is a fixed momentum/trend baseline; it has not passed independent out-of-sample approval."
+          ],
+          "questions": [
+            "Does the strategy remain robust after a longer prospective paper-trading period and stressed transaction costs?"
+          ]
+        }
       },
       "risk_auditor": {
-        "status": "FAILED",
-        "error": "provider_http_403"
+        "status": "COMPLETED",
+        "engine": "local_deterministic",
+        "review": {
+          "summary": "Observed maximum drawdown: -0.142611; stale instruments: 0; instruments with data errors: 0.",
+          "risks": [
+            "Options and futures are excluded from NAV pending executable quotes and contract-level risk modeling."
+          ],
+          "questions": [
+            "Are transaction costs, dividends, currency exposure and ETF liquidity sufficiently represented?"
+          ]
+        }
       }
     },
-    "policy": "AI commentary is advisory only; deterministic engine alone calculates NAV and holdings."
+    "policy": "LLM and local reviewers are commentary-only. They cannot change NAV, holdings, signals or authorize real trading."
   },
   "run_mode": "AUTONOMOUS_RESEARCH_PAPER_ONLY",
-  "data_source": "Stooq public daily CSV"
+  "data_source": "Yahoo Finance chart API; Stooq CSV fallback"
 }
