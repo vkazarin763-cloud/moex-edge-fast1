@@ -1,0 +1,40 @@
+name: Expanded Finam Options History + Strategy Grid (Research)
+on:
+  workflow_dispatch:
+    inputs:
+      underlyings:
+        description: "Finam underlying symbols, comma-separated"
+        required: true
+        default: "SBER@MISX,GAZP@MISX,LKOH@MISX,ROSN@MISX,MOEX@MISX"
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: finam-options-expanded-history
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Fetch expanded option OHLC history (read-only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          OPTION_UNDERLYINGS: ${{ inputs.underlyings }}
+        run: python research/finam_options_expanded_history.py
+      - name: Run exploratory strategy grid
+        run: python research/options_strategy_grid.py finam-options-expanded-history.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finam-options-expanded-history-and-grid
+          path: |
+            finam-options-expanded-history.json
+            options-strategy-grid.json
+          if-no-files-found: warn
+          retention-days: 30
