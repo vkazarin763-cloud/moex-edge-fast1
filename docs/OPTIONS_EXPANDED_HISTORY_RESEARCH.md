@@ -13,3 +13,8 @@ It then runs a parameter grid for option-price breakouts and EMA crosses with 3/
 - No orders, accounts, portfolio endpoints, scheduler, Telegram, or live trading are touched.
 
 Manual workflow only, using existing `FINAM_API_SECRET`. Artifacts retained 30 days. No schedule.
+
+## Finam chain endpoint behavior
+The official REST documentation for `GET /v1/assets/{underlying_symbol}/options` defines optional `expiration_date.year/month/day` filters. A month can be requested with `day=0`; without an expiry filter the endpoint returns the nearest expiry only. The collector now queries each calendar month intersecting its 15–90 DTE window and deduplicates contracts by symbol. The optional `root` parameter is documented for futures options (weekly/monthly roots), but its accepted values are not specified in the REST reference, so this patch does not guess them. Each monthly request's HTTP status, returned count and expiry dates are recorded for verification.
+
+Official reference: https://api.finam.ru/docs/rest/assetsservice_optionschain.md
