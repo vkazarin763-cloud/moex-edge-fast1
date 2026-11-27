@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install dependency
+        run: pip install requests
       - name: Add verified MOEX TLS root CA
         shell: bash
         run: |
@@ -56,8 +58,6 @@ jobs:
           response.raise_for_status()
           print(f"MOEX ISS TLS verified; HTTP {response.status_code}; bytes={len(response.content)}")
           PY
-      - name: Install dependency
-        run: pip install requests
       - name: Generate LONG/SHORT futures signals (read only)
         run: python research/moex_futures_simple_signals.py
       - name: Publish signal summary
