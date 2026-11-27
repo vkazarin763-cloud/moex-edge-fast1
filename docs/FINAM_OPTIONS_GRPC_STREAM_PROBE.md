@@ -1,27 +1,43 @@
-# Finam options gRPC stream probe
+# Finam options gRPC stream quality probe
 
-A bounded, read-only experiment to compare live market-data streams with unary quote snapshots and token market-data entitlements.
+A bounded, read-only capture that measures per-instrument freshness and deduplicates repeated provider timestamps. It is a data-quality diagnostic, not a trading signal or execution test.
 
 ## Run
 
 GitHub Actions → **Finam Options gRPC Stream Probe (Read Only)** → Run workflow.
-Default capture is 120 seconds. The artifact is retained for 30 days.
+Default capture is 180 seconds (allowed 30–300). The artifact is retained for 30 days.
 
-## SDK and diagnostics
+The default option set includes both CALL and PUT for GAZP and SBER:
+- \`GZ100CL6@RTSX\` — GAZP CALL
+- \`GZ100CX6@RTSX\` — GAZP PUT
+- \`SR290CL6@RTSX\` — SBER CALL
+- \`SR290CX6@RTSX\` — SBER PUT
 
-Uses the official Finam Python SDK, pinned to the published `finam-sdk==2.24.0` release, and the existing `FINAM_API_SECRET` repository secret. A separate import check runs before any connection attempt.
+\`SBER@MISX\` remains a control symbol for the underlying share quote stream.
 
-The probe records:
-- `TokenDetails` market-data permissions (quote level, MIC/region, delay), but not the JWT or account identifiers;
-- unary `LastQuote` snapshots for the option symbols;
-- a control `LastQuote` and `SubscribeQuote` stream for `SBER@MISX`, to distinguish an options-symbol issue from a general streaming issue;
-- option `SubscribeQuote`, `SubscribeOrderBook`, and `SubscribeLatestTrades` events;
-- both gRPC exceptions and Finam stream-level errors carried inside protobuf responses.
+## Metrics
+
+The JSONL artifact preserves raw gRPC envelopes and adds normalized per-instrument records:
+- quote snapshot vs update counts;
+- unique provider timestamps and duplicate/repeated timestamps;
+- fresh unique quote updates (provider timestamp no more than 60 seconds old at client receipt) vs stale updates;
+- per-instrument order-book snapshots, delta messages, delta row counts, action counts, and row timestamp ages;
+- trade event counts;
+- unary \`LastQuote\` snapshots and token market-data entitlements.
+
+Counts are per instrument item, not per gRPC envelope. A repeated quote snapshot or an old quote repeated by the server is not treated as fresh market activity. The 60-second threshold is a diagnostic convention, not a guarantee of executable prices. Provider timestamps are retained separately from client receipt timestamps.
 
 ## Interpretation
 
-Every stream event has a client-side `received_at_utc`; provider timestamps remain inside the protobuf payload. A successful unary snapshot does not prove that the streaming feed is delivering updates. A control-symbol stream event with no option events points toward option-specific eligibility/activity; no events for either control or options, despite successful unary snapshots, points toward the streaming path or market-data service. Token permissions and RPC errors must be read alongside event counts.
+- Frequent SBER control updates but no fresh option updates: the connection is alive, but option quotes are inactive, stale, or not being delivered.
+- Fresh option quote updates and unique order-book deltas: the option stream is demonstrably delivering current changes during the capture.
+- Snapshots without fresh updates: subscription initialization succeeded, but ongoing freshness is not established.
+- No trade events in a short capture does not prove that the trade stream is broken; it may simply mean no trades occurred.
 
-## Safety
+## SDK and safety
 
-Only market-data subscriptions and token metadata are called. No balances, positions, account IDs, orders, cancellations, or execution APIs are queried. No secret/JWT is written to the artifact. This probe does not place trades and does not establish fillability or profitability.
+Uses the official Finam Python SDK pinned to published \`finam-sdk==2.24.0\` and the existing \`FINAM_API_SECRET\` repository secret. A separate import check runs before connection.
+
+Only token metadata and market-data RPCs are called. No balances, positions, account IDs, orders, cancellations, or execution APIs are queried. The JWT and secret are never written to the artifact. The token details response reports \`readonly\`; this probe itself does not invoke trading APIs.
+
+A successful stream does not prove fillability, profitability, or suitability for live trading. All strategy and live-execution work remains out of scope.
