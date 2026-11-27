@@ -70,7 +70,8 @@ def main()->int:
       "assets_with_history":len(history),"data_errors":len(errors),
       "historical_backtest_index":report.get("performance",{}).get("ending_nav_index"),
       "paper_status":ledger.get("status"),"paper_nav_index":ledger.get("nav_index"),
-      "paper_holdings":len(ledger.get("holdings",[])),"cash_weight":ledger.get("cash_weight"),\n      "finam_allowed_symbols":allowlist["allowed_symbols"],"eligibility_blocked":len(allowlist["blocked_symbols"]),
+      "paper_holdings":len(ledger.get("holdings",[])),"cash_weight":ledger.get("cash_weight"),
+      "finam_allowed_symbols":allowlist["allowed_symbols"],"eligibility_blocked":len(allowlist["blocked_symbols"]),
       "ai_review":report["ai_review"]["status"],"ai_agents_completed":report["ai_review"].get("agents_completed",0),
       "paper_only":True,"orders_placed":False,
     },ensure_ascii=False))
