@@ -1,0 +1,77 @@
+name: Simple MOEX Options Signals (Read Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      underlyings:
+        description: "Finam underlying symbols, comma-separated"
+        required: true
+        default: "SBER@MISX,GAZP@MISX,LKOH@MISX,ROSN@MISX,MOEX@MISX"
+        type: string
+  schedule:
+    # Hourly during the main MOEX derivatives session (10:00-23:00 Moscow time).
+    - cron: "0 7-20 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simple-moex-options-signals
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install API dependency
+        run: pip install requests
+      - name: Generate simple CALL/PUT signals (read only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          OPTION_UNDERLYINGS: ${{ inputs.underlyings || 'SBER@MISX,GAZP@MISX,LKOH@MISX,ROSN@MISX,MOEX@MISX' }}
+        run: python research/moex_options_simple_signals.py
+      - name: Publish signal summary
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads(Path("moex-options-signals.json").read_text())
+          lines = [
+              "# Simple MOEX options signals",
+              "",
+              f"- As of UTC: {data['as_of_utc']}",
+              f"- Underlyings: {len(data['underlyings'])}",
+              f"- Signals: **{len(data['signals'])}**",
+              "- No spread/liquidity/volatility filters are applied.",
+              "- Read-only: no orders or account operations.",
+              "",
+              "| Underlying | Signal | H1 close | Option | Expiry | Bid / Ask | Spread | Quote age |",
+              "|---|---|---:|---|---|---:|---:|---:|",
+          ]
+          for s in data["signals"]:
+              opt = s.get("option", {})
+              q = opt.get("quote", {})
+              ba = f"{q.get('bid')} / {q.get('ask')}" if q else "—"
+              lines.append(
+                  f"| {s['underlying']} | {s['direction']} | {s['underlying_close']} | "
+                  f"{opt.get('symbol', '—')} | {opt.get('expiry', '—')} | {ba} | "
+                  f"{q.get('spread_pct', '—')}% | {q.get('age_minutes', '—')} min |"
+              )
+          if not data["signals"]:
+              lines.append("| — | No signal | — | — | — | — | — | — |")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("\n".join(lines) + "\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moex-options-simple-signals
+          path: moex-options-signals.json
+          if-no-files-found: error
+          retention-days: 30
