@@ -59,6 +59,13 @@ class ExperimentalPortfolioTests(unittest.TestCase):
         self.assertEqual(result["llm_agents_completed"],0)
         self.assertTrue(all(x["engine"]=="local_deterministic" for x in result["reviews"].values()))
 
+    def test_local_reviewer_handles_insufficient_historical_report(self):
+        with patch.dict(os.environ,{},clear=True):
+            result=run_reviewers({"status":"INSUFFICIENT_DATA","historical_backtest":{"period":None,"performance":None},"paper_portfolio":{"status":"WAITING_FOR_FINAM_ACCOUNT_ALLOWLIST","nav_index":100.0},"holdings":[]})
+        self.assertEqual(result["agents_completed"],3)
+        self.assertEqual(result["local_agents_completed"],3)
+        self.assertTrue(all(x["engine"]=="local_deterministic" for x in result["reviews"].values()))
+
     def test_forward_ledger_initializes_without_historical_trades(self):
         ledger=update_paper_ledger(self.make_history(),None,datetime(2026,11,27,tzinfo=timezone.utc))
         self.assertEqual(ledger["status"],"INITIALIZED_WAITING_FOR_NEXT_SESSION")
