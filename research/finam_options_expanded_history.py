@@ -59,6 +59,33 @@ def bars(api,symbol,tf,start,end):
         except Exception:continue
     out.sort(key=lambda x:x["timestamp"])
     return {"http_status":st,"available":True,"bars_count":len(raw),"valid_ohlc_bars":len(out),"first_timestamp":out[0]["timestamp"] if out else None,"last_timestamp":out[-1]["timestamp"] if out else None,"series":out}
+def diagnose_chain(opts, today):
+    from collections import Counter
+    types=Counter(); expiries=Counter(); rejected=Counter(); dtes=[]
+    for o in opts or []:
+        if not isinstance(o,dict): rejected["not_object"]+=1; continue
+        typ=option_type(o.get("type")); types[typ or str(val(o.get("type")))]+=1
+        exp=date(o.get("expiration_last_day")) or date(o.get("expiration_first_day"))
+        strike=dec(o.get("strike"))
+        if not exp: rejected["date_unparsed"]+=1; continue
+        try: dte=(datetime.fromisoformat(exp).date()-today).days
+        except ValueError: rejected["date_invalid"]+=1; continue
+        expiries[exp]+=1; dtes.append(dte)
+        if strike is None: rejected["strike_unparsed"]+=1
+        elif typ not in ("TYPE_CALL","TYPE_PUT"): rejected["type_unrecognized"]+=1
+        elif not 15<=dte<=90: rejected["outside_15_90_dte"]+=1
+    return {
+        "chain_total":len(opts or []),
+        "type_counts":dict(types),
+        "expiry_date_count":len(expiries),
+        "expiry_dates_earliest_20":sorted(expiries.items())[:20],
+        "expiry_dates_latest_10":sorted(expiries.items())[-10:],
+        "dte_min":min(dtes) if dtes else None,
+        "dte_max":max(dtes) if dtes else None,
+        "contracts_with_expiry_15_90_dte":sum(n for e,n in expiries.items() if 15 <= (datetime.fromisoformat(e).date()-today).days <= 90),
+        "rejection_counts":dict(rejected)
+    }
+
 def select(opts,spot,today):
     parsed=[]
     for o in opts or []:
@@ -97,7 +124,7 @@ def main():
                 for raw_option in opts[:3]:
                     if isinstance(raw_option,dict):
                         schema_sample.append({"keys":sorted(raw_option.keys()),"type_value":val(raw_option.get("type")),"type_python":type(raw_option.get("type")).__name__,"expiration_last_day_python":type(raw_option.get("expiration_last_day")).__name__,"expiration_last_day_raw":raw_option.get("expiration_last_day"),"expiration_first_day_raw":raw_option.get("expiration_first_day"),"expiration_last_day_normalized":date(raw_option.get("expiration_last_day")),"expiration_first_day_normalized":date(raw_option.get("expiration_first_day")),"strike_raw":raw_option.get("strike"),"strike_normalized":str(dec(raw_option.get("strike"))) if dec(raw_option.get("strike")) is not None else None,"symbol":raw_option.get("symbol")})
-                item.update({"option_schema_sample":schema_sample,"selection_status":"ok" if selected else "no_contracts_after_normalization","spot_quote":{k:val(q.get(k)) for k in ("timestamp","bid","ask","last","bid_size","ask_size")},"chain_count":len(opts),"contracts_selected":len(selected),"underlying_bars":{"h1":bars(api,u,"TIME_FRAME_H1",start30,end),"d1":bars(api,u,"TIME_FRAME_D",start365,end)},"contract_data":[]})
+                item.update({"option_chain_diagnostics":diagnose_chain(opts,today),"option_schema_sample":schema_sample,"selection_status":"ok" if selected else "no_contracts_after_normalization","spot_quote":{k:val(q.get(k)) for k in ("timestamp","bid","ask","last","bid_size","ask_size")},"chain_count":len(opts),"contracts_selected":len(selected),"underlying_bars":{"h1":bars(api,u,"TIME_FRAME_H1",start30,end),"d1":bars(api,u,"TIME_FRAME_D",start365,end)},"contract_data":[]})
                 for c in selected:
                     c["history"]={"m5":bars(api,c["symbol"],"TIME_FRAME_M5",start30,end),"h1":bars(api,c["symbol"],"TIME_FRAME_H1",start30,end),"d1":bars(api,c["symbol"],"TIME_FRAME_D",start365,end)}
                     item["contract_data"].append(c)
