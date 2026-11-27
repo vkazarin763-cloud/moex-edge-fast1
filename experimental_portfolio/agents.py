@@ -56,7 +56,9 @@ def _local_review(role:str,report:dict[str,Any])->dict[str,Any]:
         if report.get("status")!="READY": risks.append("Market data status is not READY; portfolio marks may be unavailable.")
         questions.append("Are the ETF proxies and their exchange calendars representative of the intended global universe?")
     elif role=="portfolio_researcher":
-        summary=f"Historical backtest: {(report.get('historical_backtest') or {}).get('period',{}).get('from','UNKNOWN')} to {(report.get('historical_backtest') or {}).get('period',{}).get('till','UNKNOWN')}; total return {performance.get('total_return','UNKNOWN')}; SPY benchmark {((report.get('historical_backtest') or {}).get('benchmark_spy_buy_and_hold') or {}).get('total_return','UNKNOWN')}. Forward paper NAV index: {paper.get('nav_index','UNKNOWN')}."
+        period=(report.get("historical_backtest") or {}).get("period") or {}
+        benchmark=(report.get("historical_backtest") or {}).get("benchmark_spy_buy_and_hold") or {}
+        summary=f"Historical backtest: {period.get('from','UNKNOWN')} to {period.get('till','UNKNOWN')}; total return {performance.get('total_return','UNKNOWN')}; SPY benchmark {benchmark.get('total_return','UNKNOWN')}. Forward paper NAV index: {paper.get('nav_index','UNKNOWN')}."
         risks.append("Historical backtest is not independent out-of-sample approval.")
         questions.append("Does the strategy remain robust after a longer prospective paper-trading period and stressed transaction costs?")
     else:
