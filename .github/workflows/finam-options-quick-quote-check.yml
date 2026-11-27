@@ -1,0 +1,48 @@
+name: Finam Options Quick Quote Check (Read Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      capture_minutes:
+        description: "Short capture duration (1–5 minutes)"
+        required: true
+        default: "2"
+        type: string
+      poll_seconds:
+        description: "Polling interval (15–60 seconds)"
+        required: true
+        default: "30"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: finam-options-quick-quote-check
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install collector dependency
+        run: pip install requests
+      - name: Capture current option quotes and order books
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          CAPTURE_MINUTES: ${{ inputs.capture_minutes }}
+          POLL_SECONDS: ${{ inputs.poll_seconds }}
+          OPTION_SYMBOLS: GZ100CX6@RTSX,SR290CX6@RTSX
+        run: python research/finam_options_quote_archive.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finam-options-quick-quote-check
+          path: finam-options-quote-archive.jsonl
+          if-no-files-found: warn
+          retention-days: 30
