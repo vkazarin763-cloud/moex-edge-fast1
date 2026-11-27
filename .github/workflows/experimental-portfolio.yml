@@ -1,0 +1,70 @@
+name: Autonomous Experimental Portfolio (Paper Only)
+
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "Historical window in years (1-10)"
+        required: false
+        default: "3"
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - "experimental_portfolio/engine.py"
+      - "experimental_portfolio/agents.py"
+      - "experimental_portfolio/run.py"
+      - "experimental_portfolio/README.md"
+      - ".github/workflows/experimental-portfolio.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: experimental-paper-portfolio
+  cancel-in-progress: false
+
+jobs:
+  paper-portfolio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run deterministic global ETF paper portfolio and AI reviewers
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_MODEL: "openrouter/free"
+          GROQ_MODEL: "openai/gpt-oss-20b"
+          YEARS: ${{ github.event.inputs.years || '3' }}
+        run: |
+          python -m experimental_portfolio.run --years "$YEARS"
+      - name: Upload portfolio report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experimental-portfolio-${{ github.run_id }}
+          path: |
+            reports/experimental-portfolio/
+            experimental_portfolio/state.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Persist paper state and reports
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add experimental_portfolio/state.json reports/experimental-portfolio/
+          if git diff --cached --quiet; then
+            echo "No portfolio state or report changes to commit."
+          else
+            git commit -m "Update experimental paper portfolio snapshot"
+            git push
+          fi

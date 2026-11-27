@@ -1,0 +1,26 @@
+name: Experimental Portfolio Safety Tests
+
+on:
+  pull_request:
+    paths:
+      - "experimental_portfolio/**"
+      - "tests/test_experimental_portfolio.py"
+      - ".github/workflows/experimental-portfolio-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile isolated portfolio modules
+        run: python -m compileall -q experimental_portfolio
+      - name: Run unit tests
+        run: python -m unittest tests.test_experimental_portfolio -v
