@@ -1,0 +1,53 @@
+name: Diagnose MOEX ISS TLS chain
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-moex-iss-tls.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect runner trust configuration
+        shell: bash
+        run: |
+          set +e
+          echo "=== Runner ==="
+          date -u
+          uname -a
+          openssl version -a
+          echo "=== CA bundle paths ==="
+          python - <<'PY'
+          import os, ssl
+          paths = ssl.get_default_verify_paths()
+          print(paths)
+          for key in ("SSL_CERT_FILE", "SSL_CERT_DIR", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY"):
+              print(f"{key}_SET={bool(os.environ.get(key))}")
+          for path in (paths.cafile, paths.capath, "/etc/ssl/certs/ca-certificates.crt"):
+              if path:
+                  print(f"{path}: exists={os.path.exists(path)}")
+          PY
+          echo "=== OpenSSL certificate chain ==="
+          timeout 30 openssl s_client -connect iss.moex.com:443 -servername iss.moex.com -showcerts -verify_return_error </dev/null 2>&1 | tee /tmp/moex-iss-chain.txt
+          echo "=== Chain summary ==="
+          grep -E "^(depth=| *[0-9]+ s:| *i:| *subject=| *issuer=| *Verify return code:| *Verification:)" /tmp/moex-iss-chain.txt || true
+          echo "=== Python requests verification ==="
+          python - <<'PY'
+          import requests, ssl, certifi
+          print("system_verify_paths:", ssl.get_default_verify_paths())
+          print("certifi_bundle:", certifi.where())
+          for label, verify in (("requests_default", True), ("system_ca_file", ssl.get_default_verify_paths().cafile), ("certifi", certifi.where())):
+              if not verify:
+                  print(label, "SKIPPED: no CA file")
+                  continue
+              try:
+                  r = requests.get("https://iss.moex.com/iss/engines/futures/markets/forts/securities.json", params={"iss.meta":"off"}, timeout=20, verify=verify)
+                  print(label, "HTTP", r.status_code, "bytes", len(r.content))
+              except Exception as exc:
+                  print(label, type(exc).__name__, str(exc)[:500])
+          PY
