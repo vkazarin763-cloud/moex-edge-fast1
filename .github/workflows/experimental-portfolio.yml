@@ -13,7 +13,10 @@ on:
   push:
     branches: [main]
     paths:
-      - "experimental_portfolio/**"
+      - "experimental_portfolio/engine.py"
+      - "experimental_portfolio/agents.py"
+      - "experimental_portfolio/run.py"
+      - "experimental_portfolio/README.md"
       - ".github/workflows/experimental-portfolio.yml"
 
 permissions:
@@ -30,24 +33,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: \${{ github.token }}
+          token: ${{ github.token }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Run deterministic global ETF paper portfolio and AI reviewers
         env:
-          OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
-          GROQ_API_KEY: \${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_MODEL: "openrouter/free"
           GROQ_MODEL: "openai/gpt-oss-20b"
-          YEARS: \${{ inputs.years || '3' }}
+          YEARS: ${{ github.event.inputs.years || '3' }}
         run: |
           python -m experimental_portfolio.run --years "$YEARS"
       - name: Upload portfolio report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: experimental-portfolio-\${{ github.run_id }}
+          name: experimental-portfolio-${{ github.run_id }}
           path: |
             reports/experimental-portfolio/
             experimental_portfolio/state.json
