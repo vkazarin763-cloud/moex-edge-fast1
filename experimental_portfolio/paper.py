@@ -9,10 +9,11 @@ from experimental_portfolio.engine import (
 
 def update_paper_ledger(history:dict[str,list[dict[str,Any]]],
                         existing:dict[str,Any]|None=None,
-                        generated_at:datetime|None=None)->dict[str,Any]:
+                        generated_at:datetime|None=None,
+                        allowed_symbols:set[str]|None=None)->dict[str,Any]:
     """Mark existing paper holdings to market and rebalance only on newly seen sessions."""
     generated_at=generated_at or datetime.now(timezone.utc)
-    eligible={s:r for s,r in history.items() if len(r)>=MIN_COMMON_BARS}
+    eligible={s:r for s,r in history.items() if len(r)>=MIN_COMMON_BARS and (allowed_symbols is None or s in allowed_symbols)}
     common=set.intersection(*(set(x["date"] for x in rows) for rows in eligible.values())) if eligible else set()
     dates=sorted(common)
     if len(eligible)<6 or len(dates)<MIN_COMMON_BARS:
@@ -56,8 +57,8 @@ def update_paper_ledger(history:dict[str,list[dict[str,Any]]],
                        "paper_only":True,"orders_placed":False})
         return ledger
 
-    weights={item["symbol"]:float(item["weight"]) for item in ledger.get("holdings",[])}
-    weights[CASH_KEY]=float(ledger.get("cash_weight",max(0.0,1.0-sum(weights.values()))))
+    weights={item["symbol"]:float(item["weight"]) for item in ledger.get("holdings",[]) if item["symbol"] in eligible}
+    weights[CASH_KEY]=max(0.0,1.0-sum(weights.values()))
     nav=float(ledger.get("nav_index",100.0))
     high=max(float(ledger.get("high_watermark",nav)),nav)
     max_dd=float(ledger.get("max_drawdown",0.0))
@@ -117,5 +118,7 @@ def update_paper_ledger(history:dict[str,list[dict[str,Any]]],
         "rebalance_count":rebalance_count,"cumulative_turnover":round(turnover_total,8),
         "sessions_processed":int(ledger.get("sessions_processed",0))+processed,
         "paper_only":True,"orders_placed":False,
+        "finam_eligible_symbols":sorted(eligible),
+        "excluded_prior_holdings":[item["symbol"] for item in existing.get("holdings",[]) if item["symbol"] not in eligible] if existing else [],
     })
     return ledger
