@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "status": "INITIALIZED_WAITING_FOR_NEXT_SESSION",
+  "start_date": "2026-11-27",
+  "last_processed_date": "2026-11-27",
+  "updated_at_utc": "2026-11-27T19:57:35.245122+00:00",
+  "nav_index": 100.0,
+  "high_watermark": 100.0,
+  "max_drawdown": 0.0,
+  "last_daily_return": 0.0,
+  "holdings": [],
+  "cash_weight": 1.0,
+  "last_rebalance_month": null,
+  "rebalance_count": 0,
+  "cumulative_turnover": 0.0,
+  "paper_only": true,
+  "orders_placed": false,
+  "note": "Initialized after the latest completed close. First virtual entry will use the next available session open."
+}

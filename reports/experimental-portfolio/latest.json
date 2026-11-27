@@ -1,6 +1,6 @@
 {
   "status": "READY",
-  "generated_at_utc": "2026-11-27T19:55:01.473723+00:00",
+  "generated_at_utc": "2026-11-27T19:57:35.187968+00:00",
   "source": "Yahoo Finance chart API; Stooq CSV fallback",
   "providers_used": [
     "Yahoo Finance"
@@ -71,23 +71,8 @@
     "sharpe_rf0": 0.8669,
     "ending_nav_index": 135.139
   },
-  "holdings": [
-    {
-      "symbol": "DBC.US",
-      "weight": 0.5,
-      "latest_close": 29.549999237060547,
-      "adjusted_close": 29.549999237060547,
-      "asset_class": "commodities"
-    },
-    {
-      "symbol": "SHY.US",
-      "weight": 0.5,
-      "latest_close": 81.62000274658203,
-      "adjusted_close": 81.62000274658203,
-      "asset_class": "cash_proxy"
-    }
-  ],
-  "cash_weight": 0.0,
+  "holdings": [],
+  "cash_weight": 1.0,
   "rebalance_count": 28,
   "cumulative_turnover": 10.75,
   "latest_prices": {
@@ -198,6 +183,85 @@
     "VNQ.US",
     "SHY.US"
   ],
+  "run_mode": "AUTONOMOUS_RESEARCH_AND_FORWARD_PAPER_ONLY",
+  "data_source": "Yahoo Finance chart API; Stooq CSV fallback",
+  "historical_backtest": {
+    "period": {
+      "from": "2024-08-16",
+      "till": "2026-11-27",
+      "common_daily_bars": 773,
+      "assets_included": [
+        "DBC.US",
+        "EEM.US",
+        "EFA.US",
+        "EWJ.US",
+        "GLD.US",
+        "IEF.US",
+        "INDA.US",
+        "IWM.US",
+        "QQQ.US",
+        "SHY.US",
+        "SPY.US",
+        "TLT.US",
+        "VGK.US",
+        "VNQ.US"
+      ]
+    },
+    "performance": {
+      "observations": 573,
+      "total_return": 0.314578,
+      "cagr": 0.127418,
+      "max_drawdown": -0.142611,
+      "annualized_volatility": 0.143417,
+      "sharpe_rf0": 0.9106,
+      "ending_nav_index": 131.4578
+    },
+    "benchmark_spy_buy_and_hold": {
+      "observations": 573,
+      "total_return": 0.35139,
+      "cagr": 0.141154,
+      "max_drawdown": -0.187552,
+      "annualized_volatility": 0.169186,
+      "sharpe_rf0": 0.8669,
+      "ending_nav_index": 135.139
+    },
+    "latest_model_weights": [
+      {
+        "symbol": "DBC.US",
+        "weight": 0.5,
+        "latest_close": 29.549999237060547,
+        "adjusted_close": 29.549999237060547,
+        "asset_class": "commodities"
+      },
+      {
+        "symbol": "SHY.US",
+        "weight": 0.5,
+        "latest_close": 81.62000274658203,
+        "adjusted_close": 81.62000274658203,
+        "asset_class": "cash_proxy"
+      }
+    ],
+    "notice": "Historical simulation only. It is not the prospective paper portfolio and does not seed paper holdings."
+  },
+  "paper_portfolio": {
+    "version": 1,
+    "status": "INITIALIZED_WAITING_FOR_NEXT_SESSION",
+    "start_date": "2026-11-27",
+    "last_processed_date": "2026-11-27",
+    "updated_at_utc": "2026-11-27T19:57:35.245122+00:00",
+    "nav_index": 100.0,
+    "high_watermark": 100.0,
+    "max_drawdown": 0.0,
+    "last_daily_return": 0.0,
+    "holdings": [],
+    "cash_weight": 1.0,
+    "last_rebalance_month": null,
+    "rebalance_count": 0,
+    "cumulative_turnover": 0.0,
+    "paper_only": true,
+    "orders_placed": false,
+    "note": "Initialized after the latest completed close. First virtual entry will use the next available session open."
+  },
   "ai_review": {
     "status": "LOCAL_FALLBACK_AFTER_PROVIDER_FAILURE",
     "agents_expected": 3,
@@ -214,7 +278,7 @@
         "status": "COMPLETED",
         "engine": "local_deterministic",
         "review": {
-          "summary": "Portfolio status: READY. Current holdings: 2; represented asset classes: cash_proxy, commodities. Cash weight: 0.0.",
+          "summary": "Forward paper status: INITIALIZED_WAITING_FOR_NEXT_SESSION. Prospective holdings: 0; asset classes: none. Cash weight: 1.0.",
           "risks": [],
           "questions": [
             "Are the ETF proxies and their exchange calendars representative of the intended global universe?"
@@ -225,9 +289,9 @@
         "status": "COMPLETED",
         "engine": "local_deterministic",
         "review": {
-          "summary": "Model: Global 63-session momentum + 200-session trend. Backtest observations: 573; total return: 0.314578; SPY benchmark return: 0.35139.",
+          "summary": "Historical backtest: 2024-08-16 to 2026-11-27; total return 0.314578; SPY benchmark 0.35139. Forward paper NAV index: 100.0.",
           "risks": [
-            "The strategy is a fixed momentum/trend baseline; it has not passed independent out-of-sample approval."
+            "Historical backtest is not independent out-of-sample approval."
           ],
           "questions": [
             "Does the strategy remain robust after a longer prospective paper-trading period and stressed transaction costs?"
@@ -238,7 +302,7 @@
         "status": "COMPLETED",
         "engine": "local_deterministic",
         "review": {
-          "summary": "Observed maximum drawdown: -0.142611; stale instruments: 0; instruments with data errors: 0.",
+          "summary": "Forward paper maximum drawdown: 0.0; historical backtest maximum drawdown: -0.142611; stale instruments: 0; data errors: 0.",
           "risks": [
             "Options and futures are excluded from NAV pending executable quotes and contract-level risk modeling."
           ],
@@ -249,7 +313,5 @@
       }
     },
     "policy": "LLM and local reviewers are commentary-only. They cannot change NAV, holdings, signals or authorize real trading."
-  },
-  "run_mode": "AUTONOMOUS_RESEARCH_PAPER_ONLY",
-  "data_source": "Yahoo Finance chart API; Stooq CSV fallback"
+  }
 }
