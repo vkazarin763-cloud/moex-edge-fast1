@@ -26,7 +26,18 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install official Finam SDK
-        run: pip install "finam-sdk==2.19.1"
+        run: pip install "finam-sdk==2.24.0"
+      - name: Verify read-only stream SDK imports
+        run: |
+          python - <<'PY'
+          from finam_trade_api import AsyncFinamClient
+          from finam_trade_api.market_data import (
+              SubscribeLatestTradesRequest,
+              SubscribeOrderBookRequest,
+              SubscribeQuoteRequest,
+          )
+          print("Finam SDK imports OK")
+          PY
       - name: Capture gRPC market-data streams
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}

@@ -7,13 +7,15 @@ A bounded, read-only experiment to compare live market-data streams with the exi
 GitHub Actions → **Finam Options gRPC Stream Probe (Read Only)** → Run workflow.
 Default capture is 120 seconds. The artifact is retained for 30 days.
 
+## SDK
+
+Uses the official Finam Python SDK, pinned to the published `finam-sdk==2.24.0` release, and the existing `FINAM_API_SECRET` repository secret. A separate import check runs before any connection attempt so package/API compatibility errors are caught early.
+
 ## Streams
 
 - `SubscribeQuote` for both option symbols.
 - `SubscribeOrderBook` per symbol.
 - `SubscribeLatestTrades` per symbol.
-
-Uses the official `finam-sdk==2.19.1` package and the existing `FINAM_API_SECRET` repository secret.
 
 ## Interpretation
 
