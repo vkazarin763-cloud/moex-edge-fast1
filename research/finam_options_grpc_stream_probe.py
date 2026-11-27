@@ -321,21 +321,23 @@ async def main() -> None:
             item: {key: value for key, value in data.items() if not key.startswith("_")}
             for item, data in stats.items()
         }
-        fresh_updates = sum(data["quote"]["fresh_unique_updates"] for data in stats.values())
-        book_deltas = sum(data["order_book"]["unique_delta_signatures"] for data in stats.values())
-        trade_items = sum(data["trades"]["messages"] for data in stats.values())
+        fresh_updates = sum(stats[item]["quote"]["fresh_unique_updates"] for item in symbols)
+        fresh_control_updates = stats[control_symbol]["quote"]["fresh_unique_updates"]
+        book_deltas = sum(stats[item]["order_book"]["unique_delta_signatures"] for item in symbols)
+        trade_items = sum(stats[item]["trades"]["messages"] for item in symbols)
         write_record(handle, {
             "record_type": "summary",
             "finished_at_utc": utc_now(),
             "duration_seconds": duration,
             "stream_envelopes_total": total,
             "stream_envelopes_by_subscription_symbol": dict(counts),
-            "fresh_unique_quote_updates": fresh_updates,
-            "unique_order_book_delta_messages": book_deltas,
+            "fresh_unique_option_quote_updates": fresh_updates,
+            "fresh_unique_control_quote_updates": fresh_control_updates,
+            "unique_option_order_book_delta_messages": book_deltas,
             "trade_items_total": trade_items,
             "instrument_quality": clean_stats,
             "diagnostic_errors": errors,
-            "result": "fresh_option_updates" if fresh_updates else "no_fresh_option_updates",
+            "result": "fresh_option_updates" if fresh_updates or book_deltas or trade_items else "no_fresh_option_updates",
             "note": (
                 "Counts are normalized per instrument item, not per gRPC envelope. Repeated provider timestamps are deduplicated. "
                 "Fresh means provider timestamp age <= 60 seconds at receipt. Snapshots are not counted as quote updates. "
@@ -346,8 +348,9 @@ async def main() -> None:
     print(json.dumps({
         "status": "completed",
         "stream_envelopes_total": sum(counts.values()),
-        "fresh_unique_quote_updates": fresh_updates,
-        "unique_order_book_delta_messages": book_deltas,
+        "fresh_unique_option_quote_updates": fresh_updates,
+        "fresh_unique_control_quote_updates": fresh_control_updates,
+        "unique_option_order_book_delta_messages": book_deltas,
         "trade_items_total": trade_items,
         "instrument_quality": clean_stats,
         "diagnostic_errors": len(errors),
