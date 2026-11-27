@@ -15,9 +15,23 @@ def dec(x):
         d=Decimal(str(val(x))); return d if d.is_finite() else None
     except (InvalidOperation,TypeError,ValueError): return None
 def date(x):
-    if not isinstance(x,dict): return None
-    try:return f"{int(x['year']):04d}-{int(x['month']):02d}-{int(x['day']):02d}"
-    except (KeyError,TypeError,ValueError):return None
+    # Finam may wrap scalar fields in {"value": ...}; date components may be wrapped too.
+    if isinstance(x, dict) and isinstance(x.get("value"), dict):
+        x = x["value"]
+    if isinstance(x, str):
+        try: return datetime.fromisoformat(x.replace("Z", "+00:00")).date().isoformat()
+        except ValueError: return None
+    if not isinstance(x, dict): return None
+    try:
+        return f"{int(val(x['year'])):04d}-{int(val(x['month'])):02d}-{int(val(x['day'])):02d}"
+    except (KeyError, TypeError, ValueError): return None
+
+def option_type(x):
+    raw = val(x)
+    text = str(raw or "").upper()
+    if "CALL" in text: return "TYPE_CALL"
+    if "PUT" in text: return "TYPE_PUT"
+    return None
 class API:
     def __init__(self,secret):
         self.s=requests.Session();self.s.headers["User-Agent"]="finam-options-history-research/1.0"
@@ -49,7 +63,7 @@ def select(opts,spot,today):
     parsed=[]
     for o in opts or []:
         if not isinstance(o,dict) or not o.get("symbol"):continue
-        strike=dec(o.get("strike"));exp=date(o.get("expiration_last_day")) or date(o.get("expiration_first_day"));typ=str(o.get("type","")).upper()
+        strike=dec(o.get("strike"));exp=date(o.get("expiration_last_day")) or date(o.get("expiration_first_day"));typ=option_type(o.get("type"))
         if strike is None or not exp or typ not in ("TYPE_CALL","TYPE_PUT"):continue
         try:dte=(datetime.fromisoformat(exp).date()-today).days
         except ValueError:continue
@@ -78,7 +92,12 @@ def main():
             cs,ch=api.get(f"/v1/assets/{quote(u,safe='')}/options");opts=(ch or {}).get("options",[]) if cs==200 else []
             if spot is None or not opts:item.update({"status":"unavailable","quote_http":qs,"chain_http":cs})
             else:
-                selected=select(opts,spot,today);item.update({"spot_quote":{k:val(q.get(k)) for k in ("timestamp","bid","ask","last","bid_size","ask_size")},"chain_count":len(opts),"contracts_selected":len(selected),"underlying_bars":{"h1":bars(api,u,"TIME_FRAME_H1",start30,end),"d1":bars(api,u,"TIME_FRAME_D",start365,end)},"contract_data":[]})
+                selected=select(opts,spot,today)
+                schema_sample=[]
+                for raw_option in opts[:3]:
+                    if isinstance(raw_option,dict):
+                        schema_sample.append({"keys":sorted(raw_option.keys()),"type_value":val(raw_option.get("type")),"type_python":type(raw_option.get("type")).__name__,"expiration_last_day_python":type(raw_option.get("expiration_last_day")).__name__,"expiration_last_day_value":val(raw_option.get("expiration_last_day")),"symbol":raw_option.get("symbol")})
+                item.update({"option_schema_sample":schema_sample,"selection_status":"ok" if selected else "no_contracts_after_normalization","spot_quote":{k:val(q.get(k)) for k in ("timestamp","bid","ask","last","bid_size","ask_size")},"chain_count":len(opts),"contracts_selected":len(selected),"underlying_bars":{"h1":bars(api,u,"TIME_FRAME_H1",start30,end),"d1":bars(api,u,"TIME_FRAME_D",start365,end)},"contract_data":[]})
                 for c in selected:
                     c["history"]={"m5":bars(api,c["symbol"],"TIME_FRAME_M5",start30,end),"h1":bars(api,c["symbol"],"TIME_FRAME_H1",start30,end),"d1":bars(api,c["symbol"],"TIME_FRAME_D",start365,end)}
                     item["contract_data"].append(c)
