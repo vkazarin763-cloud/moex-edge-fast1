@@ -1,0 +1,69 @@
+{
+  "status": "INSUFFICIENT_DATA",
+  "generated_at_utc": "2026-11-27T19:51:26.540388+00:00",
+  "source": "Stooq public daily CSV",
+  "eligible_assets": [],
+  "common_daily_bars": 0,
+  "data_errors": {
+    "SPY.US": "ValueError:provider returned no OHLCV CSV header",
+    "QQQ.US": "ValueError:provider returned no OHLCV CSV header",
+    "IWM.US": "ValueError:provider returned no OHLCV CSV header",
+    "EFA.US": "ValueError:provider returned no OHLCV CSV header",
+    "EEM.US": "ValueError:provider returned no OHLCV CSV header",
+    "VGK.US": "ValueError:provider returned no OHLCV CSV header",
+    "EWJ.US": "ValueError:provider returned no OHLCV CSV header",
+    "INDA.US": "ValueError:provider returned no OHLCV CSV header",
+    "TLT.US": "ValueError:provider returned no OHLCV CSV header",
+    "IEF.US": "ValueError:provider returned no OHLCV CSV header",
+    "GLD.US": "ValueError:provider returned no OHLCV CSV header",
+    "DBC.US": "ValueError:provider returned no OHLCV CSV header",
+    "VNQ.US": "ValueError:provider returned no OHLCV CSV header",
+    "SHY.US": "ValueError:provider returned no OHLCV CSV header"
+  },
+  "safety": {
+    "paper_only": true,
+    "broker_access": false,
+    "orders_placed": false,
+    "llm_can_change_weights": false,
+    "real_trading_authorized": false
+  },
+  "message": "Not enough synchronized validated history; no performance is reported.",
+  "universe_requested": [
+    "SPY.US",
+    "QQQ.US",
+    "IWM.US",
+    "EFA.US",
+    "EEM.US",
+    "VGK.US",
+    "EWJ.US",
+    "INDA.US",
+    "TLT.US",
+    "IEF.US",
+    "GLD.US",
+    "DBC.US",
+    "VNQ.US",
+    "SHY.US"
+  ],
+  "ai_review": {
+    "status": "FAILED",
+    "agents_expected": 3,
+    "agents_completed": 0,
+    "reviews": {
+      "market_analyst": {
+        "status": "FAILED",
+        "error": "provider_http_403"
+      },
+      "portfolio_researcher": {
+        "status": "FAILED",
+        "error": "provider_http_403"
+      },
+      "risk_auditor": {
+        "status": "FAILED",
+        "error": "provider_http_403"
+      }
+    },
+    "policy": "AI commentary is advisory only; deterministic engine alone calculates NAV and holdings."
+  },
+  "run_mode": "AUTONOMOUS_RESEARCH_PAPER_ONLY",
+  "data_source": "Stooq public daily CSV"
+}

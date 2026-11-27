@@ -1,0 +1,15 @@
+{
+  "updated_at_utc": "2026-11-27T19:51:26.540388+00:00",
+  "status": "INSUFFICIENT_DATA",
+  "portfolio_index": null,
+  "holdings": [],
+  "cash_weight": null,
+  "ai_review_status": "FAILED",
+  "safety": {
+    "paper_only": true,
+    "broker_access": false,
+    "orders_placed": false,
+    "llm_can_change_weights": false,
+    "real_trading_authorized": false
+  }
+}
