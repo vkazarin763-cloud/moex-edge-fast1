@@ -105,7 +105,7 @@ def options_chain(api, underlying, today):
         match.group(1)
         for option in base_rows if isinstance(option, dict)
         for symbol in [str(option.get("symbol", "")).split("@", 1)[0]]
-        for match in [re.match(r"^([A-Z]+)\\d", symbol)]
+        for match in [re.match(r"^([A-Z]+)\d", symbol)]
         if match
     })
     first = today + timedelta(days=15)
