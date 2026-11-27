@@ -114,10 +114,11 @@ def get_h1_bars(api, symbol, now):
 
 
 def find_signal(bars):
-    if len(bars) < 52:
-        return None, {"valid_h1_bars": len(bars), "reason": "need_at_least_52_completed_h1_bars"}
+    if len(bars) < 21:
+        return None, {"valid_h1_bars": len(bars), "reason": "need_at_least_21_completed_h1_bars"}
     closes = [b["close"] for b in bars]
-    e20, e50 = ema(closes, 20), ema(closes, 50)
+    e20 = ema(closes, 20)
+    e50 = ema(closes, 50) if len(bars) >= 50 else None
     i = len(bars) - 1
     previous = bars[i-20:i]
     high20 = max(b["high"] for b in previous)
@@ -127,12 +128,12 @@ def find_signal(bars):
         "signal_candle_utc": last["time"].isoformat(),
         "underlying_close": last["close"],
         "ema20": round(e20[i], 6),
-        "ema50": round(e50[i], 6),
+        "ema50": round(e50[i], 6) if e50 else None,
         "previous_20_h1_high": high20,
         "previous_20_h1_low": low20,
         "valid_h1_bars": len(bars),
     }
-    common["ema_trend"] = "UP" if e20[i] > e50[i] else "DOWN" if e20[i] < e50[i] else "FLAT"
+    common["ema_trend"] = ("UP" if e20[i] > e50[i] else "DOWN" if e20[i] < e50[i] else "FLAT") if e50 else "NOT_ENOUGH_HISTORY"
     if last["close"] > high20:
         return {"direction": "LONG_CALL", "reason": "H1 close above previous 20-bar high", **common}, common
     if last["close"] < low20:
