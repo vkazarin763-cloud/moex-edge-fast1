@@ -189,9 +189,10 @@ def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None
         "The 100-point NAV is a normalized research index, not user capital or currency.",
         "Historical results are not a forecast or proof of profitability."]}
 
-def download_universe(start:date,end:date)->tuple[dict[str,list[dict[str,Any]]],dict[str,str]]:
+def download_universe(start:date,end:date,symbols:set[str]|None=None)->tuple[dict[str,list[dict[str,Any]]],dict[str,str]]:
     history,errors={},{}
     for item in UNIVERSE:
+        if symbols is not None and item["symbol"] not in symbols: continue
         symbol=item["symbol"]
         try:
             rows=fetch_daily(symbol,start,end)
