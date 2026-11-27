@@ -163,13 +163,13 @@ def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None
     metrics=_metrics(daily_returns,return_dates); metrics["max_drawdown"]=round(max_dd,6)
     benchmark=[prices["SPY.US"][i]/prices["SPY.US"][i-1]-1.0 for i in range(TREND_WINDOW,len(dates))] if "SPY.US" in prices else []
     benchmark_metrics=_metrics(benchmark,return_dates) if benchmark else None
-    holdings=[{"symbol":s,"weight":round(w,6),"latest_close":prices[s][-1],
+    holdings=[{"symbol":s,"weight":round(w,6),"latest_close":eligible[s][-1].get("raw_close",eligible[s][-1]["close"]),"adjusted_close":prices[s][-1],
       "asset_class":next((x["asset_class"] for x in UNIVERSE if x["symbol"]==s),"unknown")} for s,w in sorted(last_targets.items())]
-    latest_prices={s:{"date":eligible[s][-1]["date"],"close":eligible[s][-1]["close"]} for s in eligible}
+    latest_prices={s:{"date":eligible[s][-1]["date"],"close":eligible[s][-1].get("raw_close",eligible[s][-1]["close"]),"adjusted_close":eligible[s][-1]["close"]} for s in eligible}
     stale=[s for s,x in latest_prices.items() if (generated_at.date()-date.fromisoformat(x["date"])).days>7]
     providers=sorted({row.get("source","unknown") for rows in eligible.values() for row in rows[-1:]})
     return {"status":"READY" if not stale else "DATA_STALE","generated_at_utc":generated_at.isoformat(),"source":SOURCE,
-      "providers_used":providers,"market_scope":"US-listed global equity, bond, gold, commodity and real-estate ETF proxies",
+      "providers_used":providers,"provider_by_symbol":{s:eligible[s][-1].get("source","unknown") for s in eligible},"market_scope":"US-listed global equity, bond, gold, commodity and real-estate ETF proxies",
       "portfolio_model":{"name":"Global 63-session momentum + 200-session trend","initial_nav_index":100.0,
         "currency":"NOT_APPLICABLE_INDEX_UNITS","rebalance":"monthly, using prior completed daily close",
         "selection":"up to four assets with positive 63-session momentum and close above 200-session SMA",
