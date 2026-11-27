@@ -6,7 +6,7 @@ on:
       capture_seconds:
         description: "Capture duration (30–300 seconds)"
         required: true
-        default: "120"
+        default: "180"
         type: string
 
 permissions:
@@ -40,11 +40,11 @@ jobs:
           )
           print("Finam SDK imports OK")
           PY
-      - name: Capture gRPC market-data streams
+      - name: Capture per-instrument gRPC market-data quality
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
           CAPTURE_SECONDS: ${{ inputs.capture_seconds }}
-          OPTION_SYMBOLS: GZ100CX6@RTSX,SR290CX6@RTSX
+          OPTION_SYMBOLS: GZ100CL6@RTSX,GZ100CX6@RTSX,SR290CL6@RTSX,SR290CX6@RTSX
         run: python research/finam_options_grpc_stream_probe.py
       - uses: actions/upload-artifact@v4
         if: always()
