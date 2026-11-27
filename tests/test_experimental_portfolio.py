@@ -6,6 +6,7 @@ from unittest.mock import patch
 from experimental_portfolio.engine import UNIVERSE,build_report,MIN_COMMON_BARS,parse_yahoo_payload
 from experimental_portfolio.agents import run_reviewers
 from experimental_portfolio.paper import update_paper_ledger
+from experimental_portfolio.eligibility import load_finam_allowlist
 
 class ExperimentalPortfolioTests(unittest.TestCase):
     def make_history(self,count=260):

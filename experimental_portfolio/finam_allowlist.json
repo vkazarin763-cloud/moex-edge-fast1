@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "account_scope": "Finam account (account identifier deliberately not stored in repository)",
+  "verification_source": "EMPTY_INITIAL_ALLOWLIST; requires read-only account-specific Finam verification",
+  "last_verified": null,
+  "instruments": [],
+  "policy": "No instrument may be held in paper portfolio unless account_buy_permission=BUY_ALLOWED, verified_account_access=true, and verified_at is present. Empty list means cash only."
+}
