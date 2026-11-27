@@ -2,8 +2,9 @@
 """Simple read-only MOEX options signal generator.
 
 Signals are based on the underlying's last completed H1 candle:
-  LONG CALL: close breaks the previous 20-bar high and EMA20 > EMA50.
-  LONG PUT:  close breaks the previous 20-bar low and EMA20 < EMA50.
+  LONG CALL: close breaks the previous 20-bar high.
+  LONG PUT:  close breaks the previous 20-bar low.
+EMA20/EMA50 are reported for later filtering, but do not suppress signals.
 
 No liquidity, spread, volatility, OI or AI filters suppress a signal. Those
 fields are displayed as context only. This script never places orders.
@@ -131,10 +132,11 @@ def find_signal(bars):
         "previous_20_h1_low": low20,
         "valid_h1_bars": len(bars),
     }
-    if last["close"] > high20 and e20[i] > e50[i]:
-        return {"direction": "LONG_CALL", "reason": "H1 close above previous 20-bar high; EMA20 > EMA50", **common}, common
-    if last["close"] < low20 and e20[i] < e50[i]:
-        return {"direction": "LONG_PUT", "reason": "H1 close below previous 20-bar low; EMA20 < EMA50", **common}, common
+    common["ema_trend"] = "UP" if e20[i] > e50[i] else "DOWN" if e20[i] < e50[i] else "FLAT"
+    if last["close"] > high20:
+        return {"direction": "LONG_CALL", "reason": "H1 close above previous 20-bar high", **common}, common
+    if last["close"] < low20:
+        return {"direction": "LONG_PUT", "reason": "H1 close below previous 20-bar low", **common}, common
     return None, common
 
 
@@ -220,9 +222,9 @@ def main():
         "as_of_utc": now.isoformat(),
         "mode": "simple_read_only_options_signals",
         "rules": {
-            "long_call": "last completed H1 close > highest high of previous 20 completed H1 candles AND EMA20 > EMA50",
-            "long_put": "last completed H1 close < lowest low of previous 20 completed H1 candles AND EMA20 < EMA50",
-            "filters": "none; option spread, quote age and other quality metrics do not suppress signals",
+            "long_call": "last completed H1 close > highest high of previous 20 completed H1 candles",
+            "long_put": "last completed H1 close < lowest low of previous 20 completed H1 candles",
+            "filters": "none; EMA trend, option spread, quote age, volatility, OI and liquidity do not suppress signals",
         },
         "underlyings": {},
         "signals": [],
