@@ -17,6 +17,8 @@ on:
       - "experimental_portfolio/agents.py"
       - "experimental_portfolio/paper.py"
       - "experimental_portfolio/run.py"
+      - "experimental_portfolio/eligibility.py"
+      - "experimental_portfolio/finam_allowlist.json"
       - "experimental_portfolio/README.md"
       - ".github/workflows/experimental-portfolio.yml"
 
