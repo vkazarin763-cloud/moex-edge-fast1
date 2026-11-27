@@ -1,0 +1,66 @@
+name: Simple MOEX Futures Signals (Read Only)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Hourly during the main MOEX derivatives session (10:00-23:00 Moscow time).
+    - cron: "0 7-20 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simple-moex-futures-signals
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependency
+        run: pip install requests
+      - name: Generate LONG/SHORT futures signals (read only)
+        run: python research/moex_futures_simple_signals.py
+      - name: Publish signal summary
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads(Path("moex-futures-signals.json").read_text())
+          lines = [
+              "# Simple MOEX futures signals",
+              "",
+              f"- As of Moscow time: {data['as_of_msk']}",
+              f"- Contracts processed: {data['contracts_processed']}",
+              f"- Signals: **{len(data['signals'])}**",
+              "- Rule: H1 breakout of previous 20 completed candles.",
+              "- Read-only: no Finam account calls and no orders.",
+              "",
+              "| Asset | Contract | Direction | H1 close | Previous 20 high | Previous 20 low | EMA trend |",
+              "|---|---|---|---:|---:|---:|---|",
+          ]
+          for s in data["signals"]:
+              lines.append(
+                  f"| {s['asset']} | {s['secid']} | {s['direction']} | {s['last_h1_close']} | "
+                  f"{s['previous_20_h1_high']} | {s['previous_20_h1_low']} | {s['ema_trend']} |"
+              )
+          if not data["signals"]:
+              lines.append("| — | — | No signal | — | — | — | — |")
+          errors = [x for x in data["contracts"].values() if x["status"] == "error"]
+          lines += ["", f"- Contract data errors: {len(errors)}"]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("\n".join(lines) + "\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moex-futures-simple-signals
+          path: moex-futures-signals.json
+          if-no-files-found: error
+          retention-days: 30
