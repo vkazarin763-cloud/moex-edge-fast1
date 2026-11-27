@@ -1,10 +1,10 @@
-"""Deterministic, read-only global ETF paper-portfolio engine."""
+"""Read-only global ETF paper-portfolio engine using public daily price feeds."""
 from __future__ import annotations
-import csv, io, math, urllib.parse, urllib.request
-from datetime import date, datetime, timezone
+import csv, io, json, math, urllib.parse, urllib.request
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
 
-SOURCE = "Stooq public daily CSV"
+SOURCE = "Yahoo Finance chart API; Stooq CSV fallback"
 UNIVERSE = [
  {"symbol":"SPY.US","name":"US large-cap equities","asset_class":"equity_us"},
  {"symbol":"QQQ.US","name":"US technology equities","asset_class":"equity_us"},
@@ -21,31 +21,93 @@ UNIVERSE = [
  {"symbol":"VNQ.US","name":"US listed real estate","asset_class":"real_estate"},
  {"symbol":"SHY.US","name":"Short US Treasuries / cash proxy","asset_class":"cash_proxy"},
 ]
-LOOKBACK, TREND_WINDOW, MAX_HOLDINGS = 63, 200, 4
-ESTIMATED_ONE_WAY_COST = 0.0010
-MIN_COMMON_BARS = 220
-CASH_KEY = "__CASH__"
+LOOKBACK,TREND_WINDOW,MAX_HOLDINGS=63,200,4
+ESTIMATED_ONE_WAY_COST=0.0010
+MIN_COMMON_BARS=220
+CASH_KEY="__CASH__"
 
-def fetch_daily(symbol: str, start: date, end: date, timeout: int = 25) -> list[dict[str, Any]]:
-    params=urllib.parse.urlencode({"s":symbol.lower(),"i":"d","d1":start.strftime("%Y%m%d"),"d2":end.strftime("%Y%m%d")})
-    request=urllib.request.Request("https://stooq.com/q/d/l/?"+params,headers={"User-Agent":"experimental-paper-portfolio/1.0"})
-    with urllib.request.urlopen(request,timeout=timeout) as response: raw=response.read().decode("utf-8-sig")
+def parse_yahoo_payload(payload:dict[str,Any],symbol:str,start:date,end:date)->list[dict[str,Any]]:
+    chart=payload.get("chart",{})
+    if chart.get("error"):
+        error=chart["error"]
+        raise ValueError(f"yahoo_api_error:{error.get('code','unknown')}")
+    result_list=chart.get("result") or []
+    if not result_list: raise ValueError("yahoo_empty_chart_result")
+    result=result_list[0]
+    timestamps=result.get("timestamp") or []
+    indicators=result.get("indicators") or {}
+    quotes=indicators.get("quote") or []
+    if not timestamps or not quotes: raise ValueError("yahoo_missing_ohlcv")
+    quote=quotes[0]
+    adjusted_rows=indicators.get("adjclose") or []
+    adjusted=(adjusted_rows[0].get("adjclose") or []) if adjusted_rows else []
+    rows={}
+    for i,stamp in enumerate(timestamps):
+        try:
+            day=datetime.fromtimestamp(int(stamp),timezone.utc).date()
+            if day<start or day>end: continue
+            o,h,low,raw_close=(quote[k][i] for k in ("open","high","low","close"))
+            volume=quote.get("volume",[None]*len(timestamps))[i]
+            if any(x is None for x in (o,h,low,raw_close)): continue
+            o,h,low,raw_close=(float(x) for x in (o,h,low,raw_close))
+            if not all(math.isfinite(x) and x>0 for x in (o,h,low,raw_close)): continue
+            if h<max(o,low,raw_close) or low>min(o,h,raw_close): continue
+            adj=float(adjusted[i]) if i<len(adjusted) and adjusted[i] is not None else raw_close
+            if not math.isfinite(adj) or adj<=0: adj=raw_close
+            if volume is not None: volume=float(volume)
+            if volume is not None and (not math.isfinite(volume) or volume<0): volume=None
+            key=day.isoformat()
+            rows[key]={"date":key,"open":o,"high":h,"low":low,"raw_close":raw_close,
+                "adjusted_close":adj,"close":adj,"volume":volume,"source":"Yahoo Finance",
+                "dividend_adjusted":bool(i<len(adjusted) and adjusted[i] is not None)}
+        except (IndexError,TypeError,ValueError,OverflowError):
+            continue
+    return [rows[k] for k in sorted(rows)]
+
+def _fetch_yahoo(symbol:str,start:date,end:date,timeout:int)->list[dict[str,Any]]:
+    ticker=symbol.removesuffix(".US")
+    period1=int(datetime.combine(start,time.min,tzinfo=timezone.utc).timestamp())
+    period2=int(datetime.combine(end+timedelta(days=1),time.min,tzinfo=timezone.utc).timestamp())
+    query=urllib.parse.urlencode({"period1":period1,"period2":period2,"interval":"1d","events":"div,splits","includeAdjustedClose":"true"})
+    url=f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ticker)}?{query}"
+    req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (compatible; PaperPortfolio/1.0)","Accept":"application/json"})
+    with urllib.request.urlopen(req,timeout=timeout) as response: payload=json.loads(response.read().decode("utf-8"))
+    return parse_yahoo_payload(payload,symbol,start,end)
+
+def _fetch_stooq(symbol:str,start:date,end:date,timeout:int)->list[dict[str,Any]]:
+    query=urllib.parse.urlencode({"s":symbol.lower(),"i":"d","d1":start.strftime("%Y%m%d"),"d2":end.strftime("%Y%m%d")})
+    req=urllib.request.Request("https://stooq.com/q/d/l/?"+query,headers={"User-Agent":"Mozilla/5.0 (compatible; PaperPortfolio/1.0)"})
+    with urllib.request.urlopen(req,timeout=timeout) as response: raw=response.read().decode("utf-8-sig")
     reader=csv.DictReader(io.StringIO(raw))
     if not reader.fieldnames or not {"Date","Open","High","Low","Close","Volume"}.issubset(reader.fieldnames):
-        raise ValueError("provider returned no OHLCV CSV header")
+        raise ValueError("stooq_no_ohlcv_csv_header")
     rows={}
     for item in reader:
         try:
-            day=date.fromisoformat(item["Date"]).isoformat()
+            day=date.fromisoformat(item["Date"])
+            if day<start or day>end: continue
             o,h,low,c=(float(item[k]) for k in ("Open","High","Low","Close"))
-            vtext=item["Volume"].strip()
-            volume=float(vtext) if vtext not in ("","N/A") else None
+            vtext=item["Volume"].strip(); volume=float(vtext) if vtext not in ("","N/A") else None
             if not all(math.isfinite(x) and x>0 for x in (o,h,low,c)): continue
             if h<max(o,low,c) or low>min(o,h,c): continue
             if volume is not None and (not math.isfinite(volume) or volume<0): continue
-            rows[day]={"date":day,"open":o,"high":h,"low":low,"close":c,"volume":volume}
+            key=day.isoformat()
+            rows[key]={"date":key,"open":o,"high":h,"low":low,"raw_close":c,
+                "adjusted_close":c,"close":c,"volume":volume,"source":"Stooq",
+                "dividend_adjusted":False}
         except (KeyError,TypeError,ValueError): continue
     return [rows[k] for k in sorted(rows)]
+
+def fetch_daily(symbol:str,start:date,end:date,timeout:int=25)->list[dict[str,Any]]:
+    errors=[]
+    for provider,fetcher in (("Yahoo Finance",_fetch_yahoo),("Stooq",_fetch_stooq)):
+        try:
+            rows=fetcher(symbol,start,end,timeout)
+            if rows: return rows
+            errors.append(f"{provider}:no_valid_rows")
+        except Exception as exc:
+            errors.append(f"{provider}:{type(exc).__name__}:{str(exc)[:100]}")
+    raise RuntimeError("; ".join(errors))
 
 def _metrics(values:list[float],dates:list[str])->dict[str,Any]:
     if len(values)<2: return {"observations":len(values),"total_return":None,"cagr":None,"max_drawdown":None,"annualized_volatility":None,"sharpe_rf0":None}
@@ -68,10 +130,9 @@ def _target_weights(prices:dict[str,list[float]],symbols:list[str],index:int)->d
         momentum=series[index]/series[index-LOOKBACK]-1.0
         sma=sum(series[index-TREND_WINDOW+1:index+1])/TREND_WINDOW
         if series[index]>sma and momentum>0: ranked.append((momentum,symbol))
-    ranked.sort(reverse=True)
-    chosen=[symbol for _,symbol in ranked[:MAX_HOLDINGS]]
+    ranked.sort(reverse=True); chosen=[s for _,s in ranked[:MAX_HOLDINGS]]
     weight=1.0/len(chosen) if chosen else 0.0
-    return {symbol:weight for symbol in chosen}
+    return {s:weight for s in chosen}
 
 def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None=None,
                  generated_at:datetime|None=None)->dict[str,Any]:
@@ -80,7 +141,7 @@ def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None
     common=set.intersection(*(set(x["date"] for x in r) for r in eligible.values())) if eligible else set()
     dates=sorted(common)
     safety={"paper_only":True,"broker_access":False,"orders_placed":False,
-            "llm_can_change_weights":False,"real_trading_authorized":False}
+        "llm_can_change_weights":False,"real_trading_authorized":False}
     if len(eligible)<6 or len(dates)<MIN_COMMON_BARS:
         return {"status":"INSUFFICIENT_DATA","generated_at_utc":generated_at.isoformat(),"source":SOURCE,
           "eligible_assets":sorted(eligible),"common_daily_bars":len(dates),"data_errors":errors,
@@ -92,24 +153,23 @@ def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None
         day,prev=dates[i],dates[i-1]; before=nav
         if i==TREND_WINDOW or day[:7]!=prev[:7]:
             target_assets=_target_weights(prices,sorted(prices),i-1)
-            target=dict(target_assets)
-            target[CASH_KEY]=max(0.0,1.0-sum(target_assets.values()))
+            target=dict(target_assets); target[CASH_KEY]=max(0.0,1.0-sum(target_assets.values()))
             turnover=sum(abs(target.get(s,0.0)-weights.get(s,0.0)) for s in set(target)|set(weights))/2.0
             nav*=max(0.0,1.0-turnover*ESTIMATED_ONE_WAY_COST)
             turnover_total+=turnover; rebalances+=1; weights=target; last_targets=target_assets
         day_return=sum(w*(prices[s][i]/prices[s][i-1]-1.0) for s,w in weights.items() if s!=CASH_KEY)
-        nav*=1.0+day_return
-        daily_returns.append(nav/before-1.0 if before else 0.0); return_dates.append(day)
+        nav*=1.0+day_return; daily_returns.append(nav/before-1.0 if before else 0.0); return_dates.append(day)
         peak=max(peak,nav); max_dd=min(max_dd,nav/peak-1.0)
     metrics=_metrics(daily_returns,return_dates); metrics["max_drawdown"]=round(max_dd,6)
     benchmark=[prices["SPY.US"][i]/prices["SPY.US"][i-1]-1.0 for i in range(TREND_WINDOW,len(dates))] if "SPY.US" in prices else []
     benchmark_metrics=_metrics(benchmark,return_dates) if benchmark else None
-    holdings=[{"symbol":s,"weight":round(w,6),"latest_close":prices[s][-1],
+    holdings=[{"symbol":s,"weight":round(w,6),"latest_close":eligible[s][-1].get("raw_close",eligible[s][-1]["close"]),"adjusted_close":prices[s][-1],
       "asset_class":next((x["asset_class"] for x in UNIVERSE if x["symbol"]==s),"unknown")} for s,w in sorted(last_targets.items())]
-    latest_prices={s:{"date":eligible[s][-1]["date"],"close":eligible[s][-1]["close"]} for s in eligible}
+    latest_prices={s:{"date":eligible[s][-1]["date"],"close":eligible[s][-1].get("raw_close",eligible[s][-1]["close"]),"adjusted_close":eligible[s][-1]["close"]} for s in eligible}
     stale=[s for s,x in latest_prices.items() if (generated_at.date()-date.fromisoformat(x["date"])).days>7]
+    providers=sorted({row.get("source","unknown") for rows in eligible.values() for row in rows[-1:]})
     return {"status":"READY" if not stale else "DATA_STALE","generated_at_utc":generated_at.isoformat(),"source":SOURCE,
-      "market_scope":"US-listed global equity, bond, gold, commodity and real-estate ETF proxies",
+      "providers_used":providers,"provider_by_symbol":{s:eligible[s][-1].get("source","unknown") for s in eligible},"market_scope":"US-listed global equity, bond, gold, commodity and real-estate ETF proxies",
       "portfolio_model":{"name":"Global 63-session momentum + 200-session trend","initial_nav_index":100.0,
         "currency":"NOT_APPLICABLE_INDEX_UNITS","rebalance":"monthly, using prior completed daily close",
         "selection":"up to four assets with positive 63-session momentum and close above 200-session SMA",
@@ -123,8 +183,8 @@ def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None
       "latest_prices":latest_prices,"stale_symbols":stale,"data_errors":errors,
       "derivatives":{"status":"RESEARCH_ONLY_NOT_IN_NAV",
         "reason":"Options need historical executable bid/ask, contract, expiry and liquidity data; futures need expiry/roll, multiplier and margin modeling. Existing MOEX scanners remain separate."},
-      "safety":safety,"limitations":["Stooq daily closes are not live quotes or executable bid/ask.",
-        "Dividend income is not included in this price-return model.",
+      "safety":safety,"limitations":["Daily closes are not live quotes or executable bid/ask.",
+        "Dividend-adjusted close is used when the provider supplies it; Stooq fallback is price-only.",
         "US-listed ETF proxies are not direct ownership of every underlying market.",
         "The 100-point NAV is a normalized research index, not user capital or currency.",
         "Historical results are not a forecast or proof of profitability."]}
@@ -137,5 +197,5 @@ def download_universe(start:date,end:date)->tuple[dict[str,list[dict[str,Any]]],
             rows=fetch_daily(symbol,start,end)
             if len(rows)<MIN_COMMON_BARS: errors[symbol]=f"insufficient_valid_bars:{len(rows)}"
             else: history[symbol]=rows
-        except Exception as exc: errors[symbol]=f"{type(exc).__name__}:{str(exc)[:180]}"
+        except Exception as exc: errors[symbol]=f"{type(exc).__name__}:{str(exc)[:220]}"
     return history,errors
