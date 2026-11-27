@@ -88,21 +88,24 @@ def diagnose_chain(opts, today):
         "rejection_counts":dict(rejected)
     }
 
+def third_wednesday(year, month):
+    first_day = datetime(year, month, 1).date()
+    days_to_wednesday = (2 - first_day.weekday()) % 7
+    return first_day + timedelta(days=days_to_wednesday + 14)
+
 def options_chain(api, underlying, today):
-    """Probe the nearest chain for futures-option roots, then query each month up to 365 DTE."""
+    """Probe exact monthly expiries (third Wednesday), then retry with observed roots."""
     path = f"/v1/assets/{quote(underlying,safe='')}/options"
     base_status, base_payload = api.get(path)
     base_rows = (base_payload or {}).get("options", []) if base_status == 200 else []
     if not isinstance(base_rows, list):
         base_rows = []
 
-    # Root candidates are derived only from actual symbols returned by Finam,
-    # e.g. SR... -> SR. We record them as probes, not as assumed API semantics.
     roots = sorted({
         match.group(1)
         for option in base_rows if isinstance(option, dict)
         for symbol in [str(option.get("symbol", "")).split("@", 1)[0]]
-        for match in [re.match(r"^([A-Z]+)\d", symbol)]
+        for match in [re.match(r"^([A-Z]+)\\d", symbol)]
         if match
     })
     first = today + timedelta(days=15)
@@ -119,17 +122,14 @@ def options_chain(api, underlying, today):
         "expiry_dates": sorted({date(o.get("expiration_last_day")) or date(o.get("expiration_first_day")) for o in base_rows if isinstance(o, dict)} - {None}),
     }]
     while month <= last:
-        common = {
-            "expiration_date.year": str(month.year),
-            "expiration_date.month": str(month.month),
-            "expiration_date.day": "0",
-        }
-        probes = [("no_root_control", None)] + [("root_probe", root) for root in roots]
-        for kind, root in probes:
-            params = dict(common)
-            if root is not None:
-                params["root"] = root
-            status, payload = api.get(path, params)
+        expiry = third_wednesday(month.year, month.month)
+        if first <= expiry <= last:
+            common = {
+                "expiration_date.year": str(expiry.year),
+                "expiration_date.month": str(expiry.month),
+                "expiration_date.day": str(expiry.day),
+            }
+            status, payload = api.get(path, common)
             rows = (payload or {}).get("options", []) if status == 200 else []
             if not isinstance(rows, list):
                 rows = []
@@ -137,11 +137,29 @@ def options_chain(api, underlying, today):
                 if isinstance(option, dict) and option.get("symbol"):
                     collected[option["symbol"]] = option
             monthly.append({
-                "query_kind": kind, "root": root,
-                "year": month.year, "month": month.month,
+                "query_kind": "exact_expiry_no_root", "root": None,
+                "requested_expiry": expiry.isoformat(),
                 "http_status": status, "contracts_returned": len(rows),
                 "expiry_dates": sorted({date(o.get("expiration_last_day")) or date(o.get("expiration_first_day")) for o in rows if isinstance(o, dict)} - {None}),
             })
+            # Only retry with observed symbol roots when the exact-expiry control is empty.
+            if not rows:
+                for root in roots:
+                    params = dict(common)
+                    params["root"] = root
+                    root_status, root_payload = api.get(path, params)
+                    root_rows = (root_payload or {}).get("options", []) if root_status == 200 else []
+                    if not isinstance(root_rows, list):
+                        root_rows = []
+                    for option in root_rows:
+                        if isinstance(option, dict) and option.get("symbol"):
+                            collected[option["symbol"]] = option
+                    monthly.append({
+                        "query_kind": "exact_expiry_root_probe", "root": root,
+                        "requested_expiry": expiry.isoformat(),
+                        "http_status": root_status, "contracts_returned": len(root_rows),
+                        "expiry_dates": sorted({date(o.get("expiration_last_day")) or date(o.get("expiration_first_day")) for o in root_rows if isinstance(o, dict)} - {None}),
+                    })
         month = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
     return list(collected.values()), monthly, roots, base_status
 
