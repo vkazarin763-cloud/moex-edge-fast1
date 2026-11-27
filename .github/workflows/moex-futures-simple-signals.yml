@@ -45,6 +45,8 @@ jobs:
           sudo install -m 0644 "$cert" /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
           sudo update-ca-certificates
           openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt "$cert"
+          # Requests defaults to certifi, which does not include this OS-installed root.
+          echo "REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt" >> "$GITHUB_ENV"
       - name: Verify MOEX ISS HTTPS access
         run: |
           python - <<'PY'
