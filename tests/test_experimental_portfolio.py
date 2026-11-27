@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from experimental_portfolio.engine import UNIVERSE,build_report,MIN_COMMON_BARS,parse_yahoo_payload
 from experimental_portfolio.agents import run_reviewers
+from experimental_portfolio.paper import update_paper_ledger
 
 class ExperimentalPortfolioTests(unittest.TestCase):
     def make_history(self,count=260):
@@ -16,7 +17,7 @@ class ExperimentalPortfolioTests(unittest.TestCase):
                 close=50.0+i*(0.12+n*0.005)
                 rows.append({"date":(base+timedelta(days=i)).isoformat(),"open":close,
                   "high":close*1.01,"low":close*0.99,"close":close,"volume":1000,
-                  "raw_close":close,"source":"synthetic"})
+                  "raw_close":close,"adjusted_close":close,"source":"synthetic"})
             history[item["symbol"]]=rows
         return history
 
@@ -56,6 +57,40 @@ class ExperimentalPortfolioTests(unittest.TestCase):
         self.assertEqual(result["agents_completed"],3)
         self.assertEqual(result["llm_agents_completed"],0)
         self.assertTrue(all(x["engine"]=="local_deterministic" for x in result["reviews"].values()))
+
+    def test_forward_ledger_initializes_without_historical_trades(self):
+        ledger=update_paper_ledger(self.make_history(),None,datetime(2026,11,27,tzinfo=timezone.utc))
+        self.assertEqual(ledger["status"],"INITIALIZED_WAITING_FOR_NEXT_SESSION")
+        self.assertEqual(ledger["nav_index"],100.0)
+        self.assertEqual(ledger["holdings"],[])
+        self.assertEqual(ledger["cash_weight"],1.0)
+        self.assertFalse(ledger["orders_placed"])
+
+    def test_forward_ledger_enters_only_on_a_new_session(self):
+        history=self.make_history()
+        first=update_paper_ledger(history,None,datetime(2026,11,27,tzinfo=timezone.utc))
+        # Add one new session with a modest positive open-to-close move.
+        new_day=(date.fromisoformat(first["last_processed_date"])+timedelta(days=1)).isoformat()
+        for rows in history.values():
+            old=rows[-1]["close"]
+            new=old*1.01
+            rows.append({"date":new_day,"open":old,"high":new*1.01,"low":old*0.99,
+              "close":new,"raw_close":new,"adjusted_close":new,"volume":1000,"source":"synthetic"})
+        updated=update_paper_ledger(history,first,datetime(2026,11,28,tzinfo=timezone.utc))
+        self.assertEqual(updated["status"],"UPDATED")
+        self.assertEqual(updated["last_processed_date"],new_day)
+        self.assertGreater(updated["rebalance_count"],0)
+        self.assertEqual(len(updated["holdings"]),4)
+        self.assertFalse(updated["orders_placed"])
+        self.assertGreater(updated["nav_index"],0)
+
+    def test_forward_ledger_does_not_replay_same_session(self):
+        history=self.make_history()
+        first=update_paper_ledger(history,None)
+        second=update_paper_ledger(history,first)
+        self.assertEqual(second["status"],"WAITING_FOR_NEW_SESSION")
+        self.assertEqual(second["nav_index"],first["nav_index"])
+        self.assertEqual(second["last_processed_date"],first["last_processed_date"])
 
     def test_cost_assumption_is_explicit(self):
         report=build_report(self.make_history())
