@@ -86,6 +86,34 @@ def diagnose_chain(opts, today):
         "rejection_counts":dict(rejected)
     }
 
+def options_chain(api, underlying, today):
+    """Fetch option chains month-by-month; an unfiltered call only returns the nearest expiry."""
+    path = f"/v1/assets/{quote(underlying,safe='')}/options"
+    first = today + timedelta(days=15)
+    last = today + timedelta(days=90)
+    month = first.replace(day=1)
+    collected = {}
+    monthly = []
+    while month <= last:
+        params = {
+            "expiration_date.year": str(month.year),
+            "expiration_date.month": str(month.month),
+            "expiration_date.day": "0",
+        }
+        status, payload = api.get(path, params)
+        rows = (payload or {}).get("options", []) if status == 200 else []
+        if isinstance(rows, list):
+            for option in rows:
+                if isinstance(option, dict) and option.get("symbol"):
+                    collected[option["symbol"]] = option
+        monthly.append({
+            "year": month.year, "month": month.month,
+            "http_status": status, "contracts_returned": len(rows) if isinstance(rows, list) else 0,
+            "expiry_dates": sorted({date(o.get("expiration_last_day")) or date(o.get("expiration_first_day")) for o in rows if isinstance(o, dict)} - {None}),
+        })
+        month = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return list(collected.values()), monthly
+
 def select(opts,spot,today):
     parsed=[]
     for o in opts or []:
@@ -116,15 +144,15 @@ def main():
         item={"status":"ok"}
         try:
             qs,q=api.get(f"/v1/instruments/{quote(u,safe='')}/quotes/latest");q=(q or {}).get("quote",{});spot=dec(q.get("last"))
-            cs,ch=api.get(f"/v1/assets/{quote(u,safe='')}/options");opts=(ch or {}).get("options",[]) if cs==200 else []
-            if spot is None or not opts:item.update({"status":"unavailable","quote_http":qs,"chain_http":cs})
+            opts, monthly_chain_queries = options_chain(api,u,today)
+            if spot is None or not opts:item.update({"status":"unavailable","quote_http":qs,"monthly_chain_queries":monthly_chain_queries})
             else:
                 selected=select(opts,spot,today)
                 schema_sample=[]
                 for raw_option in opts[:3]:
                     if isinstance(raw_option,dict):
                         schema_sample.append({"keys":sorted(raw_option.keys()),"type_value":val(raw_option.get("type")),"type_python":type(raw_option.get("type")).__name__,"expiration_last_day_python":type(raw_option.get("expiration_last_day")).__name__,"expiration_last_day_raw":raw_option.get("expiration_last_day"),"expiration_first_day_raw":raw_option.get("expiration_first_day"),"expiration_last_day_normalized":date(raw_option.get("expiration_last_day")),"expiration_first_day_normalized":date(raw_option.get("expiration_first_day")),"strike_raw":raw_option.get("strike"),"strike_normalized":str(dec(raw_option.get("strike"))) if dec(raw_option.get("strike")) is not None else None,"symbol":raw_option.get("symbol")})
-                item.update({"option_chain_diagnostics":diagnose_chain(opts,today),"option_schema_sample":schema_sample,"selection_status":"ok" if selected else "no_contracts_after_normalization","spot_quote":{k:val(q.get(k)) for k in ("timestamp","bid","ask","last","bid_size","ask_size")},"chain_count":len(opts),"contracts_selected":len(selected),"underlying_bars":{"h1":bars(api,u,"TIME_FRAME_H1",start30,end),"d1":bars(api,u,"TIME_FRAME_D",start365,end)},"contract_data":[]})
+                item.update({"option_chain_diagnostics":diagnose_chain(opts,today),"monthly_chain_queries":monthly_chain_queries,"option_schema_sample":schema_sample,"selection_status":"ok" if selected else "no_contracts_after_normalization","spot_quote":{k:val(q.get(k)) for k in ("timestamp","bid","ask","last","bid_size","ask_size")},"chain_count":len(opts),"contracts_selected":len(selected),"underlying_bars":{"h1":bars(api,u,"TIME_FRAME_H1",start30,end),"d1":bars(api,u,"TIME_FRAME_D",start365,end)},"contract_data":[]})
                 for c in selected:
                     c["history"]={"m5":bars(api,c["symbol"],"TIME_FRAME_M5",start30,end),"h1":bars(api,c["symbol"],"TIME_FRAME_H1",start30,end),"d1":bars(api,c["symbol"],"TIME_FRAME_D",start365,end)}
                     item["contract_data"].append(c)
