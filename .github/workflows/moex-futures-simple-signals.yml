@@ -2,6 +2,10 @@ name: Simple MOEX Futures Signals (Read Only)
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/moex-futures-simple-signals.yml"
+      - "research/moex_futures_simple_signals.py"
   schedule:
     # Hourly during the main MOEX derivatives session (10:00-23:00 Moscow time).
     - cron: "0 7-20 * * 1-5"
@@ -26,6 +30,33 @@ jobs:
           python-version: "3.12"
       - name: Install dependency
         run: pip install requests
+      - name: Add verified MOEX TLS root CA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cert=/tmp/russian_trusted_root_ca.cer
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 https://gu-st.ru/content/Other/doc/russian_trusted_root_ca.cer -o "$cert"
+          fingerprint="$(openssl x509 -in "$cert" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          expected="D26D2D0231B7C39F92CC738512BA54103519E4405D68B5BD703E9788CA8ECF31"
+          if [ "$fingerprint" != "$expected" ]; then
+            echo "Unexpected Russian Trusted Root CA fingerprint: $fingerprint" >&2
+            exit 1
+          fi
+          sudo install -m 0644 "$cert" /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
+          sudo update-ca-certificates
+          openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt "$cert"
+      - name: Verify MOEX ISS HTTPS access
+        run: |
+          python - <<'PY'
+          import requests
+          response = requests.get(
+              "https://iss.moex.com/iss/engines/futures/markets/forts/securities.json",
+              params={"iss.meta": "off"},
+              timeout=20,
+          )
+          response.raise_for_status()
+          print(f"MOEX ISS TLS verified; HTTP {response.status_code}; bytes={len(response.content)}")
+          PY
       - name: Generate LONG/SHORT futures signals (read only)
         run: python research/moex_futures_simple_signals.py
       - name: Publish signal summary
