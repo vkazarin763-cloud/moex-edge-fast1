@@ -73,7 +73,8 @@ class Finam:
     def get(self, path, params=None):
         response = self.session.get(BASE + path, params=params, timeout=TIMEOUT)
         if response.status_code != 200:
-            raise RuntimeError(f"api_http_{response.status_code}")
+            detail = " ".join(response.text.split())[:240]
+            raise RuntimeError(f"api_http_{response.status_code}: {detail}")
         return response.json()
 
 
@@ -86,9 +87,9 @@ def ema(values, period):
 
 
 def get_h1_bars(api, symbol, now):
-    start = (now - timedelta(days=60)).isoformat(timespec="seconds").replace("+00:00", "Z")
+    start = (now - timedelta(days=30)).isoformat(timespec="seconds").replace("+00:00", "Z")
     end = (now + timedelta(minutes=1)).isoformat(timespec="seconds").replace("+00:00", "Z")
-    payload = api.get(f"/v1/instruments/{quote(symbol, safe='')}/bars", {
+    payload = api.get(f"/v1/instruments/{quote(symbol, safe='@')}/bars", {
         "timeframe": "TIME_FRAME_H1",
         "interval.start_time": start,
         "interval.end_time": end,
@@ -158,7 +159,7 @@ def expiry_date(contract):
 
 
 def choose_option(api, underlying, direction, spot, today, now):
-    payload = api.get(f"/v1/assets/{quote(underlying, safe='')}/options")
+    payload = api.get(f"/v1/assets/{quote(underlying, safe='@')}/options")
     options = payload.get("options", [])
     wanted = "TYPE_CALL" if direction == "LONG_CALL" else "TYPE_PUT"
     candidates = []
@@ -189,7 +190,7 @@ def choose_option(api, underlying, direction, spot, today, now):
         "status": "selected_nearest_expiry_near_atm",
     }
     try:
-        q = api.get(f"/v1/instruments/{quote(symbol, safe='')}/quotes/latest").get("quote", {})
+        q = api.get(f"/v1/instruments/{quote(symbol, safe='@')}/quotes/latest").get("quote", {})
         bid, ask = number(q.get("bid")), number(q.get("ask"))
         stamp = parse_time(q.get("timestamp"))
         age = round((now - stamp).total_seconds() / 60, 1) if stamp else None
