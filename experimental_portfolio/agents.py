@@ -3,7 +3,7 @@
 LLM text is commentary only. It never creates or changes portfolio positions.
 """
 from __future__ import annotations
-import json,os,re,urllib.error,urllib.request
+import json,os,re,time,urllib.error,urllib.request
 from typing import Any
 
 OPENROUTER_URL="https://openrouter.ai/api/v1/chat/completions"
