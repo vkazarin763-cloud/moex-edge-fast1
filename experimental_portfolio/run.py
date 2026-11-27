@@ -6,6 +6,7 @@ from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from experimental_portfolio.agents import run_reviewers
 from experimental_portfolio.engine import SOURCE,UNIVERSE,build_report,download_universe
+from experimental_portfolio.paper import update_paper_ledger
 
 def main()->int:
     parser=argparse.ArgumentParser()
@@ -18,23 +19,51 @@ def main()->int:
     history,errors=download_universe(start,end)
     report=build_report(history,errors)
     report["universe_requested"]=[x["symbol"] for x in UNIVERSE]
-    report["ai_review"]=run_reviewers(report)
-    report["run_mode"]="AUTONOMOUS_RESEARCH_PAPER_ONLY"
+    report["run_mode"]="AUTONOMOUS_RESEARCH_AND_FORWARD_PAPER_ONLY"
     report["data_source"]=SOURCE
+
+    # Keep historical replay and forward paper ledger explicitly separate.
+    report["historical_backtest"]={
+        "period":report.get("period"),
+        "performance":report.get("performance"),
+        "benchmark_spy_buy_and_hold":report.get("benchmark_spy_buy_and_hold"),
+        "latest_model_weights":report.get("holdings",[]),
+        "notice":"Historical simulation only. It is not the prospective paper portfolio and does not seed paper holdings.",
+    }
+    ledger_path=Path("experimental_portfolio/paper_ledger.json")
+    existing=None
+    if ledger_path.exists():
+        existing=json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger=update_paper_ledger(history,existing)
+    ledger_path.write_text(json.dumps(ledger,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    report["paper_portfolio"]=ledger
+    report["holdings"]=ledger.get("holdings",[])
+    report["cash_weight"]=ledger.get("cash_weight")
+    report["ai_review"]=run_reviewers(report)
+
     out=Path(args.output_dir);out.mkdir(parents=True,exist_ok=True)
     rendered=json.dumps(report,ensure_ascii=False,indent=2,allow_nan=False)+"\n"
     (out/"latest.json").write_text(rendered,encoding="utf-8")
     (out/f"portfolio-{end.isoformat()}.json").write_text(rendered,encoding="utf-8")
-    state={"updated_at_utc":report.get("generated_at_utc"),"status":report.get("status"),
-      "portfolio_index":report.get("performance",{}).get("ending_nav_index"),
-      "holdings":report.get("holdings",[]),"cash_weight":report.get("cash_weight"),
-      "ai_review_status":report.get("ai_review",{}).get("status"),"safety":report.get("safety")}
+    state={
+      "updated_at_utc":report.get("generated_at_utc"),"data_status":report.get("status"),
+      "paper_status":ledger.get("status"),"portfolio_index":ledger.get("nav_index"),
+      "paper_holdings":ledger.get("holdings",[]),"cash_weight":ledger.get("cash_weight"),
+      "last_processed_date":ledger.get("last_processed_date"),
+      "historical_backtest_index":report.get("performance",{}).get("ending_nav_index"),
+      "ai_review_status":report.get("ai_review",{}).get("status"),
+      "ai_agents_completed":report.get("ai_review",{}).get("agents_completed",0),
+      "safety":report.get("safety"),
+    }
     Path("experimental_portfolio/state.json").write_text(json.dumps(state,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    print(json.dumps({"status":report.get("status"),"assets_requested":len(UNIVERSE),
+    print(json.dumps({
+      "data_status":report.get("status"),"assets_requested":len(UNIVERSE),
       "assets_with_history":len(history),"data_errors":len(errors),
-      "portfolio_index":report.get("performance",{}).get("ending_nav_index"),
-      "holdings":len(report.get("holdings",[])),"ai_review":report["ai_review"]["status"],
-      "ai_agents_completed":report["ai_review"].get("agents_completed",0),
-      "paper_only":report.get("safety",{}).get("paper_only"),"orders_placed":False},ensure_ascii=False))
+      "historical_backtest_index":report.get("performance",{}).get("ending_nav_index"),
+      "paper_status":ledger.get("status"),"paper_nav_index":ledger.get("nav_index"),
+      "paper_holdings":len(ledger.get("holdings",[])),"cash_weight":ledger.get("cash_weight"),
+      "ai_review":report["ai_review"]["status"],"ai_agents_completed":report["ai_review"].get("agents_completed",0),
+      "paper_only":True,"orders_placed":False,
+    },ensure_ascii=False))
     return 0
 if __name__=="__main__": raise SystemExit(main())
