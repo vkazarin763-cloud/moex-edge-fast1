@@ -135,9 +135,9 @@ def _target_weights(prices:dict[str,list[float]],symbols:list[str],index:int)->d
     return {s:weight for s in chosen}
 
 def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None=None,
-                 generated_at:datetime|None=None)->dict[str,Any]:
+                 generated_at:datetime|None=None,allowed_symbols:set[str]|None=None)->dict[str,Any]:
     errors=errors or {}; generated_at=generated_at or datetime.now(timezone.utc)
-    eligible={s:r for s,r in history.items() if len(r)>=MIN_COMMON_BARS}
+    eligible={s:r for s,r in history.items() if len(r)>=MIN_COMMON_BARS and (allowed_symbols is None or s in allowed_symbols)}
     common=set.intersection(*(set(x["date"] for x in r) for r in eligible.values())) if eligible else set()
     dates=sorted(common)
     safety={"paper_only":True,"broker_access":False,"orders_placed":False,
@@ -169,10 +169,10 @@ def build_report(history:dict[str,list[dict[str,Any]]],errors:dict[str,str]|None
     stale=[s for s,x in latest_prices.items() if (generated_at.date()-date.fromisoformat(x["date"])).days>7]
     providers=sorted({row.get("source","unknown") for rows in eligible.values() for row in rows[-1:]})
     return {"status":"READY" if not stale else "DATA_STALE","generated_at_utc":generated_at.isoformat(),"source":SOURCE,
-      "providers_used":providers,"provider_by_symbol":{s:eligible[s][-1].get("source","unknown") for s in eligible},"market_scope":"US-listed global equity, bond, gold, commodity and real-estate ETF proxies",
+      "providers_used":providers,"provider_by_symbol":{s:eligible[s][-1].get("source","unknown") for s in eligible},"market_scope":"Finam-account-verified eligible assets only; ETF proxy universe is research candidates",
       "portfolio_model":{"name":"Global 63-session momentum + 200-session trend","initial_nav_index":100.0,
         "currency":"NOT_APPLICABLE_INDEX_UNITS","rebalance":"monthly, using prior completed daily close",
-        "selection":"up to four assets with positive 63-session momentum and close above 200-session SMA",
+        "selection":"up to four Finam-account-verified eligible assets with positive 63-session momentum and close above 200-session SMA",
         "weighting":"equal weight; uninvested share remains cash","estimated_one_way_transaction_cost":ESTIMATED_ONE_WAY_COST,
         "cost_assumption_note":"Provisional modeling assumption, not a verified broker tariff or executable spread."},
       "period":{"from":return_dates[0] if return_dates else None,"till":return_dates[-1] if return_dates else None,
