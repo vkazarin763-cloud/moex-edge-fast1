@@ -1,8 +1,9 @@
 import unittest
+from datetime import date, timedelta
 from experimental_portfolio.weekly_strategy_lab import validate_bars, signal_series, backtest, compare
 
 def make_bars(closes):
-    return [{"date":f"2020-{i+1:02d}-01","open":v,"high":v*1.01,"low":v*.99,"close":v} for i,v in enumerate(closes)]
+    return [{"date":(date(2020,1,1)+timedelta(days=7*i)).isoformat(),"open":v,"high":v*1.01,"low":v*.99,"close":v} for i,v in enumerate(closes)]
 
 class WeeklyStrategyLabTests(unittest.TestCase):
     def test_bad_duplicate_rows_filtered(self):
