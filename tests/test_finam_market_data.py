@@ -138,6 +138,43 @@ class FinamMarketDataTests(unittest.TestCase):
         with self.assertRaises(FinamAPIError):
             client.fetch_bars("SBER@MISX", "TIME_FRAME_D", self.start, self.end)
 
+    def test_weekly_fetch_can_allow_only_one_preceding_boundary_bar(self):
+        prior_week = bar("2026-11-11T00:00:00Z")
+        client = FinamMarketDataClient(
+            "token", requester=lambda *a, **k: {
+                "symbol": "SBER@MISX", "bars": [prior_week]
+            }
+        )
+        rows = client.fetch_bars(
+            "SBER@MISX", "TIME_FRAME_W", self.start, self.end,
+            allow_preceding_weekly_bar=True,
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].timestamp, datetime(2026, 11, 11, tzinfo=timezone.utc))
+
+    def test_weekly_fetch_rejects_preceding_bar_older_than_seven_days(self):
+        old_bar = bar("2026-11-10T00:00:00Z")
+        client = FinamMarketDataClient(
+            "token", requester=lambda *a, **k: {
+                "symbol": "SBER@MISX", "bars": [old_bar]
+            }
+        )
+        with self.assertRaises(FinamAPIError):
+            client.fetch_bars(
+                "SBER@MISX", "TIME_FRAME_W", self.start, self.end,
+                allow_preceding_weekly_bar=True,
+            )
+
+    def test_preceding_bar_allowance_is_weekly_only(self):
+        client = FinamMarketDataClient(
+            "token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": []}
+        )
+        with self.assertRaisesRegex(ValueError, "only valid for weekly"):
+            client.fetch_bars(
+                "SBER@MISX", "TIME_FRAME_D", self.start, self.end,
+                allow_preceding_weekly_bar=True,
+            )
+
     def test_fetch_bars_rejects_bars_outside_requested_interval(self):
         client = FinamMarketDataClient(
             "token", requester=lambda *a, **k: {"symbol": "SBER@MISX", "bars": [bar("2026-11-19T00:00:00Z")]}
