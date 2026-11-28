@@ -8,6 +8,7 @@ be independently verified before total-return calculations are enabled.
 """
 from __future__ import annotations
 
+import re
 from datetime import date
 from typing import Callable
 from urllib.parse import urlencode
@@ -15,6 +16,25 @@ from urllib.parse import urlencode
 BASE = "https://api.finam.ru"
 PAGE_SIZE = 100
 MAX_PAGES = 20
+
+
+def sanitize_error_detail(value: object) -> str:
+    """Keep only short, non-sensitive diagnostic text from vendor errors."""
+    text = str(value or "")
+    text = re.sub(
+        r"(?i)(authorization|bearer|token|secret|account[_-]?id)\s*[:=]\s*[^,\s\"}]+",
+        r"\1=[redacted]",
+        text,
+    )
+    text = re.sub(r"[^A-Za-z0-9 _.,:/-]", " ", text)
+    return " ".join(text.split())[:120] or "NO_ERROR_DETAIL"
+
+
+class FinamRequestError(RuntimeError):
+    def __init__(self, code: str, detail: object = "") -> None:
+        self.code = code[:40]
+        self.detail = sanitize_error_detail(detail)
+        super().__init__(self.code)
 
 
 def _date_params(prefix: str, value: date) -> dict[str, str]:
@@ -60,8 +80,6 @@ def fetch_event_pages(
                 **_date_params("date_from", start_date),
                 **_date_params("date_to", end_date),
             }
-            # Finam's documented query names contain literal dots (date_from.year).
-            # Preserve them: some API gateways do not normalize %2E in parameter keys.
             query = urlencode(params, safe=".")
             payload = requester(f"{BASE}{endpoint}?{query}", token)
             if not isinstance(payload, dict) or not isinstance(payload.get(list_key), list):
@@ -77,6 +95,11 @@ def fetch_event_pages(
                 return {"status": "OK", "events": events, "pages": pages}
             offset += len(page)
         return {"status": "PAGE_LIMIT_REACHED", "events": events, "pages": pages}
+    except FinamRequestError as exc:
+        return {
+            "status": "UNAVAILABLE", "error_code": exc.code,
+            "error_detail": exc.detail, "events": [], "pages": pages,
+        }
     except Exception as exc:
         code = str(exc).split(":", 1)[0][:40] or "REQUEST_FAILED"
         return {"status": "UNAVAILABLE", "error_code": code, "events": [], "pages": pages}
