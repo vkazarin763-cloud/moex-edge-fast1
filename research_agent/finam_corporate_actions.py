@@ -1,9 +1,10 @@
-"""Read-only Finam corporate-action event retrieval for research audits.
+"Read-only Finam corporate-action event retrieval for research audits.
 
+Finam's historical dividend date is the register closing date, not the
+ex-dividend/last-buy date. Split execution dates are separately defined.
 This module records vendor events but deliberately does not adjust prices:
-the REST schema exposes event dates and amounts/ratios, but the date's
-economic meaning and fund-distribution completeness must be independently
-verified before total-return calculations are enabled.
+fund-distribution completeness and an authoritative ex-date mapping must
+be independently verified before total-return calculations are enabled.
 """
 from __future__ import annotations
 
@@ -59,10 +60,10 @@ def fetch_event_pages(
                 **_date_params("date_from", start_date),
                 **_date_params("date_to", end_date),
             }
-            payload = requester(
-                f"{BASE}{endpoint}?{urlencode(params)}",
-                token,
-            )
+            # Finam's documented query names contain literal dots (date_from.year).
+            # Preserve them: some API gateways do not normalize %2E in parameter keys.
+            query = urlencode(params, safe=".")
+            payload = requester(f"{BASE}{endpoint}?{query}", token)
             if not isinstance(payload, dict) or not isinstance(payload.get(list_key), list):
                 return {"status": "INVALID_RESPONSE", "events": [], "pages": pages}
             page = payload[list_key]
@@ -72,14 +73,11 @@ def fetch_event_pages(
             has_next = pagination.get("has_next")
             if has_next is False or not page:
                 return {"status": "OK", "events": events, "pages": pages}
-            if has_next is None:
-                # Older API responses may omit has_next; a short page is terminal.
-                if len(page) < page_size:
-                    return {"status": "OK", "events": events, "pages": pages}
+            if has_next is None and len(page) < page_size:
+                return {"status": "OK", "events": events, "pages": pages}
             offset += len(page)
         return {"status": "PAGE_LIMIT_REACHED", "events": events, "pages": pages}
     except Exception as exc:
-        # Keep only a coarse code; never persist response bodies or credentials.
         code = str(exc).split(":", 1)[0][:40] or "REQUEST_FAILED"
         return {"status": "UNAVAILABLE", "error_code": code, "events": [], "pages": pages}
 
@@ -104,5 +102,5 @@ def fetch_instrument_corporate_actions(
             symbol, "/v1/splits/past", "splits", token,
             start_date, end_date, requester=requester,
         )
-    result["adjustment_status"] = "NOT_ADJUSTED_EVENT_DATE_SEMANTICS_AND_COVERAGE_UNVERIFIED"
+    result["adjustment_status"] = "NOT_ADJUSTED_DIVIDEND_DATE_IS_RECORD_DATE_AND_DISTRIBUTION_COVERAGE_UNVERIFIED"
     return result
