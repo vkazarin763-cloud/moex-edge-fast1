@@ -115,11 +115,14 @@ def normalized_reviewer_context(report:dict)->dict:
     period=bt.get("period") or {}
     metrics=bt.get("metrics")
     normalized_period={"from":period.get("start"),"till":period.get("end")}
-    return {**report,"period":normalized_period,"performance":metrics,
-        "historical_backtest":{"period":normalized_period,"performance":metrics,
-            "benchmark_spy_buy_and_hold":bt.get("benchmark_buy_hold")},
-        "benchmark_spy_buy_and_hold":bt.get("benchmark_buy_hold"),
-        "paper_portfolio":report.get("forward_paper_ledger"),
-        "holdings":(report.get("forward_paper_ledger") or {}).get("holdings",[]),
-        "cash_weight":(report.get("forward_paper_ledger") or {}).get("cash_weight"),
-        "data_errors":report.get("history_errors",{}),"portfolio_model":bt.get("strategy")}
+    benchmark=bt.get("benchmark_buy_hold")
+    errors={s:e for s,e in (report.get("history_errors") or {}).items() if not str(e).startswith("insufficient_weekly_bars:")}
+    excluded={s:e for s,e in (report.get("history_errors") or {}).items() if str(e).startswith("insufficient_weekly_bars:")}
+    ledger=report.get("forward_paper_ledger") or {}
+    return {"generated_at_utc":report.get("generated_at_utc"),"status":report.get("status"),
+        "period":normalized_period,"performance":metrics,
+        "historical_backtest":{"period":normalized_period,"performance":metrics,"benchmark_buy_and_hold":benchmark},
+        "benchmark_buy_and_hold":benchmark,"paper_portfolio":ledger,
+        "holdings":ledger.get("holdings",[]),"cash_weight":ledger.get("cash_weight"),
+        "data_errors":errors,"history_exclusions":excluded,"portfolio_model":bt.get("strategy"),
+        "limitations":report.get("limitations")}
