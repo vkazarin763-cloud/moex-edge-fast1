@@ -27,3 +27,15 @@ The earlier comparison used a trailing strategy return against a current deposit
 
 ## Safety and scope
 Read-only account permission and market-data endpoints only. No order endpoints, leverage, position sizing, live execution or paid data services. Equities/funds remain a research-only phase; bonds, futures and options require dedicated cash-flow, expiry, margin and payoff models.
+
+## Independent source probes (2026-11-28)
+
+### MOEX ISS splits
+A read-only GitHub Actions probe confirmed that `/iss/statistics/engines/stock/splits.json?iss.meta=off` returns JSON with columns `tradedate, secid, before, after` and 58 rows in the response. The endpoint succeeds over plain HTTP, while HTTPS from the hosted runner fails certificate verification because the certificate chain contains a self-signed certificate. The probe now always verifies TLS for HTTPS and does not disable certificate checks; the HTTP result is recorded only as a diagnostic because it is unencrypted and must not be trusted for price adjustment without independent reconciliation. The MOEX ISS documentation also states that use beyond familiarization requires an agreement with MOEX. No split data is currently applied to bars.
+
+### Dividend-source candidates
+- Long/Short publishes a machine-readable CSV/JSON dividend feed under CC-BY. Its own documentation says the feed covers the previous year and upcoming events, combines T-Investments API, Smart-Lab, Dohod.ru and issuer clarifications, and marks events as confirmed/recommended/forecast. It explicitly warns that data may contain source errors; `last_buy_date` may be approximate and `meeting_status=not_verified` means the meeting decision was not separately checked. It is a useful candidate for cross-checking recent events, not a complete historical total-return source.
+- BUYHOLD advertises a historical dataset of 1,851 payments across 190 companies and lists MOEX ISS, Smart-Lab and Bank of Russia as sources. The public CSV export endpoint returned HTTP 403 to the probe, so automated access and licensing are not established.
+- MOEX's Corporate Information Centre provides structured corporate actions and historical access, but its product page describes subscription/test access and pricing; the CCI JSON endpoint returned HTML rather than JSON in the read-only probe. It is not treated as a free public API.
+
+These sources are not merged or used for price adjustments. A candidate event must be reconciled to issuer/registrar primary disclosure, with event type, amount, currency, record date, ex/last-buy date and payment date kept as distinct fields. Fund distributions require separate completeness checks. Deposit comparisons remain `NOT_COMPARABLE` until the full return basis is independently verified.
