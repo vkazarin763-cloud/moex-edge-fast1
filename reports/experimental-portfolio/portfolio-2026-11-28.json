@@ -1,6 +1,6 @@
 {
   "status": "INSUFFICIENT_DATA",
-  "generated_at_utc": "2026-11-28T03:12:01.145557+00:00",
+  "generated_at_utc": "2026-11-28T03:15:25.506346+00:00",
   "source": "Yahoo Finance chart API; Stooq CSV fallback",
   "eligible_assets": [],
   "common_daily_bars": 0,
@@ -33,7 +33,7 @@
     "blocked_symbols": {},
     "verification_source": "Finam account-scoped API; direct per-symbol checks",
     "account_scope": "Finam account (identifier not stored)",
-    "last_verified": "2026-11-28T03:12:01.034798+00:00",
+    "last_verified": "2026-11-28T03:15:25.415189+00:00",
     "fail_closed": true
   },
   "eligibility_policy": "Fail closed: only account-confirmed Finam BUY_ALLOWED instruments may be selected. No confirmed symbols means cash only.",
@@ -67,7 +67,7 @@
     "status": "DATA_INSUFFICIENT",
     "start_date": "2026-11-27",
     "last_processed_date": "2026-11-27",
-    "updated_at_utc": "2026-11-28T03:12:01.145618+00:00",
+    "updated_at_utc": "2026-11-28T03:15:25.506431+00:00",
     "nav_index": 100.0,
     "high_watermark": 100.0,
     "max_drawdown": 0.0,
@@ -94,41 +94,40 @@
       "market_analyst": {
         "status": "COMPLETED",
         "engine": "llm",
-        "provider": "groq_fallback",
-        "model": "openai/gpt-oss-20b",
+        "provider": "openrouter",
+        "model": "openrouter/free",
         "review": {
-          "summary": "The portfolio is currently 100% cash with no holdings. No market breadth, asset‑class concentration, or performance data are available.",
+          "summary": "The portfolio is in an initial state with 100% cash (cash_weight: 1.0) and zero holdings. All tracked symbols (SPY, QQQ, IWM, EFA, EEM, VGK, EWJ, INDA, TLT, IEF, GLD, DBC, VNQ, SHY) are blocked by the data provider's account allowlist, resulting in INSUFFICIENT_DATA status. No market breadth, asset-class concentration, or notable changes can be assessed because no price or weight data is available.",
           "risks": [
-            "Liquidity risk due to lack of active positions",
-            "Potential concentration risk if future allocations are heavily weighted in a single asset class"
+            "Complete data outage for all benchmark and portfolio symbols prevents any risk analysis.",
+            "Portfolio holds only cash; no diversification or market exposure exists."
           ],
           "questions": [
-            "What specific asset classes are intended for future allocation?",
-            "Which market data sources are unavailable or blocked?",
-            "When will the portfolio begin rebalancing from cash to securities?"
+            "When will the data provider allowlist be updated to restore symbol access?",
+            "Is there an alternative data source to populate holdings and performance metrics?"
           ]
         }
       },
       "portfolio_researcher": {
         "status": "COMPLETED",
         "engine": "llm",
-        "provider": "groq_fallback",
-        "model": "openai/gpt-oss-20b",
+        "provider": "openrouter",
+        "model": "openrouter/free",
         "review": {
-          "summary": "The deterministic strategy lacks sufficient evidence to evaluate its viability. All performance metrics, backtest results, and benchmark comparisons are marked as INSUFFICIENT_DATA. No holdings or orders have been processed, and the portfolio remains entirely cash. Data errors prevent access to key benchmark symbols, further limiting assessment.",
+          "summary": "The deterministic strategy cannot be evaluated because all required market data is unavailable (every symbol blocked by Finam account allowlist), the historical backtest has no period or performance, the paper portfolio holds only cash with no trades, and no portfolio model or limitations are defined. There is zero evidence of strategy behavior, risk characteristics, or benchmark comparison.",
           "risks": [
-            "Inability to validate strategy performance due to missing backtest data",
-            "Potential data integrity issues from blocked benchmark symbols",
-            "No historical performance to assess risk-adjusted returns",
-            "Uncertain market exposure as holdings are empty",
-            "Risk of overfitting if future data is not available"
+            "Complete data outage for all 14 universe symbols prevents any signal generation, backtesting, or paper trading.",
+            "No historical backtest results exist to assess strategy logic, drawdowns, or benchmark-relative performance.",
+            "Paper portfolio has never held a position; first virtual entry depends on future data availability.",
+            "Portfolio model, weighting scheme, rebalance rules, and risk controls are undefined (null).",
+            "Benchmark SPY buy-and-hold reference is missing, so no relative performance context can be established."
           ],
           "questions": [
-            "What is the intended allocation strategy once data becomes available?",
-            "How will the strategy handle periods of market illiquidity?",
-            "What are the expected turnover and transaction cost assumptions?",
-            "When will benchmark data be restored to enable performance comparison?",
-            "What risk metrics (e.g., VaR, Sharpe) are projected for the strategy?"
+            "What alternative data source or access method will replace the blocked Finam feed?",
+            "When will a complete historical backtest (with period, performance, and benchmark) be produced?",
+            "What is the deterministic portfolio model (asset selection, weighting, rebalance frequency, risk limits)?",
+            "How will the strategy handle missing or stale data in live operation?",
+            "What are the explicit limitations and assumptions of the strategy once data is restored?"
           ]
         }
       },
@@ -138,13 +137,13 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The portfolio is in an initial state with no holdings and all capital in cash. No performance data, backtest, or benchmark information is available. Several key symbols are blocked, preventing data retrieval. The portfolio has not yet rebalance or placed any orders.",
+          "summary": "The portfolio is in an initial state with no holdings and all capital in cash. No performance data, backtest, or benchmark information is available. All requested symbols are blocked, resulting in data gaps and stale prices. The portfolio has no concentration or drawdown data to assess.",
           "risks": [
-            "Data insufficiency: lack of historical prices and performance metrics prevents risk assessment.",
-            "Symbol blocking: critical ETFs (SPY, QQQ, IWM, etc.) are inaccessible, creating a data gap.",
-            "Concentration risk cannot be evaluated due to empty holdings.",
-            "Drawdown cannot be measured; max_drawdown is 0.0 but this is a placeholder.",
-            "Potential stale data: no recent price updates for any symbol."
+            "Data insufficiency: lack of historical performance, backtest, and benchmark metrics.",
+            "Symbol data gaps: all requested tickers are blocked, preventing accurate valuation and risk assessment.",
+            "No concentration information: holdings list is empty, so concentration risk cannot be evaluated.",
+            "No drawdown data: max_drawdown is 0.0 but this is meaningless without actual trades.",
+            "Potential stale prices: with no data, any future valuation would rely on unknown or outdated prices."
           ],
           "questions": []
         }
