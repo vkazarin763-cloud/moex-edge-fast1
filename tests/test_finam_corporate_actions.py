@@ -30,6 +30,28 @@ class CorporateActionFetchTests(unittest.TestCase):
         self.assertIn("date_from.year=2021", calls[0][0])
         self.assertNotIn("date_from%2Eyear", calls[0][0])
 
+    def test_400_date_query_retries_without_dates_and_filters_locally(self):
+        calls = []
+        def requester(url, token):
+            calls.append(url)
+            query = parse_qs(urlparse(url).query)
+            if "date_from.year" in query:
+                raise FinamRequestError("HTTP_400", "invalid date query")
+            return {"dividends": [
+                {"date": {"year": 2020, "month": 1, "day": 2}},
+                {"date": {"year": 2024, "month": 5, "day": 6}},
+                {"date": {"year": 2027, "month": 1, "day": 2}},
+            ], "pagination": {"has_next": False}}
+        result = fetch_event_pages(
+            "SBER@MISX", "/v1/past-dividends", "dividends", "token",
+            date(2021, 1, 1), date(2026, 1, 1), requester=requester,
+        )
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(result["status"], "OK")
+        self.assertEqual(result["date_filter_mode"], "local_fallback")
+        self.assertEqual(len(result["events"]), 1)
+        self.assertEqual(result["events"][0]["date"]["year"], 2024)
+
     def test_fund_does_not_request_split_endpoint(self):
         calls = []
         def requester(url, token):
