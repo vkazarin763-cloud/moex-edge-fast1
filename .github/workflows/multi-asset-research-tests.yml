@@ -1,0 +1,25 @@
+name: Universal Multi-Asset Research Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/universal-multi-asset-research]
+    paths:
+      - "experimental_portfolio/multi_asset_registry.py"
+      - "experimental_portfolio/MULTI_ASSET_RESEARCH.md"
+      - "tests/test_multi_asset_registry.py"
+      - ".github/workflows/multi-asset-research-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  registry-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run isolated registry tests
+        run: python -m pip install pytest && python -m pytest -q tests/test_multi_asset_registry.py
