@@ -1,0 +1,27 @@
+name: Finam Multi-Asset Account Permission Probe (Read Only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/multiasset-finam-permission-probe]
+    paths:
+      - "scripts/probe_finam_multiasset_permissions.py"
+      - ".github/workflows/finam-multiasset-permissions-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  account-permission-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Probe account-scoped permissions (read only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+        run: python scripts/probe_finam_multiasset_permissions.py
