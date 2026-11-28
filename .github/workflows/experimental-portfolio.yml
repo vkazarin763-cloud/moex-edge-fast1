@@ -22,6 +22,8 @@ on:
       - "scripts/probe_finam_active_asset_catalog.py"
       - "scripts/probe_finam_moex_fund_permissions.py"
       - "scripts/probe_finam_daily_bars_for_moex_funds.py"
+      - "scripts/validate_finam_daily_bars_for_approved_moex_funds.py"
+      - "scripts/validate_finam_daily_bars_for_approved_moex_funds.py"
       - "scripts/probe_finam_daily_bars_for_moex_funds.py"
       - "scripts/probe_finam_moex_fund_permissions.py"
       - "scripts/probe_finam_active_asset_catalog.py"
@@ -48,6 +50,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Validate daily bars for account-eligible MOEX funds (read-only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+        run: python scripts/validate_finam_daily_bars_for_approved_moex_funds.py || echo "Bar validation failed; no data source change."
       - name: Probe daily Finam bars for MOEX fund candidates (read-only)
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
