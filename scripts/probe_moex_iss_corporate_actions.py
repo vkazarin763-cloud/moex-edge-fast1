@@ -1,34 +1,27 @@
 #!/usr/bin/env python3
-"""Read-only live probe of public MOEX ISS dividend endpoints."""
+"""Read-only MOEX ISS probe; TLS verification is always enabled."""
 import json
-import os
 import ssl
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-BASE = "https://iss.moex.com/iss"
+ISS = "https://iss.moex.com/iss"
 URLS = [
-    f"{BASE}/statistics/engines/stock/splits.json?iss.meta=off",
-    f"{BASE}/cci/corp-actions/dividends.json?iss.meta=off",
-    f"{BASE}/cci/corp-actions/dividends.json?iss.meta=off&start=0",
+    f"{ISS}/statistics/engines/stock/splits.json?iss.meta=off",
+    "http://iss.moex.com/iss/statistics/engines/stock/splits.json?iss.meta=off",
+    f"{ISS}/cci/corp-actions/dividends.json?iss.meta=off",
 ]
 
 def main():
     failed = False
+    context = ssl.create_default_context()
     for url in URLS:
         print(f"\nURL {url}")
         try:
             request = Request(url, headers={"Accept": "application/json", "User-Agent": "moex-edge-readonly-research/1.0"})
-            context = ssl.create_default_context()
-            insecure_diagnostic = os.getenv("MOEX_ISS_DIAGNOSTIC_INSECURE_TLS") == "1"
-            if insecure_diagnostic:
-                # Diagnostic only: this public read-only probe must never feed production data.
-                context.check_hostname = False
-                context.verify_mode = ssl.CERT_NONE
-                print("TLS_VERIFY DISABLED_FOR_DIAGNOSTIC_ONLY")
-            with urlopen(request, timeout=20, context=context) as response:
+            with urlopen(request, timeout=20, context=context if url.startswith("https:") else None) as response:
                 raw = response.read(200_000).decode("utf-8", "replace")
-                print("HTTP", response.status, "CONTENT_TYPE", response.headers.get("Content-Type"))
+                print("HTTP", response.status, "FINAL_URL", response.geturl(), "CONTENT_TYPE", response.headers.get("Content-Type"))
             try:
                 payload = json.loads(raw)
             except json.JSONDecodeError:
@@ -51,7 +44,6 @@ def main():
             print("NETWORK_ERROR", type(exc).__name__, str(exc)[:300])
             failed = True
     print("\nPROBE_RESULT", "SOME_ENDPOINTS_FAILED" if failed else "ALL_ENDPOINTS_RESPONDED")
-    # Endpoint-level failures are diagnostic findings, not a failing code test.
     return 0
 
 if __name__ == "__main__":
