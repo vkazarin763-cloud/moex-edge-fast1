@@ -50,7 +50,7 @@ def refresh():
         auth=api("POST","/v1/sessions",payload={"secret":secret})
         token=auth.get("token")
         if not token: raise RuntimeError("Finam token missing")
-        eligible=[]; errors=0
+        eligible=[]; ambiguous=0; listings_found=0; not_tradable=0; long_blocked=0; listing_not_found=0
         for ticker in sorted(TARGETS):
             available=[]
             for mic in MIC_CANDIDATES:
@@ -59,11 +59,17 @@ def refresh():
                     params=api("GET",f"/v1/assets/{quote(symbol,safe='')}/params",token,{"account_id":account})
                 except FinamHTTPError as exc:
                     if exc.status in (400,404):
+                        listing_not_found+=1
                         continue  # listing absent/not recognized for this account
                     raise
+                listings_found+=1
                 long_status=enum(params.get("longable"))
                 if params.get("is_tradable") is True and long_status in ("AVAILABLE",1,"1"):
                     available.append((symbol,params))
+                elif params.get("is_tradable") is not True:
+                    not_tradable+=1
+                else:
+                    long_blocked+=1
                 time.sleep(.25)
             # If multiple account-enabled listings exist, block rather than guess.
             if len(available)==1:
@@ -73,12 +79,12 @@ def refresh():
                     "verified_at":result["last_verified"],"is_tradable":True,
                     "longable":str(enum(params.get("longable"))),"trade_lot_size":params.get("trade_lot_size")})
             elif len(available)>1:
-                errors+=1
+                ambiguous+=1
         result["instruments"]=eligible
         result["verification_source"]="Finam account-scoped API; direct per-symbol checks"
         result["last_verified"]=datetime.now(timezone.utc).isoformat()
         OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
-        print(f"ALLOWLIST_REFRESH=SUCCESS eligible={len(eligible)} candidates={len(TARGETS)} ambiguous={errors}")
+        print(f"ALLOWLIST_REFRESH=SUCCESS eligible={len(eligible)} candidates={len(TARGETS)} listings_found={listings_found} listing_not_found={listing_not_found} not_tradable={not_tradable} long_blocked={long_blocked} ambiguous={ambiguous}")
         print("Eligible symbols:",", ".join(x["symbol"] for x in eligible) if eligible else "none; portfolio remains cash")
         return 0
     except Exception as exc:
