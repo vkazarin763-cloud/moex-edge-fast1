@@ -18,7 +18,14 @@ def main():
         print(f"\nURL {url}")
         try:
             request = Request(url, headers={"Accept": "application/json", "User-Agent": "moex-edge-readonly-research/1.0"})
-            context = ssl.create_default_context()\n            insecure_diagnostic = os.getenv("MOEX_ISS_DIAGNOSTIC_INSECURE_TLS") == "1"\n            if insecure_diagnostic:\n                # Diagnostic only: this public read-only probe must never feed production data.\n                context.check_hostname = False\n                context.verify_mode = ssl.CERT_NONE\n                print("TLS_VERIFY DISABLED_FOR_DIAGNOSTIC_ONLY")\n            with urlopen(request, timeout=20, context=context) as response:
+            context = ssl.create_default_context()
+            insecure_diagnostic = os.getenv("MOEX_ISS_DIAGNOSTIC_INSECURE_TLS") == "1"
+            if insecure_diagnostic:
+                # Diagnostic only: this public read-only probe must never feed production data.
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+                print("TLS_VERIFY DISABLED_FOR_DIAGNOSTIC_ONLY")
+            with urlopen(request, timeout=20, context=context) as response:
                 raw = response.read(200_000).decode("utf-8", "replace")
                 print("HTTP", response.status, "CONTENT_TYPE", response.headers.get("Content-Type"))
             try:
