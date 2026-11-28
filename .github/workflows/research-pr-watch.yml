@@ -1,0 +1,114 @@
+name: Research PR Watch
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_run:
+    workflows:
+      - "Finam Weekly Strategy Batch (Read Only)"
+      - "Research Agent Safety Tests"
+      - "Experimental Portfolio Safety Tests"
+      - "Finam Executor Safety Tests"
+      - "Finam AI Screener MCP Probe (Read Only)"
+      - "Manual Groq Fallback Routing Check (Offline)"
+    types: [completed]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  checks: read
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Summarize checks for open research PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const marker = '<!-- research-pr-watch -->';
+            const response = await github.rest.pulls.list({
+              owner, repo, state: 'open', per_page: 100, sort: 'updated', direction: 'desc'
+            });
+            const eventPr = context.payload.pull_request;
+            const candidates = response.data.filter(pr =>
+              pr.base.ref === 'main' &&
+              /research|finam|strategy|corporate action|moex/i.test(
+                `${pr.title}\n${pr.body || ''}`
+              )
+            );
+            if (eventPr && !candidates.some(pr => pr.number === eventPr.number)) {
+              candidates.unshift(eventPr);
+            }
+
+            for (const pr of candidates) {
+              const checks = await github.rest.checks.listForRef({
+                owner, repo, ref: pr.head.sha, per_page: 100
+              });
+              const runs = checks.data.check_runs || [];
+              const failures = runs.filter(run =>
+                run.status === 'completed' &&
+                ['failure', 'timed_out', 'action_required', 'startup_failure'].includes(run.conclusion)
+              );
+              const pending = runs.filter(run => run.status !== 'completed');
+              const successes = runs.filter(run =>
+                run.status === 'completed' && run.conclusion === 'success'
+              );
+
+              let state;
+              if (failures.length) state = 'FAILED';
+              else if (pending.length || runs.length === 0) state = 'RUNNING / WAITING';
+              else if (successes.length === runs.length) state = 'ALL CHECKS PASSED';
+              else state = 'REVIEW REQUIRED';
+
+              const lines = [
+                marker,
+                '### Automated research PR watch',
+                '',
+                `**State:** ${state}`,
+                `**PR:** #${pr.number} — ${pr.title}`,
+                `**Head:** \`${pr.head.sha.slice(0, 12)}\``,
+                `**Checks:** ${successes.length} passed · ${pending.length} running · ${failures.length} failed · ${runs.length} total`,
+                ''
+              ];
+              if (failures.length) {
+                lines.push('**Failed checks:**');
+                for (const run of failures) {
+                  lines.push(`- ${run.name}: ${run.conclusion}`);
+                }
+                lines.push('', 'This monitor reports failures; it does not merge PRs or enable live trading.');
+              } else if (pending.length) {
+                lines.push('Checks are still running. This comment will be refreshed on the next scheduled or workflow-completion check.');
+              } else if (state === 'ALL CHECKS PASSED') {
+                lines.push('All reported checks passed. Research artifacts and data semantics still require review before merge.');
+              } else {
+                lines.push('At least one check has a non-success terminal state. Review the check details before merge.');
+              }
+
+              const body = lines.join('\n');
+              const comments = await github.rest.issues.listComments({
+                owner, repo, issue_number: pr.number, per_page: 100
+              });
+              const previous = comments.data.find(comment =>
+                comment.user?.type === 'Bot' && comment.body?.includes(marker)
+              );
+              if (previous) {
+                if (previous.body !== body) {
+                  await github.rest.issues.updateComment({
+                    owner, repo, comment_id: previous.id, body
+                  });
+                }
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: pr.number, body
+                });
+              }
+            }
