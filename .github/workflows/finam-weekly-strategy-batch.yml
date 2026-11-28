@@ -40,6 +40,8 @@ jobs:
           python -m unittest tests.test_weekly_strategy_lab -v
           python -m unittest tests.test_deposit_benchmark -v
       - name: Probe public MOEX ISS corporate-action endpoints (read only)
+        env:
+          MOEX_ISS_DIAGNOSTIC_INSECURE_TLS: "1"
         run: python scripts/probe_moex_iss_corporate_actions.py
       - name: Upload MOEX ISS probe result immediately
         uses: actions/upload-artifact@v4
