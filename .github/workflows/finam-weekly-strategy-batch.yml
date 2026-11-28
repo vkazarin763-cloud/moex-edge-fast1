@@ -1,5 +1,10 @@
 name: Finam Weekly Strategy Batch (Read Only)
 on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/run_finam_weekly_strategy_batch.py
+      - .github/workflows/finam-weekly-strategy-batch.yml
   workflow_dispatch:
 permissions:
   contents: read
