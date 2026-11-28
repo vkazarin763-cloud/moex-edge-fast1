@@ -1,0 +1,20 @@
+name: MOEX ISS Corporate Actions Probe (Read Only)
+on:
+  pull_request:
+    paths:
+      - scripts/probe_moex_iss_corporate_actions.py
+      - .github/workflows/moex-iss-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Probe public MOEX ISS endpoints
+        run: python scripts/probe_moex_iss_corporate_actions.py
