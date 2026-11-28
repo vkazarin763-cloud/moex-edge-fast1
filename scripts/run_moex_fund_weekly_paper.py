@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError,URLError
 from urllib.parse import quote,urlencode
-from experimental_portfolio.moex_fund_weekly import run_weekly_backtest
+from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,MIN_HISTORY
 from experimental_portfolio.agents import run_reviewers
 
 BASE="https://api.finam.ru"
@@ -78,13 +78,16 @@ def main():
   ledger_path=Path("experimental_portfolio/moex_fund_paper_ledger.json")
   ledger=json.loads(ledger_path.read_text()) if ledger_path.exists() else None
   latest_date=max((rows[-1]["date"] for rows in hist.values() if rows),default=None)
+  target=current_weekly_targets(hist)
   if ledger is None:
-   ledger={"status":"INITIALIZED_CASH_ONLY","nav_index":100.0,"cash_weight":1.0,"holdings":[],"last_processed_week":latest_date,"paper_only":True,"orders_placed":False,"note":"Initialized with cash; no simulated entry before next weekly observation."}
+   ledger={"status":"INITIALIZED_CASH_ONLY","nav_index":100.0,"cash_weight":1.0,"holdings":[],"last_processed_week":latest_date,"pending_targets":target,"paper_only":True,"orders_placed":False,"note":"Initialized with cash; targets are research-only and will not be simulated as holdings until a later weekly candle."}
   else:
-   # Forward-only update when a new common weekly bar exists; mark NAV with prior holdings and never replay dates.
-   ledger["status"]="WAITING_FOR_NEXT_WEEK" if latest_date==ledger.get("last_processed_week") else ledger.get("status","FORWARD_PAPER")
-   ledger["last_processed_week"]=latest_date or ledger.get("last_processed_week")
+   # Ledger only advances on a new completed weekly candle. Targets are queued from the latest closed bar.
+   if latest_date and latest_date!=ledger.get("last_processed_week"):
+    ledger["status"]="FORWARD_PAPER_NEXT_WEEK";ledger["last_processed_week"]=latest_date;ledger["pending_targets"]=target
+   else:ledger["status"]="WAITING_FOR_NEXT_WEEK"
    ledger["paper_only"]=True;ledger["orders_placed"]=False
+  report["weekly_target_for_next_period"]=target
   report["forward_paper_ledger"]=ledger
   report["ai_review"]=run_reviewers(report)
   ledger_path.write_text(json.dumps(ledger,ensure_ascii=False,indent=2)+"\n")
