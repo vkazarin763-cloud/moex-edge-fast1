@@ -1,3 +1,4 @@
+# Corporate-action diagnosis is PR-only and limited to SBER@MISX.
 name: Finam Weekly Strategy Batch (Read Only)
 on:
   push:
@@ -9,6 +10,8 @@ on:
       - tests/test_weekly_strategy_lab.py
       - tests/test_deposit_benchmark.py
       - scripts/run_finam_weekly_strategy_batch.py
+      - research_agent/finam_corporate_actions.py
+      - tests/test_finam_corporate_actions.py
       - .github/workflows/finam-weekly-strategy-batch.yml
   pull_request:
     paths:
@@ -17,6 +20,9 @@ on:
       - tests/test_weekly_strategy_lab.py
       - tests/test_deposit_benchmark.py
       - scripts/run_finam_weekly_strategy_batch.py
+      - research_agent/finam_corporate_actions.py
+      - tests/test_finam_corporate_actions.py
+      - scripts/probe_finam_corporate_actions.py
       - .github/workflows/finam-weekly-strategy-batch.yml
   workflow_dispatch:
 permissions:
@@ -32,8 +38,23 @@ jobs:
           python-version: "3.11"
       - name: Run research unit tests
         run: |
+          python -m unittest tests.test_finam_corporate_actions -v
           python -m unittest tests.test_weekly_strategy_lab -v
           python -m unittest tests.test_deposit_benchmark -v
+      - name: Diagnose Finam corporate-actions requests on one symbol (read only)
+        if: github.event_name == 'pull_request'
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+        run: python scripts/probe_finam_corporate_actions.py
+      - name: Probe public MOEX ISS corporate-action endpoints (read only, verified TLS)
+        run: python scripts/probe_moex_iss_corporate_actions.py
+      - name: Upload MOEX ISS probe result immediately
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-iss-corporate-actions-probe
+          path: research_output/moex_iss_corporate_actions_probe.txt
+          retention-days: 30
+          if-no-files-found: error
       - name: Fetch validated bars and run expanded research
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}

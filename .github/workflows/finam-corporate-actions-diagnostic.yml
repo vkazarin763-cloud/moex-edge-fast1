@@ -1,0 +1,22 @@
+name: Finam Corporate Actions Request Diagnostic (Read Only)
+on:
+  pull_request:
+    paths:
+      - scripts/probe_finam_corporate_actions.py
+      - .github/workflows/finam-corporate-actions-diagnostic.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run one-symbol Finam request diagnostic
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+        run: python scripts/probe_finam_corporate_actions.py
