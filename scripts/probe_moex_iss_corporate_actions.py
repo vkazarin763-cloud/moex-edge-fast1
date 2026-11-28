@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Read-only live probe of public MOEX ISS dividend endpoints."""
 import json
+import os
+import ssl
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -16,7 +18,7 @@ def main():
         print(f"\nURL {url}")
         try:
             request = Request(url, headers={"Accept": "application/json", "User-Agent": "moex-edge-readonly-research/1.0"})
-            with urlopen(request, timeout=20) as response:
+            context = ssl.create_default_context()\n            insecure_diagnostic = os.getenv("MOEX_ISS_DIAGNOSTIC_INSECURE_TLS") == "1"\n            if insecure_diagnostic:\n                # Diagnostic only: this public read-only probe must never feed production data.\n                context.check_hostname = False\n                context.verify_mode = ssl.CERT_NONE\n                print("TLS_VERIFY DISABLED_FOR_DIAGNOSTIC_ONLY")\n            with urlopen(request, timeout=20, context=context) as response:
                 raw = response.read(200_000).decode("utf-8", "replace")
                 print("HTTP", response.status, "CONTENT_TYPE", response.headers.get("Content-Type"))
             try:
