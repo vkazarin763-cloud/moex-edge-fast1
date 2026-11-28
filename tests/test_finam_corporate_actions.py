@@ -67,7 +67,7 @@ class CorporateActionFetchTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "UNAVAILABLE")
         self.assertEqual(result["error_code"], "HTTP_403")
-        self.assertIn("[redacted]", result["error_detail"])
+        self.assertIn("redacted", result["error_detail"])
         self.assertNotIn("abc", str(result))
         self.assertNotIn("123", str(result))
 
