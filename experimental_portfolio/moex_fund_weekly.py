@@ -54,3 +54,19 @@ def run_weekly_backtest(history:dict[str,list[dict]], min_history:int=MIN_HISTOR
       "strategy":{"trend_filter":"weekly close above 40-week SMA","momentum":"13-week positive momentum","selection":"top 4 equal-weight, monthly rebalance","cost_one_way":COST},
       "metrics":m,"benchmark_buy_hold":benchmark,"last_targets":[{"symbol":s,"weight":round(w,6)} for s,w in sorted(last_targets.items())],
       "turnover_total":round(turnover,4),"rebalances":rebals,"notice":"Historical weekly simulation only; not evidence of future profitability."}
+
+def current_weekly_targets(history:dict[str,list[dict]], min_history:int=MIN_HISTORY)->list[dict[str,float|str]]:
+    eligible={s:r for s,r in history.items() if len(r)>=min_history}
+    if len(eligible)<4:return []
+    dates=sorted(set.intersection(*(set(r["date"] for r in rows) for rows in eligible.values()))
+    if len(dates)<TREND_WEEKS:return []
+    idx=len(dates)-1
+    ranked=[]
+    for s,rows in eligible.items():
+        p=[next(r["close"] for r in rows if r["date"]==d) for d in dates]
+        mom=p[idx]/p[idx-MOMENTUM_WEEKS]-1
+        sma=sum(p[idx-TREND_WEEKS+1:idx+1])/TREND_WEEKS
+        if p[idx]>sma and mom>0:ranked.append((mom,s))
+    ranked.sort(reverse=True)
+    chosen=[s for _,s in ranked[:MAX_HOLDINGS]]
+    return [{"symbol":s,"weight":round(1/len(chosen),6)} for s in chosen] if chosen else []
