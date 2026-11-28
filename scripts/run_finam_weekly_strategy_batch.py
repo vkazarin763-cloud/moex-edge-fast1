@@ -16,6 +16,8 @@ from research_agent.finam_corporate_actions import fetch_instrument_corporate_ac
 BASE="https://api.finam.ru"; MIC="MISX"
 UNIVERSE={"equity":["AFKS","AFLT","ALRS","BSPB","CBOM","CHMF","CNRU","DOMRF","ENPG","FLOT","GAZP","GMKN","HEAD","IRAO","LKOH","MAGN","MDMG","MOEX","MTSS","NLMK","NVTK","OZON","PHOR","PLZL","POSI","RAGR","RENI","ROSN","RTKM","RUAL","SBER","SBERP","SNGS","SNGSP","SVCB","T","TATN","TATNP","TRNFP","UGLD","VKCO","VTBR","X5","YDEX"],"fund":["AKME","AKMM","AMNR","AMNY","AMRE","AMRH","BCSD","DIVD","EQMX","GOLD","LQDT","SBCB","SBGB","SBMM","SBMX","SBRB","TBRU","TGLD","TMOS"]}
 def req(url,token):
+ # Finam documents a 200 requests/minute limit; throttle every call, not each symbol.
+ time.sleep(.35)
  try:
   with urlopen(Request(url,headers={"Authorization":"Bearer "+token,"Accept":"application/json"}),timeout=25) as x:return json.loads(x.read().decode())
  except HTTPError as e:raise RuntimeError("HTTP_"+str(e.code)) from None
