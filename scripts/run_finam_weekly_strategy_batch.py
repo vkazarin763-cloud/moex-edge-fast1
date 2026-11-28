@@ -81,6 +81,6 @@ def main():
   w=csv.DictWriter(f,fieldnames=wf_fields);w.writeheader()
   for a in report:
    for m in a.get("walk_forward_metrics",[]):
-    w.writerow({"symbol":a["symbol"],"class":a["asset_class"],**{k:m.get(k) for k in wf_fields if k not in ("symbol","class")}})
+    w.writerow({"symbol":a["symbol"],"class":a["asset_class"],**{k:(m.get("cost_stress") if k=="cost" else m.get(k)) for k in wf_fields if k not in ("symbol","class")}})
  print("WEEKLY_RESEARCH_BATCH=COMPLETE");print("SUMMARY="+json.dumps(dict(counts),sort_keys=True));print("SAFETY=READ_ONLY_NO_ORDERS_NO_COMMIT_MARKET_DATA");return 0
 if __name__=="__main__":raise SystemExit(main())
