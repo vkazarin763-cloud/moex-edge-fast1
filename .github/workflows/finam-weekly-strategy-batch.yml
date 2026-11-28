@@ -3,6 +3,18 @@ on:
   push:
     branches: [main]
     paths:
+      - experimental_portfolio/weekly_strategy_lab.py
+      - experimental_portfolio/deposit_benchmark.py
+      - tests/test_weekly_strategy_lab.py
+      - tests/test_deposit_benchmark.py
+      - scripts/run_finam_weekly_strategy_batch.py
+      - .github/workflows/finam-weekly-strategy-batch.yml
+  pull_request:
+    paths:
+      - experimental_portfolio/weekly_strategy_lab.py
+      - experimental_portfolio/deposit_benchmark.py
+      - tests/test_weekly_strategy_lab.py
+      - tests/test_deposit_benchmark.py
       - scripts/run_finam_weekly_strategy_batch.py
       - .github/workflows/finam-weekly-strategy-batch.yml
   workflow_dispatch:
@@ -17,7 +29,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Fetch validated bars and run baseline strategies
+      - name: Run research unit tests
+        run: |
+          python -m unittest tests.test_weekly_strategy_lab -v
+          python -m unittest tests.test_deposit_benchmark -v
+      - name: Fetch validated bars and run expanded research
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
           FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
