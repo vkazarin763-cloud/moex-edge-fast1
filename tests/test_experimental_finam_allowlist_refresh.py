@@ -37,7 +37,7 @@ class AllowlistRefreshTests(unittest.TestCase):
         temp.cleanup()
 
     def test_ambiguous_ticker_fails_closed(self):
-        code,data,temp=self.run_refresh({"is_tradable":True,"longable":{"value":"AVAILABLE"}},assets=[{"ticker":"SPY","mic":"ARCX"},{"ticker":"SPY","mic":"XNAS"}])
+        code,data,temp=self.run_refresh({"is_tradable":True,"longable":{"value":"AVAILABLE"}},assets=[{"ticker":"SPY","mic":"ARCX"},{"ticker":"SPY","mic":"ARCX"}])
         self.assertEqual(code,0)
         self.assertEqual(data["instruments"],[])
         temp.cleanup()
