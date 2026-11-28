@@ -70,10 +70,12 @@ def test_review_context_includes_weekly_metrics_and_ledger():
       "benchmark_buy_hold":{"symbol":"TMOS@MISX","total_return":0.05},
       "strategy":{"trend_filter":"40w"}},
       "forward_paper_ledger":{"nav_index":100,"cash_weight":1,"holdings":[]},
-      "history_errors":{"X@MISX":"missing"}}
+      "history_errors":{"X@MISX":"missing","Y@MISX":"insufficient_weekly_bars:120"}}
     ctx=normalized_reviewer_context(report)
     assert ctx["performance"]["total_return"]==0.2
     assert ctx["historical_backtest"]["period"]["from"]=="2023-01-01"
     assert ctx["benchmark_buy_and_hold"]["symbol"]=="TMOS@MISX"
     assert ctx["paper_portfolio"]["nav_index"]==100
     assert ctx["data_errors"]["X@MISX"]=="missing"
+    assert "Y@MISX" in ctx["history_exclusions"]
+    assert "Y@MISX" not in ctx["data_errors"]
