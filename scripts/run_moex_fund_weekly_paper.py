@@ -87,7 +87,7 @@ def main():
   p=bt.get("period") or {}
   report["period"]={"from":p.get("start"),"till":p.get("end")}
   report["performance"]=bt.get("metrics")
-  report["historical_backtest"]={"period":report["period"],"performance":bt.get("metrics"),"benchmark_spy_buy_and_hold":bt.get("benchmark_buy_hold")}
+  report["historical_backtest"]={"period":report["period"],"performance":bt.get("metrics"),"benchmark_buy_and_hold":bt.get("benchmark_buy_hold")}
   report["benchmark_spy_buy_and_hold"]=bt.get("benchmark_buy_hold")
   report["paper_portfolio"]=ledger
   report["holdings"]=ledger.get("holdings",[])
