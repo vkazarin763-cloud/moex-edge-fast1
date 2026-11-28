@@ -109,3 +109,17 @@ def update_forward_ledger(history:dict[str,list[dict]],ledger:dict|None,target:l
       rebalance_count=int(state.get("rebalance_count",0))+1,pending_targets=target,
       paper_only=True,orders_placed=False)
     return state
+
+def normalized_reviewer_context(report:dict)->dict:
+    bt=report.get("weekly_backtest") or {}
+    period=bt.get("period") or {}
+    metrics=bt.get("metrics")
+    normalized_period={"from":period.get("start"),"till":period.get("end")}
+    return {**report,"period":normalized_period,"performance":metrics,
+        "historical_backtest":{"period":normalized_period,"performance":metrics,
+            "benchmark_spy_buy_and_hold":bt.get("benchmark_buy_hold")},
+        "benchmark_spy_buy_and_hold":bt.get("benchmark_buy_hold"),
+        "paper_portfolio":report.get("forward_paper_ledger"),
+        "holdings":(report.get("forward_paper_ledger") or {}).get("holdings",[]),
+        "cash_weight":(report.get("forward_paper_ledger") or {}).get("cash_weight"),
+        "data_errors":report.get("history_errors",{}),"portfolio_model":bt.get("strategy")}

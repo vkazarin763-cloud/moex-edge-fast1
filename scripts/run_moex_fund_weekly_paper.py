@@ -8,7 +8,7 @@ from urllib.request import Request,urlopen
 from urllib.error import HTTPError,URLError
 from urllib.parse import quote,urlencode
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger,MIN_HISTORY
+from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger,normalized_reviewer_context,MIN_HISTORY
 from experimental_portfolio.agents import run_reviewers
 
 BASE="https://api.finam.ru"
@@ -83,7 +83,19 @@ def main():
   ledger=update_forward_ledger(hist,ledger,target)
   report["weekly_target_for_next_period"]=target
   report["forward_paper_ledger"]=ledger
-  report["ai_review"]=run_reviewers(report)
+  bt=report.get("weekly_backtest") or {}
+  p=bt.get("period") or {}
+  report["period"]={"from":p.get("start"),"till":p.get("end")}
+  report["performance"]=bt.get("metrics")
+  report["historical_backtest"]={"period":report["period"],"performance":bt.get("metrics"),"benchmark_spy_buy_and_hold":bt.get("benchmark_buy_hold")}
+  report["benchmark_spy_buy_and_hold"]=bt.get("benchmark_buy_hold")
+  report["paper_portfolio"]=ledger
+  report["holdings"]=ledger.get("holdings",[])
+  report["cash_weight"]=ledger.get("cash_weight")
+  report["data_errors"]=errors
+  report["portfolio_model"]=bt.get("strategy")
+  report["limitations"]=["Historical Finam weekly close prices are not dividend-adjusted.","No spread, liquidity, tax or real execution modeling.","Weekly trend/momentum backtest is hypothetical; paper ledger is prospective and currently starts in cash."]
+  report["ai_review"]=run_reviewers(normalized_reviewer_context(report))
   ledger_path.write_text(json.dumps(ledger,ensure_ascii=False,indent=2)+"\n")
  except Exception as e:
   report.update(status="FAIL_CLOSED",error=f"{type(e).__name__}:{str(e)[:160]}",eligible_symbols=[],history_errors={})
