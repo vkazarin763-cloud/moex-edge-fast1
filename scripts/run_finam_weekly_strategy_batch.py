@@ -12,6 +12,7 @@ sys.path.insert(0,str(ROOT))
 from experimental_portfolio.weekly_strategy_lab import validate_bars,compare,walk_forward_compare
 from experimental_portfolio.deposit_benchmark import compare_to_deposit
 from research_agent.finam_market_data import FinamMarketDataClient,create_access_token
+from research_agent.finam_corporate_actions import fetch_instrument_corporate_actions
 BASE="https://api.finam.ru"; MIC="MISX"
 UNIVERSE={"equity":["AFKS","AFLT","ALRS","BSPB","CBOM","CHMF","CNRU","DOMRF","ENPG","FLOT","GAZP","GMKN","HEAD","IRAO","LKOH","MAGN","MDMG","MOEX","MTSS","NLMK","NVTK","OZON","PHOR","PLZL","POSI","RAGR","RENI","ROSN","RTKM","RUAL","SBER","SBERP","SNGS","SNGSP","SVCB","T","TATN","TATNP","TRNFP","UGLD","VKCO","VTBR","X5","YDEX"],"fund":["AKME","AKMM","AMNR","AMNY","AMRE","AMRH","BCSD","DIVD","EQMX","GOLD","LQDT","SBCB","SBGB","SBMM","SBMX","SBRB","TBRU","TGLD","TMOS"]}
 def req(url,token):
@@ -44,6 +45,13 @@ def main():
      item.update({"valid_bars":len(bars),"from":bars[0]["date"] if bars else None,"to":bars[-1]["date"] if bars else None})
      if len(bars)>=200:
       data[symbol]=bars;item["status"]="QUALIFIED"
+      # Retrieve event history for audit only; never adjust prices in this batch.
+      item["corporate_actions"]=fetch_instrument_corporate_actions(
+       symbol,kind,token,start.date(),end.date(),requester=req)
+      for event_kind in ("dividends","splits"):
+       event_result=item["corporate_actions"][event_kind]
+       counts["CORPORATE_ACTION_"+event_kind.upper()+"_"+event_result["status"]]+=1
+       counts["CORPORATE_ACTION_"+event_kind.upper()+"_EVENTS"]+=len(event_result.get("events",[]))
       metrics=compare(bars,evaluation_start=screen_start)
       for metric in metrics:
        if metric.get("status")=="OK":
