@@ -1,5 +1,5 @@
 from datetime import date,timedelta
-from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger
+from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger,normalized_reviewer_context
 
 def make_hist(n=240):
     hist={}
@@ -63,3 +63,17 @@ def test_forward_ledger_advances_only_on_new_week():
     assert updated["last_processed_week"]>ledger["last_processed_week"]
     assert updated["nav_index"]>100
     assert updated["orders_placed"] is False
+
+def test_review_context_includes_weekly_metrics_and_ledger():
+    report={"weekly_backtest":{"period":{"start":"2023-01-01","end":"2025-01-01"},
+      "metrics":{"total_return":0.2,"max_drawdown":-0.1},
+      "benchmark_buy_hold":{"total_return":0.05},
+      "strategy":{"trend_filter":"40w"}},
+      "forward_paper_ledger":{"nav_index":100,"cash_weight":1,"holdings":[]},
+      "history_errors":{"X@MISX":"missing"}}
+    ctx=normalized_reviewer_context(report)
+    assert ctx["performance"]["total_return"]==0.2
+    assert ctx["historical_backtest"]["period"]["from"]=="2023-01-01"
+    assert ctx["benchmark_spy_buy_and_hold"]["total_return"]==0.05
+    assert ctx["paper_portfolio"]["nav_index"]==100
+    assert ctx["data_errors"]["X@MISX"]=="missing"
