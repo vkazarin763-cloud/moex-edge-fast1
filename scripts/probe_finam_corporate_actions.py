@@ -8,11 +8,16 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import time
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+# When executed as "python scripts/...", Python puts scripts/ rather than the
+# repository root on sys.path. Add the root so the shared auth helper resolves.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from research_agent.finam_market_data import create_access_token
 
 BASE = "https://api.finam.ru"
@@ -37,6 +42,7 @@ def error_message(raw: bytes) -> str:
     except Exception:
         return sanitize(decoded)
     candidates = []
+
     def walk(value):
         if isinstance(value, dict):
             for key, child in value.items():
@@ -47,12 +53,15 @@ def error_message(raw: bytes) -> str:
         elif isinstance(value, list):
             for child in value:
                 walk(child)
+
     walk(payload)
     return sanitize(" | ".join(candidates[:3]))
 
 
 def main() -> None:
-    secret = __import__("os").environ.get("FINAM_API_SECRET", "").strip()
+    import os
+
+    secret = os.environ.get("FINAM_API_SECRET", "").strip()
     if not secret:
         raise SystemExit("FINAM_API_SECRET_MISSING")
     token = create_access_token(secret)
@@ -81,7 +90,9 @@ def main() -> None:
                     payload = json.loads(response.read().decode("utf-8"))
                     events = payload.get(list_key, [])
                     pagination = payload.get("pagination", {})
-                    print(f"  {label}: HTTP {response.status}; keys={','.join(sorted(payload.keys()))}; events={len(events) if isinstance(events, list) else 'INVALID'}; has_next={pagination.get('has_next') if isinstance(pagination, dict) else 'UNKNOWN'}")
+                    event_count = len(events) if isinstance(events, list) else "INVALID"
+                    has_next = pagination.get("has_next") if isinstance(pagination, dict) else "UNKNOWN"
+                    print(f"  {label}: HTTP {response.status}; keys={','.join(sorted(payload.keys()))}; events={event_count}; has_next={has_next}")
             except HTTPError as exc:
                 print(f"  {label}: HTTP {exc.code}; {error_message(exc.read())}")
             except (URLError, TimeoutError, json.JSONDecodeError) as exc:
