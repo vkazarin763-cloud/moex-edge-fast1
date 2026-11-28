@@ -77,7 +77,7 @@ def refresh():
             params=api("GET",f"/v1/assets/{quote(symbol,safe='')}/params",token,{"account_id":account})
             long_status=enum(params.get("longable"))
             is_tradable=params.get("is_tradable") is True
-            if is_tradable and long_status in ("AVAILABLE","AVAILABLE_STRATEGY",1,"1"):
+            if is_tradable and long_status in ("AVAILABLE",1,"1"):
                 eligible.append({"symbol":ticker+".US","finam_symbol":symbol,
                     "account_buy_permission":"BUY_ALLOWED","verified_account_access":True,
                     "verified_at":result["last_verified"],"is_tradable":True,
