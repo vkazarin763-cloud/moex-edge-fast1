@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-11-28T02:58:36.580413+00:00",
+  "updated_at_utc": "2026-11-28T03:02:14.846837+00:00",
   "data_status": "INSUFFICIENT_DATA",
   "paper_status": "DATA_INSUFFICIENT",
   "portfolio_index": 100.0,
@@ -7,7 +7,7 @@
   "cash_weight": 1.0,
   "last_processed_date": "2026-11-27",
   "historical_backtest_index": null,
-  "ai_review_status": "LLM_COMPLETE",
+  "ai_review_status": "MIXED_LLM_AND_LOCAL",
   "ai_agents_completed": 3,
   "safety": {
     "paper_only": true,
