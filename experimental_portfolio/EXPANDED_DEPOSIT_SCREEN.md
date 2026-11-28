@@ -4,11 +4,15 @@
 The batch evaluates 13 predeclared rule variants: buy-and-hold; SMA trend (10/20/40 weeks); momentum (13/26/52); mean reversion (2/4/8); breakout (13/26/52). Each is tested at 0.10%, 0.25% and 0.50% illustrative one-way turnover costs. These are sensitivity assumptions, not confirmed account-specific costs.
 
 ## Critical return-data limitation
-Finam's documented weekly-bars schema provides OHLCV and a snapshot flag, but does not expose a documented total-return/adjusted-price flag. Finam separately documents historical dividend and split endpoints. Until corporate actions are retrieved, reconciled and applied (and fund distributions are verified), raw price CAGR is **not comparable** with a deposit return. The batch therefore marks every deposit comparison `NOT_COMPARABLE` and preserves the raw-price screen only as diagnostic metadata. Do not treat previously observed above-hurdle rows as candidates.
+Finam's documented weekly-bars schema provides OHLCV and a snapshot flag, but does not expose a documented total-return/adjusted-price flag. Finam separately documents historical dividend and split endpoints. The next batch now retrieves historical dividend/distribution records for qualified equities and funds and split records for equities, preserving event payloads as audit evidence only. The API documents event lists and pagination, but the economic meaning of the event date and completeness of fund distributions still require verification. No events are applied to OHLCV in this stage. Until corporate actions are reconciled and fund distributions are verified, raw price CAGR is **not comparable** with a deposit return. The batch therefore marks every deposit comparison `NOT_COMPARABLE` and preserves the raw-price screen only as diagnostic metadata. Do not treat previously observed above-hurdle rows as candidates.
 
 Official API references:
 - [Finam REST API: bars, historical dividends and splits](https://api.finam.ru/docs/rest/)
 - [Finam protobuf market-data schema](https://github.com/FinamWeb/finam-trade-api/blob/main/proto/grpc/tradeapi/v1/marketdata/marketdata_service.proto)
+
+## Corporate-action event audit
+
+The read-only batch collects `/v1/past-dividends` for qualified equities and funds and `/v1/splits/past` for qualified equities, using paginated requests. Requests are throttled below Finam's documented 200 requests/minute ceiling. The event data is retained in the research artifact with per-endpoint status; it is not used to adjust prices. Missing, unsupported or incomplete event feeds keep total-return and deposit comparisons disabled.
 
 ## Sequential holdout validation
 The research batch preserves up to five years of weekly history. For each fixed strategy rule it now evaluates sequential holdout folds after a 104-week warm-up, using up to 52-week test windows (minimum 26 weeks). Signals are calculated from information available up to the prior bar; no parameters are fitted on the test fold. This is a more informative stability check, but not proof of future profitability. The folds remain historical and can overlap neither training nor future information in the signal calculation.
