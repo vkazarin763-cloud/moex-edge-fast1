@@ -21,7 +21,7 @@ def main():
  if not secret:print("BARS_VALIDATE=FAIL_MISSING_SECRET");return 2
  token=req("POST","/v1/sessions",body={"secret":secret}).get("token")
  if not token:print("BARS_VALIDATE=FAIL_TOKEN");return 2
- end=datetime.now(timezone.utc);start=end-timedelta(days=365*3+30)
+ end=datetime.now(timezone.utc);start=end-timedelta(days=350)
  q=urlencode({"timeframe":"TIME_FRAME_D","interval.start_time":start.isoformat(),"interval.end_time":end.isoformat()})
  outcomes=[];totals={"assets":len(CANDIDATES),"success":0,"errors":0,"valid_bars":0,"invalid_bars":0}
  for t in CANDIDATES:
@@ -32,7 +32,7 @@ def main():
    valid=0;bad=0;dates=[]
    for b in bars:
     try:
-     vals=[float(b[k]) for k in ("open","high","low","close")]
+     vals=[float(b[k].get("value") if isinstance(b[k],dict) else b[k]) for k in ("open","high","low","close")]
      if not all(math.isfinite(x) and x>0 for x in vals):raise ValueError()
      o,h,l,c=vals
      if h<max(o,l,c) or l>min(o,h,c):raise ValueError()
