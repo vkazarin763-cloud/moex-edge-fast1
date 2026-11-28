@@ -1,6 +1,6 @@
 {
   "status": "INSUFFICIENT_DATA",
-  "generated_at_utc": "2026-11-27T23:17:15.970593+00:00",
+  "generated_at_utc": "2026-11-28T02:51:32.304095+00:00",
   "source": "Yahoo Finance chart API; Stooq CSV fallback",
   "eligible_assets": [],
   "common_daily_bars": 0,
@@ -31,9 +31,9 @@
   "finam_account_eligibility": {
     "allowed_symbols": [],
     "blocked_symbols": {},
-    "verification_source": "EMPTY_INITIAL_ALLOWLIST; requires read-only account-specific Finam verification",
-    "account_scope": "Finam account (account identifier deliberately not stored in repository)",
-    "last_verified": null,
+    "verification_source": "FINAM_CHECK_FAILED_FAIL_CLOSED",
+    "account_scope": "Finam account (identifier not stored)",
+    "last_verified": "2026-11-28T02:50:51.180850+00:00",
     "fail_closed": true
   },
   "eligibility_policy": "Fail closed: only account-confirmed Finam BUY_ALLOWED instruments may be selected. No confirmed symbols means cash only.",
@@ -67,7 +67,7 @@
     "status": "DATA_INSUFFICIENT",
     "start_date": "2026-11-27",
     "last_processed_date": "2026-11-27",
-    "updated_at_utc": "2026-11-27T23:17:15.970676+00:00",
+    "updated_at_utc": "2026-11-28T02:51:32.304142+00:00",
     "nav_index": 100.0,
     "high_watermark": 100.0,
     "max_drawdown": 0.0,
@@ -111,20 +111,20 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The deterministic strategy lacks any actionable data: no historical backtest results, no paper portfolio performance, and all benchmark comparisons are missing. The portfolio is currently all cash with no holdings, and the data feed for all benchmark symbols is blocked, preventing any evaluation of relative performance or risk metrics. Consequently, the strategy cannot be critiqued beyond noting that it is uninitialized and data‑insufficient.",
+          "summary": "The deterministic strategy currently lacks sufficient data to evaluate performance or risk. All key metrics (period, performance, benchmark comparison, holdings, and backtest results) are marked as INSUFFICIENT_DATA or null. The paper portfolio is in a pristine state with 100% cash and no holdings, and no orders have been placed. Data errors indicate that all benchmark symbols are blocked, preventing any meaningful backtesting or live comparison.",
           "risks": [
-            "Data unavailability for all benchmark symbols prevents risk assessment and performance comparison.",
-            "The strategy is currently idle (all cash) so any risk metrics are undefined.",
-            "Without historical backtest or paper portfolio data, drawdown, volatility, and turnover cannot be evaluated.",
-            "Potential regulatory or data access issues may delay strategy activation.",
-            "The lack of any model weights or signals means the strategy cannot be executed or tested."
+            "Inability to assess strategy performance due to missing historical data and benchmark comparisons.",
+            "Potential data integrity issues from blocked symbols, which may lead to inaccurate or incomplete backtests.",
+            "Risk of deploying a strategy without evidence of its effectiveness or risk profile.",
+            "Uncertainty about the strategy’s behavior during market stress periods because no drawdown or volatility metrics are available.",
+            "No confirmation that the strategy’s logic aligns with intended investment objectives due to lack of executed trades or portfolio evolution."
           ],
           "questions": [
-            "What data source will be used to replace the blocked symbols and provide price history?",
-            "When will the historical backtest be completed and what performance metrics will be reported?",
-            "What model or signal will generate the latest_model_weights for the paper portfolio?",
-            "How will the strategy handle rebalancing once holdings are introduced?",
-            "What are the expected turnover and transaction cost assumptions for the strategy?"
+            "What specific data sources are required to populate the missing performance and benchmark fields?",
+            "How can the blocked symbols be unblocked or replaced to enable proper backtesting?",
+            "What is the intended frequency and logic for rebalancing, and how will it be validated once data is available?",
+            "Are there any alternative benchmarks or synthetic proxies that can be used while the primary data remains unavailable?",
+            "What steps will be taken to ensure that the strategy’s deterministic rules are correctly implemented once the data gaps are filled?"
           ]
         }
       },
@@ -134,21 +134,15 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The portfolio is in an initial state with no holdings and 100% cash. No performance data, backtest, or benchmark information is available. All requested symbols are blocked, resulting in data errors. The portfolio has no concentration or drawdown data, and the model is undefined.",
+          "summary": "The portfolio is in an initial state with no holdings and all capital in cash. No performance data, backtest, or benchmark information is available. Several data errors indicate that key market symbols are blocked, preventing any meaningful analysis of market exposure or risk metrics.",
           "risks": [
-            "Data insufficiency: No price or performance data for any holdings or benchmark.",
-            "Stale or missing symbol data: All requested symbols are blocked, preventing any meaningful analysis.",
-            "No concentration information: With no holdings, concentration risk cannot be assessed.",
-            "Drawdown and volatility metrics are unavailable.",
-            "Potential for misinterpretation: Users may assume the portfolio is fully funded or diversified when it is not."
+            "Data insufficiency: lack of historical performance, backtest, and benchmark data prevents assessment of return, volatility, or drawdown.",
+            "Concentration risk cannot be evaluated due to empty holdings.",
+            "Drawdown limits cannot be determined; max_drawdown is reported as 0.0 but this is meaningless without trades.",
+            "Stale or missing market data for all listed symbols, which would impede any future rebalancing or risk calculations.",
+            "Potential regulatory or access limitations indicated by blocked symbols, which could affect portfolio execution."
           ],
-          "questions": [
-            "What is the source of the data block for all symbols?",
-            "When will the data errors be resolved to allow price and performance retrieval?",
-            "What is the intended asset allocation once the portfolio is populated?",
-            "What risk limits (e.g., concentration, drawdown) are set in the model?",
-            "How will the portfolio be rebalanced and what triggers rebalancing?"
-          ]
+          "questions": []
         }
       }
     },

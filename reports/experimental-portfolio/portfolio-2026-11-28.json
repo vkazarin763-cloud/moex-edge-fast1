@@ -1,0 +1,151 @@
+{
+  "status": "INSUFFICIENT_DATA",
+  "generated_at_utc": "2026-11-28T02:51:32.304095+00:00",
+  "source": "Yahoo Finance chart API; Stooq CSV fallback",
+  "eligible_assets": [],
+  "common_daily_bars": 0,
+  "data_errors": {
+    "SPY.US": "blocked_by_finam_account_allowlist",
+    "QQQ.US": "blocked_by_finam_account_allowlist",
+    "IWM.US": "blocked_by_finam_account_allowlist",
+    "EFA.US": "blocked_by_finam_account_allowlist",
+    "EEM.US": "blocked_by_finam_account_allowlist",
+    "VGK.US": "blocked_by_finam_account_allowlist",
+    "EWJ.US": "blocked_by_finam_account_allowlist",
+    "INDA.US": "blocked_by_finam_account_allowlist",
+    "TLT.US": "blocked_by_finam_account_allowlist",
+    "IEF.US": "blocked_by_finam_account_allowlist",
+    "GLD.US": "blocked_by_finam_account_allowlist",
+    "DBC.US": "blocked_by_finam_account_allowlist",
+    "VNQ.US": "blocked_by_finam_account_allowlist",
+    "SHY.US": "blocked_by_finam_account_allowlist"
+  },
+  "safety": {
+    "paper_only": true,
+    "broker_access": false,
+    "orders_placed": false,
+    "llm_can_change_weights": false,
+    "real_trading_authorized": false
+  },
+  "message": "Not enough synchronized validated history; no performance is reported.",
+  "finam_account_eligibility": {
+    "allowed_symbols": [],
+    "blocked_symbols": {},
+    "verification_source": "FINAM_CHECK_FAILED_FAIL_CLOSED",
+    "account_scope": "Finam account (identifier not stored)",
+    "last_verified": "2026-11-28T02:50:51.180850+00:00",
+    "fail_closed": true
+  },
+  "eligibility_policy": "Fail closed: only account-confirmed Finam BUY_ALLOWED instruments may be selected. No confirmed symbols means cash only.",
+  "universe_requested": [
+    "SPY.US",
+    "QQQ.US",
+    "IWM.US",
+    "EFA.US",
+    "EEM.US",
+    "VGK.US",
+    "EWJ.US",
+    "INDA.US",
+    "TLT.US",
+    "IEF.US",
+    "GLD.US",
+    "DBC.US",
+    "VNQ.US",
+    "SHY.US"
+  ],
+  "run_mode": "AUTONOMOUS_RESEARCH_AND_FORWARD_PAPER_ONLY",
+  "data_source": "Yahoo Finance chart API; Stooq CSV fallback",
+  "historical_backtest": {
+    "period": null,
+    "performance": null,
+    "benchmark_spy_buy_and_hold": null,
+    "latest_model_weights": [],
+    "notice": "Historical simulation only. It is not the prospective paper portfolio and does not seed paper holdings."
+  },
+  "paper_portfolio": {
+    "version": 1,
+    "status": "DATA_INSUFFICIENT",
+    "start_date": "2026-11-27",
+    "last_processed_date": "2026-11-27",
+    "updated_at_utc": "2026-11-28T02:51:32.304142+00:00",
+    "nav_index": 100.0,
+    "high_watermark": 100.0,
+    "max_drawdown": 0.0,
+    "last_daily_return": 0.0,
+    "holdings": [],
+    "cash_weight": 1.0,
+    "last_rebalance_month": null,
+    "rebalance_count": 0,
+    "cumulative_turnover": 0.0,
+    "paper_only": true,
+    "orders_placed": false,
+    "note": "Initialized after the latest completed close. First virtual entry will use the next available session open."
+  },
+  "holdings": [],
+  "cash_weight": 1.0,
+  "ai_review": {
+    "status": "LLM_COMPLETE",
+    "agents_expected": 3,
+    "agents_completed": 3,
+    "llm_agents_completed": 3,
+    "local_agents_completed": 0,
+    "provider_diagnostics": {},
+    "reviews": {
+      "market_analyst": {
+        "status": "COMPLETED",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
+        "review": {
+          "summary": "The portfolio currently holds no securities and is 100% cash. Market breadth, asset‑class concentration, and any notable changes cannot be determined from the available data.",
+          "risks": [],
+          "questions": [
+            "What securities will be added to the portfolio in the next rebalance?",
+            "When will the portfolio begin to allocate to specific asset classes?"
+          ]
+        }
+      },
+      "portfolio_researcher": {
+        "status": "COMPLETED",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
+        "review": {
+          "summary": "The deterministic strategy currently lacks sufficient data to evaluate performance or risk. All key metrics (period, performance, benchmark comparison, holdings, and backtest results) are marked as INSUFFICIENT_DATA or null. The paper portfolio is in a pristine state with 100% cash and no holdings, and no orders have been placed. Data errors indicate that all benchmark symbols are blocked, preventing any meaningful backtesting or live comparison.",
+          "risks": [
+            "Inability to assess strategy performance due to missing historical data and benchmark comparisons.",
+            "Potential data integrity issues from blocked symbols, which may lead to inaccurate or incomplete backtests.",
+            "Risk of deploying a strategy without evidence of its effectiveness or risk profile.",
+            "Uncertainty about the strategy’s behavior during market stress periods because no drawdown or volatility metrics are available.",
+            "No confirmation that the strategy’s logic aligns with intended investment objectives due to lack of executed trades or portfolio evolution."
+          ],
+          "questions": [
+            "What specific data sources are required to populate the missing performance and benchmark fields?",
+            "How can the blocked symbols be unblocked or replaced to enable proper backtesting?",
+            "What is the intended frequency and logic for rebalancing, and how will it be validated once data is available?",
+            "Are there any alternative benchmarks or synthetic proxies that can be used while the primary data remains unavailable?",
+            "What steps will be taken to ensure that the strategy’s deterministic rules are correctly implemented once the data gaps are filled?"
+          ]
+        }
+      },
+      "risk_auditor": {
+        "status": "COMPLETED",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
+        "review": {
+          "summary": "The portfolio is in an initial state with no holdings and all capital in cash. No performance data, backtest, or benchmark information is available. Several data errors indicate that key market symbols are blocked, preventing any meaningful analysis of market exposure or risk metrics.",
+          "risks": [
+            "Data insufficiency: lack of historical performance, backtest, and benchmark data prevents assessment of return, volatility, or drawdown.",
+            "Concentration risk cannot be evaluated due to empty holdings.",
+            "Drawdown limits cannot be determined; max_drawdown is reported as 0.0 but this is meaningless without trades.",
+            "Stale or missing market data for all listed symbols, which would impede any future rebalancing or risk calculations.",
+            "Potential regulatory or access limitations indicated by blocked symbols, which could affect portfolio execution."
+          ],
+          "questions": []
+        }
+      }
+    },
+    "policy": "LLM and local reviewers are commentary-only. They cannot change NAV, holdings, signals or authorize real trading."
+  }
+}
