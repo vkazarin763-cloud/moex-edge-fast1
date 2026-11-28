@@ -5,6 +5,7 @@ on:
     paths:
       - experimental_portfolio/weekly_strategy_lab.py
       - experimental_portfolio/deposit_benchmark.py
+      - experimental_portfolio/EXPANDED_DEPOSIT_SCREEN.md
       - tests/test_weekly_strategy_lab.py
       - tests/test_deposit_benchmark.py
       - scripts/run_finam_weekly_strategy_batch.py
