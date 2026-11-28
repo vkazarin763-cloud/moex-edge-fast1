@@ -34,9 +34,10 @@ def main():
     allowed=p.get("is_tradable") is True and la in ("AVAILABLE",1,"1");item["buy_permission"]=allowed
     if not allowed:item["status"]="BLOCKED_PERMISSION";counts[item["status"]]+=1
     else:
-     # Finam weekly bars can begin before an exact five-year UTC cutoff.
-     # Fetch a small buffer, then retain only bars inside the requested window.
-     fetched=client.fetch_bars(symbol,"TIME_FRAME_W",start-timedelta(days=14),end)
+     # Keep the request within Finam's 1,825-day limit. Its weekly endpoint
+     # may still return the single candle straddling the requested start; the
+     # client permits only that bounded preceding candle, then we filter it out.
+     fetched=client.fetch_bars(symbol,"TIME_FRAME_W",start,end,allow_preceding_weekly_bar=True)
      in_window=[b for b in fetched if start <= b.timestamp < end]
      bars=validate_bars([{"date":b.timestamp.date().isoformat(),"open":b.open,"high":b.high,"low":b.low,"close":b.close} for b in in_window])
      item.update({"valid_bars":len(bars),"from":bars[0]["date"] if bars else None,"to":bars[-1]["date"] if bars else None})
