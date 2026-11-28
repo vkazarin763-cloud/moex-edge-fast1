@@ -1,6 +1,6 @@
 {
   "status": "INSUFFICIENT_DATA",
-  "generated_at_utc": "2026-11-28T02:55:52.340953+00:00",
+  "generated_at_utc": "2026-11-28T02:58:36.580413+00:00",
   "source": "Yahoo Finance chart API; Stooq CSV fallback",
   "eligible_assets": [],
   "common_daily_bars": 0,
@@ -31,9 +31,9 @@
   "finam_account_eligibility": {
     "allowed_symbols": [],
     "blocked_symbols": {},
-    "verification_source": "FINAM_CHECK_FAILED_FAIL_CLOSED",
+    "verification_source": "Finam account-scoped API; direct per-symbol checks",
     "account_scope": "Finam account (identifier not stored)",
-    "last_verified": "2026-11-28T02:55:50.053480+00:00",
+    "last_verified": "2026-11-28T02:58:36.406034+00:00",
     "fail_closed": true
   },
   "eligibility_policy": "Fail closed: only account-confirmed Finam BUY_ALLOWED instruments may be selected. No confirmed symbols means cash only.",
@@ -67,7 +67,7 @@
     "status": "DATA_INSUFFICIENT",
     "start_date": "2026-11-27",
     "last_processed_date": "2026-11-27",
-    "updated_at_utc": "2026-11-28T02:55:52.341035+00:00",
+    "updated_at_utc": "2026-11-28T02:58:36.580466+00:00",
     "nav_index": 100.0,
     "high_watermark": 100.0,
     "max_drawdown": 0.0,
@@ -94,14 +94,19 @@
       "market_analyst": {
         "status": "COMPLETED",
         "engine": "llm",
-        "provider": "groq_fallback",
-        "model": "openai/gpt-oss-20b",
+        "provider": "openrouter",
+        "model": "openrouter/free",
         "review": {
-          "summary": "The portfolio currently holds no securities and is 100% cash. Market breadth, asset‑class concentration, and any notable changes cannot be determined from the available data.",
-          "risks": [],
+          "summary": "The portfolio data is insufficient for analysis. All major ETF symbols (SPY, QQQ, IWM, EFA, EEM, VGK, EWJ, INDA, TLT, IEF, GLD, DBC, VNQ, SHY) are blocked by the Finam account allowlist, resulting in zero holdings and 100% cash weight. No performance, benchmark, or historical backtest data is available. Market breadth, asset-class concentration, and notable changes cannot be assessed.",
+          "risks": [
+            "Complete data outage for all tracked symbols due to account allowlist restrictions",
+            "Inability to compute any portfolio metrics, breadth measures, or concentration statistics",
+            "Paper portfolio remains uninvested (100% cash) with no rebalance history"
+          ],
           "questions": [
-            "What securities will be added to the portfolio in the next rebalance?",
-            "When will the portfolio begin to allocate to specific asset classes?"
+            "When will the Finam account allowlist be updated to permit data access for the required symbols?",
+            "Is there an alternative data source available to populate holdings and performance?",
+            "What is the expected timeline for resolving the data_errors blocking all 14 symbols?"
           ]
         }
       },
@@ -111,20 +116,20 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The deterministic strategy lacks any actionable data: no historical backtest results, no paper portfolio performance, and no benchmark comparison are available. All key metrics (period, performance, drawdown, turnover, holdings) are missing or marked as insufficient. Consequently, the strategy’s viability, risk profile, and expected returns cannot be assessed.",
+          "summary": "The deterministic strategy lacks sufficient evidence to evaluate its viability. All performance metrics, backtest results, and benchmark comparisons are marked as INSUFFICIENT_DATA. The paper portfolio is empty, with no holdings or turnover, and the data source is blocked for all listed symbols, preventing any meaningful analysis.",
           "risks": [
-            "Unverified performance – no evidence of past profitability or risk metrics.",
-            "No benchmark comparison – cannot gauge relative strength versus SPY buy‑and‑hold.",
-            "No holdings data – exposure to specific assets is unknown.",
-            "Data errors for all benchmark tickers – potential data integrity issues.",
-            "No turnover or rebalancing information – transaction costs cannot be estimated."
+            "No historical performance data to assess risk-adjusted returns.",
+            "No benchmark comparison to gauge relative performance.",
+            "No holdings or turnover data to evaluate concentration or liquidity risk.",
+            "Data source restrictions may lead to incomplete or inaccurate signals.",
+            "Potential for overfitting or model drift cannot be evaluated without sufficient data."
           ],
           "questions": [
-            "What is the intended backtest period and frequency?",
-            "What are the expected returns and volatility metrics?",
-            "How does the strategy perform relative to a buy‑and‑hold benchmark?",
-            "What are the portfolio holdings and sector allocations?",
-            "What is the turnover rate and expected transaction cost impact?"
+            "What is the intended lookback period and frequency for the deterministic strategy?",
+            "Which specific signals or indicators drive the strategy’s trades?",
+            "How are risk limits and position sizing determined?",
+            "What is the expected turnover and transaction cost impact?",
+            "Has the strategy been validated on out-of-sample data or alternative data sources?"
           ]
         }
       },
@@ -134,15 +139,21 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The portfolio is in an initial state with no holdings and all assets in cash. No performance data, backtest, or benchmark information is available. Several key symbols are blocked, preventing data retrieval. The portfolio has no concentration or drawdown data, and the model weights are empty.",
+          "summary": "The portfolio is in an initial state with no holdings and all capital in cash. No performance data, backtest, or benchmark information is available. Several data errors indicate that key market symbols are blocked, preventing any meaningful analysis of market exposure or risk metrics.",
           "risks": [
-            "Data insufficiency: lack of historical performance, backtest, and benchmark data prevents risk assessment.",
-            "Stale or missing data: many symbols are blocked, so current market information is unavailable.",
-            "Concentration risk cannot be evaluated due to empty holdings.",
-            "Drawdown risk cannot be assessed as max_drawdown is 0.0 with no trades.",
-            "Liquidity risk unknown because no holdings exist."
+            "Data insufficiency: lack of historical performance, backtest, and benchmark data prevents assessment of return, volatility, or drawdown.",
+            "Concentration risk: unknown, but with no holdings the portfolio is effectively unexposed; however, future allocations cannot be evaluated.",
+            "Drawdown limitation: max_drawdown is reported as 0.0 but this is meaningless without actual trades or price data.",
+            "Stale or missing market data: many symbols are blocked, so any future rebalancing or risk calculations would be based on incomplete or outdated information.",
+            "Regulatory/allowlist risk: blocked symbols suggest potential compliance or access issues that could delay or prevent execution of intended trades."
           ],
-          "questions": []
+          "questions": [
+            "What is the source of the data errors for the listed symbols and how will they be resolved?",
+            "When will historical performance and backtest data become available for this portfolio?",
+            "What is the intended asset allocation strategy once the portfolio is populated?",
+            "How will the system handle rebalancing given the current data limitations?",
+            "What measures are in place to ensure that future data will be complete and up-to-date?"
+          ]
         }
       }
     },
