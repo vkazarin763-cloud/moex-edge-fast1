@@ -58,7 +58,7 @@ def run_weekly_backtest(history:dict[str,list[dict]], min_history:int=MIN_HISTOR
 def current_weekly_targets(history:dict[str,list[dict]], min_history:int=MIN_HISTORY)->list[dict[str,float|str]]:
     eligible={s:r for s,r in history.items() if len(r)>=min_history}
     if len(eligible)<4:return []
-    dates=sorted(set.intersection(*(set(r["date"] for r in rows) for rows in eligible.values()))
+    dates=sorted(set.intersection(*(set(r["date"] for r in rows) for rows in eligible.values())))
     if len(dates)<TREND_WEEKS:return []
     idx=len(dates)-1
     ranked=[]
