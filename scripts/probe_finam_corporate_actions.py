@@ -15,8 +15,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-# When executed as "python scripts/...", Python puts scripts/ rather than the
-# repository root on sys.path. Add the root so the shared auth helper resolves.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from research_agent.finam_market_data import create_access_token
 
@@ -70,10 +68,10 @@ def main() -> None:
         "date_to.year": "2026", "date_to.month": "11", "date_to.day": "28",
     }
     variants = [
-        ("symbol_only", {"symbol": SYMBOL}),
-        ("symbol_sort", {"symbol": SYMBOL, "sort_direction": "asc"}),
-        ("symbol_pagination", {"symbol": SYMBOL, "sort_direction": "asc", "limit": "100", "offset": "0"}),
-        ("full_dates", {"symbol": SYMBOL, "sort_direction": "asc", "limit": "100", "offset": "0", **date_params}),
+        ("symbol_limit", {"symbol": SYMBOL, "limit": "100", "offset": "0"}),
+        ("enum_asc", {"symbol": SYMBOL, "sort_direction": "ASC", "limit": "100", "offset": "0"}),
+        ("enum_desc", {"symbol": SYMBOL, "sort_direction": "DESC", "limit": "100", "offset": "0"}),
+        ("full_dates", {"symbol": SYMBOL, "sort_direction": "ASC", "limit": "100", "offset": "0", **date_params}),
     ]
     for endpoint, list_key in (("/v1/past-dividends", "dividends"), ("/v1/splits/past", "splits")):
         print(f"ENDPOINT {endpoint} SYMBOL {SYMBOL}")
