@@ -4,7 +4,7 @@ from datetime import date
 from urllib.parse import urlparse, parse_qs
 
 from research_agent.finam_corporate_actions import (
-    fetch_event_pages, fetch_instrument_corporate_actions,
+    FinamRequestError, fetch_event_pages, fetch_instrument_corporate_actions,
 )
 
 
@@ -58,16 +58,18 @@ class CorporateActionFetchTests(unittest.TestCase):
         self.assertEqual(result["dividends"]["status"], "OK")
         self.assertEqual(result["splits"]["status"], "OK")
 
-    def test_request_failure_is_sanitized(self):
+    def test_request_failure_is_sanitized_and_diagnostic(self):
         def requester(url, token):
-            raise RuntimeError("HTTP_403: sensitive response body")
+            raise FinamRequestError("HTTP_403", "secret=abc account_id=123 invalid token")
         result = fetch_event_pages(
             "SBER@MISX", "/v1/past-dividends", "dividends", "token",
             date(2021, 1, 1), date(2026, 1, 1), requester=requester,
         )
         self.assertEqual(result["status"], "UNAVAILABLE")
         self.assertEqual(result["error_code"], "HTTP_403")
-        self.assertNotIn("sensitive", str(result))
+        self.assertIn("[redacted]", result["error_detail"])
+        self.assertNotIn("abc", str(result))
+        self.assertNotIn("123", str(result))
 
     def test_invalid_endpoint_rejected(self):
         with self.assertRaises(ValueError):
