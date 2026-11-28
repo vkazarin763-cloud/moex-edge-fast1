@@ -8,9 +8,10 @@ from urllib.request import Request, urlopen
 
 BASE = "https://iss.moex.com/iss"
 URLS = [
-    f"{BASE}/securities/{ticker}/dividends.json?iss.meta=off"
-    for ticker in ("SBER", "GMKN", "PLZL")
-] + [f"{BASE}/cci/corp-actions/dividends.json?iss.meta=off&limit=5"]
+    f"{BASE}/statistics/engines/stock/splits.json?iss.meta=off",
+    f"{BASE}/cci/corp-actions/dividends.json?iss.meta=off",
+    f"{BASE}/cci/corp-actions/dividends.json?iss.meta=off&start=0",
+]
 
 def main():
     failed = False
