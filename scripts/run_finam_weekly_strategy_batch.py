@@ -12,7 +12,7 @@ sys.path.insert(0,str(ROOT))
 from experimental_portfolio.weekly_strategy_lab import validate_bars,compare,walk_forward_compare
 from experimental_portfolio.deposit_benchmark import compare_to_deposit
 from research_agent.finam_market_data import FinamMarketDataClient,create_access_token
-from research_agent.finam_corporate_actions import fetch_instrument_corporate_actions
+from research_agent.finam_corporate_actions import fetch_instrument_corporate_actions, FinamRequestError
 BASE="https://api.finam.ru"; MIC="MISX"
 UNIVERSE={"equity":["AFKS","AFLT","ALRS","BSPB","CBOM","CHMF","CNRU","DOMRF","ENPG","FLOT","GAZP","GMKN","HEAD","IRAO","LKOH","MAGN","MDMG","MOEX","MTSS","NLMK","NVTK","OZON","PHOR","PLZL","POSI","RAGR","RENI","ROSN","RTKM","RUAL","SBER","SBERP","SNGS","SNGSP","SVCB","T","TATN","TATNP","TRNFP","UGLD","VKCO","VTBR","X5","YDEX"],"fund":["AKME","AKMM","AMNR","AMNY","AMRE","AMRH","BCSD","DIVD","EQMX","GOLD","LQDT","SBCB","SBGB","SBMM","SBMX","SBRB","TBRU","TGLD","TMOS"]}
 def req(url,token):
@@ -20,7 +20,14 @@ def req(url,token):
  time.sleep(.35)
  try:
   with urlopen(Request(url,headers={"Authorization":"Bearer "+token,"Accept":"application/json"}),timeout=25) as x:return json.loads(x.read().decode())
- except HTTPError as e:raise RuntimeError("HTTP_"+str(e.code)) from None
+ except HTTPError as e:
+  try:
+   body=e.read(2048).decode("utf-8","replace")
+   parsed=json.loads(body)
+   detail=parsed.get("message") or parsed.get("detail") or "NO_ERROR_DETAIL"
+  except Exception:
+   detail="NO_ERROR_DETAIL"
+  raise FinamRequestError("HTTP_"+str(e.code),detail) from None
  except (URLError,TimeoutError):raise RuntimeError("NETWORK") from None
 def main():
  secret=os.getenv("FINAM_API_SECRET","").strip();account=os.getenv("FINAM_ACCOUNT_ID","").strip()
