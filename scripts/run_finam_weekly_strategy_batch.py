@@ -37,7 +37,8 @@ def main():
      # Finam weekly bars can begin before an exact five-year UTC cutoff.
      # Fetch a small buffer, then retain only bars inside the requested window.
      fetched=client.fetch_bars(symbol,"TIME_FRAME_W",start-timedelta(days=14),end)
-     in_window=[b for b in fetched if start <= b.timestamp < end]\n     bars=validate_bars([{"date":b.timestamp.date().isoformat(),"open":b.open,"high":b.high,"low":b.low,"close":b.close} for b in in_window])
+     in_window=[b for b in fetched if start <= b.timestamp < end]
+     bars=validate_bars([{"date":b.timestamp.date().isoformat(),"open":b.open,"high":b.high,"low":b.low,"close":b.close} for b in in_window])
      item.update({"valid_bars":len(bars),"from":bars[0]["date"] if bars else None,"to":bars[-1]["date"] if bars else None})
      if len(bars)>=200:
       data[symbol]=bars;item["status"]="QUALIFIED";item["metrics"]=compare(bars);counts["QUALIFIED"]+=1
