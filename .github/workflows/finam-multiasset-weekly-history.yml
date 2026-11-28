@@ -1,0 +1,27 @@
+name: Finam Multi-Asset Weekly History Validation (Read Only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/multiasset-weekly-history-probe]
+    paths:
+      - "scripts/probe_finam_multiasset_weekly_history.py"
+      - ".github/workflows/finam-multiasset-weekly-history.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate account permission and weekly OHLC history (read only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+        run: python scripts/probe_finam_multiasset_weekly_history.py
