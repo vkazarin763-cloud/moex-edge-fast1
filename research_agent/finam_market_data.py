@@ -175,6 +175,8 @@ class FinamMarketDataClient:
         timeframe: str,
         start_time: datetime,
         end_time: datetime,
+        *,
+        allow_preceding_weekly_bar: bool = False,
     ) -> list[FinamBar]:
         """Fetch bars for [start_time, end_time); enforce Finam history limits.
 
@@ -186,6 +188,8 @@ class FinamMarketDataClient:
             raise ValueError("symbol must include an exchange MIC, e.g. SBER@MISX")
         if timeframe not in TIMEFRAME_MAX_DAYS:
             raise ValueError(f"Unsupported Finam timeframe: {timeframe}")
+        if allow_preceding_weekly_bar and timeframe != "TIME_FRAME_W":
+            raise ValueError("preceding-bar allowance is only valid for weekly candles")
         if (not isinstance(start_time, datetime) or not isinstance(end_time, datetime)
                 or start_time.tzinfo is None or end_time.tzinfo is None
                 or start_time.utcoffset() is None or end_time.utcoffset() is None):
@@ -243,7 +247,8 @@ class FinamMarketDataClient:
                 validate_candles([bar.as_candle() for bar in result])
             except ValueError as exc:
                 raise FinamAPIError(f"Invalid Finam OHLCV series: {exc}") from None
-            outside = next((bar for bar in result if bar.timestamp < start_utc or bar.timestamp >= end_utc), None)
+            earliest_allowed = start_utc - timedelta(days=7) if allow_preceding_weekly_bar else start_utc
+            outside = next((bar for bar in result if bar.timestamp < earliest_allowed or bar.timestamp >= end_utc), None)
             if outside is not None:
                 raise FinamAPIError(
                     "Finam returned a bar outside the requested interval: "
