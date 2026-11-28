@@ -2,7 +2,7 @@ name: Finam-Verified MOEX Funds Weekly Paper
 
 on:
   schedule:
-    - cron: "30 22 * * 1"
+    - cron: "30 22 * * 5"
   workflow_dispatch:
   push:
     branches: [main]
