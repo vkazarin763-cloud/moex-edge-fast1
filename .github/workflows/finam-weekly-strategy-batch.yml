@@ -19,6 +19,8 @@ on:
       - tests/test_weekly_strategy_lab.py
       - tests/test_deposit_benchmark.py
       - scripts/run_finam_weekly_strategy_batch.py
+      - research_agent/finam_corporate_actions.py
+      - tests/test_finam_corporate_actions.py
       - .github/workflows/finam-weekly-strategy-batch.yml
   workflow_dispatch:
 permissions:
