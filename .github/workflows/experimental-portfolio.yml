@@ -65,6 +65,7 @@ jobs:
             reports/experimental-portfolio/
             experimental_portfolio/state.json
             experimental_portfolio/paper_ledger.json
+            experimental_portfolio/finam_allowlist.json
           if-no-files-found: warn
           retention-days: 30
       - name: Persist paper state and reports
