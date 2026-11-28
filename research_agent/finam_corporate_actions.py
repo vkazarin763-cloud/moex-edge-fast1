@@ -16,6 +16,8 @@ from urllib.parse import urlencode
 BASE = "https://api.finam.ru"
 PAGE_SIZE = 100
 MAX_PAGES = 20
+# The REST gateway accepts protobuf enum identifiers, not lowercase prose.
+SORT_ASC = "ASC"
 
 
 def sanitize_error_detail(value: object) -> str:
@@ -85,7 +87,7 @@ def fetch_event_pages(
         while pages < max_pages:
             params = {
                 "symbol": symbol,
-                "sort_direction": "asc",
+                "sort_direction": SORT_ASC,
                 "limit": str(page_size),
                 "offset": str(offset),
                 **(_date_params("date_from", start_date) if date_filter_mode == "vendor" else {}),
@@ -100,7 +102,7 @@ def fetch_event_pages(
                 date_filter_mode = "local_fallback"
                 params = {
                     "symbol": symbol,
-                    "sort_direction": "asc",
+                    "sort_direction": SORT_ASC,
                     "limit": str(page_size),
                     "offset": str(offset),
                 }
