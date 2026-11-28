@@ -34,13 +34,16 @@ def main():
     allowed=p.get("is_tradable") is True and la in ("AVAILABLE",1,"1");item["buy_permission"]=allowed
     if not allowed:item["status"]="BLOCKED_PERMISSION";counts[item["status"]]+=1
     else:
-     fetched=client.fetch_bars(symbol,"TIME_FRAME_W",start,end)
-     bars=validate_bars([{"date":b.timestamp.date().isoformat(),"open":b.open,"high":b.high,"low":b.low,"close":b.close} for b in fetched])
+     # Finam weekly bars can begin before an exact five-year UTC cutoff.
+     # Fetch a small buffer, then retain only bars inside the requested window.
+     fetched=client.fetch_bars(symbol,"TIME_FRAME_W",start-timedelta(days=14),end)
+     in_window=[b for b in fetched if start <= b.timestamp < end]
+     bars=validate_bars([{"date":b.timestamp.date().isoformat(),"open":b.open,"high":b.high,"low":b.low,"close":b.close} for b in in_window])
      item.update({"valid_bars":len(bars),"from":bars[0]["date"] if bars else None,"to":bars[-1]["date"] if bars else None})
      if len(bars)>=200:
       data[symbol]=bars;item["status"]="QUALIFIED";item["metrics"]=compare(bars);counts["QUALIFIED"]+=1
      else:item["status"]="INSUFFICIENT_HISTORY";counts[item["status"]]+=1
-   except Exception as e:item["status"]="ERROR";item["error_code"]=str(e)[:70];counts["ERROR"]+=1
+   except Exception as e:item["status"]="ERROR";item["error_code"]=str(e)[:160];counts["ERROR"]+=1
    report.append(item);time.sleep(.12)
  payload={"run_utc":datetime.now(timezone.utc).isoformat(),"policy":"permission check, 5y weekly history, >=200 validated bars; no trading","counts":dict(counts),"instruments":report,"validated_bars":data}
  (folder/"research.json").write_text(json.dumps(payload,ensure_ascii=False,indent=2))
