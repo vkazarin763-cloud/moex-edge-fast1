@@ -28,18 +28,12 @@ def enum(v):
     return v.get("value") if isinstance(v,dict) else v
 
 def fetch_assets(token):
-    all_assets=[]; cursor=None
-    for _ in range(20):
-        params={"only_active":"true"}
-        if cursor: params["cursor"]=cursor
-        data=api("GET","/v1/assets/all",token,params)
-        page=data.get("assets")
-        if not isinstance(page,list): raise RuntimeError("Finam assets list malformed")
-        all_assets.extend(page)
-        cursor=data.get("next_cursor")
-        if not cursor: break
-    else: raise RuntimeError("Finam asset pagination limit reached")
-    return all_assets
+    # The active tradeable catalog is a single response; avoid scanning the
+    # paginated all-assets catalog, which includes archived/indicative assets.
+    data=api("GET","/v1/assets",token)
+    assets=data.get("assets")
+    if not isinstance(assets,list): raise RuntimeError("Finam assets list malformed")
+    return assets
 
 def refresh():
     secret=os.getenv("FINAM_API_SECRET","").strip()

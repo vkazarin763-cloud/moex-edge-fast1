@@ -13,7 +13,7 @@ class AllowlistRefreshTests(unittest.TestCase):
         assets=assets or [{"ticker":"SPY","mic":"ARCX"}]
         def fake_api(method, endpoint, token=None, params=None, payload=None):
             if method=="POST": return {"token":"test"}
-            if endpoint=="/v1/assets/all": return {"assets":assets,"next_cursor":None}
+            if endpoint=="/v1/assets": return {"assets":assets,"next_cursor":None}
             return params_response
         params_response=params
         with patch.dict(os.environ,{"FINAM_API_SECRET":"dummy","FINAM_ACCOUNT_ID":"dummy"}), \
