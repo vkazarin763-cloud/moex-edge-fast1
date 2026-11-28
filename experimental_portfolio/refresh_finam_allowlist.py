@@ -50,7 +50,7 @@ def refresh():
         auth=api("POST","/v1/sessions",payload={"secret":secret})
         token=auth.get("token")
         if not token: raise RuntimeError("Finam token missing")
-        eligible=[]; ambiguous=0; listings_found=0; not_tradable=0; long_blocked=0; listing_not_found=0
+        eligible=[]; ambiguous=0; listings_found=0; not_tradable=0; long_blocked=0; listing_not_found=0; status_counts={}
         for ticker in sorted(TARGETS):
             available=[]
             for mic in MIC_CANDIDATES:
@@ -64,6 +64,8 @@ def refresh():
                     raise
                 listings_found+=1
                 long_status=enum(params.get("longable"))
+                status_label=str(long_status if long_status is not None else "MISSING")
+                status_counts[status_label]=status_counts.get(status_label,0)+1
                 if params.get("is_tradable") is True and long_status in ("AVAILABLE",1,"1"):
                     available.append((symbol,params))
                 elif params.get("is_tradable") is not True:
@@ -85,6 +87,7 @@ def refresh():
         result["last_verified"]=datetime.now(timezone.utc).isoformat()
         OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
         print(f"ALLOWLIST_REFRESH=SUCCESS eligible={len(eligible)} candidates={len(TARGETS)} listings_found={listings_found} listing_not_found={listing_not_found} not_tradable={not_tradable} long_blocked={long_blocked} ambiguous={ambiguous}")
+        print("LONG_PERMISSION_STATUS_COUNTS:",json.dumps(status_counts,sort_keys=True))
         print("Eligible symbols:",", ".join(x["symbol"] for x in eligible) if eligible else "none; portfolio remains cash")
         return 0
     except Exception as exc:
