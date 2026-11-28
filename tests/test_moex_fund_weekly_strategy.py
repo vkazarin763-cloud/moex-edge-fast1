@@ -1,5 +1,5 @@
 from datetime import date,timedelta
-from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets
+from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger
 
 def make_hist(n=240):
     hist={}
@@ -36,3 +36,30 @@ def test_insufficient_universe_stays_no_strategy():
     report=run_weekly_backtest({"A@MISX":make_hist()["A@MISX"]})
     assert report["status"]=="INSUFFICIENT_HISTORY"
     assert report["metrics"] is None
+
+def test_forward_ledger_starts_cash_and_does_not_replay():
+    hist=make_hist()
+    targets=current_weekly_targets(hist)
+    ledger=update_forward_ledger(hist,None,targets)
+    assert ledger["nav_index"]==100
+    assert ledger["cash_weight"]==1
+    assert ledger["holdings"]==[]
+    assert ledger["orders_placed"] is False
+    unchanged=update_forward_ledger(hist,ledger,targets)
+    assert unchanged["nav_index"]==100
+    assert unchanged["last_processed_week"]==ledger["last_processed_week"]
+
+def test_forward_ledger_advances_only_on_new_week():
+    hist=make_hist()
+    targets=current_weekly_targets(hist)
+    ledger=update_forward_ledger(hist,None,targets)
+    for symbol,rows in hist.items():
+        last=rows[-1]
+        newdate=(date.fromisoformat(last["date"])+timedelta(days=7)).isoformat()
+        close=last["close"]*1.01
+        rows.append({"date":newdate,"open":last["close"],"high":close*1.01,"low":last["close"]*.99,"close":close})
+    updated=update_forward_ledger(hist,ledger,targets)
+    assert updated["status"]=="FORWARD_PAPER"
+    assert updated["last_processed_week"]>ledger["last_processed_week"]
+    assert updated["nav_index"]>100
+    assert updated["orders_placed"] is False
