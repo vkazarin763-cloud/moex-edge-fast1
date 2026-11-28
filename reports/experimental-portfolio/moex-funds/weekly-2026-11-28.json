@@ -1,0 +1,247 @@
+{
+  "generated_at_utc": "2026-11-28T03:31:51.877222+00:00",
+  "universe": "Account-scoped MOEX funds, MIC MISX",
+  "paper_only": true,
+  "orders_placed": false,
+  "status": "READY",
+  "account_permission_counts": {
+    "AVAILABLE": 19
+  },
+  "eligible_symbols": [
+    "AKME@MISX",
+    "AKMM@MISX",
+    "AMNR@MISX",
+    "AMNY@MISX",
+    "AMRE@MISX",
+    "AMRH@MISX",
+    "BCSD@MISX",
+    "DIVD@MISX",
+    "EQMX@MISX",
+    "GOLD@MISX",
+    "LQDT@MISX",
+    "SBCB@MISX",
+    "SBGB@MISX",
+    "SBMM@MISX",
+    "SBMX@MISX",
+    "SBRB@MISX",
+    "TBRU@MISX",
+    "TGLD@MISX",
+    "TMOS@MISX"
+  ],
+  "history_symbols": [
+    "AKME@MISX",
+    "AKMM@MISX",
+    "AMRE@MISX",
+    "AMRH@MISX",
+    "DIVD@MISX",
+    "EQMX@MISX",
+    "GOLD@MISX",
+    "LQDT@MISX",
+    "SBGB@MISX",
+    "SBMM@MISX",
+    "SBMX@MISX",
+    "SBRB@MISX",
+    "TBRU@MISX",
+    "TGLD@MISX",
+    "TMOS@MISX"
+  ],
+  "history_errors": {
+    "AMNR@MISX": "insufficient_weekly_bars:150",
+    "AMNY@MISX": "insufficient_weekly_bars:127",
+    "BCSD@MISX": "insufficient_weekly_bars:123",
+    "SBCB@MISX": "insufficient_weekly_bars:165"
+  },
+  "invalid_bars": {},
+  "weekly_backtest": {
+    "status": "READY",
+    "period": {
+      "start": "2023-05-15",
+      "end": "2026-11-23"
+    },
+    "common_bars": 225,
+    "eligible_symbols": [
+      "AKME@MISX",
+      "AKMM@MISX",
+      "AMRE@MISX",
+      "AMRH@MISX",
+      "DIVD@MISX",
+      "EQMX@MISX",
+      "GOLD@MISX",
+      "LQDT@MISX",
+      "SBGB@MISX",
+      "SBMM@MISX",
+      "SBMX@MISX",
+      "SBRB@MISX",
+      "TBRU@MISX",
+      "TGLD@MISX",
+      "TMOS@MISX"
+    ],
+    "excluded_short_history": [],
+    "strategy": {
+      "trend_filter": "weekly close above 40-week SMA",
+      "momentum": "13-week positive momentum",
+      "selection": "top 4 equal-weight, monthly rebalance",
+      "cost_one_way": 0.001
+    },
+    "metrics": {
+      "observations": 185,
+      "total_return": 0.621712,
+      "cagr": 0.146949,
+      "max_drawdown": -0.15407,
+      "volatility": 0.125138,
+      "sharpe": 1.15,
+      "ending_nav": 162.1712
+    },
+    "benchmark_buy_hold": {
+      "observations": 185,
+      "total_return": 0.181384,
+      "cagr": 0.048404,
+      "max_drawdown": -0.341193,
+      "volatility": 0.21663,
+      "sharpe": 0.3228,
+      "ending_nav": 118.1384,
+      "symbol": "TMOS@MISX"
+    },
+    "last_targets": [
+      {
+        "symbol": "AKME@MISX",
+        "weight": 0.25
+      },
+      {
+        "symbol": "EQMX@MISX",
+        "weight": 0.25
+      },
+      {
+        "symbol": "SBMX@MISX",
+        "weight": 0.25
+      },
+      {
+        "symbol": "TMOS@MISX",
+        "weight": 0.25
+      }
+    ],
+    "turnover_total": 14.75,
+    "rebalances": 43,
+    "notice": "Historical weekly simulation only; not evidence of future profitability."
+  },
+  "source": "Finam Trade API account-scoped permissions + weekly bars",
+  "weekly_target_for_next_period": [
+    {
+      "symbol": "AKME@MISX",
+      "weight": 0.25
+    },
+    {
+      "symbol": "SBMM@MISX",
+      "weight": 0.25
+    },
+    {
+      "symbol": "LQDT@MISX",
+      "weight": 0.25
+    },
+    {
+      "symbol": "AKMM@MISX",
+      "weight": 0.25
+    }
+  ],
+  "forward_paper_ledger": {
+    "status": "WAITING_FOR_NEXT_WEEK",
+    "nav_index": 100.0,
+    "high_watermark": 100.0,
+    "max_drawdown": 0.0,
+    "cash_weight": 1.0,
+    "holdings": [],
+    "last_processed_week": "2026-11-23",
+    "pending_targets": [
+      {
+        "symbol": "AKME@MISX",
+        "weight": 0.25
+      },
+      {
+        "symbol": "SBMM@MISX",
+        "weight": 0.25
+      },
+      {
+        "symbol": "LQDT@MISX",
+        "weight": 0.25
+      },
+      {
+        "symbol": "AKMM@MISX",
+        "weight": 0.25
+      }
+    ],
+    "last_week_return": 0.0,
+    "cumulative_turnover": 0.0,
+    "rebalance_count": 0,
+    "paper_only": true,
+    "orders_placed": false,
+    "note": "Started in cash. Targets from the last completed week are queued for the next weekly open."
+  },
+  "ai_review": {
+    "status": "LLM_COMPLETE",
+    "agents_expected": 3,
+    "agents_completed": 3,
+    "llm_agents_completed": 3,
+    "local_agents_completed": 0,
+    "provider_diagnostics": {},
+    "reviews": {
+      "market_analyst": {
+        "status": "COMPLETED",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
+        "review": {
+          "summary": "UNKNOWN",
+          "risks": [],
+          "questions": [
+            "Could you provide the portfolio holdings and performance data to analyze market breadth and asset‑class concentration?"
+          ]
+        }
+      },
+      "portfolio_researcher": {
+        "status": "COMPLETED",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
+        "review": {
+          "summary": "The deterministic strategy lacks any concrete evidence of performance, backtesting, or paper trading results. All key metrics such as historical backtest, paper portfolio, and benchmark comparison are missing, rendering the strategy unverified. Without these data, it is impossible to assess risk, return, or robustness.",
+          "risks": [
+            "No performance data to confirm profitability or drawdown characteristics.",
+            "No backtest results to evaluate strategy stability across different market regimes.",
+            "No paper portfolio results to validate execution feasibility and slippage.",
+            "No benchmark comparison to determine relative advantage over passive indices.",
+            "No holdings or cash weight information to assess diversification and liquidity."
+          ],
+          "questions": [
+            "What is the historical backtest performance of the strategy?",
+            "What are the paper portfolio results and how do they compare to the benchmark?",
+            "What holdings and cash weight composition does the strategy use?",
+            "Are there any stale symbols or data errors that could affect execution?",
+            "What portfolio model and constraints are applied?"
+          ]
+        }
+      },
+      "risk_auditor": {
+        "status": "COMPLETED",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
+        "review": {
+          "summary": "UNKNOWN",
+          "risks": [
+            "Data gaps: All portfolio metrics and holdings are missing, indicating incomplete data.",
+            "Stale prices: No price timestamps are provided, so current valuation cannot be assessed.",
+            "Concentration: Without holdings information, concentration risk cannot be evaluated.",
+            "Drawdown limitations: Historical performance and backtest data are absent, preventing drawdown analysis."
+          ],
+          "questions": [
+            "What are the current holdings and their weights?",
+            "What is the latest price data for each symbol?",
+            "What is the historical performance and drawdown history?",
+            "Are there any concentration limits or risk controls in place?"
+          ]
+        }
+      }
+    },
+    "policy": "LLM and local reviewers are commentary-only. They cannot change NAV, holdings, signals or authorize real trading."
+  }
+}

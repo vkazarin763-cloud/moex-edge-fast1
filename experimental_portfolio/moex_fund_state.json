@@ -1,0 +1,38 @@
+{
+  "status": "READY",
+  "eligible_symbols": [
+    "AKME@MISX",
+    "AKMM@MISX",
+    "AMNR@MISX",
+    "AMNY@MISX",
+    "AMRE@MISX",
+    "AMRH@MISX",
+    "BCSD@MISX",
+    "DIVD@MISX",
+    "EQMX@MISX",
+    "GOLD@MISX",
+    "LQDT@MISX",
+    "SBCB@MISX",
+    "SBGB@MISX",
+    "SBMM@MISX",
+    "SBMX@MISX",
+    "SBRB@MISX",
+    "TBRU@MISX",
+    "TGLD@MISX",
+    "TMOS@MISX"
+  ],
+  "backtest_metrics": {
+    "observations": 185,
+    "total_return": 0.621712,
+    "cagr": 0.146949,
+    "max_drawdown": -0.15407,
+    "volatility": 0.125138,
+    "sharpe": 1.15,
+    "ending_nav": 162.1712
+  },
+  "paper_nav_index": 100.0,
+  "cash_weight": 1.0,
+  "holdings": [],
+  "paper_only": true,
+  "orders_placed": false
+}

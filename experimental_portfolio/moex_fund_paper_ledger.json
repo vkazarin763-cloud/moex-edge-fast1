@@ -1,0 +1,33 @@
+{
+  "status": "WAITING_FOR_NEXT_WEEK",
+  "nav_index": 100.0,
+  "high_watermark": 100.0,
+  "max_drawdown": 0.0,
+  "cash_weight": 1.0,
+  "holdings": [],
+  "last_processed_week": "2026-11-23",
+  "pending_targets": [
+    {
+      "symbol": "AKME@MISX",
+      "weight": 0.25
+    },
+    {
+      "symbol": "SBMM@MISX",
+      "weight": 0.25
+    },
+    {
+      "symbol": "LQDT@MISX",
+      "weight": 0.25
+    },
+    {
+      "symbol": "AKMM@MISX",
+      "weight": 0.25
+    }
+  ],
+  "last_week_return": 0.0,
+  "cumulative_turnover": 0.0,
+  "rebalance_count": 0,
+  "paper_only": true,
+  "orders_placed": false,
+  "note": "Started in cash. Targets from the last completed week are queued for the next weekly open."
+}
