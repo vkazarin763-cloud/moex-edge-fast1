@@ -9,15 +9,15 @@ from typing import Any
 OPENROUTER_URL="https://openrouter.ai/api/v1/chat/completions"
 GROQ_URL="https://api.groq.com/openai/v1/chat/completions"
 ROLES={
- "market_analyst":"Describe market breadth, asset-class concentration and notable changes using only supplied facts.",
- "portfolio_researcher":"Critique the deterministic strategy and identify evidence still missing.",
- "risk_auditor":"Act as a skeptical independent risk auditor. Look for data gaps, stale prices, concentration and drawdown limitations.",
+ "market_analyst":"Review the supplied MOEX fund portfolio. State the actual holdings/cash and benchmark comparison. Do not assume the assets are individual stocks; use only the supplied facts. Be concise.",
+ "portfolio_researcher":"Critique the deterministic weekly strategy using its supplied backtest and benchmark. Identify the most important limitations; do not claim metrics are missing when they are present.",
+ "risk_auditor":"Act as a skeptical independent risk auditor. Review data gaps, stale prices, concentration and drawdown. Distinguish short-history exclusions from actual data errors.",
 }
 def _request(url:str,key:str,model:str,prompt:str)->dict[str,Any]:
-    body={"model":model,"temperature":0.1,"max_completion_tokens":450,
+    body={"model":model,"temperature":0.1,"max_completion_tokens":600,
       "reasoning_format":"hidden","reasoning_effort":"low",
       "response_format":{"type":"json_object"},
-      "messages":[{"role":"system","content":"You are a read-only portfolio research reviewer. Never invent prices, facts or performance. Do not instruct the user to trade or place orders. Never change portfolio weights. Return JSON with keys summary (string), risks (array), questions (array)."},
+      "messages":[{"role":"system","content":"You are a read-only portfolio research reviewer. Never invent prices, facts or performance. Do not instruct the user to trade or place orders. Never change portfolio weights. Return concise JSON with keys summary (string, at most 100 words), risks (array of at most 3 short items), questions (array of at most 3 short items)."},
       {"role":"user","content":prompt}]}
     req=urllib.request.Request(url,data=json.dumps(body).encode(),headers={"Authorization":f"Bearer {key}",
       "Content-Type":"application/json","User-Agent":"MOEX-EDGE-Portfolio-Research/1.0"},method="POST")
@@ -89,7 +89,7 @@ def run_reviewers(report:dict[str,Any])->dict[str,Any]:
     context={k:report.get(k) for k in ("generated_at_utc","status","period","performance","historical_backtest","paper_portfolio","benchmark_buy_and_hold","benchmark_spy_buy_and_hold","holdings","cash_weight","stale_symbols","data_errors","history_exclusions","portfolio_model","limitations")}
     reviews={}; diagnostics={}
     for role,instruction in ROLES.items():
-        prompt=f"ROLE: {role}. {instruction}\nUse only this JSON evidence. Missing facts are UNKNOWN. Do not infer live conditions from EOD data.\n"+json.dumps(context,ensure_ascii=False,separators=(",",":"))
+        prompt=f"ROLE: {role}. {instruction}\nUse only this JSON evidence. Missing facts are UNKNOWN. Do not infer live conditions from EOD data. Keep the summary under 100 words and each risks/questions list to at most 3 brief items. Never invent facts.\n"+json.dumps(context,ensure_ascii=False,separators=(",",":"))
         result=None; provider=None; model=None; error="provider_key_not_configured"
         if openrouter:
             try: result=_request(OPENROUTER_URL,openrouter,or_model,prompt); provider,model="openrouter",or_model
