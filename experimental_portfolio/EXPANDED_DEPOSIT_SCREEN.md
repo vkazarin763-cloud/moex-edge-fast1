@@ -4,11 +4,14 @@
 The batch evaluates 13 predeclared rule variants: buy-and-hold; SMA trend (10/20/40 weeks); momentum (13/26/52); mean reversion (2/4/8); breakout (13/26/52). Each is tested at 0.10%, 0.25% and 0.50% illustrative one-way turnover costs. These are sensitivity assumptions, not confirmed account-specific costs.
 
 ## Critical return-data limitation
-Finam's documented weekly-bars schema provides OHLCV and a snapshot flag, but does not expose a documented total-return/adjusted-price flag. Finam separately documents historical dividend and split endpoints. The next batch now retrieves historical dividend/distribution records for qualified equities and funds and split records for equities, preserving event payloads as audit evidence only. The API documents event lists and pagination, but the economic meaning of the event date and completeness of fund distributions still require verification. No events are applied to OHLCV in this stage. Until corporate actions are reconciled and fund distributions are verified, raw price CAGR is **not comparable** with a deposit return. The batch therefore marks every deposit comparison `NOT_COMPARABLE` and preserves the raw-price screen only as diagnostic metadata. Do not treat previously observed above-hurdle rows as candidates.
+Finam's documented weekly-bars schema provides OHLCV and a snapshot flag, but does not expose a documented total-return/adjusted-price flag. Finam separately documents historical dividend and split endpoints. The audit collector was added, but its first run returned HTTP 400 for every dividend and split request; no corporate-action records were retrieved. The first implementation percent-encoded dots in documented query parameter names (for example, `date_from.year`); the collector now preserves literal dots and adds a regression test. A fresh live batch must confirm the fix before the event feed can be considered usable.
+
+Finam's protobuf schema defines the historical dividend `date` as the **register closing date**, not the ex-dividend/last-buy date. It must not be used directly as the price-adjustment date. Split `exec_date` is the effective corporate-action date. Fund-distribution completeness and authoritative ex-date mapping remain unverified. No events are applied to OHLCV. Until corporate actions are reconciled and fund distributions are verified, raw price CAGR is **not comparable** with a deposit return. Every deposit comparison remains `NOT_COMPARABLE`; raw-price metrics are diagnostic only. Do not treat previously observed above-hurdle rows as candidates.
 
 Official API references:
 - [Finam REST API: bars, historical dividends and splits](https://api.finam.ru/docs/rest/)
 - [Finam protobuf market-data schema](https://github.com/FinamWeb/finam-trade-api/blob/main/proto/grpc/tradeapi/v1/marketdata/marketdata_service.proto)
+- [Finam corporate-actions protobuf schema](https://github.com/FinamWeb/finam-trade-api/blob/main/proto/grpc/tradeapi/v1/corporateactions/corporate_actions_service.proto)
 
 ## Corporate-action event audit
 
