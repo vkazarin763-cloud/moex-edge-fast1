@@ -1,0 +1,27 @@
+name: Finam Weekly Strategy Batch (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  research-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Fetch validated bars and run baseline strategies
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+        run: python scripts/run_finam_weekly_strategy_batch.py
+      - name: Upload research artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-strategy-research
+          path: research_output/
+          retention-days: 90
+          if-no-files-found: warn
