@@ -41,6 +41,8 @@ class WeeklyStrategyLabTests(unittest.TestCase):
         results=walk_forward_compare(bars,costs=(0.001,),warmup_bars=104,fold_bars=52)
         self.assertEqual({r["fold"] for r in results},{1,2,3})
         self.assertTrue(all(r["validation"]=="sequential_fixed_rule_holdout" for r in results))
+        cost_results=walk_forward_compare(bars,costs=(0.001,0.0025,0.005),warmup_bars=104,fold_bars=52)
+        self.assertEqual({r["cost_stress"] for r in cost_results},{0.001,0.0025,0.005})
         self.assertTrue(all(r["evaluation_bars"]<=52 for r in results if r["status"]=="OK"))
     def test_sharpe_suppressed_for_low_volatility(self):
         bars=make_bars([100+i*0.01 for i in range(100)])
