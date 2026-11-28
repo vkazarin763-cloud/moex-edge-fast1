@@ -16,7 +16,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Probe public MOEX ISS endpoints
-        env:
-          MOEX_ISS_DIAGNOSTIC_INSECURE_TLS: "1"
+      - name: Probe public MOEX ISS endpoints with verified TLS
         run: python scripts/probe_moex_iss_corporate_actions.py
