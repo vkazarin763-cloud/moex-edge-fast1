@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Read-only weekly research batch; market-data output is artifact-only."""
-import json,os,time,csv
+import json,os,time,csv,sys
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
 from collections import Counter
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
