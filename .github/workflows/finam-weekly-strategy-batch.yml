@@ -41,6 +41,13 @@ jobs:
           python -m unittest tests.test_deposit_benchmark -v
       - name: Probe public MOEX ISS corporate-action endpoints (read only)
         run: python scripts/probe_moex_iss_corporate_actions.py
+      - name: Upload MOEX ISS probe result immediately
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-iss-corporate-actions-probe
+          path: research_output/moex_iss_corporate_actions_probe.txt
+          retention-days: 30
+          if-no-files-found: error
       - name: Fetch validated bars and run expanded research
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
