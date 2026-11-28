@@ -19,6 +19,8 @@ on:
       - "experimental_portfolio/run.py"
       - "experimental_portfolio/eligibility.py"
       - "experimental_portfolio/refresh_finam_allowlist.py"
+      - "scripts/probe_finam_active_asset_catalog.py"
+      - "scripts/probe_finam_active_asset_catalog.py"
       - "experimental_portfolio/finam_allowlist.json"
       - "experimental_portfolio/README.md"
       - "experimental_portfolio/refresh_finam_allowlist.py"
@@ -42,6 +44,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Probe Finam active asset catalog (read-only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+        run: python scripts/probe_finam_active_asset_catalog.py || echo "Catalog probe unavailable; eligibility refresh remains fail-closed."
       - name: Refresh account-specific Finam ETF buy eligibility (read-only)
         env:
           FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
