@@ -88,7 +88,7 @@ def main():
         return 2
 
     end = datetime.now(timezone.utc)
-    start = end - timedelta(days=365 * 6)
+    start = end - timedelta(days=365 * 5)  # Finam weekly history is limited to 5 years.
     interval = urlencode({
         "timeframe": "TIME_FRAME_W",
         "interval.start_time": start.isoformat(),
