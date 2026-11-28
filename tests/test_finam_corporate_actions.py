@@ -13,7 +13,10 @@ class CorporateActionFetchTests(unittest.TestCase):
         calls = []
         def requester(url, token):
             calls.append((url, token))
-            offset = int(parse_qs(urlparse(url).query)["offset"][0])
+            query = parse_qs(urlparse(url).query)
+            offset = int(query["offset"][0])
+            self.assertEqual(query["sort_direction"], ["ASC"])
+            self.assertIn("limit", query)
             if offset == 0:
                 return {"dividends": [{"date": {"year": 2025, "month": 1, "day": 1}}],
                         "pagination": {"has_next": True}}
@@ -35,6 +38,8 @@ class CorporateActionFetchTests(unittest.TestCase):
         def requester(url, token):
             calls.append(url)
             query = parse_qs(urlparse(url).query)
+            self.assertEqual(query["sort_direction"], ["ASC"])
+            self.assertIn("limit", query)
             if "date_from.year" in query:
                 raise FinamRequestError("HTTP_400", "invalid date query")
             return {"dividends": [
@@ -77,6 +82,7 @@ class CorporateActionFetchTests(unittest.TestCase):
             requester=requester,
         )
         self.assertEqual(len(calls), 2)
+        self.assertTrue(all("sort_direction=ASC" in url for url in calls))
         self.assertEqual(result["dividends"]["status"], "OK")
         self.assertEqual(result["splits"]["status"], "OK")
 
