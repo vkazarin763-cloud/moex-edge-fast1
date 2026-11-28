@@ -1,0 +1,53 @@
+"""Deterministic weekly strategy lab. Pure functions; no data fetching or broker calls."""
+from __future__ import annotations
+from typing import Any
+from datetime import date
+
+STRATEGIES = ("buy_hold", "sma_trend", "momentum_13w", "mean_reversion_4w", "breakout_13w")
+DEFAULT_ONE_WAY_COST = 0.001
+
+def validate_bars(bars: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    cleaned=[]; seen=set()
+    for row in bars:
+        day=str(row.get("date",""))
+        try: values=[float(row[k]) for k in ("open","high","low","close")]
+        except (KeyError,TypeError,ValueError): continue
+        o,h,l,c=values
+        if not day or day in seen or any(v<=0 for v in values) or h<max(o,l,c) or l>min(o,h,c): continue
+        seen.add(day); cleaned.append({"date":day,"open":o,"high":h,"low":l,"close":c})
+    return sorted(cleaned,key=lambda r:r["date"])
+
+def signal_series(bars: list[dict[str,Any]], strategy: str) -> list[int]:
+    if strategy not in STRATEGIES: raise ValueError(f"unknown_strategy:{strategy}")
+    closes=[r["close"] for r in bars]; signals=[0]*len(closes)
+    if strategy=="buy_hold": return [1]*len(closes)
+    for i,c in enumerate(closes):
+        if strategy=="sma_trend" and i>=19: signals[i]=int(c>sum(closes[i-19:i+1])/20)
+        elif strategy=="momentum_13w" and i>=13: signals[i]=int(c>closes[i-13])
+        elif strategy=="mean_reversion_4w" and i>=4: signals[i]=int(c<closes[i-4])
+        elif strategy=="breakout_13w" and i>=13: signals[i]=int(c>max(closes[i-13:i]))
+    return signals
+
+def backtest(bars:list[dict[str,Any]],strategy:str,one_way_cost:float=DEFAULT_ONE_WAY_COST)->dict[str,Any]:
+    bars=validate_bars(bars)
+    if len(bars)<2: return {"strategy":strategy,"bars":len(bars),"status":"INSUFFICIENT_DATA"}
+    if not 0<=one_way_cost<0.1: raise ValueError("invalid_cost")
+    signals=signal_series(bars,strategy); returns=[]; dates=[]; exposure=[]
+    for i in range(1,len(bars)):
+        position=signals[i-1]
+        gross=bars[i]["close"]/bars[i-1]["close"]-1
+        turnover=abs(position-signals[i-2]) if i>=2 else abs(position)
+        returns.append(position*gross-turnover*one_way_cost); dates.append(bars[i]["date"]); exposure.append(position)
+    nav=peak=1.0; maxdd=0.0
+    for r in returns: nav*=1+r; peak=max(peak,nav); maxdd=min(maxdd,nav/peak-1)
+    years=max((date.fromisoformat(dates[-1])-date.fromisoformat(dates[0])).days/365.25,1/52)
+    mean=sum(returns)/len(returns); variance=sum((r-mean)**2 for r in returns)/max(len(returns)-1,1)
+    vol=variance**0.5*52**0.5; sharpe=mean/(variance**0.5)*52**0.5 if variance>0 else None
+    return {"strategy":strategy,"status":"OK","bars":len(bars),"period":{"from":dates[0],"to":dates[-1]},
+      "total_return":nav-1,"cagr":nav**(1/years)-1 if nav>0 else -1,"max_drawdown":maxdd,
+      "annualized_volatility":vol,"sharpe_rf0":sharpe,"exposure_fraction":sum(exposure)/len(exposure),
+      "trades_or_rebalances":sum(abs(signals[i]-signals[i-1]) for i in range(1,len(signals))),
+      "one_way_cost":one_way_cost,"ending_nav":nav}
+
+def compare(bars:list[dict[str,Any]],costs=(0.001,0.0025,0.005))->list[dict[str,Any]]:
+    return [{**backtest(bars,s,c),"cost_stress":c} for c in costs for s in STRATEGIES]
