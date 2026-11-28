@@ -1,4 +1,4 @@
-"Tests for read-only Finam corporate-action event retrieval."""
+"""Tests for read-only Finam corporate-action event retrieval."""
 import unittest
 from datetime import date
 from urllib.parse import urlparse, parse_qs
