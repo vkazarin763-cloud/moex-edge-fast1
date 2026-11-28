@@ -1,7 +1,7 @@
 import unittest
 from datetime import date, timedelta
 from experimental_portfolio.weekly_strategy_lab import (
-    STRATEGIES, validate_bars, signal_series, backtest, compare,
+    STRATEGIES, validate_bars, signal_series, backtest, compare, walk_forward_compare,
 )
 
 def make_bars(closes):
@@ -32,4 +32,21 @@ class WeeklyStrategyLabTests(unittest.TestCase):
         self.assertEqual(result["status"],"OK")
         self.assertEqual(result["period"]["from"],bars[-30]["date"])
         self.assertGreater(result["bars"],result["evaluation_bars"])
+    def test_evaluation_end_is_exclusive(self):
+        bars=make_bars(list(range(10,100)))
+        result=backtest(bars,"buy_hold",evaluation_start=bars[40]["date"],evaluation_end=bars[50]["date"])
+        self.assertEqual(result["period"]["to"],bars[49]["date"])
+    def test_walk_forward_uses_sequential_holdouts(self):
+        bars=make_bars(list(range(10,10+260)))
+        results=walk_forward_compare(bars,costs=(0.001,),warmup_bars=104,fold_bars=52)
+        self.assertEqual({r["fold"] for r in results},{1,2,3})
+        self.assertTrue(all(r["validation"]=="sequential_fixed_rule_holdout" for r in results))
+        cost_results=walk_forward_compare(bars,costs=(0.001,0.0025,0.005),warmup_bars=104,fold_bars=52)
+        self.assertEqual({r["cost_stress"] for r in cost_results},{0.001,0.0025,0.005})
+        self.assertTrue(all(r["evaluation_bars"]<=52 for r in results if r["status"]=="OK"))
+    def test_sharpe_suppressed_for_low_volatility(self):
+        bars=make_bars([100+i*0.01 for i in range(100)])
+        result=backtest(bars,"buy_hold")
+        self.assertIsNone(result["sharpe_rf0"])
+        self.assertEqual(result["sharpe_status"],"LOW_VOLATILITY_UNRELIABLE")
 if __name__=="__main__": unittest.main()

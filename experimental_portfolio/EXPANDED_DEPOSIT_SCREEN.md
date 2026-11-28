@@ -1,29 +1,22 @@
-# Expanded weekly strategy and deposit screening
+# Expanded weekly strategy and validation screen
 
-## Research grid
+## Strategy grid
+The batch evaluates 13 predeclared rule variants: buy-and-hold; SMA trend (10/20/40 weeks); momentum (13/26/52); mean reversion (2/4/8); breakout (13/26/52). Each is tested at 0.10%, 0.25% and 0.50% illustrative one-way turnover costs. These are sensitivity assumptions, not confirmed account-specific costs.
 
-The batch evaluates 13 predeclared rule variants:
-- Buy and hold.
-- Simple moving-average trend: 10, 20 and 40 weeks.
-- Momentum: 13, 26 and 52 weeks.
-- Mean reversion: 2, 4 and 8 weeks.
-- Price breakout: 13, 26 and 52 weeks.
+## Critical return-data limitation
+Finam's documented weekly-bars schema provides OHLCV and a snapshot flag, but does not expose a documented total-return/adjusted-price flag. Finam separately documents historical dividend and split endpoints. Until corporate actions are retrieved, reconciled and applied (and fund distributions are verified), raw price CAGR is **not comparable** with a deposit return. The batch therefore marks every deposit comparison `NOT_COMPARABLE` and preserves the raw-price screen only as diagnostic metadata. Do not treat previously observed above-hurdle rows as candidates.
 
-Each is evaluated at 0.10%, 0.25% and 0.50% illustrative one-way turnover costs. These are sensitivity assumptions, not confirmed account-specific execution costs. This expands the matrix to 39 rows per instrument.
+Official API references:
+- [Finam REST API: bars, historical dividends and splits](https://api.finam.ru/docs/rest/)
+- [Finam protobuf market-data schema](https://github.com/FinamWeb/finam-trade-api/blob/main/proto/grpc/tradeapi/v1/marketdata/marketdata_service.proto)
 
-The parameter grid is deliberately small and explicit. Selecting the best variant after inspecting the same data would introduce multiple-testing/selection bias. All variants must be reviewed across rolling folds and parameter neighborhoods; this grid alone cannot establish a robust edge.
+## Sequential holdout validation
+The research batch preserves up to five years of weekly history. For each fixed strategy rule it now evaluates sequential holdout folds after a 104-week warm-up, using up to 52-week test windows (minimum 26 weeks). Signals are calculated from information available up to the prior bar; no parameters are fitted on the test fold. This is a more informative stability check, but not proof of future profitability. The folds remain historical and can overlap neither training nor future information in the signal calculation.
+
+A low-volatility Sharpe ratio is suppressed when annualized volatility is below 5%; it is labelled `LOW_VOLATILITY_UNRELIABLE` rather than presented as a meaningful risk-adjusted score. This specifically prevents smooth money-market NAV series from producing misleadingly impressive Sharpe values.
 
 ## Deposit screen
-
-The script preserves up to five years of weekly bars for indicator warm-up, but evaluates strategy returns only over the trailing approximately 52 weeks. It then compares each strategy's historical trailing-window CAGR with the current 181-day-to-one-year RUB deposit hurdle (12.85% annualized in the 27 Nov 2026 Bank of Russia snapshot).
-
-Each JSON/CSV result contains strategy CAGR and max drawdown, illustrative one-way cost, deposit hurdle and excess return, status (BELOW_HURDLE, ABOVE_HURDLE_NOT_APPROVED or NOT_COMPARABLE), and the labels trailing_approx_52_weeks and historical_screen_only_not_forecast.
-
-The trailing strategy return and current deposit rate are not a synchronized forward investment comparison. This screen is a conservative rejection filter, not a forecast, net-of-tax result or approval. A proper historical comparison requires a historical term-specific deposit-rate series and matched rollover assumptions. Actual bank offers, tax, fees, spread, slippage and liquidity must be modeled before decision-making.
+The earlier comparison used a trailing strategy return against a current deposit snapshot; it was not synchronized. It is now explicitly disabled until total-return adjustments are verified. A proper comparison also needs historical term-specific deposit rates, matched rollover assumptions, taxes, and actual fees/spread/slippage.
 
 ## Safety and scope
-
-- Read-only Finam account permission and historical market-data access.
-- No order endpoints, order placement, leverage, position sizing or live execution.
-- Candidate eligibility is not strategy approval.
-- Bonds, futures and options remain outside this equity/fund weekly model until dedicated cash-flow, expiry, margin and payoff models are implemented.
+Read-only account permission and market-data endpoints only. No order endpoints, leverage, position sizing, live execution or paid data services. Equities/funds remain a research-only phase; bonds, futures and options require dedicated cash-flow, expiry, margin and payoff models.

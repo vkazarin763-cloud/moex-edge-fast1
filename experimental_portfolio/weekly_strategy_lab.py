@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import Any
 from datetime import date
 
-# Small, predeclared parameter grid. The expanded set is a discovery screen,
-# not a license to select the best in-sample parameter.
 STRATEGIES = (
     "buy_hold",
     "sma_trend", "sma_trend_10w", "sma_trend_40w",
@@ -71,6 +69,7 @@ def backtest(
     strategy:str,
     one_way_cost:float=DEFAULT_ONE_WAY_COST,
     evaluation_start:str|None=None,
+    evaluation_end:str|None=None,
 )->dict[str,Any]:
     bars=validate_bars(bars)
     _strategy_spec(strategy)
@@ -78,8 +77,8 @@ def backtest(
     if not 0<=one_way_cost<0.1: raise ValueError("invalid_cost")
     signals=signal_series(bars,strategy); returns=[]; dates=[]; exposure=[]
     for i in range(1,len(bars)):
-        if evaluation_start and bars[i]["date"] < evaluation_start:
-            continue
+        if evaluation_start and bars[i]["date"] < evaluation_start: continue
+        if evaluation_end and bars[i]["date"] >= evaluation_end: continue
         position=signals[i-1]
         gross=bars[i]["close"]/bars[i-1]["close"]-1
         turnover=abs(position-signals[i-2]) if i>=2 else abs(position)
@@ -91,11 +90,16 @@ def backtest(
     for r in returns: nav*=1+r; peak=max(peak,nav); maxdd=min(maxdd,nav/peak-1)
     years=max((date.fromisoformat(dates[-1])-date.fromisoformat(dates[0])).days/365.25,1/52)
     mean=sum(returns)/len(returns); variance=sum((r-mean)**2 for r in returns)/max(len(returns)-1,1)
-    vol=variance**0.5*52**0.5; sharpe=mean/(variance**0.5)*52**0.5 if variance>0 else None
+    vol=variance**0.5*52**0.5
+    # A Sharpe ratio on near-zero-volatility NAV series is numerically unstable
+    # and can look spectacular without representing investable risk-adjusted alpha.
+    sharpe_status="LOW_VOLATILITY_UNRELIABLE" if vol<0.05 else "OK"
+    sharpe=mean/(variance**0.5)*52**0.5 if variance>0 and sharpe_status=="OK" else None
     return {"strategy":strategy,"status":"OK","bars":len(bars),"evaluation_bars":len(returns),
       "period":{"from":dates[0],"to":dates[-1]},"total_return":nav-1,
       "cagr":nav**(1/years)-1 if nav>0 else -1,"max_drawdown":maxdd,
-      "annualized_volatility":vol,"sharpe_rf0":sharpe,"exposure_fraction":sum(exposure)/len(exposure),
+      "annualized_volatility":vol,"sharpe_rf0":sharpe,"sharpe_status":sharpe_status,
+      "exposure_fraction":sum(exposure)/len(exposure),
       "trades_or_rebalances":sum(abs(signals[i]-signals[i-1]) for i in range(1,len(signals))),
       "one_way_cost":one_way_cost,"ending_nav":nav}
 
@@ -109,3 +113,31 @@ def compare(
         {**backtest(bars,s,c,evaluation_start=evaluation_start),"cost_stress":c}
         for c in costs for s in STRATEGIES
     ]
+
+
+def walk_forward_compare(
+    bars:list[dict[str,Any]],
+    costs=(0.001,0.0025,0.005),
+    warmup_bars:int=104,
+    fold_bars:int=52,
+    min_fold_bars:int=26,
+)->list[dict[str,Any]]:
+    """Sequential fixed-rule holdouts; indicators use only bars before each return."""
+    clean=validate_bars(bars)
+    if warmup_bars<52 or fold_bars<13 or min_fold_bars<13 or min_fold_bars>fold_bars:
+        raise ValueError("invalid_walk_forward_window")
+    results=[]
+    fold_number=0
+    for start_idx in range(warmup_bars,len(clean),fold_bars):
+        end_idx=min(start_idx+fold_bars,len(clean))
+        if end_idx-start_idx<min_fold_bars: continue
+        fold_number+=1
+        start=clean[start_idx]["date"]
+        end=clean[end_idx]["date"] if end_idx<len(clean) else None
+        for cost in costs:
+            for strategy in STRATEGIES:
+                result=backtest(clean,strategy,cost,evaluation_start=start,evaluation_end=end)
+                results.append({**result,"fold":fold_number,"warmup_bars":start_idx,
+                    "test_from":start,"test_to":result.get("period",{}).get("to"),
+                    "cost_stress":cost,"validation":"sequential_fixed_rule_holdout"})
+    return results
