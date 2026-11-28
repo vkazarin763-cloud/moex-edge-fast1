@@ -1,6 +1,8 @@
 import unittest
 from datetime import date, timedelta
-from experimental_portfolio.weekly_strategy_lab import validate_bars, signal_series, backtest, compare
+from experimental_portfolio.weekly_strategy_lab import (
+    STRATEGIES, validate_bars, signal_series, backtest, compare,
+)
 
 def make_bars(closes):
     return [{"date":(date(2020,1,1)+timedelta(days=7*i)).isoformat(),"open":v,"high":v*1.01,"low":v*.99,"close":v} for i,v in enumerate(closes)]
@@ -13,10 +15,21 @@ class WeeklyStrategyLabTests(unittest.TestCase):
         bars=make_bars(list(range(10,40))); sig=signal_series(bars,"momentum_13w")
         self.assertEqual(sig[12],0); self.assertEqual(sig[13],1)
         self.assertEqual(backtest(bars,"momentum_13w")["status"],"OK")
+    def test_parameter_grid_families(self):
+        self.assertIn("sma_trend_10w",STRATEGIES)
+        self.assertIn("momentum_52w",STRATEGIES)
+        self.assertIn("breakout_26w",STRATEGIES)
+        self.assertEqual(len(STRATEGIES),13)
     def test_costs_penalize(self):
         bars=make_bars([10,11,12,11,10,12,13,12,14,13,15,14,16,15,17,18,19,20,21,22,23])
         self.assertLessEqual(backtest(bars,"sma_trend",0.01)["total_return"],backtest(bars,"sma_trend",0)["total_return"])
     def test_unknown_strategy(self):
         with self.assertRaises(ValueError): backtest(make_bars([1,2]),"magic")
-    def test_matrix_size(self): self.assertEqual(len(compare(make_bars(list(range(10,40))))),15)
+    def test_matrix_size(self): self.assertEqual(len(compare(make_bars(list(range(10,80))))),39)
+    def test_evaluation_window_keeps_indicator_warmup(self):
+        bars=make_bars(list(range(10,100)))
+        result=backtest(bars,"momentum_13w",evaluation_start=bars[-30]["date"])
+        self.assertEqual(result["status"],"OK")
+        self.assertEqual(result["period"]["from"],bars[-30]["date"])
+        self.assertGreater(result["bars"],result["evaluation_bars"])
 if __name__=="__main__": unittest.main()
