@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-28T03:34:43.435028+00:00",
+  "generated_at_utc": "2026-11-28T03:39:08.363133+00:00",
   "universe": "Account-scoped MOEX funds, MIC MISX",
   "paper_only": true,
   "orders_placed": false,
@@ -203,7 +203,7 @@
       "sharpe": 1.15,
       "ending_nav": 162.1712
     },
-    "benchmark_spy_buy_and_hold": {
+    "benchmark_buy_and_hold": {
       "observations": 185,
       "total_return": 0.181384,
       "cagr": 0.048404,
@@ -277,48 +277,54 @@
     "Weekly trend/momentum backtest is hypothetical; paper ledger is prospective and currently starts in cash."
   ],
   "ai_review": {
-    "status": "LOCAL_FALLBACK_AFTER_PROVIDER_FAILURE",
+    "status": "MIXED_LLM_AND_LOCAL",
     "agents_expected": 3,
     "agents_completed": 3,
-    "llm_agents_completed": 0,
-    "local_agents_completed": 3,
+    "llm_agents_completed": 2,
+    "local_agents_completed": 1,
     "provider_diagnostics": {
-      "market_analyst": "provider_http_400:Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
-      "portfolio_researcher": "provider_http_400:Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
       "risk_auditor": "provider_http_400:Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details."
     },
     "reviews": {
       "market_analyst": {
         "status": "COMPLETED",
-        "engine": "local_deterministic",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "Forward paper status: WAITING_FOR_NEXT_WEEK. Prospective holdings: 0; asset classes: none. Cash weight: 1.0.",
-          "risks": [],
-          "questions": [
-            "Are the ETF proxies and their exchange calendars representative of the intended global universe?"
-          ]
+          "summary": "The portfolio is currently held entirely in cash with no active holdings. The strategy targets four equities (AKME, SBMM, LQDT, AKMM) at equal weights, but these positions have not yet been executed. The backtest over the period 2023‑05‑15 to 2026‑11‑23 shows a total return of 62.2 % (CAGR ≈ 14.7 %) with a maximum drawdown of 15.4 % and volatility of 12.5 %. The benchmark buy‑and‑hold (TMOS) delivered 18.1 % total return (CAGR ≈ 4.8 %) with a larger drawdown of 34.1 % and higher volatility of 21.7 %. The portfolio’s Sharpe ratio (1.15) exceeds that of the benchmark (0.32). No asset‑class concentration can be assessed yet because the portfolio is in cash. The only concentration risk that can be noted is the planned equal‑weight allocation to four individual equities, which could expose the portfolio to sector or company‑specific risk if those stocks are correlated.\n\nRisks:",
+          "risks": [
+            "Liquidity risk of the target equities due to limited weekly data availability for some symbols (e.g., AMNR, AMNY, BCSD, SBCB).",
+            "Concentration risk from equal‑weight exposure to only four equities once positions are taken.",
+            "Potential tracking error relative to the benchmark due to the strategy’s trend and momentum filters.",
+            "Execution risk: the paper ledger has not yet placed orders, so actual market execution may differ."
+          ],
+          "questions": []
         }
       },
       "portfolio_researcher": {
         "status": "COMPLETED",
-        "engine": "local_deterministic",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "Historical backtest: 2023-05-15 to 2026-11-23; total return 0.621712; SPY benchmark 0.181384. Forward paper NAV index: 100.0.",
+          "summary": "The deterministic strategy, based on a weekly trend filter, 13‑week momentum, and equal‑weight top‑4 selection with monthly rebalancing, has delivered a 62.2% total return (≈14.7% CAGR) over 185 observations, outperforming the TMOS buy‑and‑hold benchmark (18.1% total return). The strategy’s max drawdown is 15.4% versus 34.1% for the benchmark, and its Sharpe ratio is 1.15 versus 0.32. However, the paper portfolio remains in cash and has not yet executed any trades, so the backtest results are purely hypothetical. The evidence lacks real‑world execution details, liquidity assessment, tax impact, and dividend‑adjusted pricing. The strategy’s performance is also limited to a single benchmark and a single market (MISX).",
           "risks": [
-            "Historical backtest is not independent out-of-sample approval."
+            "Backtest is based on non‑dividend‑adjusted Finam weekly close prices, potentially overstating returns.\nNo modeling of bid‑ask spread, slippage, or liquidity constraints.\nTax implications are not considered.\nPaper portfolio has not yet traded; execution risk unknown.\nStrategy relies on a single bench",
+            "questions",
+            ":",
+            "['What would the strategy’s performance look like with dividend‑adjusted prices?\\nHow sensitive is the strategy to transaction costs beyond the 0.1% one‑way cost?\\nWhat liquidity constraints exist for the selected symbols, and how would they affect execution?\\nHow would tax considerations alter the "
           ],
-          "questions": [
-            "Does the strategy remain robust after a longer prospective paper-trading period and stressed transaction costs?"
-          ]
+          "questions": []
         }
       },
       "risk_auditor": {
         "status": "COMPLETED",
         "engine": "local_deterministic",
         "review": {
-          "summary": "Forward paper maximum drawdown: 0.0; historical backtest maximum drawdown: -0.15407; stale instruments: 0; data errors: 4.",
+          "summary": "Forward paper maximum drawdown: 0.0; historical backtest maximum drawdown: -0.15407; stale instruments: 0; data errors: 0.",
           "risks": [
-            "Some requested instruments failed data validation or download.",
+            "4 candidates excluded from backtest due to insufficient weekly history; these are not download failures.",
             "Options and futures are excluded from NAV pending executable quotes and contract-level risk modeling."
           ],
           "questions": [
