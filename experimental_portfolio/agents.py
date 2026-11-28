@@ -69,14 +69,16 @@ def _local_review(role:str,report:dict[str,Any])->dict[str,Any]:
         questions.append("Are the ETF proxies and their exchange calendars representative of the intended global universe?")
     elif role=="portfolio_researcher":
         period=(report.get("historical_backtest") or {}).get("period") or {}
-        benchmark=(report.get("historical_backtest") or {}).get("benchmark_spy_buy_and_hold") or {}
-        summary=f"Historical backtest: {period.get('from','UNKNOWN')} to {period.get('till','UNKNOWN')}; total return {performance.get('total_return','UNKNOWN')}; SPY benchmark {benchmark.get('total_return','UNKNOWN')}. Forward paper NAV index: {paper.get('nav_index','UNKNOWN')}."
+        benchmark=(report.get("historical_backtest") or {}).get("benchmark_buy_and_hold") or report.get("benchmark_buy_and_hold") or (report.get("historical_backtest") or {}).get("benchmark_spy_buy_and_hold") or report.get("benchmark_spy_buy_and_hold") or {}
+        benchmark_name=benchmark.get("symbol","benchmark")
+        summary=f"Historical backtest: {period.get('from','UNKNOWN')} to {period.get('till','UNKNOWN')}; total return {performance.get('total_return','UNKNOWN')}; {benchmark_name} buy-and-hold {benchmark.get('total_return','UNKNOWN')}. Forward paper NAV index: {paper.get('nav_index','UNKNOWN')}."
         risks.append("Historical backtest is not independent out-of-sample approval.")
         questions.append("Does the strategy remain robust after a longer prospective paper-trading period and stressed transaction costs?")
     else:
         summary=f"Forward paper maximum drawdown: {paper.get('max_drawdown','UNKNOWN')}; historical backtest maximum drawdown: {performance.get('max_drawdown','UNKNOWN')}; stale instruments: {len(stale)}; data errors: {len(errors)}."
         if stale: risks.append("At least one instrument has stale daily data.")
-        if errors: risks.append("Some requested instruments failed data validation or download.")
+        if errors: risks.append("Some instruments failed data validation or download.")
+        if report.get("history_exclusions"): risks.append(f"{len(report['history_exclusions'])} candidates excluded from backtest due to insufficient weekly history; these are not download failures.")
         risks.append("Options and futures are excluded from NAV pending executable quotes and contract-level risk modeling.")
         questions.append("Are transaction costs, dividends, currency exposure and ETF liquidity sufficiently represented?")
     return {"summary":summary,"risks":risks,"questions":questions}
@@ -84,7 +86,7 @@ def _local_review(role:str,report:dict[str,Any])->dict[str,Any]:
 def run_reviewers(report:dict[str,Any])->dict[str,Any]:
     openrouter=os.getenv("OPENROUTER_API_KEY","").strip(); groq=os.getenv("GROQ_API_KEY","").strip()
     or_model=os.getenv("OPENROUTER_MODEL","openrouter/free"); groq_model=os.getenv("GROQ_MODEL","openai/gpt-oss-20b")
-    context={k:report.get(k) for k in ("generated_at_utc","status","period","performance","historical_backtest","paper_portfolio","benchmark_spy_buy_and_hold","holdings","cash_weight","stale_symbols","data_errors","portfolio_model","limitations")}
+    context={k:report.get(k) for k in ("generated_at_utc","status","period","performance","historical_backtest","paper_portfolio","benchmark_buy_and_hold","benchmark_spy_buy_and_hold","holdings","cash_weight","stale_symbols","data_errors","history_exclusions","portfolio_model","limitations")}
     reviews={}; diagnostics={}
     for role,instruction in ROLES.items():
         prompt=f"ROLE: {role}. {instruction}\nUse only this JSON evidence. Missing facts are UNKNOWN. Do not infer live conditions from EOD data.\n"+json.dumps(context,ensure_ascii=False,separators=(",",":"))
