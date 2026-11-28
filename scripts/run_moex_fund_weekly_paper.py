@@ -8,7 +8,7 @@ from urllib.request import Request,urlopen
 from urllib.error import HTTPError,URLError
 from urllib.parse import quote,urlencode
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger,MIN_HISTORY
+from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger,normalized_reviewer_context,MIN_HISTORY
 from experimental_portfolio.agents import run_reviewers
 
 BASE="https://api.finam.ru"
@@ -95,7 +95,7 @@ def main():
   report["data_errors"]=errors
   report["portfolio_model"]=bt.get("strategy")
   report["limitations"]=["Historical Finam weekly close prices are not dividend-adjusted.","No spread, liquidity, tax or real execution modeling.","Weekly trend/momentum backtest is hypothetical; paper ledger is prospective and currently starts in cash."]
-  report["ai_review"]=run_reviewers(report)
+  report["ai_review"]=run_reviewers(normalized_reviewer_context(report))
   ledger_path.write_text(json.dumps(ledger,ensure_ascii=False,indent=2)+"\n")
  except Exception as e:
   report.update(status="FAIL_CLOSED",error=f"{type(e).__name__}:{str(e)[:160]}",eligible_symbols=[],history_errors={})
