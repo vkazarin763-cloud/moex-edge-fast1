@@ -45,4 +45,15 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import contextlib
+    import io
+    from pathlib import Path
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        exit_code = main()
+    output = buffer.getvalue()
+    print(output, end="")
+    artifact_dir = Path("research_output")
+    artifact_dir.mkdir(exist_ok=True)
+    (artifact_dir / "moex_iss_corporate_actions_probe.txt").write_text(output, encoding="utf-8")
+    raise SystemExit(exit_code)
