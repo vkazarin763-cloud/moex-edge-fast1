@@ -25,7 +25,7 @@ class WeeklyStrategyLabTests(unittest.TestCase):
         self.assertLessEqual(backtest(bars,"sma_trend",0.01)["total_return"],backtest(bars,"sma_trend",0)["total_return"])
     def test_unknown_strategy(self):
         with self.assertRaises(ValueError): backtest(make_bars([1,2]),"magic")
-    def test_matrix_size(self): self.assertEqual(len(compare(make_bars(list(range(10,80)))),39)
+    def test_matrix_size(self): self.assertEqual(len(compare(make_bars(list(range(10,80))))),39)
     def test_evaluation_window_keeps_indicator_warmup(self):
         bars=make_bars(list(range(10,100)))
         result=backtest(bars,"momentum_13w",evaluation_start=bars[-30]["date"])
