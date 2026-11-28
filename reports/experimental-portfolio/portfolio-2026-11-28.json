@@ -1,6 +1,6 @@
 {
   "status": "INSUFFICIENT_DATA",
-  "generated_at_utc": "2026-11-28T03:19:30.326635+00:00",
+  "generated_at_utc": "2026-11-28T03:22:21.604980+00:00",
   "source": "Yahoo Finance chart API; Stooq CSV fallback",
   "eligible_assets": [],
   "common_daily_bars": 0,
@@ -33,7 +33,7 @@
     "blocked_symbols": {},
     "verification_source": "Finam account-scoped API; direct per-symbol checks",
     "account_scope": "Finam account (identifier not stored)",
-    "last_verified": "2026-11-28T03:19:30.251502+00:00",
+    "last_verified": "2026-11-28T03:22:21.353096+00:00",
     "fail_closed": true
   },
   "eligibility_policy": "Fail closed: only account-confirmed Finam BUY_ALLOWED instruments may be selected. No confirmed symbols means cash only.",
@@ -67,7 +67,7 @@
     "status": "DATA_INSUFFICIENT",
     "start_date": "2026-11-27",
     "last_processed_date": "2026-11-27",
-    "updated_at_utc": "2026-11-28T03:19:30.326697+00:00",
+    "updated_at_utc": "2026-11-28T03:22:21.605054+00:00",
     "nav_index": 100.0,
     "high_watermark": 100.0,
     "max_drawdown": 0.0,
@@ -97,18 +97,11 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The portfolio is currently 100% cash with no holdings. No market breadth, asset‑class concentration, or performance data are available.",
-          "risks": [
-            "Liquidity risk due to lack of exposure to market instruments.",
-            "Potential concentration risk if future positions are added without diversification.",
-            "Data availability risk: key securities are blocked, preventing assessment of exposure.",
-            "",
-            ""
-          ],
+          "summary": "The portfolio currently holds no securities and is 100% cash. Market breadth, asset‑class concentration, and any notable changes cannot be determined from the available data.",
+          "risks": [],
           "questions": [
-            "What securities will be added to the portfolio next?",
-            "When will the blocked data become available?",
-            "What is the target asset‑class allocation?"
+            "What securities will be added to the portfolio in the next rebalance?",
+            "When will the portfolio begin to allocate to specific asset classes?"
           ]
         }
       },
@@ -118,18 +111,20 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The deterministic strategy lacks sufficient evidence to evaluate its viability. All performance metrics, backtest results, and benchmark comparisons are marked as INSUFFICIENT_DATA. No holdings or orders have been processed, and the portfolio remains entirely in cash. Data errors prevent retrieval of key benchmark symbols, further limiting assessment.",
+          "summary": "The deterministic strategy lacks sufficient evidence to evaluate its viability. All performance metrics, backtest results, and benchmark comparisons are marked as INSUFFICIENT_DATA. The paper portfolio is empty, with no holdings or turnover, and the data for all benchmark symbols is blocked, preventing any meaningful analysis. Consequently, no conclusions about risk, return, or strategy robustness can be drawn.",
           "risks": [
-            "Unverified strategy performance due to missing backtest data",
-            "Potential data integrity issues from blocked symbols",
-            "No evidence of risk metrics such as drawdown or volatility",
-            "Inability to compare against benchmark (SPY) because benchmark data is unavailable"
+            "No historical performance data to assess risk or return characteristics.",
+            "No benchmark comparison to gauge relative performance.",
+            "Data blocks prevent evaluation of key securities, increasing uncertainty about strategy exposure.",
+            "Absence of any holdings or turnover data means the strategy’s operational feasibility is unverified.",
+            "Potential data integrity issues due to blocked symbols may lead to incomplete or biased results."
           ],
           "questions": [
-            "What is the intended allocation strategy once data becomes available?",
-            "How will the strategy handle periods of missing or blocked data?",
-            "What risk controls (e.g., stop‑loss, position limits) are planned?",
-            "When will the backtest and live performance data be populated?"
+            "What is the intended asset allocation and weighting scheme for the strategy?",
+            "Which securities are targeted once data blocks are resolved?",
+            "What backtesting methodology and period are planned for future evaluation?",
+            "How will the strategy handle data gaps or blocked symbols in live operation?",
+            "What risk metrics (e.g., volatility, drawdown, Sharpe ratio) are expected once sufficient data is available?"
           ]
         }
       },
@@ -139,15 +134,21 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The portfolio is in an initial state with no holdings and all capital in cash. No performance data, backtest, or benchmark information is available. Several data errors indicate that key market symbols are blocked, preventing any realistic valuation or risk assessment. Consequently, the portfolio lacks any meaningful exposure, drawdown, or concentration metrics.",
+          "summary": "The portfolio is in an initial state with no holdings and all capital in cash. No performance data, backtest, or benchmark information is available. Several key symbols are blocked, preventing data retrieval. The portfolio has not yet rebalance or placed any orders.",
           "risks": [
-            "Data insufficiency: No historical or current performance data to evaluate risk metrics.",
-            "Data errors: Multiple key symbols are blocked, preventing accurate valuation or risk calculation.",
-            "Concentration risk: Unknown, as holdings are empty.",
-            "Drawdown risk: Undefined due to lack of performance history.",
-            "Liquidity risk: Unknown, as no holdings exist."
+            "Data insufficiency: lack of historical prices and performance metrics prevents risk assessment.",
+            "Symbol blocking: critical ETFs (SPY, QQQ, IWM, etc.) are inaccessible, creating a data gap.",
+            "Concentration risk cannot be evaluated due to empty holdings.",
+            "Drawdown cannot be measured; max_drawdown is reported as 0.0 but is meaningless without trades.",
+            "Potential stale data: no recent price updates for any symbol."
           ],
-          "questions": []
+          "questions": [
+            "What is the intended asset allocation strategy once the portfolio is activated?",
+            "Which data source will be used to obtain price feeds for the blocked symbols?",
+            "How will the portfolio handle rebalancing once holdings are established?",
+            "What risk limits (e.g., max drawdown, concentration) are set for the strategy?",
+            "When will the first trade be executed and what will trigger it?"
+          ]
         }
       }
     },
