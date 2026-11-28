@@ -9,6 +9,8 @@ on:
       - tests/test_weekly_strategy_lab.py
       - tests/test_deposit_benchmark.py
       - scripts/run_finam_weekly_strategy_batch.py
+      - research_agent/finam_corporate_actions.py
+      - tests/test_finam_corporate_actions.py
       - .github/workflows/finam-weekly-strategy-batch.yml
   pull_request:
     paths:
@@ -32,6 +34,7 @@ jobs:
           python-version: "3.11"
       - name: Run research unit tests
         run: |
+          python -m unittest tests.test_finam_corporate_actions -v
           python -m unittest tests.test_weekly_strategy_lab -v
           python -m unittest tests.test_deposit_benchmark -v
       - name: Fetch validated bars and run expanded research
