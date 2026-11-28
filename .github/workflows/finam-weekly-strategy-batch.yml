@@ -1,3 +1,4 @@
+# Corporate-action diagnosis is PR-only and limited to SBER@MISX.
 name: Finam Weekly Strategy Batch (Read Only)
 on:
   push:
