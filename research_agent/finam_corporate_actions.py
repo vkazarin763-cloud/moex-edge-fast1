@@ -45,6 +45,16 @@ def _date_params(prefix: str, value: date) -> dict[str, str]:
     }
 
 
+def _event_date(event: dict) -> date | None:
+    raw = event.get("date") or event.get("exec_date")
+    if not isinstance(raw, dict):
+        return None
+    try:
+        return date(int(raw["year"]), int(raw["month"]), int(raw["day"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def fetch_event_pages(
     symbol: str,
     endpoint: str,
@@ -57,7 +67,7 @@ def fetch_event_pages(
     page_size: int = PAGE_SIZE,
     max_pages: int = MAX_PAGES,
 ) -> dict:
-    """Fetch a paginated read-only event list; never returns auth/error bodies."""
+    """Retry without date query parameters after HTTP 400; then filter locally."""
     if not symbol or "@" not in symbol:
         raise ValueError("symbol must include exchange MIC")
     if endpoint not in ("/v1/past-dividends", "/v1/splits/past", "/v1/bonds/past"):
@@ -70,6 +80,7 @@ def fetch_event_pages(
     events = []
     offset = 0
     pages = 0
+    date_filter_mode = "vendor"
     try:
         while pages < max_pages:
             params = {
@@ -77,32 +88,55 @@ def fetch_event_pages(
                 "sort_direction": "asc",
                 "limit": str(page_size),
                 "offset": str(offset),
-                **_date_params("date_from", start_date),
-                **_date_params("date_to", end_date),
+                **(_date_params("date_from", start_date) if date_filter_mode == "vendor" else {}),
+                **(_date_params("date_to", end_date) if date_filter_mode == "vendor" else {}),
             }
             query = urlencode(params, safe=".")
-            payload = requester(f"{BASE}{endpoint}?{query}", token)
+            try:
+                payload = requester(f"{BASE}{endpoint}?{query}", token)
+            except FinamRequestError as exc:
+                if exc.code != "HTTP_400" or date_filter_mode != "vendor":
+                    raise
+                date_filter_mode = "local_fallback"
+                params = {
+                    "symbol": symbol,
+                    "sort_direction": "asc",
+                    "limit": str(page_size),
+                    "offset": str(offset),
+                }
+                payload = requester(f"{BASE}{endpoint}?{urlencode(params)}", token)
             if not isinstance(payload, dict) or not isinstance(payload.get(list_key), list):
-                return {"status": "INVALID_RESPONSE", "events": [], "pages": pages}
+                return {"status": "INVALID_RESPONSE", "events": [], "pages": pages, "date_filter_mode": date_filter_mode}
             page = payload[list_key]
             events.extend(page)
             pages += 1
             pagination = payload.get("pagination") or {}
             has_next = pagination.get("has_next")
             if has_next is False or not page:
-                return {"status": "OK", "events": events, "pages": pages}
+                break
             if has_next is None and len(page) < page_size:
-                return {"status": "OK", "events": events, "pages": pages}
+                break
             offset += len(page)
-        return {"status": "PAGE_LIMIT_REACHED", "events": events, "pages": pages}
+        if date_filter_mode == "local_fallback":
+            events = [
+                event for event in events
+                if _event_date(event) is None or start_date <= _event_date(event) <= end_date
+            ]
+        return {
+            "status": "OK" if pages < max_pages else "PAGE_LIMIT_REACHED",
+            "events": events,
+            "pages": pages,
+            "date_filter_mode": date_filter_mode,
+        }
     except FinamRequestError as exc:
         return {
             "status": "UNAVAILABLE", "error_code": exc.code,
             "error_detail": exc.detail, "events": [], "pages": pages,
+            "date_filter_mode": date_filter_mode,
         }
     except Exception as exc:
         code = str(exc).split(":", 1)[0][:40] or "REQUEST_FAILED"
-        return {"status": "UNAVAILABLE", "error_code": code, "events": [], "pages": pages}
+        return {"status": "UNAVAILABLE", "error_code": code, "events": [], "pages": pages, "date_filter_mode": date_filter_mode}
 
 
 def fetch_instrument_corporate_actions(
