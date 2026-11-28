@@ -1,0 +1,68 @@
+name: Finam-Verified MOEX Funds Weekly Paper
+
+on:
+  schedule:
+    - cron: "30 22 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "experimental_portfolio/moex_fund_weekly.py"
+      - "scripts/run_moex_fund_weekly_paper.py"
+      - "tests/test_moex_fund_weekly_strategy.py"
+      - ".github/workflows/moex-fund-weekly-paper.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: moex-fund-weekly-paper
+  cancel-in-progress: false
+
+jobs:
+  paper-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Run offline strategy and paper-ledger tests
+        run: python -m pytest -q tests/test_moex_fund_weekly_strategy.py
+      - name: Run account-verified weekly MOEX fund research and paper ledger
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_MODEL: "openrouter/free"
+          GROQ_MODEL: "openai/gpt-oss-20b"
+        run: python scripts/run_moex_fund_weekly_paper.py
+      - name: Upload weekly research report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moex-fund-weekly-paper-${{ github.run_id }}
+          path: |
+            reports/experimental-portfolio/moex-funds/
+            experimental_portfolio/moex_fund_state.json
+            experimental_portfolio/moex_fund_paper_ledger.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Persist paper report and forward ledger
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add experimental_portfolio/moex_fund_state.json experimental_portfolio/moex_fund_paper_ledger.json reports/experimental-portfolio/moex-funds/
+          if git diff --cached --quiet; then
+            echo "No state or report changes to commit."
+          else
+            git commit -m "Update account-verified MOEX fund weekly paper report"
+            git push
+          fi
