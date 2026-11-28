@@ -7,18 +7,16 @@ from unittest.mock import patch
 from experimental_portfolio import refresh_finam_allowlist as refresh
 
 class AllowlistRefreshTests(unittest.TestCase):
-    def run_refresh(self, params, assets=None):
+    def run_refresh(self, params, mics=("ARCX",)):
         temp=tempfile.TemporaryDirectory()
         path=Path(temp.name)/"allowlist.json"
-        assets=assets or [{"ticker":"SPY","mic":"ARCX"}]
         def fake_api(method, endpoint, token=None, params=None, payload=None):
             if method=="POST": return {"token":"test"}
-            if endpoint=="/v1/assets": return {"assets":assets,"next_cursor":None}
             return params_response
         params_response=params
         with patch.dict(os.environ,{"FINAM_API_SECRET":"dummy","FINAM_ACCOUNT_ID":"dummy"}), \
              patch.object(refresh,"OUT",path), patch.object(refresh,"TARGETS",{"SPY"}), \
-             patch.object(refresh,"US_MICS",{"ARCX"}), patch.object(refresh,"api",fake_api), \
+             patch.object(refresh,"MIC_CANDIDATES",mics), patch.object(refresh,"api",fake_api), \
              patch.object(refresh.time,"sleep"):
             code=refresh.refresh()
         return code,json.loads(path.read_text()),temp
@@ -36,8 +34,8 @@ class AllowlistRefreshTests(unittest.TestCase):
         self.assertEqual(data["instruments"],[])
         temp.cleanup()
 
-    def test_ambiguous_ticker_fails_closed(self):
-        code,data,temp=self.run_refresh({"is_tradable":True,"longable":{"value":"AVAILABLE"}},assets=[{"ticker":"SPY","mic":"ARCX"},{"ticker":"SPY","mic":"ARCX"}])
+    def test_ambiguous_multiple_available_listings_fail_closed(self):
+        code,data,temp=self.run_refresh({"is_tradable":True,"longable":{"value":"AVAILABLE"}},mics=("ARCX","XNAS"))
         self.assertEqual(code,0)
         self.assertEqual(data["instruments"],[])
         temp.cleanup()
