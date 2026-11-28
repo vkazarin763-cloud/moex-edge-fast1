@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-11-28T03:39:08.363133+00:00",
+  "generated_at_utc": "2026-11-28T03:42:00.277177+00:00",
   "universe": "Account-scoped MOEX funds, MIC MISX",
   "paper_only": true,
   "orders_placed": false,
@@ -277,14 +277,12 @@
     "Weekly trend/momentum backtest is hypothetical; paper ledger is prospective and currently starts in cash."
   ],
   "ai_review": {
-    "status": "MIXED_LLM_AND_LOCAL",
+    "status": "LLM_COMPLETE",
     "agents_expected": 3,
     "agents_completed": 3,
-    "llm_agents_completed": 2,
-    "local_agents_completed": 1,
-    "provider_diagnostics": {
-      "risk_auditor": "provider_http_400:Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details."
-    },
+    "llm_agents_completed": 3,
+    "local_agents_completed": 0,
+    "provider_diagnostics": {},
     "reviews": {
       "market_analyst": {
         "status": "COMPLETED",
@@ -292,14 +290,17 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The portfolio is currently held entirely in cash with no active holdings. The strategy targets four equities (AKME, SBMM, LQDT, AKMM) at equal weights, but these positions have not yet been executed. The backtest over the period 2023‑05‑15 to 2026‑11‑23 shows a total return of 62.2 % (CAGR ≈ 14.7 %) with a maximum drawdown of 15.4 % and volatility of 12.5 %. The benchmark buy‑and‑hold (TMOS) delivered 18.1 % total return (CAGR ≈ 4.8 %) with a larger drawdown of 34.1 % and higher volatility of 21.7 %. The portfolio’s Sharpe ratio (1.15) exceeds that of the benchmark (0.32). No asset‑class concentration can be assessed yet because the portfolio is in cash. The only concentration risk that can be noted is the planned equal‑weight allocation to four individual equities, which could expose the portfolio to sector or company‑specific risk if those stocks are correlated.\n\nRisks:",
+          "summary": "The portfolio is currently 100% cash with no holdings. Pending targets for the next week include AKME@MISX, SBMM@MISX, LQDT@MISX, and AKMM@MISX, each at 25% weight. Benchmark TMOS@MISX has returned 18.14% (CAGR 4.84%) versus the portfolio’s 62.17% total return (CAGR 14.70%).",
           "risks": [
-            "Liquidity risk of the target equities due to limited weekly data availability for some symbols (e.g., AMNR, AMNY, BCSD, SBCB).",
-            "Concentration risk from equal‑weight exposure to only four equities once positions are taken.",
-            "Potential tracking error relative to the benchmark due to the strategy’s trend and momentum filters.",
-            "Execution risk: the paper ledger has not yet placed orders, so actual market execution may differ."
+            "High concentration risk once targets are executed",
+            "Benchmark underperforms portfolio’s historical return",
+            "Limited liquidity and execution modeling may affect real performance"
           ],
-          "questions": []
+          "questions": [
+            "When will the pending targets be executed?",
+            "What is the liquidity profile of the target symbols?",
+            "How will dividend adjustments impact future returns?"
+          ]
         }
       },
       "portfolio_researcher": {
@@ -308,27 +309,35 @@
         "provider": "groq_fallback",
         "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "The deterministic strategy, based on a weekly trend filter, 13‑week momentum, and equal‑weight top‑4 selection with monthly rebalancing, has delivered a 62.2% total return (≈14.7% CAGR) over 185 observations, outperforming the TMOS buy‑and‑hold benchmark (18.1% total return). The strategy’s max drawdown is 15.4% versus 34.1% for the benchmark, and its Sharpe ratio is 1.15 versus 0.32. However, the paper portfolio remains in cash and has not yet executed any trades, so the backtest results are purely hypothetical. The evidence lacks real‑world execution details, liquidity assessment, tax impact, and dividend‑adjusted pricing. The strategy’s performance is also limited to a single benchmark and a single market (MISX).",
+          "summary": "The deterministic weekly strategy shows a 62% total return, 14.7% CAGR, and a Sharpe of 1.15 versus a 18% return and 3.2 Sharpe for the TMOS buy‑and‑hold benchmark. However, the backtest lacks dividend adjustment, ignores liquidity, tax, and execution costs, and the paper ledger is still in cash with no realized trades. The strategy’s performance may be overstated due to these omissions.",
           "risks": [
-            "Backtest is based on non‑dividend‑adjusted Finam weekly close prices, potentially overstating returns.\nNo modeling of bid‑ask spread, slippage, or liquidity constraints.\nTax implications are not considered.\nPaper portfolio has not yet traded; execution risk unknown.\nStrategy relies on a single bench",
-            "questions",
-            ":",
-            "['What would the strategy’s performance look like with dividend‑adjusted prices?\\nHow sensitive is the strategy to transaction costs beyond the 0.1% one‑way cost?\\nWhat liquidity constraints exist for the selected symbols, and how would they affect execution?\\nHow would tax considerations alter the "
+            "Dividend‑adjustment omission may inflate returns",
+            "No execution cost modeling could overstate Sharpe",
+            "Paper portfolio remains cash‑only, limiting real‑world validation"
           ],
-          "questions": []
+          "questions": [
+            "How would including dividend adjustments affect total return?",
+            "What impact would realistic transaction costs have on volatility and Sharpe?",
+            "When will the paper portfolio transition from cash to active holdings for performance verification?"
+          ]
         }
       },
       "risk_auditor": {
         "status": "COMPLETED",
-        "engine": "local_deterministic",
+        "engine": "llm",
+        "provider": "groq_fallback",
+        "model": "openai/gpt-oss-20b",
         "review": {
-          "summary": "Forward paper maximum drawdown: 0.0; historical backtest maximum drawdown: -0.15407; stale instruments: 0; data errors: 0.",
+          "summary": "The portfolio has no holdings yet, remaining in cash. Performance metrics are based on a 185‑observation backtest with a 62% total return and 14.7% CAGR, but the max drawdown is 15.4%. Data gaps exist for four symbols due to insufficient weekly bars, and no live price data is available. The model’s assumptions (no dividends, no liquidity, no tax) limit real‑world applicability.",
           "risks": [
-            "4 candidates excluded from backtest due to insufficient weekly history; these are not download failures.",
-            "Options and futures are excluded from NAV pending executable quotes and contract-level risk modeling."
+            "Data gaps for AMNR, AMNY, BCSD, SBCB may bias backtest results.",
+            "Backtest uses non‑dividend‑adjusted prices, overstating returns.",
+            "Model lacks execution, liquidity, and tax considerations, reducing realism."
           ],
           "questions": [
-            "Are transaction costs, dividends, currency exposure and ETF liquidity sufficiently represented?"
+            "How will the portfolio perform once actual trades are executed?",
+            "What impact would dividend adjustments have on the reported CAGR?",
+            "Are there liquidity constraints for the target symbols that could affect rebalancing?"
           ]
         }
       }
