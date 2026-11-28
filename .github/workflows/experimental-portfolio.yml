@@ -18,8 +18,10 @@ on:
       - "experimental_portfolio/paper.py"
       - "experimental_portfolio/run.py"
       - "experimental_portfolio/eligibility.py"
+      - "experimental_portfolio/refresh_finam_allowlist.py"
       - "experimental_portfolio/finam_allowlist.json"
       - "experimental_portfolio/README.md"
+      - "experimental_portfolio/refresh_finam_allowlist.py"
       - ".github/workflows/experimental-portfolio.yml"
 
 permissions:
@@ -40,6 +42,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Refresh account-specific Finam ETF buy eligibility (read-only)
+        env:
+          FINAM_API_SECRET: ${{ secrets.FINAM_API_SECRET }}
+          FINAM_ACCOUNT_ID: ${{ secrets.FINAM_ACCOUNT_ID }}
+        run: python experimental_portfolio/refresh_finam_allowlist.py || echo "Refresh failed safely; empty allowlist/cash-only mode."
       - name: Run deterministic global ETF paper portfolio and AI reviewers
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
