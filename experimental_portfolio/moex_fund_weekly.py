@@ -70,3 +70,42 @@ def current_weekly_targets(history:dict[str,list[dict]], min_history:int=MIN_HIS
     ranked.sort(reverse=True)
     chosen=[s for _,s in ranked[:MAX_HOLDINGS]]
     return [{"symbol":s,"weight":round(1/len(chosen),6)} for s in chosen] if chosen else []
+
+def update_forward_ledger(history:dict[str,list[dict]],ledger:dict|None,target:list[dict])->dict:
+    """Forward-only paper simulation: rebalance at next weekly open, mark at weekly close."""
+    dates=sorted(set.intersection(*(set(r["date"] for r in rows) for rows in history.values() if rows))) if history else []
+    latest=dates[-1] if dates else None
+    if ledger is None:
+        return {"status":"WAITING_FOR_NEXT_WEEK","nav_index":100.0,"high_watermark":100.0,"max_drawdown":0.0,
+            "cash_weight":1.0,"holdings":[],"last_processed_week":latest,"pending_targets":target,
+            "last_week_return":0.0,"cumulative_turnover":0.0,"rebalance_count":0,"paper_only":True,"orders_placed":False,
+            "note":"Started in cash. Targets from the last completed week are queued for the next weekly open."}
+    state=dict(ledger);state["paper_only"]=True;state["orders_placed"]=False
+    if not latest or latest==state.get("last_processed_week"):
+        state["status"]="WAITING_FOR_NEXT_WEEK";state["pending_targets"]=state.get("pending_targets",target)
+        return state
+    prev_date=state.get("last_processed_week")
+    old={x["symbol"]:float(x["weight"]) for x in state.get("holdings",[])}
+    targetw={x["symbol"]:float(x["weight"]) for x in state.get("pending_targets",target)}
+    # Missing prices for any held/queued symbol block ledger advancement instead of silently dropping it.
+    lookup={s:{r["date"]:r for r in rows} for s,rows in history.items()}
+    for sym in set(old)|set(targetw):
+        if sym not in lookup or prev_date not in lookup[sym] or latest not in lookup[sym]:
+            state["status"]="PRICE_GAP_BLOCKED";state["last_week_return"]=0.0
+            return state
+    nav=float(state.get("nav_index",100.0))
+    gap=sum(w*(lookup[s][latest]["open"]/lookup[s][prev_date]["close"]-1) for s,w in old.items())
+    nav*=1+gap
+    turnover=sum(abs(targetw.get(s,0)-old.get(s,0)) for s in set(targetw)|set(old))/2
+    nav*=max(0,1-turnover*COST)
+    intraperiod=sum(w*(lookup[s][latest]["close"]/lookup[s][latest]["open"]-1) for s,w in targetw.items())
+    nav*=1+intraperiod
+    high=max(float(state.get("high_watermark",100)),nav)
+    dd=min(float(state.get("max_drawdown",0)),nav/high-1)
+    state.update(status="FORWARD_PAPER",nav_index=round(nav,6),high_watermark=round(high,6),max_drawdown=round(dd,6),
+      cash_weight=round(max(0,1-sum(targetw.values())),6),holdings=[{"symbol":s,"weight":round(w,6)} for s,w in sorted(targetw.items())],
+      last_processed_week=latest,last_week_return=round(nav/float(state.get("nav_index",100))-1,6),
+      cumulative_turnover=round(float(state.get("cumulative_turnover",0))+turnover,6),
+      rebalance_count=int(state.get("rebalance_count",0))+1,pending_targets=target,
+      paper_only=True,orders_placed=False)
+    return state
