@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError,URLError
 from urllib.parse import quote,urlencode
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from experimental_portfolio.moex_fund_weekly import run_weekly_backtest,current_weekly_targets,update_forward_ledger,MIN_HISTORY
 from experimental_portfolio.agents import run_reviewers
 
