@@ -1,0 +1,27 @@
+name: Deposit Benchmark Tests
+on:
+  push:
+    paths:
+      - experimental_portfolio/deposit_benchmark.py
+      - tests/test_deposit_benchmark.py
+      - experimental_portfolio/DEPOSIT_BENCHMARK.md
+      - .github/workflows/deposit-benchmark-tests.yml
+  pull_request:
+    paths:
+      - experimental_portfolio/deposit_benchmark.py
+      - tests/test_deposit_benchmark.py
+      - experimental_portfolio/DEPOSIT_BENCHMARK.md
+      - .github/workflows/deposit-benchmark-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run deposit benchmark tests
+        run: python -m unittest tests.test_deposit_benchmark -v
