@@ -1,4 +1,4 @@
-"""Tests for read-only Finam corporate-action event retrieval."""
+"Tests for read-only Finam corporate-action event retrieval."""
 import unittest
 from datetime import date
 from urllib.parse import urlparse, parse_qs
@@ -9,7 +9,7 @@ from research_agent.finam_corporate_actions import (
 
 
 class CorporateActionFetchTests(unittest.TestCase):
-    def test_paginates_until_terminal_page(self):
+    def test_paginates_until_terminal_page_and_preserves_dotted_query_keys(self):
         calls = []
         def requester(url, token):
             calls.append((url, token))
@@ -27,6 +27,8 @@ class CorporateActionFetchTests(unittest.TestCase):
         self.assertEqual(len(result["events"]), 2)
         self.assertEqual(len(calls), 2)
         self.assertTrue(all(call[1] == "test-token" for call in calls))
+        self.assertIn("date_from.year=2021", calls[0][0])
+        self.assertNotIn("date_from%2Eyear", calls[0][0])
 
     def test_fund_does_not_request_split_endpoint(self):
         calls = []
@@ -40,7 +42,7 @@ class CorporateActionFetchTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertIn("/v1/past-dividends?", calls[0])
         self.assertEqual(result["splits"]["status"], "NOT_APPLICABLE")
-        self.assertTrue(result["adjustment_status"].startswith("NOT_ADJUSTED"))
+        self.assertIn("RECORD_DATE", result["adjustment_status"])
 
     def test_equity_requests_dividends_and_splits(self):
         calls = []
