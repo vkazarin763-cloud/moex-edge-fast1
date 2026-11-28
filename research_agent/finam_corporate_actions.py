@@ -1,4 +1,4 @@
-"Read-only Finam corporate-action event retrieval for research audits.
+"""Read-only Finam corporate-action event retrieval for research audits.
 
 Finam's historical dividend date is the register closing date, not the
 ex-dividend/last-buy date. Split execution dates are separately defined.
